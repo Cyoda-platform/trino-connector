@@ -1,0 +1,162 @@
+{
+  "_embedded": {
+    "gridConfigFieldsViews": [
+      {
+        "gridConfigFields": {
+          "id": "PLAY-InterfaceMessage_0-ExampleFixMessageReport"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-InterfaceMessage_0-ExampleFixMessageReport",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-InterfaceMessage_0-ExampleFixMessageReport",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-InterfaceMessage_0-ExampleFixMessageReport",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-InterfaceMessage_0-ExampleFixMessageReport{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      },
+      {
+        "gridConfigFields": {
+          "id": "PLAY-Trade-EUR_CHF_USD_TradedYesterday"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-Trade-EUR_CHF_USD_TradedYesterday",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-Trade-EUR_CHF_USD_TradedYesterday",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-Trade-EUR_CHF_USD_TradedYesterday",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-Trade-EUR_CHF_USD_TradedYesterday{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      },
+      {
+        "gridConfigFields": {
+          "id": "PLAY-\"RiskFigures_1-RiskFiguresReport"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-%22RiskFigures_1-RiskFiguresReport",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-%22RiskFigures_1-RiskFiguresReport",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-%22RiskFigures_1-RiskFiguresReport",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-%22RiskFigures_1-RiskFiguresReport{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      },
+      {
+        "gridConfigFields": {
+          "id": "PLAY-DTCCTrade_0-DEFAULT"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-DTCCTrade_0-DEFAULT",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-DTCCTrade_0-DEFAULT",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-DTCCTrade_0-DEFAULT",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-DTCCTrade_0-DEFAULT{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      },
+      {
+        "gridConfigFields": {
+          "id": "PLAY-Trade-DEFAULT"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-Trade-DEFAULT",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-Trade-DEFAULT",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-Trade-DEFAULT",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-Trade-DEFAULT{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      }
+    ]
+  },
+  "page": {
+    "size": 10,
+    "totalElements": 25,
+    "totalPages": 3,
+    "number": 20
+  }
+}

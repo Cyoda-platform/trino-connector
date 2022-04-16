@@ -1,0 +1,342 @@
+{
+  "_embedded": {
+    "gridConfigFieldsViews": [
+      {
+        "gridConfigFields": {
+          "id": "PLAY-InterfaceMessage_0-OutboundGTRReport"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-InterfaceMessage_0-OutboundGTRReport",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-InterfaceMessage_0-OutboundGTRReport",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-InterfaceMessage_0-OutboundGTRReport",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-InterfaceMessage_0-OutboundGTRReport{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      },
+      {
+        "gridConfigFields": {
+          "id": "PLAY-LegalEntity-All LegalEntities"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-LegalEntity-All%20LegalEntities",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-LegalEntity-All%20LegalEntities",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-LegalEntity-All%20LegalEntities",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-LegalEntity-All%20LegalEntities{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      },
+      {
+        "gridConfigFields": {
+          "id": "PLAY-InterfaceMessage-ExampleFixMessageReport"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-InterfaceMessage-ExampleFixMessageReport",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-InterfaceMessage-ExampleFixMessageReport",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-InterfaceMessage-ExampleFixMessageReport",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-InterfaceMessage-ExampleFixMessageReport{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      },
+      {
+        "gridConfigFields": {
+          "id": "PLAY-InterfaceMessage_0-FIXMessagesByBook"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-InterfaceMessage_0-FIXMessagesByBook",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-InterfaceMessage_0-FIXMessagesByBook",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-InterfaceMessage_0-FIXMessagesByBook",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-InterfaceMessage_0-FIXMessagesByBook{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      },
+      {
+        "gridConfigFields": {
+          "id": "PLAY-Trade_0-EUR_CHF_USD_TradedYesterday"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-Trade_0-EUR_CHF_USD_TradedYesterday",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-Trade_0-EUR_CHF_USD_TradedYesterday",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-Trade_0-EUR_CHF_USD_TradedYesterday",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-Trade_0-EUR_CHF_USD_TradedYesterday{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      },
+      {
+        "gridConfigFields": {
+          "id": "PLAY-RiskFigures-RiskFiguresByCurrency"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-RiskFigures-RiskFiguresByCurrency",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-RiskFigures-RiskFiguresByCurrency",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-RiskFigures-RiskFiguresByCurrency",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-RiskFigures-RiskFiguresByCurrency{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      },
+      {
+        "gridConfigFields": {
+          "id": "PLAY-RiskFigures-RiskFiguresByCurrency_hierarchy"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-RiskFigures-RiskFiguresByCurrency_hierarchy",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-RiskFigures-RiskFiguresByCurrency_hierarchy",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-RiskFigures-RiskFiguresByCurrency_hierarchy",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-RiskFigures-RiskFiguresByCurrency_hierarchy{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      },
+      {
+        "gridConfigFields": {
+          "id": "PLAY-InterfaceMessage-MessagesByCurrencyReport"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-InterfaceMessage-MessagesByCurrencyReport",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-InterfaceMessage-MessagesByCurrencyReport",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-InterfaceMessage-MessagesByCurrencyReport",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-InterfaceMessage-MessagesByCurrencyReport{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      },
+      {
+        "gridConfigFields": {
+          "id": "PLAY-\"RiskFigures_0-RiskFiguresByCurrency"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-%22RiskFigures_0-RiskFiguresByCurrency",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-%22RiskFigures_0-RiskFiguresByCurrency",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-%22RiskFigures_0-RiskFiguresByCurrency",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-%22RiskFigures_0-RiskFiguresByCurrency{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      },
+      {
+        "gridConfigFields": {
+          "id": "PLAY-NMOTrade_0-DEFAULT"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-NMOTrade_0-DEFAULT",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-NMOTrade_0-DEFAULT",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-NMOTrade_0-DEFAULT",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-NMOTrade_0-DEFAULT{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      },
+      {
+        "gridConfigFields": {
+          "id": "PLAY-InterfaceMessage-InboundFpmlReport"
+        },
+        "_links": {
+          "/definitions": [
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-InterfaceMessage-InboundFpmlReport",
+              "title": "Get preconfigured reports",
+              "type": "GET"
+            },
+            {
+              "href": "/platform-api/reporting/definitions/PLAY-InterfaceMessage-InboundFpmlReport",
+              "title": "Update report definition",
+              "type": "PUT"
+            }
+          ],
+          "/pre": {
+            "href": "/platform-api/reporting/pre?gridConfig=PLAY-InterfaceMessage-InboundFpmlReport",
+            "title": "Launch a preconfigured report",
+            "type": "POST"
+          },
+          "/history": {
+            "href": "/platform-api/reporting/history?report_name=PLAY-InterfaceMessage-InboundFpmlReport{&username,from,to}",
+            "title": "Get report histories",
+            "type": "GET",
+            "templated": true
+          }
+        }
+      }
+    ]
+  },
+  "page": {
+    "size": 10,
+    "totalElements": 25,
+    "totalPages": 3,
+    "number": 0
+  }
+}
