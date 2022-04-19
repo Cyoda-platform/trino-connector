@@ -17,11 +17,11 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.neededatcyoda.GridConfigFieldsView;
-import com.cyoda.presto.reports.ConfiguredReportsApiHandler;
-import com.cyoda.presto.reports.CyodaApiRequestHandler;
-import com.cyoda.presto.reports.CyodaApiRequestHandlerProvider;
-import com.cyoda.presto.reports.CyodaStaticReportTable;
+import com.cyoda.presto.client.neededatcyoda.GridConfigFieldsView;
+import com.cyoda.presto.client.reporting.ConfiguredReportsApiHandler;
+import com.cyoda.presto.client.CyodaApiRequestHandler;
+import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
+import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
 import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.RecordSet;
 import com.google.common.collect.ImmutableList;

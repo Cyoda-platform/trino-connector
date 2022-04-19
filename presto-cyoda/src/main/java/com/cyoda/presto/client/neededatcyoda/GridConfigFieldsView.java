@@ -15,23 +15,19 @@
  *
  */
 
-package com.cyoda.presto.reports;
+package com.cyoda.presto.client.neededatcyoda;
 
-import com.cyoda.presto.CyodaTable;
-import com.facebook.presto.spi.SchemaTableName;
-import org.springframework.hateoas.CollectionModel;
+import java.util.HashMap;
+import java.util.Map;
 
-import java.util.List;
+public class GridConfigFieldsView {
+    private final Map<String, String> gridConfigFields = new HashMap<>();
 
-public interface CyodaApiRequestHandler<T> {
-    String getHandlerKey();
+    public void addField(String fieldName, String fieldValue) {
+        gridConfigFields.put(fieldName, fieldValue);
+    }
 
-    boolean hasTable(SchemaTableName tableName);
-
-    List<CyodaTable> getTables();
-
-    CollectionModel<T> retrieveCollection();
-
-    Object getValue(T entity, int field);
-
+    public Map<String, String> getGridConfigFields() {
+        return gridConfigFields;
+    }
 }

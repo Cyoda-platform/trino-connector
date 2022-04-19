@@ -15,7 +15,7 @@
  *
  */
 
-package com.cyoda.presto.reports;
+package com.cyoda.presto.client;
 
 import com.facebook.presto.spi.SchemaTableName;
 

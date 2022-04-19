@@ -17,7 +17,7 @@
 
 package com.cyoda.presto;
 
-import com.cyoda.presto.reports.CyodaApiRequestHandlerProvider;
+import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
 import com.facebook.presto.spi.SchemaTableName;
 import com.google.common.collect.ImmutableMap;
 

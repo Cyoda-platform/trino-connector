@@ -15,7 +15,7 @@
  *
  */
 
-package com.cyoda.presto.http;
+package com.cyoda.presto.client;
 
 import com.cyoda.presto.CyodaConfig;
 import com.google.common.base.CharMatcher;

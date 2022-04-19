@@ -15,14 +15,15 @@
  *
  */
 
-package com.cyoda.presto.reports;
+package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.CyodaTable;
+import com.cyoda.presto.client.CyodaApiRequestHandler;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.http.RestTemplateCustomizer;
-import com.cyoda.presto.neededatcyoda.GridConfigFieldsView;
+import com.cyoda.presto.client.RestTemplateCustomizer;
+import com.cyoda.presto.client.neededatcyoda.GridConfigFieldsView;
 import com.facebook.presto.common.type.TimestampType;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.SchemaTableName;
@@ -49,6 +50,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.facebook.presto.common.type.VarcharType.createUnboundedVarcharType;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.lang.String.format;
@@ -140,7 +142,7 @@ public class ConfiguredReportsApiHandler implements CyodaApiRequestHandler<GridC
                     .follow()//.withTemplateParameters(parameters)
                     .toObject(typeReference);
         } catch (HttpClientErrorException e) {
-            throw requestFailedException("retrieveCollection", e, uri);
+            throw requestFailedException(this,"retrieveCollection", e, uri);
         }
     }
 
@@ -169,28 +171,5 @@ public class ConfiguredReportsApiHandler implements CyodaApiRequestHandler<GridC
         return LocalDateTime.parse(str, DateTimeFormatter.ISO_DATE_TIME);
     }
 
-    @SuppressWarnings("SameParameterValue")
-    private RuntimeException requestFailedException(String task, HttpClientErrorException e, URI uri) {
-        if (HttpStatus.UNAUTHORIZED.equals(e.getStatusCode())) {
-            return new PrestoException(StandardErrorCode.PERMISSION_DENIED, "Authentication failed : " + e.getStatusText());
-        }
-        if (HttpStatus.TOO_MANY_REQUESTS.equals(e.getStatusCode())) {
-            return new PrestoException(StandardErrorCode.TOO_MANY_REQUESTS_FAILED, "Request throttled : " + e.getStatusText());
-        }
 
-        return new RuntimeException(
-                format("Error %s at %s returned an invalid response: %s [Error: %s]",
-                        task, uri.toASCIIString(), asString(e), e.getResponseBodyAsString()),
-                e
-        );
-    }
-
-    private String asString(HttpClientErrorException e) {
-        return toStringHelper(this)
-                .add("statusCode", e.getStatusCode())
-                .add("statusMessage", e.getStatusText())
-                .add("headers", e.getResponseHeaders())
-                .omitNullValues()
-                .toString();
-    }
 }

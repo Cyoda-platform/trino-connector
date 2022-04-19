@@ -15,19 +15,11 @@
  *
  */
 
-package com.cyoda.presto.neededatcyoda;
+package com.cyoda.presto.client.reporting;
 
-import java.util.HashMap;
-import java.util.Map;
-
-public class GridConfigFieldsView {
-    private final Map<String, String> gridConfigFields = new HashMap<>();
-
-    public void addField(String fieldName, String fieldValue) {
-        gridConfigFields.put(fieldName, fieldValue);
-    }
-
-    public Map<String, String> getGridConfigFields() {
-        return gridConfigFields;
-    }
+public enum CyodaStaticReportTable {
+    REPORTS,
+    REPORT_HISTORIES,
+    REPORT_GROUPS,
+    REPORT_ROWS
 }

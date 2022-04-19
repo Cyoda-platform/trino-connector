@@ -18,7 +18,7 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.reports.CyodaApiRequestHandler;
+import com.cyoda.presto.client.CyodaApiRequestHandler;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.RecordSet;

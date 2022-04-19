@@ -18,16 +18,33 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.reports.CyodaApiRequestHandler;
+import com.cyoda.presto.client.CyodaApiRequestHandler;
+import com.facebook.presto.common.type.BigintType;
+import com.facebook.presto.common.type.BooleanType;
+import com.facebook.presto.common.type.DateType;
+import com.facebook.presto.common.type.DoubleType;
+import com.facebook.presto.common.type.IntegerType;
+import com.facebook.presto.common.type.RealType;
+import com.facebook.presto.common.type.SmallintType;
 import com.facebook.presto.common.type.StandardTypes;
+import com.facebook.presto.common.type.TimestampType;
+import com.facebook.presto.common.type.TinyintType;
 import com.facebook.presto.common.type.Type;
+import com.facebook.presto.common.type.VarbinaryType;
 import com.facebook.presto.spi.RecordCursor;
 import io.airlift.slice.Slice;
+import io.airlift.slice.Slices;
 import org.checkerframework.checker.nullness.qual.NonNull;
 import org.springframework.hateoas.CollectionModel;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.net.InetAddress;
+import java.nio.ByteBuffer;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -36,6 +53,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.facebook.presto.common.type.BooleanType.BOOLEAN;
+import static com.facebook.presto.common.type.VarcharType.createUnboundedVarcharType;
 import static com.facebook.presto.common.type.VarcharType.createVarcharType;
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.airlift.slice.Slices.utf8Slice;
@@ -70,13 +88,20 @@ public class CyodaRecordCursor<T> implements RecordCursor {
     }
 
     @SuppressWarnings("squid:S125")
-    public static Optional<Object> getColumnValue(Object columnValue, CyodaType cyodaType) {
+    public static Slice getColumnValue(Object columnValue, CyodaType cyodaType) {
         requireNonNull(cyodaType, "cyodaType is null");
         // Might be needed when we map other types
         // Type nativeType = cyodaType.getNativeType();
         if (columnValue == null) {
-            return Optional.empty();
+            return Slices.EMPTY_SLICE;
         } else {
+            // VarcharEnumType
+            // VarcharType
+            // CharType
+            // JsonType
+            // LongDecimalType
+            // VarbinaryType
+
             switch (cyodaType) {
                 case UUID:
                     throw new UnsupportedOperationException("UUID does not work. " +
@@ -87,8 +112,7 @@ public class CyodaRecordCursor<T> implements RecordCursor {
 //                    return Optional.of(uuidSlice);
                 case STRING:
                     final String string = columnValue.toString();
-                    final Slice strSlice = utf8Slice(string);
-                    return Optional.of(strSlice);
+                    return (string == null) ? Slices.EMPTY_SLICE : utf8Slice(string);
                 default:
                     throw new IllegalStateException("Handling of type " + cyodaType
                             + " is not implemented");
@@ -167,12 +191,9 @@ public class CyodaRecordCursor<T> implements RecordCursor {
 
         final Object fieldValue = getFieldValue(field);
         final Type columnType = columnHandles.get(field).getColumnType();
-        Optional<Object> value = getColumnValue(fieldValue, getCyodaType(columnType));
-        if (!value.isPresent()) throw new IllegalStateException("Attempting to get Slice of a null column value");
-        if (value.get() instanceof Slice) {
-            return (Slice) value.get();
-        }
-        return utf8Slice(value.get().toString());
+        final String base = columnType.getTypeSignature().getBase();
+        Slice value = getColumnValue(fieldValue, getCyodaType(columnType));
+        return value;
     }
 
     @Override
@@ -200,8 +221,26 @@ public class CyodaRecordCursor<T> implements RecordCursor {
      * Taken from CassandraType of module presto-cassandra.
      */
     enum CyodaType {
-        UUID(createVarcharType(Constants.UUID_STRING_MAX_LENGTH), java.util.UUID.class),
-        STRING(createVarcharType(Constants.UUID_STRING_MAX_LENGTH), java.util.UUID.class);
+        UUID(createVarcharType(Constants.UUID_STRING_UUID_LENGTH), java.util.UUID.class),
+        TIMEUUID(createVarcharType(Constants.UUID_STRING_UUID_LENGTH), java.util.UUID.class),
+        STRING(createVarcharType(Constants.UUID_STRING_MAX_LENGTH), String.class),
+        BIGINT(BigintType.BIGINT, Long.class),
+        BLOB(VarbinaryType.VARBINARY, ByteBuffer.class),
+        BOOLEAN(BooleanType.BOOLEAN, Boolean.class),
+        DOUBLE(DoubleType.DOUBLE, Double.class),
+        FLOAT(RealType.REAL, Float.class),
+        INET(createVarcharType(Constants.IP_ADDRESS_STRING_MAX_LENGTH), InetAddress.class),
+        INT(IntegerType.INTEGER, Integer.class),
+        SMALLINT(SmallintType.SMALLINT, Short.class),
+        TINYINT(TinyintType.TINYINT, Byte.class),
+        TEXT(createUnboundedVarcharType(), String.class),
+        DATE(DateType.DATE, LocalDate.class),
+        TIMESTAMP(TimestampType.TIMESTAMP, LocalDateTime.class),
+        VARCHAR(createUnboundedVarcharType(), String.class),
+        VARINT(createUnboundedVarcharType(), BigInteger.class),
+        LIST(createUnboundedVarcharType(), null),
+        MAP(createUnboundedVarcharType(), null),
+        SET(createUnboundedVarcharType(), null);
 
         private final Type nativeType;
         private final Class<?> javaType;
@@ -224,6 +263,7 @@ public class CyodaRecordCursor<T> implements RecordCursor {
     @SuppressWarnings("squid:S1068")
     private static class Constants {
         private static final int UUID_STRING_MAX_LENGTH = 36;
+        private static final int UUID_STRING_UUID_LENGTH = 16;
         // IPv4: 255.255.255.255 - 15 characters
         // IPv6: FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF - 39 characters
         // IPv4 embedded into IPv6: FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:255.255.255.255 - 45 characters
