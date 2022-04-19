@@ -33,6 +33,7 @@
     <modules>
         <module>presto-cyoda</module>
         <module>presto-server-runtime</module>
+        <module>presto-cli-runtime</module>
     </modules>
 
     <properties>
@@ -41,7 +42,6 @@
 
         <spring-hateoas.version>1.4.1</spring-hateoas.version>
 
-        <!-- TODO: we will need to be compatible with the air checks at some point -->
         <air.check.skip-license>true</air.check.skip-license>
         <air.check.skip-checkstyle>true</air.check.skip-checkstyle>
         <air.check.skip-modernizer>true</air.check.skip-modernizer>
