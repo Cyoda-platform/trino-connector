@@ -196,6 +196,7 @@ public class CyodaConfig {
         return this;
     }
 
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     public boolean getHttpsOverride() {
         return httpsOverride;
     }

@@ -61,7 +61,7 @@ public class CyodaConnectorFactory implements ConnectorFactory {
             return injector.getInstance(CyodaConnector.class);
         } catch (Exception e) {
             throwIfUnchecked(e);
-            throw new RuntimeException(e);
+            throw new IllegalStateException(e);
         }
     }
 }

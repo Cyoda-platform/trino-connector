@@ -169,6 +169,7 @@ public class ConfiguredReportsApiHandler implements CyodaApiRequestHandler<GridC
         return LocalDateTime.parse(str, DateTimeFormatter.ISO_DATE_TIME);
     }
 
+    @SuppressWarnings("SameParameterValue")
     private RuntimeException requestFailedException(String task, HttpClientErrorException e, URI uri) {
         if (HttpStatus.UNAUTHORIZED.equals(e.getStatusCode())) {
             return new PrestoException(StandardErrorCode.PERMISSION_DENIED, "Authentication failed : " + e.getStatusText());

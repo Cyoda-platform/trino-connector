@@ -55,7 +55,10 @@ public class TestCyodaRecordSet {
     @Test
     public void testPage1ConfiguredReports() throws IOException, URISyntaxException {
         CyodaConfig mockCyodaConfig = createCyodaConfig();
+
+        @SuppressWarnings("rawtypes")
         Set<CyodaApiRequestHandler> handlers = Collections.singleton(new ConfiguredReportsApiHandler(connectorId, mockCyodaConfig));
+
         CyodaApiRequestHandlerProvider handlerProvider = new CyodaApiRequestHandlerProvider(handlers);
         CyodaClient client = new CyodaClient(connectorId, mockCyodaConfig, handlerProvider);
 
@@ -107,7 +110,10 @@ public class TestCyodaRecordSet {
     @Test
     public void testThatColumnTypesAreCorrect() throws MalformedURLException, URISyntaxException {
         CyodaConfig mockCyodaConfig = createCyodaConfig();
+
+        @SuppressWarnings("rawtypes")
         Set<CyodaApiRequestHandler> handlers = Collections.singleton(new ConfiguredReportsApiHandler(connectorId, mockCyodaConfig));
+
         CyodaApiRequestHandlerProvider handlerProvider = new CyodaApiRequestHandlerProvider(handlers);
         CyodaClient client = new CyodaClient(connectorId, mockCyodaConfig, handlerProvider);
 

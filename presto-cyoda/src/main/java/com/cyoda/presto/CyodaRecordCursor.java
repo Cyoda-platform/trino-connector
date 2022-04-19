@@ -185,6 +185,7 @@ public class CyodaRecordCursor<T> implements RecordCursor {
         return getFieldValue(field) == null;
     }
 
+    @SuppressWarnings("SameParameterValue")
     private void checkFieldType(int field, Type expected) {
         Type actual = getType(field);
         checkArgument(actual.equals(expected), "Expected field %s to be type %s but is %s", field, expected, actual);

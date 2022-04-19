@@ -31,23 +31,26 @@ public class CyodaApiRequestHandlerProvider {
 
     private final Map<String, CyodaApiRequestHandler<?>> handlers;
 
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "squid:S3740", "rawtypes"})
     @Inject
     public CyodaApiRequestHandlerProvider(Set<CyodaApiRequestHandler> handlerList) {
         handlers = handlerList.stream().collect(Collectors.toMap(CyodaApiRequestHandler::getHandlerKey, x -> x));
     }
 
+    @SuppressWarnings({"squid:S3740", "rawtypes"})
     public CyodaApiRequestHandler getHandler(String type) {
         requireNonNull(type, "type is null");
         return handlers.get(type);
     }
 
+    @SuppressWarnings({"squid:S1452"})
     public CyodaApiRequestHandler<?> getHandler(SchemaTableName tableName) {
         return handlers.values().stream().filter(h -> h.hasTable(tableName)).findAny().orElseThrow(
                 () -> new IllegalStateException("[Cyoda]:" + this.getClass().getSimpleName() + ":unexpected error trying to get the Handler for table" + tableName)
         );
     }
 
+    @SuppressWarnings({"squid:S1452"})
     public Collection<CyodaApiRequestHandler<?>> getHandlers() {
         return handlers.values();
     }
