@@ -1,3 +1,20 @@
+/*
+ * Copyright (C) 2022 Cyoda Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.cyoda.presto;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
@@ -28,8 +45,7 @@ public class CyodaTable {
             @JsonProperty("name") String name,
             @JsonProperty("columns") List<CyodaColumnHandle> columns,
             @JsonProperty("sources") List<URI> sources,
-            @JsonProperty("isPaged") Boolean isPaged)
-    {
+            @JsonProperty("isPaged") Boolean isPaged) {
         checkArgument(!isNullOrEmpty(name), "name is null or is empty");
         this.name = requireNonNull(name, "name is null");
         this.isPaged = requireNonNull(isPaged, "isPaged is null");
@@ -45,20 +61,17 @@ public class CyodaTable {
     }
 
     @JsonProperty
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
     @JsonProperty
-    public List<CyodaColumnHandle> getColumns()
-    {
+    public List<CyodaColumnHandle> getColumns() {
         return columns;
     }
 
     @JsonProperty
-    public List<URI> getSources()
-    {
+    public List<URI> getSources() {
         return sources;
     }
 
@@ -67,8 +80,7 @@ public class CyodaTable {
         return isPaged;
     }
 
-    public List<ColumnMetadata> getColumnsMetadata()
-    {
+    public List<ColumnMetadata> getColumnsMetadata() {
         return columnsMetadata;
     }
 

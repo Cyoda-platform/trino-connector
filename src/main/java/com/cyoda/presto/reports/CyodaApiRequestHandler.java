@@ -17,9 +17,21 @@
 
 package com.cyoda.presto.reports;
 
-public enum CyodaStaticReportTable {
-    REPORTS,
-    REPORT_HISTORIES,
-    REPORT_GROUPS,
-    REPORT_ROWS
+import com.cyoda.presto.CyodaTable;
+import com.facebook.presto.spi.SchemaTableName;
+import org.springframework.hateoas.CollectionModel;
+
+import java.util.List;
+
+public interface CyodaApiRequestHandler<T> {
+    String getHandlerKey();
+
+    boolean hasTable(SchemaTableName tableName);
+
+    List<CyodaTable> getTables();
+
+    CollectionModel<T> retrieveCollection();
+
+    Object getValue(T entity, int field);
+
 }

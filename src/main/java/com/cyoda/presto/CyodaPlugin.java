@@ -15,11 +15,15 @@
  *
  */
 
-package com.cyoda.presto.reports;
+package com.cyoda.presto;
 
-public enum CyodaStaticReportTable {
-    REPORTS,
-    REPORT_HISTORIES,
-    REPORT_GROUPS,
-    REPORT_ROWS
+import com.facebook.presto.spi.Plugin;
+import com.facebook.presto.spi.connector.ConnectorFactory;
+import com.google.common.collect.ImmutableList;
+
+public class CyodaPlugin implements Plugin {
+    @Override
+    public Iterable<ConnectorFactory> getConnectorFactories() {
+        return ImmutableList.of(new CyodaConnectorFactory());
+    }
 }

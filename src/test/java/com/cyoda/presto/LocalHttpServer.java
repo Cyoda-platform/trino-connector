@@ -1,15 +1,18 @@
 /*
+ * Copyright (C) 2022 Cyoda Ltd.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 package com.cyoda.presto;
 
@@ -17,38 +20,30 @@ import com.facebook.airlift.bootstrap.Bootstrap;
 import com.facebook.airlift.bootstrap.LifeCycleManager;
 import com.facebook.airlift.http.server.TheServlet;
 import com.facebook.airlift.http.server.testing.TestingHttpServerModule;
-import com.facebook.airlift.json.JsonObjectMapperProvider;
-import com.facebook.airlift.json.ObjectMapperProvider;
 import com.facebook.airlift.node.testing.TestingNodeModule;
-import com.facebook.presto.example.TestExampleClient;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.io.Resources;
 import com.google.inject.Binder;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.TypeLiteral;
 
 import javax.servlet.Servlet;
-import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
-import java.net.URL;
 import java.util.Map;
 import java.util.Objects;
 
-public class OurHttpServer
-{
+@SuppressWarnings("UnstableApiUsage")
+public class LocalHttpServer {
     private final LifeCycleManager lifeCycleManager;
     private final URI baseUri;
-    private final OurHttpServerModule ourHttpServerModule;
+    private final LocalHttpServerModule ourHttpServerModule;
 
-    public OurHttpServer()
-            throws Exception
-    {
-        this.ourHttpServerModule = new OurHttpServerModule();
+    public LocalHttpServer() {
+        this.ourHttpServerModule = new LocalHttpServerModule();
         Bootstrap app = new Bootstrap(
                 new TestingNodeModule(),
                 new TestingHttpServerModule(),
@@ -66,23 +61,23 @@ public class OurHttpServer
         ourHttpServerModule.setResponseMapperProvider(provider);
     }
 
-    public void stop()
-            throws Exception
-    {
+    public void stop() {
         lifeCycleManager.stop();
     }
 
-    public URI resolve(String s)
-    {
+    public URI resolve(String s) {
         return baseUri.resolve(s);
     }
 
-    private static class OurHttpServerModule
-            implements Module
-    {
-        private OurHttpServlet instance = new OurHttpServlet();
+    public URI getBaseUri() {
+        return baseUri;
+    }
 
-        public OurHttpServerModule() {
+    private static class LocalHttpServerModule
+            implements Module {
+        private final OurHttpServlet instance = new OurHttpServlet();
+
+        public LocalHttpServerModule() {
         }
 
         public void setResponseMapperProvider(ResponseMapperProvider provider) {
@@ -90,16 +85,15 @@ public class OurHttpServer
         }
 
         @Override
-        public void configure(Binder binder)
-        {
-            binder.bind(new TypeLiteral<Map<String, String>>() {}).annotatedWith(TheServlet.class).toInstance(ImmutableMap.of());
+        public void configure(Binder binder) {
+            binder.bind(new TypeLiteral<Map<String, String>>() {
+            }).annotatedWith(TheServlet.class).toInstance(ImmutableMap.of());
             binder.bind(Servlet.class).annotatedWith(TheServlet.class).toInstance(instance);
         }
     }
 
     private static class OurHttpServlet
-            extends HttpServlet
-    {
+            extends HttpServlet {
         private ResponseMapperProvider mapperProvider;
 
         public OurHttpServlet() {
@@ -111,11 +105,10 @@ public class OurHttpServer
 
         @Override
         protected void doGet(HttpServletRequest request, HttpServletResponse response)
-                throws IOException
-        {
+                throws IOException {
             Objects.requireNonNull(mapperProvider);
-            mapperProvider.copyTo(request, response.getOutputStream());
-            throw new UnsupportedOperationException("Need to implement a mock server here");
+            mapperProvider.doGet(request, response);
+
         }
 
     }

@@ -1,27 +1,99 @@
+/*
+ * Copyright (C) 2022 Cyoda Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.cyoda.presto;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.cyoda.presto.reports.CyodaApiRequestHandler;
+import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.RecordCursor;
-import com.google.common.io.ByteSource;
 import io.airlift.slice.Slice;
+import org.checkerframework.checker.nullness.qual.NonNull;
+import org.springframework.hateoas.CollectionModel;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
+import static com.facebook.presto.common.type.BooleanType.BOOLEAN;
+import static com.facebook.presto.common.type.VarcharType.createVarcharType;
 import static com.google.common.base.Preconditions.checkArgument;
+import static io.airlift.slice.Slices.utf8Slice;
+import static java.util.Objects.requireNonNull;
 
-public class CyodaRecordCursor implements RecordCursor {
+public class CyodaRecordCursor<T> implements RecordCursor {
 
-    // TODO: AccumuloRecordCursor might be a good place to look
+    private final Iterator<T> response;
+    private final CyodaApiRequestHandler<T> requestHandler;
+    private final Map<Integer, CyodaColumnHandle> columnHandles;
+    private T current;
+    // AccumuloRecordCursor might be a good place to look
     private long bytesRead;
     private long nanoStart;
     private long nanoEnd;
 
-    private final List<CyodaColumnHandle> columnHandles;
 
+    public CyodaRecordCursor(CyodaApiRequestHandler<T> requestHandler, List<CyodaColumnHandle> columnHandleList, CollectionModel<T> response) {
+        this.requestHandler = requireNonNull(requestHandler, "requestHandler is null");
+        requireNonNull(columnHandleList, "columnHandles is null");
+        this.response = requireNonNull(response, "response is null").iterator();
+        this.columnHandles = columnHandleList.stream().collect(Collectors.toMap(CyodaColumnHandle::getOrdinalPosition, x -> x));
+    }
 
-    public CyodaRecordCursor(List<CyodaColumnHandle> columnHandles, ByteSource byteSource) {
-        this.columnHandles = columnHandles;
+    @NonNull
+    public static CyodaType getCyodaType(Type type) {
+        requireNonNull(type, "type is null");
+        final String base = type.getTypeSignature().getBase();
+        if (StandardTypes.UUID.equals(base)) return CyodaType.UUID;
+        if (StandardTypes.VARCHAR.equals(base)) return CyodaType.STRING;
+        throw new IllegalArgumentException("Type " + type.getDisplayName() + " not mapped to a CyodaType");
+    }
+
+    @SuppressWarnings("squid:S125")
+    public static Optional<Object> getColumnValue(Object columnValue, CyodaType cyodaType) {
+        requireNonNull(cyodaType, "cyodaType is null");
+        // Might be needed when we map other types
+        // Type nativeType = cyodaType.getNativeType();
+        if (columnValue == null) {
+            return Optional.empty();
+        } else {
+            switch (cyodaType) {
+                case UUID:
+                    throw new UnsupportedOperationException("UUID does not work. " +
+                            "It get's turned into a string in UuidType#getObjectValue back to the client and " +
+                            "and then FixJsonDataUtils#fixValue tries to do a base64 decode");
+//                    final UUID uuid = (UUID) columnValue;
+//                    final Slice uuidSlice = wrappedLongArray(uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
+//                    return Optional.of(uuidSlice);
+                case STRING:
+                    final String string = columnValue.toString();
+                    final Slice strSlice = utf8Slice(string);
+                    return Optional.of(strSlice);
+                default:
+                    throw new IllegalStateException("Handling of type " + cyodaType
+                            + " is not implemented");
+            }
+        }
     }
 
     @Override
@@ -49,43 +121,111 @@ public class CyodaRecordCursor implements RecordCursor {
 
         // TODO: Calculate bytesRead in this method
 
-        throw new UnsupportedOperationException("not yet implemented");
+        if (!response.hasNext()) {
+            return false;
+        }
+        current = response.next();
+        return true;
     }
 
     @Override
     public boolean getBoolean(int field) {
-        throw new UnsupportedOperationException("not yet implemented");
+        checkFieldType(field, BOOLEAN);
+        return Boolean.parseBoolean(getFieldValue(field).toString());
+    }
+
+    private Object getFieldValue(int field) {
+        return requestHandler.getValue(current, field);
     }
 
     @Override
     public long getLong(int field) {
-        throw new UnsupportedOperationException("not yet implemented");
+        Object value = getFieldValue(field);
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        if (value instanceof Date) {
+            return ((Date) value).getTime();
+        }
+        if (value instanceof LocalDateTime) {
+            return ((LocalDateTime) value).toInstant(ZoneOffset.UTC).toEpochMilli();
+        }
+        throw new IllegalStateException("Cannot retrieve long for " + getType(field));
     }
 
     @Override
     public double getDouble(int field) {
-        throw new UnsupportedOperationException("not yet implemented");
+        Object value = getFieldValue(field);
+        if (value instanceof Number) {
+            return ((Number) value).doubleValue();
+        }
+        throw new IllegalStateException("Cannot retrieve double for " + getType(field));
     }
 
     @Override
     public Slice getSlice(int field) {
-        throw new UnsupportedOperationException("not yet implemented");
+
+        final Object fieldValue = getFieldValue(field);
+        final Type columnType = columnHandles.get(field).getColumnType();
+        Optional<Object> value = getColumnValue(fieldValue, getCyodaType(columnType));
+        if (!value.isPresent()) throw new IllegalStateException("Attempting to get Slice of a null column value");
+        if (value.get() instanceof Slice) {
+            return (Slice) value.get();
+        }
+        return utf8Slice(value.get().toString());
     }
 
     @Override
     public Object getObject(int field) {
-        throw new UnsupportedOperationException("not yet implemented");
+        return getFieldValue(field);
     }
 
     @Override
     public boolean isNull(int field) {
-        throw new UnsupportedOperationException("not yet implemented");
+        return getFieldValue(field) == null;
+    }
+
+    private void checkFieldType(int field, Type expected) {
+        Type actual = getType(field);
+        checkArgument(actual.equals(expected), "Expected field %s to be type %s but is %s", field, expected, actual);
     }
 
     @Override
     public void close() {
         nanoEnd = System.nanoTime();
+    }
 
-        throw new UnsupportedOperationException("not yet implemented");
+    /**
+     * Taken from CassandraType of module presto-cassandra.
+     */
+    enum CyodaType {
+        UUID(createVarcharType(Constants.UUID_STRING_MAX_LENGTH), java.util.UUID.class),
+        STRING(createVarcharType(Constants.UUID_STRING_MAX_LENGTH), java.util.UUID.class);
+
+        private final Type nativeType;
+        private final Class<?> javaType;
+
+        CyodaType(Type nativeType, Class<?> javaType) {
+            this.nativeType = requireNonNull(nativeType, "nativeType is null");
+            this.javaType = javaType;
+        }
+
+        public Type getNativeType() {
+            return nativeType;
+        }
+
+        public Class<?> getJavaType() {
+            return javaType;
+        }
+
+    }
+
+    @SuppressWarnings("squid:S1068")
+    private static class Constants {
+        private static final int UUID_STRING_MAX_LENGTH = 36;
+        // IPv4: 255.255.255.255 - 15 characters
+        // IPv6: FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:FFFF - 39 characters
+        // IPv4 embedded into IPv6: FFFF:FFFF:FFFF:FFFF:FFFF:FFFF:255.255.255.255 - 45 characters
+        private static final int IP_ADDRESS_STRING_MAX_LENGTH = 45;
     }
 }

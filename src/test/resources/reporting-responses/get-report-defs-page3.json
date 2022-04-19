@@ -3,7 +3,11 @@
     "gridConfigFieldsViews": [
       {
         "gridConfigFields": {
-          "id": "PLAY-InterfaceMessage_0-ExampleFixMessageReport"
+          "description": "ExampleFIXMLMessageReport super description",
+          "id": "PLAY-InterfaceMessage_0-ExampleFixMessageReport",
+          "type": "InterfaceMessage",
+          "creationDate": null,
+          "userId": "bac590a0-7f4a-11ec-8755-46a74ed53d42"
         },
         "_links": {
           "/definitions": [
@@ -33,7 +37,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-Trade-EUR_CHF_USD_TradedYesterday"
+          "description": "TradesByCurrencyAndTradeDate this description wishes you well",
+          "id": "PLAY-Trade-EUR_CHF_USD_TradedYesterday",
+          "type": "Trade",
+          "creationDate": "2022-01-27T08:23:00.569Z",
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -63,7 +71,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-\"RiskFigures_1-RiskFiguresReport"
+          "description": "Example Risk Figures Report",
+          "id": "PLAY-\"RiskFigures_1-RiskFiguresReport",
+          "type": "RiskFigures",
+          "creationDate": null,
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -93,7 +105,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-DTCCTrade_0-DEFAULT"
+          "description": "DefaultDtccTradeReport descriptive description",
+          "id": "PLAY-DTCCTrade_0-DEFAULT",
+          "type": "DtccTradeEntity",
+          "creationDate": null,
+          "userId": "bac590a0-7f4a-11ec-8755-46a74ed53d42"
         },
         "_links": {
           "/definitions": [
@@ -123,7 +139,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-Trade-DEFAULT"
+          "description": "DefaultTradeReport descriptive description",
+          "id": "PLAY-Trade-DEFAULT",
+          "type": "Trade",
+          "creationDate": "2022-01-27T08:23:00.63Z",
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [

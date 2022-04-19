@@ -3,7 +3,11 @@
     "gridConfigFieldsViews": [
       {
         "gridConfigFields": {
-          "id": "PLAY-InterfaceMessage_0-OutboundGTRReport"
+          "description": "DefaultOutboundGTRReport much description",
+          "id": "PLAY-InterfaceMessage_0-OutboundGTRReport",
+          "type": "InterfaceMessage",
+          "creationDate": null,
+          "userId": "bac590a0-7f4a-11ec-8755-46a74ed53d42"
         },
         "_links": {
           "/definitions": [
@@ -33,7 +37,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-LegalEntity-All LegalEntities"
+          "description": "All LegalEntities in the system",
+          "id": "PLAY-LegalEntity-All LegalEntities",
+          "type": "LegalEntity",
+          "creationDate": "2022-01-27T08:23:00.554Z",
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -63,7 +71,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-InterfaceMessage-ExampleFixMessageReport"
+          "description": "ExampleFIXMLMessageReport super description",
+          "id": "PLAY-InterfaceMessage-ExampleFixMessageReport",
+          "type": "InterfaceMessage",
+          "creationDate": "2022-01-27T08:23:00.635Z",
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -93,7 +105,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-InterfaceMessage_0-FIXMessagesByBook"
+          "description": "FIXMessagesByBook this is a good description",
+          "id": "PLAY-InterfaceMessage_0-FIXMessagesByBook",
+          "type": "InterfaceMessage",
+          "creationDate": null,
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -123,7 +139,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-Trade_0-EUR_CHF_USD_TradedYesterday"
+          "description": "TradesByCurrencyAndTradeDate this description wishes you well",
+          "id": "PLAY-Trade_0-EUR_CHF_USD_TradedYesterday",
+          "type": "Trade",
+          "creationDate": null,
+          "userId": "bac590a0-7f4a-11ec-8755-46a74ed53d42"
         },
         "_links": {
           "/definitions": [
@@ -153,7 +173,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-RiskFigures-RiskFiguresByCurrency"
+          "description": "RiskFiguresByCurrency describes itself",
+          "id": "PLAY-RiskFigures-RiskFiguresByCurrency",
+          "type": "RiskFigures",
+          "creationDate": "2022-01-27T08:23:00.577Z",
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -183,7 +207,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-RiskFigures-RiskFiguresByCurrency_hierarchy"
+          "description": "",
+          "id": "PLAY-RiskFigures-RiskFiguresByCurrency_hierarchy",
+          "type": "RiskFigures",
+          "creationDate": "2022-01-30T09:08:41.204Z",
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -213,7 +241,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-InterfaceMessage-MessagesByCurrencyReport"
+          "description": "MessagesByCurrency describes itself",
+          "id": "PLAY-InterfaceMessage-MessagesByCurrencyReport",
+          "type": "InterfaceMessage",
+          "creationDate": "2022-01-27T08:23:00.623Z",
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -243,7 +275,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-\"RiskFigures_0-RiskFiguresByCurrency"
+          "description": "RiskFiguresByCurrency describes itself",
+          "id": "PLAY-\"RiskFigures_0-RiskFiguresByCurrency",
+          "type": "RiskFigures",
+          "creationDate": null,
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -273,7 +309,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-NMOTrade_0-DEFAULT"
+          "description": "DefaultNmoTradeReport descriptive description",
+          "id": "PLAY-NMOTrade_0-DEFAULT",
+          "type": "NmoTradeEntity",
+          "creationDate": null,
+          "userId": "bac590a0-7f4a-11ec-8755-46a74ed53d42"
         },
         "_links": {
           "/definitions": [
@@ -303,7 +343,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-InterfaceMessage-InboundFpmlReport"
+          "description": "DefaultInboundFpmlReport much description",
+          "id": "PLAY-InterfaceMessage-InboundFpmlReport",
+          "type": "InterfaceMessage",
+          "creationDate": "2022-01-27T08:23:00.617Z",
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [

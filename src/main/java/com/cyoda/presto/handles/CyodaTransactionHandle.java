@@ -15,11 +15,11 @@
  *
  */
 
-package com.cyoda.presto.reports;
+package com.cyoda.presto.handles;
 
-public enum CyodaStaticReportTable {
-    REPORTS,
-    REPORT_HISTORIES,
-    REPORT_GROUPS,
-    REPORT_ROWS
+import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
+
+public enum CyodaTransactionHandle
+        implements ConnectorTransactionHandle {
+    INSTANCE
 }

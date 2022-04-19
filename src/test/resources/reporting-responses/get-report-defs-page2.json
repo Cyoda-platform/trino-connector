@@ -3,7 +3,11 @@
     "gridConfigFieldsViews": [
       {
         "gridConfigFields": {
-          "id": "PLAY-InterfaceMessage-InboundFpmlReport"
+          "description": "DefaultInboundFpmlReport much description",
+          "id": "PLAY-InterfaceMessage-InboundFpmlReport",
+          "type": "InterfaceMessage",
+          "creationDate": "2022-01-27T08:23:00.617Z",
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -33,7 +37,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-InterfaceMessage_0-DEFAULT"
+          "description": "DefaultMessageReport much description",
+          "id": "PLAY-InterfaceMessage_0-DEFAULT",
+          "type": "InterfaceMessage",
+          "creationDate": null,
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -63,7 +71,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-InterfaceMessage-DEFAULT"
+          "description": "DefaultMessageReport much description",
+          "id": "PLAY-InterfaceMessage-DEFAULT",
+          "type": "InterfaceMessage",
+          "creationDate": "2022-01-27T08:23:00.593Z",
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -93,7 +105,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-InterfaceMessage-OutboundGTRReport"
+          "description": "DefaultOutboundGTRReport much description",
+          "id": "PLAY-InterfaceMessage-OutboundGTRReport",
+          "type": "InterfaceMessage",
+          "creationDate": "2022-01-27T08:23:00.543Z",
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -123,7 +139,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-InterfaceMessage_0-InboundFpmlReport"
+          "description": "DefaultInboundFpmlReport much description",
+          "id": "PLAY-InterfaceMessage_0-InboundFpmlReport",
+          "type": "InterfaceMessage",
+          "creationDate": null,
+          "userId": "bac590a0-7f4a-11ec-8755-46a74ed53d42"
         },
         "_links": {
           "/definitions": [
@@ -153,7 +173,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-InterfaceMessage_0-MessagesByCurrencyReport"
+          "description": "MessagesByCurrency describes itself",
+          "id": "PLAY-InterfaceMessage_0-MessagesByCurrencyReport",
+          "type": "InterfaceMessage",
+          "creationDate": null,
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -183,7 +207,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-Trade_0-DEFAULT"
+          "description": "DefaultTradeReport descriptive description",
+          "id": "PLAY-Trade_0-DEFAULT",
+          "type": "Trade",
+          "creationDate": null,
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -213,7 +241,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-NmoTradeEntity-DEFAULT"
+          "description": "DefaultNmoTradeReport descriptive description",
+          "id": "PLAY-NmoTradeEntity-DEFAULT",
+          "type": "NmoTradeEntity",
+          "creationDate": "2022-01-27T08:23:00.585Z",
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -243,7 +275,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-InterfaceMessage-FIXMessagesByBook"
+          "description": "FIXMessagesByBook this is a good description",
+          "id": "PLAY-InterfaceMessage-FIXMessagesByBook",
+          "type": "InterfaceMessage",
+          "creationDate": "2022-01-27T08:23:00.56Z",
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -273,7 +309,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-LegalEntity-LegalEntities Non res, GB"
+          "description": "",
+          "id": "PLAY-LegalEntity-LegalEntities Non res, GB",
+          "type": "LegalEntity",
+          "creationDate": "2022-01-30T16:40:46.767Z",
+          "userId": "000186be-0000-1000-8080-808080808080"
         },
         "_links": {
           "/definitions": [
@@ -303,7 +343,11 @@
       },
       {
         "gridConfigFields": {
-          "id": "PLAY-InterfaceMessage_0-ExampleFixMessageReport"
+          "description": "ExampleFIXMLMessageReport super description",
+          "id": "PLAY-InterfaceMessage_0-ExampleFixMessageReport",
+          "type": "InterfaceMessage",
+          "creationDate": null,
+          "userId": "bac590a0-7f4a-11ec-8755-46a74ed53d42"
         },
         "_links": {
           "/definitions": [

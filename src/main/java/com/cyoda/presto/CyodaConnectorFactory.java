@@ -1,9 +1,24 @@
+/*
+ * Copyright (C) 2022 Cyoda Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.cyoda.presto;
 
 import com.facebook.airlift.bootstrap.Bootstrap;
 import com.facebook.airlift.json.JsonModule;
-import com.facebook.presto.example.ExampleConnector;
-import com.facebook.presto.example.ExampleModule;
 import com.facebook.presto.spi.ConnectorHandleResolver;
 import com.facebook.presto.spi.connector.Connector;
 import com.facebook.presto.spi.connector.ConnectorContext;
@@ -16,11 +31,11 @@ import static com.google.common.base.Throwables.throwIfUnchecked;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaConnectorFactory implements ConnectorFactory {
-    public static final String CONNECTOR_FACTORY_NAME = "CyodaConnectorFactory";
+    public static final String CATALOG_NAME = "cyoda";
 
     @Override
     public String getName() {
-        return CONNECTOR_FACTORY_NAME;
+        return CATALOG_NAME;
     }
 
     @Override
@@ -29,8 +44,7 @@ public class CyodaConnectorFactory implements ConnectorFactory {
     }
 
     @Override
-    public Connector create(String catalogName, Map<String, String> requiredConfig, ConnectorContext context)
-    {
+    public Connector create(String catalogName, Map<String, String> requiredConfig, ConnectorContext context) {
         requireNonNull(requiredConfig, "requiredConfig is null");
         try {
             // A plugin is not required to use Guice; it is just very convenient
@@ -44,10 +58,10 @@ public class CyodaConnectorFactory implements ConnectorFactory {
                     .setRequiredConfigurationProperties(requiredConfig)
                     .initialize();
 
-            return injector.getInstance(ExampleConnector.class);
-        }
-        catch (Exception e) {
+            return injector.getInstance(CyodaConnector.class);
+        } catch (Exception e) {
             throwIfUnchecked(e);
             throw new RuntimeException(e);
         }
-    }}
+    }
+}

@@ -1,34 +1,48 @@
+/*
+ * Copyright (C) 2022 Cyoda Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.cyoda.presto;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.http.QueryRunner;
-import com.facebook.airlift.http.client.HttpUriBuilder;
-import com.facebook.airlift.http.client.Request;
+import com.cyoda.presto.reports.CyodaApiRequestHandler;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.RecordSet;
 import com.google.common.collect.ImmutableList;
-import com.google.common.io.ByteSource;
+import org.springframework.hateoas.CollectionModel;
 
 import java.util.List;
+import java.util.function.Supplier;
 
-import static com.facebook.airlift.http.client.HttpUriBuilder.uriBuilderFrom;
-import static com.facebook.airlift.http.client.Request.Builder.preparePost;
-import static com.facebook.airlift.http.client.StaticBodyGenerator.createStaticBodyGenerator;
 import static java.util.Objects.requireNonNull;
 
-public class CyodaRecordSet implements RecordSet {
+public class CyodaRecordSet<T> implements RecordSet {
     private final List<CyodaColumnHandle> columnHandles;
     private final List<Type> columnTypes;
 
-    // TODO: This should be something streamed from Reporting API
-    private final ByteSource byteSource;
+    private final Supplier<CollectionModel<T>> response;
     private final CyodaClient client;
+    private final String requestHandlerKey;
 
-    public CyodaRecordSet(CyodaClient client, CyodaSplit split, ImmutableList<CyodaColumnHandle> columnHandles) {
+    public CyodaRecordSet(CyodaClient client, CyodaSplit split, List<CyodaColumnHandle> columnHandles) {
 
         this.client = requireNonNull(client, "client is null");
         requireNonNull(split, "split is null");
+        this.requestHandlerKey = split.getRequestHandlerKey();
 
         this.columnHandles = requireNonNull(columnHandles, "column handles is null");
         ImmutableList.Builder<Type> types = ImmutableList.builder();
@@ -36,23 +50,25 @@ public class CyodaRecordSet implements RecordSet {
             types.add(column.getColumnType());
         }
         this.columnTypes = types.build();
-        byteSource = createByteSource();
+        response = () -> requestCollection(split);
     }
 
-    private ByteSource createByteSource() {
-        QueryRunner queryRunner = client.getQueryRunner();
-        throw new UnsupportedOperationException("not yet implemented");
+    @SuppressWarnings("java:S1854") // We want local variables to make debugging a bit easier.
+    private CollectionModel<T> requestCollection(CyodaSplit split) {
+        @SuppressWarnings("unchecked")
+        CyodaApiRequestHandler<T> handler = client.getRequestHandlerProvider().getHandler(split.getRequestHandlerKey());
+        return handler.retrieveCollection();
     }
 
     @Override
-    public List<Type> getColumnTypes()
-    {
+    public List<Type> getColumnTypes() {
         return columnTypes;
     }
 
     @Override
-    public RecordCursor cursor()
-    {
-        return new CyodaRecordCursor(columnHandles, byteSource);
+    public RecordCursor cursor() {
+        @SuppressWarnings("unchecked")
+        CyodaApiRequestHandler<T> requestHandler = client.getRequestHandlerProvider().getHandler(requestHandlerKey);
+        return new CyodaRecordCursor<>(requestHandler, columnHandles, response.get());
     }
 }
