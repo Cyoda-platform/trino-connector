@@ -22,12 +22,14 @@ import com.cyoda.presto.client.reporting.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.CyodaApiRequestHandler;
 import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
 import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
+import com.facebook.presto.common.Page;
 import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.RecordSet;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import io.airlift.slice.Slice;
+import org.springframework.core.io.Resource;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -38,10 +40,13 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import static com.cyoda.presto.client.reporting.ConfiguredReportsApiHandler.DEFAULT_PAGE_SIZE;
 import static com.facebook.presto.common.type.BigintType.BIGINT;
 import static com.facebook.presto.common.type.VarcharType.createUnboundedVarcharType;
 import static org.testng.Assert.*;
@@ -56,10 +61,7 @@ public class TestCyodaRecordSet {
     public void testPage1ConfiguredReports() throws IOException, URISyntaxException {
         CyodaConfig mockCyodaConfig = createCyodaConfig();
 
-        @SuppressWarnings("rawtypes")
-        Set<CyodaApiRequestHandler> handlers = Collections.singleton(new ConfiguredReportsApiHandler(connectorId, mockCyodaConfig));
-
-        CyodaApiRequestHandlerProvider handlerProvider = new CyodaApiRequestHandlerProvider(handlers);
+        CyodaApiRequestHandlerProvider handlerProvider = setupHandlerProvider(mockCyodaConfig);
         CyodaClient client = new CyodaClient(connectorId, mockCyodaConfig, handlerProvider);
 
         CyodaApiRequestHandler<?> apiHandler = handlerProvider.getHandler(requestHandlerKey);
@@ -67,16 +69,50 @@ public class TestCyodaRecordSet {
         assertTrue(apiHandler instanceof ConfiguredReportsApiHandler);
         assertEquals(tables.size(), 1); // There is only one table for that.
 
-
+        setupReponseMapper();
+        
         URI dataUri = ourHttpServer.getBaseUri().resolve(ConfiguredReportsApiHandler.REPORT_DEFS_ENDPOINT);
 
+        RecordSet recordSet = new CyodaRecordSet<GridConfigFieldsView>(
+                client,
+                new CyodaSplit(connectorId.toString(), "schema", "table", dataUri, requestHandlerKey, null),
+                tables.get(0).getColumns()
+        );
+        RecordCursor cursor = recordSet.cursor();
+        assertNotNull(cursor);
+        int cnt=0;
+        while(cursor.advanceNextPosition())  {
+            cnt++;
+            Slice id = cursor.getSlice(0);
+            assertNotNull(id.toStringUtf8());
+        }
+        assertEquals(cnt,DEFAULT_PAGE_SIZE);
+
+
+    }
+
+    private CyodaApiRequestHandlerProvider setupHandlerProvider(CyodaConfig mockCyodaConfig) throws URISyntaxException {
+        @SuppressWarnings("rawtypes")
+        Set<CyodaApiRequestHandler> handlers = Collections.singleton(new ConfiguredReportsApiHandler(connectorId, mockCyodaConfig));
+
+        CyodaApiRequestHandlerProvider handlerProvider = new CyodaApiRequestHandlerProvider(handlers);
+        return handlerProvider;
+    }
+
+    private void setupReponseMapper() {
         ResponseMapper mockMapper = new ResponseMapper() {
             final String page1ResourcePath = "/reporting-responses/get-report-defs-page1.json";
-            final URL dataUrl = Resources.getResource(TestCyodaRecordSet.class, page1ResourcePath);
+            final String page2ResourcePath = "/reporting-responses/get-report-defs-page2.json";
+            final String page3ResourcePath = "/reporting-responses/get-report-defs-page3.json";
+            final String[] resourcePaths = {page1ResourcePath,page2ResourcePath,page3ResourcePath};
 
+            final List<URL> responses = Arrays.stream(resourcePaths).map(
+                    it -> Resources.getResource(TestCyodaRecordSet.class, it)
+            ).collect(Collectors.toList());
+            int pos = 0;
             @Override
             public String resolveResponse() throws IOException {
-                return Resources.toString(dataUrl, StandardCharsets.UTF_8);
+                return Resources.toString(responses.get(pos++), StandardCharsets.UTF_8);
             }
         };
 
@@ -86,52 +122,70 @@ public class TestCyodaRecordSet {
 
         ResponseMapperProvider provider = new ResponseMapperProvider().withResponseMapperProvider(pathInfoMapper);
         ourHttpServer.setResponseMapperProvider(provider);
+    }
 
-        RecordSet recordSet = new CyodaRecordSet<GridConfigFieldsView>(
-                client,
-                new CyodaSplit(connectorId.toString(), "schema", "table", dataUri, requestHandlerKey),
-                tables.get(0).getColumns()
-        );
-        RecordCursor cursor = recordSet.cursor();
-        assertNotNull(cursor);
-        boolean okay = cursor.advanceNextPosition();
-        assertTrue(okay);
-        Slice id = cursor.getSlice(0);
-        assertNotNull(id.toStringUtf8());
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testPagedIteratorWithConfiguredReports() throws IOException, URISyntaxException {
+        CyodaConfig mockCyodaConfig = createCyodaConfig();
 
+        CyodaApiRequestHandlerProvider handlerProvider = setupHandlerProvider(mockCyodaConfig);
+        CyodaClient client = new CyodaClient(connectorId, mockCyodaConfig, handlerProvider);
 
+        CyodaApiRequestHandler<GridConfigFieldsView> apiHandler = handlerProvider.getHandler(requestHandlerKey);
+        List<CyodaTable> tables = apiHandler.getTables();
+        assertTrue(apiHandler instanceof ConfiguredReportsApiHandler);
+        assertEquals(tables.size(), 1); // There is only one table for that.
+
+        setupReponseMapper();
+
+        CyodaFilteringPageSource<GridConfigFieldsView> pageSource = 
+                new CyodaFilteringPageSource<>(null,apiHandler,tables.get(0).getColumns(),client);
+
+        assertNotNull(pageSource);
+        int total = 0;
+        while(!pageSource.isFinished())  {
+            Page page = pageSource.getNextPage();
+            boolean isFinished = pageSource.isFinished();
+            assertNotNull(page);
+            assertEquals(page.getChannelCount(),tables.get(0).getColumns().size());
+            total += page.getPositionCount();
+        }
+        // The source shall only read up to the page size, even if there are more elements.
+        // get-report-defs-page1.json and page2 have 11 configured reports,
+        // pag3 has 5 reports.
+        // The page size is 10, however. So we expect a count of 10+10+5
+        assertEquals(total,25);
     }
 
     private CyodaConfig createCyodaConfig() throws MalformedURLException {
         return new CyodaConfig()
-                .setServerUrl(ourHttpServer.resolve("").toURL());
+                .setServerUrl(ourHttpServer.resolve("").toURL())
+                .setRequestPageSize(10);
     }
 
     @Test
     public void testThatColumnTypesAreCorrect() throws MalformedURLException, URISyntaxException {
         CyodaConfig mockCyodaConfig = createCyodaConfig();
 
-        @SuppressWarnings("rawtypes")
-        Set<CyodaApiRequestHandler> handlers = Collections.singleton(new ConfiguredReportsApiHandler(connectorId, mockCyodaConfig));
-
-        CyodaApiRequestHandlerProvider handlerProvider = new CyodaApiRequestHandlerProvider(handlers);
+        CyodaApiRequestHandlerProvider handlerProvider = setupHandlerProvider(mockCyodaConfig);
         CyodaClient client = new CyodaClient(connectorId, mockCyodaConfig, handlerProvider);
 
         URI dataUri = ourHttpServer.getBaseUri().resolve(ConfiguredReportsApiHandler.REPORT_DEFS_ENDPOINT);
 
         RecordSet recordSet;
-        recordSet = new CyodaRecordSet<>(client, new CyodaSplit("test", "schema", "table", dataUri, requestHandlerKey), ImmutableList.of(
+        recordSet = new CyodaRecordSet<>(client, new CyodaSplit("test", "schema", "table", dataUri, requestHandlerKey, null), ImmutableList.of(
                 new CyodaColumnHandle("test", "value", BIGINT, 1, requestHandlerKey),
                 new CyodaColumnHandle("test", "text", createUnboundedVarcharType(), 0, requestHandlerKey)));
         assertEquals(recordSet.getColumnTypes(), ImmutableList.of(BIGINT, createUnboundedVarcharType()));
 
-        recordSet = new CyodaRecordSet<>(client, new CyodaSplit("test", "schema", "table", dataUri, requestHandlerKey), ImmutableList.of(
+        recordSet = new CyodaRecordSet<>(client, new CyodaSplit("test", "schema", "table", dataUri, requestHandlerKey, null), ImmutableList.of(
                 new CyodaColumnHandle("test", "value", BIGINT, 1, requestHandlerKey),
                 new CyodaColumnHandle("test", "value", BIGINT, 1, requestHandlerKey),
                 new CyodaColumnHandle("test", "text", createUnboundedVarcharType(), 0, requestHandlerKey)));
         assertEquals(recordSet.getColumnTypes(), ImmutableList.of(BIGINT, BIGINT, createUnboundedVarcharType()));
 
-        recordSet = new CyodaRecordSet<>(client, new CyodaSplit("test", "schema", "table", dataUri, requestHandlerKey), ImmutableList.of());
+        recordSet = new CyodaRecordSet<>(client, new CyodaSplit("test", "schema", "table", dataUri, requestHandlerKey, null), ImmutableList.of());
         assertEquals(recordSet.getColumnTypes(), ImmutableList.of());
     }
 

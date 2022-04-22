@@ -24,6 +24,8 @@ import org.springframework.web.client.HttpClientErrorException;
 
 import java.net.URI;
 
+import static com.cyoda.presto.CyodaErrorCode.CYODA_API_ERROR;
+import static com.cyoda.presto.CyodaErrorCode.CYODA_TOO_MANY_REQUESTS;
 import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.lang.String.format;
 
@@ -36,11 +38,11 @@ public class ExceptionsUtil {
             return new PrestoException(StandardErrorCode.PERMISSION_DENIED, "Authentication failed : " + e.getStatusText());
         }
         if (HttpStatus.TOO_MANY_REQUESTS.equals(e.getStatusCode())) {
-            return new PrestoException(StandardErrorCode.TOO_MANY_REQUESTS_FAILED, "Request throttled : " + e.getStatusText());
+            return new PrestoException(CYODA_TOO_MANY_REQUESTS, "Request throttled : " + e.getStatusText());
         }
 
-        return new RuntimeException(
-                format("Error %s at %s returned an invalid response: %s [Error: %s]",
+        return new PrestoException(CYODA_API_ERROR,
+                format("[Cyoda] Error %s at %s returned an invalid response: %s [Error: %s]",
                         task, uri.toASCIIString(), asString(me,e), e.getResponseBodyAsString()),
                 e
         );

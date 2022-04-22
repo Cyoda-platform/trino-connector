@@ -35,6 +35,7 @@ public class CyodaConfig {
     private static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.SECONDS;
     private static final boolean DEFAULT_HTTPS_OVERRIDE = false;
     private static final String DEFAULT_SCHEMA_NAME = "reporting";
+    private static final int DEFAULT_REQUEST_PAGE_SIZE = 10;
 
     private URL serverUrl;
     private CyodaAuthenticationType cyodaAuthenticationType = CyodaAuthenticationType.NONE;
@@ -49,6 +50,7 @@ public class CyodaConfig {
     private long maxHttpKeepalive;
     private boolean httpsOverride;
     private String schemaName;
+    private int requestPageSize;
 
     public CyodaConfig() {
         setDefaults();
@@ -61,6 +63,7 @@ public class CyodaConfig {
         maxHttpKeepalive = DEFAULT_HTTP_KEEP_ALIVE;
         httpsOverride = DEFAULT_HTTPS_OVERRIDE;
         schemaName = DEFAULT_SCHEMA_NAME;
+        requestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
     }
 
     @NotNull
@@ -220,5 +223,14 @@ public class CyodaConfig {
     public CyodaConfig setSchemaName(String schemaName) {
         this.schemaName = schemaName;
         return this;
+    }
+
+    @Config("cyoda.presto.request-page-size")
+    public CyodaConfig setRequestPageSize(int requestPageSize) {
+        this.requestPageSize = requestPageSize;
+        return this;
+    }
+    public int getRequestPageSize() {
+        return requestPageSize;
     }
 }

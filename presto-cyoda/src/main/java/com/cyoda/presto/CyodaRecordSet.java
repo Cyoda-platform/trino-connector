@@ -17,24 +17,33 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.client.CyodaApiRequestHandler;
 import com.facebook.presto.common.type.Type;
+import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.RecordSet;
 import com.google.common.collect.ImmutableList;
-import org.springframework.hateoas.CollectionModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.hateoas.PagedModel;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 
+import static com.cyoda.presto.CyodaErrorCode.CYODA_RESULT_ERROR;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaRecordSet<T> implements RecordSet {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CyodaRecordSet.class);
+
     private final List<CyodaColumnHandle> columnHandles;
     private final List<Type> columnTypes;
 
-    private final Supplier<CollectionModel<T>> response;
+    private final Supplier<PagedModel<T>> response;
     private final CyodaClient client;
     private final String requestHandlerKey;
 
@@ -50,14 +59,14 @@ public class CyodaRecordSet<T> implements RecordSet {
             types.add(column.getColumnType());
         }
         this.columnTypes = types.build();
-        response = () -> requestCollection(split);
+        response = () -> requestCollection(split).orElseThrow(() -> new PrestoException(CYODA_RESULT_ERROR,"No response from Cyoda API"));
     }
 
-    @SuppressWarnings("java:S1854") // We want local variables to make debugging a bit easier.
-    private CollectionModel<T> requestCollection(CyodaSplit split) {
+    private Optional<PagedModel<T>> requestCollection(CyodaSplit split) {
         @SuppressWarnings("unchecked")
         CyodaApiRequestHandler<T> handler = client.getRequestHandlerProvider().getHandler(split.getRequestHandlerKey());
-        return handler.retrieveCollection();
+        LOG.debug("Handler {} is loaded",handler.getHandlerKey());
+        return handler.retrievePage(0,0,null);
     }
 
     @Override

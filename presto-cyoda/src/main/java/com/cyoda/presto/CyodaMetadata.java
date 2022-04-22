@@ -75,7 +75,7 @@ public class CyodaMetadata implements ConnectorMetadata {
             return null;
         }
         final String handlerKey = client.getRequestHandlerProvider().getHandler(tableName).getHandlerKey();
-        return new CyodaTableHandle(connectorId, tableName.getSchemaName(), tableName.getTableName(), handlerKey);
+        return new CyodaTableHandle(connectorId, tableName.getSchemaName(), tableName.getTableName(), handlerKey,null);
     }
 
     @Override

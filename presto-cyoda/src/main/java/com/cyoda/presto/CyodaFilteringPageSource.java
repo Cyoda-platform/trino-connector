@@ -1,0 +1,215 @@
+/*
+ * Copyright (C) 2022 Cyoda Ltd.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+package com.cyoda.presto;
+
+import com.cyoda.presto.client.CyodaApiRequestHandler;
+import com.cyoda.presto.client.SupportedDataType;
+import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.facebook.airlift.json.JsonObjectMapperProvider;
+import com.facebook.presto.common.Page;
+import com.facebook.presto.common.PageBuilder;
+import com.facebook.presto.common.block.BlockBuilder;
+import com.facebook.presto.common.type.Type;
+import com.facebook.presto.spi.ConnectorPageSource;
+import com.facebook.presto.spi.PrestoException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
+
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+
+import static com.cyoda.presto.CyodaErrorCode.CYODA_PAGING_ERROR;
+import static com.google.common.base.Throwables.throwIfUnchecked;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static java.lang.Float.floatToRawIntBits;
+import static java.util.Objects.requireNonNull;
+
+@SuppressWarnings("UnstableApiUsage")
+public class CyodaFilteringPageSource<T>
+        implements ConnectorPageSource
+{
+    private final List<CyodaColumnHandle> columnHandles;
+    private final CyodaApiRequestHandler<T> requestHandler;
+
+    private boolean finished;
+    private long readTimeNanos;
+    private long completedBytes;
+    private long completedPositions;
+    private Supplier<Iterator<T>> responseSupplier;
+    private Iterator<T> responseIterator = null;
+    private final PageBuilder pageBuilder;
+    private List<Type> columnTypes;
+
+    public CyodaFilteringPageSource(
+            String query,
+            CyodaApiRequestHandler<T> requestHandler,
+            List<CyodaColumnHandle> columnHandles,
+            CyodaClient cyodaClient)
+    {
+        requireNonNull(requestHandler, "requestHandler is null");
+        this.columnHandles = ImmutableList.copyOf(requireNonNull(columnHandles, "columnHandles is null"));
+        requireNonNull(cyodaClient, "Cyoda client is null");
+        this.requestHandler = requireNonNull(requestHandler,"requestHandler is null");
+        this.responseSupplier = () -> requestHandler.getResponseIterator(cyodaClient.getRequestPageSize(),query);
+        this.finished = false;
+        List<CyodaColumnHandle> handles = columnHandles.stream()
+                .collect(toImmutableList());
+        this.columnTypes = handles.stream()
+                .map(CyodaColumnHandle::getColumnType)
+                .collect(toImmutableList());
+        this.pageBuilder = new PageBuilder(this.columnTypes);
+    }
+
+    @Override
+    public long getCompletedBytes()
+    {
+        return completedBytes;
+    }
+
+    @Override
+    public long getCompletedPositions()
+    {
+        return completedPositions;
+    }
+
+    @Override
+    public long getReadTimeNanos()
+    {
+        return readTimeNanos;
+    }
+
+    @Override
+    public boolean isFinished()
+    {
+        return finished;
+    }
+
+    @Override
+    public Page getNextPage() {
+        if (finished) {
+            return null;
+        }
+
+        if ( responseIterator == null) {
+            responseIterator = responseSupplier.get();
+        }
+
+        long start = System.nanoTime();
+        try {
+            while (responseIterator.hasNext()) {
+                final T nextItem = responseIterator.next();
+                processNext(nextItem);
+                pageBuilder.declarePosition();
+                if (pageBuilder.isFull()) {
+                    break;
+                }
+            }
+
+            if (!responseIterator.hasNext()) {
+                finished = true;
+            }
+
+            // only return a page if the buffer is full, or we are finishing
+            if (pageBuilder.isEmpty() || (!finished && !pageBuilder.isFull())) {
+                return null;
+            }
+
+            Page page = pageBuilder.build();
+            completedPositions += page.getPositionCount();
+            completedBytes += page.getSizeInBytes();
+            pageBuilder.reset();
+            return page;
+        } catch (Exception e) {
+            finished = true;
+            throw new PrestoException(CYODA_PAGING_ERROR,"Failure getting next page", e);
+        } finally {
+            readTimeNanos += System.nanoTime() - start;
+        }
+    }
+
+
+    private void processNext(T nextItem) {
+        for (int i = 0; i < columnHandles.size(); i++) {
+            Type type = columnTypes.get(i);
+            BlockBuilder blockBuilder = pageBuilder.getBlockBuilder(i);
+            SupportedDataType<?> supported = requestHandler.getValue(nextItem,i);
+            if (supported == null || supported.isNull()) {
+                blockBuilder.appendNull();
+                continue;
+            }
+            switch (supported.dataType) {
+                case BOOLEAN:
+                    type.writeBoolean(blockBuilder,supported.asBoolean());
+                    break;
+                case ARRAY:
+                case LIST:
+                case MAP:
+                case SET:
+                    type.writeObject(blockBuilder,supported.value);
+                    break;
+                case BYTE:
+                case INTEGER:
+                case SHORT:
+                case CHARACTER:
+                case LONG:
+                case BIG_INTEGER:
+                    type.writeLong(blockBuilder, supported.asBigInteger().longValue());
+                    break;
+                case DOUBLE:
+                    type.writeDouble(blockBuilder, supported.asDouble());
+                    break;
+                case FLOAT:
+                    type.writeLong(blockBuilder, floatToRawIntBits(supported.asFloat()));
+                    break;
+                case DATE:
+                case LOCAL_DATE_TIME:
+                case ZONED_DATE_TIME:
+                    type.writeLong(blockBuilder, supported.asTimestampMillis());
+                    break;
+                case UUID_TYPE:
+                    type.writeSlice(blockBuilder, supported.asSlice(type));
+                    break;
+                case YEAR:
+                case YEAR_MONTH:
+                case LOCAL_TIME:
+                case LOCAL_DATE:
+                case CLASS:
+                case LOCALE:
+                case STRING:
+                case BIG_DECIMAL:
+                default:
+                    type.writeSlice(blockBuilder, supported.asSlice(type));
+                    break;
+            }
+        }
+    }
+
+    @Override
+    public long getSystemMemoryUsage()
+    {
+        return 0;
+    }
+
+    @Override
+    public void close()
+    {
+        finished = true;
+    }
+}

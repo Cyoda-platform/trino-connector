@@ -79,22 +79,16 @@ public class CyodaColumnHandle implements ColumnHandle {
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(connectorId, columnName);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CyodaColumnHandle that = (CyodaColumnHandle) o;
+        return ordinalPosition == that.ordinalPosition && connectorId.equals(that.connectorId) && columnName.equals(that.columnName) && columnType.equals(that.columnType) && requestHandlerKey.equals(that.requestHandlerKey);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if ((obj == null) || (getClass() != obj.getClass())) {
-            return false;
-        }
-
-        CyodaColumnHandle other = (CyodaColumnHandle) obj;
-        return Objects.equals(this.connectorId, other.connectorId) &&
-                Objects.equals(this.columnName, other.columnName);
+    public int hashCode() {
+        return Objects.hash(connectorId, columnName, columnType, ordinalPosition, requestHandlerKey);
     }
 
     @Override

@@ -60,7 +60,11 @@ public class CyodaSplitManager implements ConnectorSplitManager {
 
         List<ConnectorSplit> splits = new ArrayList<>();
         for (URI uri : table.getSources()) {
-            splits.add(new CyodaSplit(connectorId, tableHandle.getSchemaName(), tableHandle.getTableName(), uri, tableHandle.getRequestHandlerKey()));
+            splits.add(new CyodaSplit(connectorId,
+                    tableHandle.getSchemaName(),
+                    tableHandle.getTableName(),
+                    uri,
+                    tableHandle.getRequestHandlerKey(), tableHandle.getQuery()));
         }
         Collections.shuffle(splits);
 

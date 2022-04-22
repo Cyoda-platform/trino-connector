@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableList;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 import static com.facebook.presto.spi.schedule.NodeSelectionStrategy.NO_PREFERENCE;
 import static java.util.Objects.requireNonNull;
@@ -38,6 +39,7 @@ public class CyodaSplit implements ConnectorSplit {
     private final URI uri;
     private final List<HostAddress> addresses;
     private final String requestHandlerKey;
+    private final Optional<String> queryString;
 
     @JsonCreator
     public CyodaSplit(
@@ -45,7 +47,8 @@ public class CyodaSplit implements ConnectorSplit {
             @JsonProperty("schemaName") String schemaName,
             @JsonProperty("tableName") String tableName,
             @JsonProperty("uri") URI uri,
-            @JsonProperty("requestHandlerKey") String requestHandlerKey) {
+            @JsonProperty("requestHandlerKey") String requestHandlerKey,
+            @JsonProperty("query") String query) {
         this.schemaName = requireNonNull(schemaName, "schema name is null");
         this.connectorId = requireNonNull(connectorId, "connector id is null");
         this.tableName = requireNonNull(tableName, "table name is null");
@@ -53,7 +56,9 @@ public class CyodaSplit implements ConnectorSplit {
         this.requestHandlerKey = requireNonNull(requestHandlerKey, "requestHandlerKey is null");
 
         addresses = ImmutableList.of(HostAddress.fromUri(uri));
+        this.queryString = Optional.ofNullable(query);
     }
+
 
     @JsonProperty
     public String getConnectorId() {
@@ -78,6 +83,11 @@ public class CyodaSplit implements ConnectorSplit {
     @JsonProperty
     public String getRequestHandlerKey() {
         return requestHandlerKey;
+    }
+
+    @JsonProperty
+    public Optional<String> getQuery() {
+        return queryString;
     }
 
     @Override

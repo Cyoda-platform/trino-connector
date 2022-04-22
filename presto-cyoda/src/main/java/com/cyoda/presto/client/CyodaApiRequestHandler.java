@@ -19,9 +19,11 @@ package com.cyoda.presto.client;
 
 import com.cyoda.presto.CyodaTable;
 import com.facebook.presto.spi.SchemaTableName;
-import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.PagedModel;
 
+import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 
 public interface CyodaApiRequestHandler<T> {
     String getHandlerKey();
@@ -30,8 +32,10 @@ public interface CyodaApiRequestHandler<T> {
 
     List<CyodaTable> getTables();
 
-    CollectionModel<T> retrieveCollection();
 
-    Object getValue(T entity, int field);
+    Optional<PagedModel<T>> retrievePage(Integer pageNum, Integer pageSize, String query);
 
+    SupportedDataType<?> getValue(T entity, int field);
+
+    Iterator<T> getResponseIterator(Integer pageSize, String query);
 }

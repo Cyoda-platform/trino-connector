@@ -17,11 +17,15 @@
 
 package com.cyoda.presto;
 
-import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.client.CyodaApiRequestHandler;
+import com.cyoda.presto.client.SupportedDataType;
+import com.cyoda.presto.client.Types;
+import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.type.BigintType;
 import com.facebook.presto.common.type.BooleanType;
 import com.facebook.presto.common.type.DateType;
+import com.facebook.presto.common.type.DecimalType;
+import com.facebook.presto.common.type.Decimals;
 import com.facebook.presto.common.type.DoubleType;
 import com.facebook.presto.common.type.IntegerType;
 import com.facebook.presto.common.type.RealType;
@@ -31,11 +35,15 @@ import com.facebook.presto.common.type.TimestampType;
 import com.facebook.presto.common.type.TinyintType;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.VarbinaryType;
+import com.facebook.presto.common.type.VarcharType;
+import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.RecordCursor;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 import org.checkerframework.checker.nullness.qual.NonNull;
+import org.codehaus.plexus.util.StringUtils;
 import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.PagedModel;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -44,7 +52,7 @@ import java.nio.ByteBuffer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.Arrays;
+import java.time.ZonedDateTime;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -52,30 +60,57 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static com.cyoda.presto.CyodaErrorCode.CYODA_INCORRECT_TYPE_ERROR;
+import static com.cyoda.presto.CyodaErrorCode.CYODA_UNSUPPORTED_TYPE_ERROR;
+import static com.facebook.presto.common.type.BigintType.BIGINT;
 import static com.facebook.presto.common.type.BooleanType.BOOLEAN;
+import static com.facebook.presto.common.type.DateType.DATE;
+import static com.facebook.presto.common.type.IntegerType.INTEGER;
+import static com.facebook.presto.common.type.RealType.REAL;
+import static com.facebook.presto.common.type.SmallintType.SMALLINT;
+import static com.facebook.presto.common.type.TimeType.TIME;
+import static com.facebook.presto.common.type.TimestampType.TIMESTAMP;
+import static com.facebook.presto.common.type.TinyintType.TINYINT;
 import static com.facebook.presto.common.type.VarcharType.createUnboundedVarcharType;
 import static com.facebook.presto.common.type.VarcharType.createVarcharType;
+import static com.facebook.presto.spi.StandardErrorCode.NOT_SUPPORTED;
 import static com.google.common.base.Preconditions.checkArgument;
-import static io.airlift.slice.Slices.utf8Slice;
+import static io.airlift.slice.Slices.*;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaRecordCursor<T> implements RecordCursor {
 
-    private final Iterator<T> response;
+    private final PagedModel<T> response;
+    private final Iterator<T> reponseIter;
     private final CyodaApiRequestHandler<T> requestHandler;
     private final Map<Integer, CyodaColumnHandle> columnHandles;
+    private final long maxRowsToRead;
+
     private T current;
     // AccumuloRecordCursor might be a good place to look
-    private long bytesRead;
+    private long bytesRead = 0;
+    private long rowsRead = 0;
     private long nanoStart;
     private long nanoEnd;
 
 
-    public CyodaRecordCursor(CyodaApiRequestHandler<T> requestHandler, List<CyodaColumnHandle> columnHandleList, CollectionModel<T> response) {
+    public CyodaRecordCursor(CyodaApiRequestHandler<T> requestHandler, List<CyodaColumnHandle> columnHandleList, PagedModel<T> response) {
         this.requestHandler = requireNonNull(requestHandler, "requestHandler is null");
         requireNonNull(columnHandleList, "columnHandles is null");
-        this.response = requireNonNull(response, "response is null").iterator();
+        this.response = requireNonNull(response, "response is null");
+        this.reponseIter = response.iterator();
+        this.maxRowsToRead = getMaxRowsToRead(response);
         this.columnHandles = columnHandleList.stream().collect(Collectors.toMap(CyodaColumnHandle::getOrdinalPosition, x -> x));
+    }
+
+    private long getMaxRowsToRead(PagedModel<T> response) {
+        PagedModel.PageMetadata metadata = response.getMetadata();
+        if ( metadata != null ) {
+            return metadata.getSize();
+        } else {
+            return 0;
+        }
     }
 
     @NonNull
@@ -84,40 +119,7 @@ public class CyodaRecordCursor<T> implements RecordCursor {
         final String base = type.getTypeSignature().getBase();
         if (StandardTypes.UUID.equals(base)) return CyodaType.UUID;
         if (StandardTypes.VARCHAR.equals(base)) return CyodaType.STRING;
-        throw new IllegalArgumentException("Type " + type.getDisplayName() + " not mapped to a CyodaType");
-    }
-
-    @SuppressWarnings("squid:S125")
-    public static Slice getColumnValue(Object columnValue, CyodaType cyodaType) {
-        requireNonNull(cyodaType, "cyodaType is null");
-        // Might be needed when we map other types
-        // Type nativeType = cyodaType.getNativeType();
-        if (columnValue == null) {
-            return Slices.EMPTY_SLICE;
-        } else {
-            // VarcharEnumType
-            // VarcharType
-            // CharType
-            // JsonType
-            // LongDecimalType
-            // VarbinaryType
-
-            switch (cyodaType) {
-                case UUID:
-                    throw new UnsupportedOperationException("UUID does not work. " +
-                            "It get's turned into a string in UuidType#getObjectValue back to the client and " +
-                            "and then FixJsonDataUtils#fixValue tries to do a base64 decode");
-//                    final UUID uuid = (UUID) columnValue;
-//                    final Slice uuidSlice = wrappedLongArray(uuid.getMostSignificantBits(), uuid.getLeastSignificantBits());
-//                    return Optional.of(uuidSlice);
-                case STRING:
-                    final String string = columnValue.toString();
-                    return (string == null) ? Slices.EMPTY_SLICE : utf8Slice(string);
-                default:
-                    throw new IllegalStateException("Handling of type " + cyodaType
-                            + " is not implemented");
-            }
-        }
+        throw new PrestoException(CYODA_UNSUPPORTED_TYPE_ERROR,"Type " + type.getDisplayName() + " not mapped to a CyodaType");
     }
 
     @Override
@@ -145,65 +147,62 @@ public class CyodaRecordCursor<T> implements RecordCursor {
 
         // TODO: Calculate bytesRead in this method
 
-        if (!response.hasNext()) {
+        boolean maxRowsHaveBeenRead = maxRowsToRead > 0 && rowsRead >= maxRowsToRead;
+        if (!reponseIter.hasNext() || maxRowsHaveBeenRead) {
             return false;
         }
-        current = response.next();
+
+        current = reponseIter.next();
+        rowsRead++;
         return true;
     }
 
     @Override
     public boolean getBoolean(int field) {
         checkFieldType(field, BOOLEAN);
-        return Boolean.parseBoolean(getFieldValue(field).toString());
+        return Boolean.parseBoolean(getFieldValue(field).value.toString());
     }
 
-    private Object getFieldValue(int field) {
+    private SupportedDataType<?> getFieldValue(int field) {
         return requestHandler.getValue(current, field);
     }
 
     @Override
     public long getLong(int field) {
-        Object value = getFieldValue(field);
-        if (value instanceof Number) {
-            return ((Number) value).longValue();
-        }
-        if (value instanceof Date) {
-            return ((Date) value).getTime();
-        }
-        if (value instanceof LocalDateTime) {
-            return ((LocalDateTime) value).toInstant(ZoneOffset.UTC).toEpochMilli();
-        }
-        throw new IllegalStateException("Cannot retrieve long for " + getType(field));
+        checkFieldType(field, BIGINT, DATE, INTEGER, REAL, SMALLINT, TIME, TIMESTAMP, TINYINT);
+        return getFieldValue(field).parseToLong();
     }
 
     @Override
     public double getDouble(int field) {
-        Object value = getFieldValue(field);
-        if (value instanceof Number) {
-            return ((Number) value).doubleValue();
+        SupportedDataType<?> supported = getFieldValue(field);
+
+        if (supported.dataType.isNumber() ) {
+            return ((Number) supported.value).doubleValue();
         }
-        throw new IllegalStateException("Cannot retrieve double for " + getType(field));
+        throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR,"Cannot retrieve double for " + getType(field));
     }
 
     @Override
     public Slice getSlice(int field) {
-
-        final Object fieldValue = getFieldValue(field);
-        final Type columnType = columnHandles.get(field).getColumnType();
-        final String base = columnType.getTypeSignature().getBase();
-        Slice value = getColumnValue(fieldValue, getCyodaType(columnType));
-        return value;
+        final SupportedDataType<?> supported = getFieldValue(field);
+        Type type = getType(field);
+        return supported.asSlice(type);
     }
+
+
 
     @Override
     public Object getObject(int field) {
-        return getFieldValue(field);
+        Type type = getType(field);
+        checkArgument(Types.isArrayType(type) || Types.isMapType(type), "Expected field %s to be a type of array or map but is %s", field, type);
+
+        return getFieldValue(field).value;
     }
 
     @Override
     public boolean isNull(int field) {
-        return getFieldValue(field) == null;
+        return getFieldValue(field).value == null;
     }
 
     @SuppressWarnings("SameParameterValue")
@@ -215,6 +214,26 @@ public class CyodaRecordCursor<T> implements RecordCursor {
     @Override
     public void close() {
         nanoEnd = System.nanoTime();
+    }
+
+    /**
+     * Checks that the given field is one of the provided types.
+     *
+     * @param field Ordinal of the field
+     * @param expected An array of expected types
+     * @throws IllegalArgumentException If the given field does not match one of the types
+     */
+    private void checkFieldType(int field, Type... expected)
+    {
+        Type actual = getType(field);
+        for (Type type : expected) {
+            if (actual.equals(type)) {
+                return;
+            }
+        }
+
+        throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR,
+                format("Expected field %s to be a type of %s but is %s", field, StringUtils.join(expected, ","), actual));
     }
 
     /**

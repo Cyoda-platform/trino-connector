@@ -21,22 +21,23 @@ import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.CyodaTable;
 import com.cyoda.presto.client.CyodaApiRequestHandler;
+import com.cyoda.presto.client.SupportedDataType;
+import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.neededatcyoda.GridConfigFieldsView;
 import com.facebook.presto.common.type.TimestampType;
-import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.SchemaTableName;
-import com.facebook.presto.spi.StandardErrorCode;
 import com.google.common.collect.ImmutableList;
-import org.springframework.hateoas.CollectionModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.hateoas.MediaTypes;
+import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.TemplateVariable;
 import org.springframework.hateoas.TemplateVariables;
 import org.springframework.hateoas.UriTemplate;
 import org.springframework.hateoas.client.Traverson;
-import org.springframework.hateoas.server.core.TypeReferences;
-import org.springframework.http.HttpStatus;
+import org.springframework.hateoas.server.core.TypeReferences.PagedModelType;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
@@ -46,9 +47,12 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.facebook.presto.common.type.VarcharType.createUnboundedVarcharType;
@@ -58,7 +62,10 @@ import static java.util.Objects.requireNonNull;
 
 public class ConfiguredReportsApiHandler implements CyodaApiRequestHandler<GridConfigFieldsView> {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ConfiguredReportsApiHandler.class);
+
     public static final String REPORT_DEFS_ENDPOINT = "/api/platform-api/reporting/definitions";
+    public static final int DEFAULT_PAGE_SIZE = 10;
 
     private final CyodaConnectorId connectorId;
     private final CyodaConfig config;
@@ -74,7 +81,6 @@ public class ConfiguredReportsApiHandler implements CyodaApiRequestHandler<GridC
         this.restTemplate = RestTemplateCustomizer.newRestTemplate(config, MediaTypes.HAL_JSON);
         this.tableMap = setupTables();
         this.cyodaTables = ImmutableList.copyOf(tableMap.values());
-
     }
 
     @Override
@@ -110,61 +116,80 @@ public class ConfiguredReportsApiHandler implements CyodaApiRequestHandler<GridC
     }
 
     @Override
-    public CollectionModel<GridConfigFieldsView> retrieveCollection() {
-        // TODO: Need to cover paging. Not sure how that works yet.
+    public Optional<PagedModel<GridConfigFieldsView>> retrievePage(
+            Integer pageNum,
+            Integer pageSize,
+            String query) {
+
+        int page = (pageNum == null ) ? 0 : pageNum;
+        int size = (pageSize == null ) ? DEFAULT_PAGE_SIZE : pageSize;
+
+        List<String> selectedFields = Arrays.asList("id","description","type","userId","creationDate");
+
+        UriTemplate uriTemplate = setupUriTemplate(query);
+
+        URI templatedUri = uriTemplate.expand(page, size, selectedFields);
+
+        Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
+        traverson.setRestOperations(restTemplate);
+
+
+        PagedModelType<GridConfigFieldsView> typeReference = new PagedModelType<GridConfigFieldsView>() {};
+
+        try {
+            final PagedModel<GridConfigFieldsView> gridConfigFieldsViews = traverson
+                .follow()
+                .toObject(typeReference);
+            return Optional.ofNullable(gridConfigFieldsViews);
+        } catch (HttpClientErrorException e) {
+            throw requestFailedException(this,"retrieveCollection", e, templatedUri);
+        }
+    }
+
+
+    private UriTemplate setupUriTemplate(String query) {
         URI uri;
         try {
             uri = config.getServerUrl().toURI().resolve(REPORT_DEFS_ENDPOINT);
         } catch (URISyntaxException e) {
             throw new IllegalStateException(e);
         }
-        TemplateVariables vars = new TemplateVariables(
+        final ImmutableList.Builder<TemplateVariable> builder = ImmutableList.builder();
+        builder.add(
                 TemplateVariable.requestParameter("page"),
-                TemplateVariable.requestParameterContinued("fields"),
-                TemplateVariable.requestParameterContinued("size")
+                TemplateVariable.requestParameterContinued("size")//,
+                //TemplateVariable.requestParameterContinued("fields")
         );
-        final UriTemplate uriTemplate = UriTemplate.of(uri.toASCIIString())
+        if (query!=null && !query.isEmpty()) builder.add(TemplateVariable.requestParameterContinued("filterByType"));
+        TemplateVariables vars = new TemplateVariables(builder.build());
+        return UriTemplate.of(uri.toASCIIString())
                 .with(vars);
-        int page = 0;
-        String selectedFields = "id,description,type,userId,creationDate";
-        int size = 1_000;
-        URI templatedUri = uriTemplate.expand(page, selectedFields, size);
-
-        Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-        traverson.setRestOperations(restTemplate);
-
-        //If it's not an array of entities, but directly one, then use: ParameterizedTypeReference<EntityModel<GridConfigFieldsView>>
-        TypeReferences.CollectionModelType<GridConfigFieldsView> typeReference = new TypeReferences.CollectionModelType<GridConfigFieldsView>() {
-        };
-
-        try {
-            return traverson
-                    .follow()//.withTemplateParameters(parameters)
-                    .toObject(typeReference);
-        } catch (HttpClientErrorException e) {
-            throw requestFailedException(this,"retrieveCollection", e, uri);
-        }
     }
-
     @Override
-    public Object getValue(GridConfigFieldsView entity, int field) {
+    public SupportedDataType<?> getValue(GridConfigFieldsView entity, int field) {
         requireNonNull(entity, "entity is null");
         Map<String, String> fields = entity.getGridConfigFields();
         switch (field) {
             case 0:
-                return fields.get("id");
+                return SupportedDataType.of(fields.get("id"), String.class);
             case 1:
-                return fields.get("description");
+                return SupportedDataType.of(fields.get("description"), String.class);
             case 2:
-                return fields.get("type");
+                return SupportedDataType.of(fields.get("type"), String.class);
             case 3:
-                return fields.get("userId");
+                return SupportedDataType.of(fields.get("userId"), String.class);
             case 4:
-                return toLocalDateTime(fields.get("creationDate"));
+                return SupportedDataType.of(toLocalDateTime(fields.get("creationDate")), LocalDateTime.class);
             default:
                 throw new IllegalArgumentException("field index " + field + " is out of bounds. valid is 0..4");
         }
     }
+
+    @Override
+    public Iterator<GridConfigFieldsView> getResponseIterator(Integer pageSize, String query) {
+        return new PagedIterator<>(this,10,null).iterator();
+    }
+
 
     private LocalDateTime toLocalDateTime(String str) {
         if (str == null) return null;

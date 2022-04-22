@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Joiner;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
@@ -32,17 +33,21 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     private final String schemaName;
     private final String tableName;
     private final String requestHandlerKey;
+    private final String query;
 
     @JsonCreator
     public CyodaTableHandle(
             @JsonProperty("connectorId") String connectorId,
             @JsonProperty("schemaName") String schemaName,
             @JsonProperty("tableName") String tableName,
-            @JsonProperty("requestHandlerKey") String requestHandlerKey) {
+            @JsonProperty("requestHandlerKey") String requestHandlerKey,
+            @JsonProperty("query") String query
+    ) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.schemaName = requireNonNull(schemaName, "schemaName is null");
         this.tableName = requireNonNull(tableName, "tableName is null");
-        this.requestHandlerKey = requestHandlerKey;
+        this.requestHandlerKey = requireNonNull(requestHandlerKey, "requestHandlerKey is null");
+        this.query = query;
     }
 
     @JsonProperty
@@ -65,32 +70,34 @@ public class CyodaTableHandle implements ConnectorTableHandle {
         return requestHandlerKey;
     }
 
+    @JsonProperty
+    public String getQuery() {
+        return query;
+    }
+
     public SchemaTableName toSchemaTableName() {
         return new SchemaTableName(schemaName, tableName);
     }
 
     @Override
-    public int hashCode() {
-        return Objects.hash(connectorId, schemaName, tableName);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CyodaTableHandle that = (CyodaTableHandle) o;
+        return connectorId.equals(that.connectorId)
+                && schemaName.equals(that.schemaName)
+                && tableName.equals(that.tableName)
+                && requestHandlerKey.equals(that.requestHandlerKey);
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if ((obj == null) || (getClass() != obj.getClass())) {
-            return false;
-        }
-
-        CyodaTableHandle other = (CyodaTableHandle) obj;
-        return Objects.equals(this.connectorId, other.connectorId) &&
-                Objects.equals(this.schemaName, other.schemaName) &&
-                Objects.equals(this.tableName, other.tableName);
+    public int hashCode() {
+        return Objects.hash(connectorId, schemaName, tableName, requestHandlerKey);
     }
 
     @Override
     public String toString() {
-        return Joiner.on(":").join(connectorId, schemaName, tableName);
+        return Joiner.on(":").join(connectorId, schemaName, requestHandlerKey);
     }
+
 }

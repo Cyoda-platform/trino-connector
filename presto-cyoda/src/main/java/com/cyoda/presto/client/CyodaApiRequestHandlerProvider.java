@@ -17,6 +17,7 @@
 
 package com.cyoda.presto.client;
 
+import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.SchemaTableName;
 
 import javax.inject.Inject;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.facebook.presto.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaApiRequestHandlerProvider {
@@ -46,7 +48,8 @@ public class CyodaApiRequestHandlerProvider {
     @SuppressWarnings({"squid:S1452"})
     public CyodaApiRequestHandler<?> getHandler(SchemaTableName tableName) {
         return handlers.values().stream().filter(h -> h.hasTable(tableName)).findAny().orElseThrow(
-                () -> new IllegalStateException("[Cyoda]:" + this.getClass().getSimpleName() + ":unexpected error trying to get the Handler for table" + tableName)
+                () -> new PrestoException(GENERIC_INTERNAL_ERROR,"[Cyoda]:" + this.getClass().getSimpleName() +
+                        ":unexpected error trying to get the Handler for table" + tableName)
         );
     }
 

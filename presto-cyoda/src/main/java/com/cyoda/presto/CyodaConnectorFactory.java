@@ -20,6 +20,7 @@ package com.cyoda.presto;
 import com.facebook.airlift.bootstrap.Bootstrap;
 import com.facebook.airlift.json.JsonModule;
 import com.facebook.presto.spi.ConnectorHandleResolver;
+import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.connector.Connector;
 import com.facebook.presto.spi.connector.ConnectorContext;
 import com.facebook.presto.spi.connector.ConnectorFactory;
@@ -27,6 +28,7 @@ import com.google.inject.Injector;
 
 import java.util.Map;
 
+import static com.cyoda.presto.CyodaErrorCode.CYODA_BOOTSTRAPPING_FAILURE;
 import static com.google.common.base.Throwables.throwIfUnchecked;
 import static java.util.Objects.requireNonNull;
 
@@ -61,7 +63,7 @@ public class CyodaConnectorFactory implements ConnectorFactory {
             return injector.getInstance(CyodaConnector.class);
         } catch (Exception e) {
             throwIfUnchecked(e);
-            throw new IllegalStateException(e);
+            throw new PrestoException(CYODA_BOOTSTRAPPING_FAILURE,"Cannot create Connection",e);
         }
     }
 }

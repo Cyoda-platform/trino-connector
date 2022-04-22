@@ -18,6 +18,7 @@
 package com.cyoda.presto.client;
 
 import com.cyoda.presto.CyodaConfig;
+import com.facebook.presto.spi.PrestoException;
 import com.google.common.base.CharMatcher;
 import com.google.common.net.HostAndPort;
 import okhttp3.ConnectionPool;
@@ -31,9 +32,11 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.text.ParseException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
+import static com.cyoda.presto.CyodaErrorCode.CYODA_AUTHENTICATION_ERROR;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static java.net.Proxy.Type.HTTP;
@@ -113,7 +116,7 @@ public class RestTemplateCustomizer {
         requireNonNull(user, "user is null");
         requireNonNull(password, "password is null");
         if (user.contains(":")) {
-            throw new IllegalArgumentException("Illegal character ':' found in username");
+            throw new PrestoException(CYODA_AUTHENTICATION_ERROR,"[Cyoda] Illegal character ':' found in username");
         }
 
         String credential = Credentials.basic(user, password);

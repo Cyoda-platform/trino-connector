@@ -84,6 +84,10 @@ public class CyodaClient {
         return requestHandlerProvider;
     }
 
+    public int getRequestPageSize() {
+        return config.getRequestPageSize();
+    }
+
     public enum CyodaAuthenticationType {
         NONE,
         BASIC,
