@@ -48,8 +48,8 @@ public class CyodaApiRequestHandlerProvider {
     @SuppressWarnings({"squid:S1452"})
     public CyodaApiRequestHandler<?> getHandler(SchemaTableName tableName) {
         return handlers.values().stream().filter(h -> h.hasTable(tableName)).findAny().orElseThrow(
-                () -> new PrestoException(GENERIC_INTERNAL_ERROR,"[Cyoda]:" + this.getClass().getSimpleName() +
-                        ":unexpected error trying to get the Handler for table" + tableName)
+                () -> new PrestoException(GENERIC_INTERNAL_ERROR, "[Cyoda]:" + this.getClass().getSimpleName() +
+                        ":unexpected error trying to get the Handler for table " + tableName)
         );
     }
 

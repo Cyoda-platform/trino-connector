@@ -18,6 +18,9 @@
 package com.cyoda.presto.client.paging;
 
 import com.cyoda.presto.client.CyodaApiRequestHandler;
+import com.cyoda.presto.handles.CyodaTableHandle;
+import com.facebook.presto.common.predicate.TupleDomain;
+import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.PrestoException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,15 +30,16 @@ import java.util.Iterator;
 import java.util.function.Function;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_API_ERROR;
-import static java.util.Objects.requireNonNull;
 
 public class PagedIterator<T> implements Iterable<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(PagedIterator.class);
-    private final Function<Integer,PagingHandle<T>> pagingHandleSupplier;
+    private final Function<Integer, PagingHandle<T>> pagingHandleSupplier;
 
-    public PagedIterator(CyodaApiRequestHandler<T> requestHandler, int pageSize, String query) {
-        pagingHandleSupplier = page -> new PagingHandle<T>(requestHandler,page,pageSize,query);
+    public PagedIterator(CyodaApiRequestHandler<T> requestHandler, int pageSize,
+                         CyodaTableHandle tableHandle,
+                         TupleDomain<ColumnHandle> constraint) {
+        pagingHandleSupplier = page -> new PagingHandle<T>(requestHandler, page, pageSize, tableHandle, constraint);
 
     }
 

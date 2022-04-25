@@ -23,6 +23,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Joiner;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -32,22 +33,22 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     private final String connectorId;
     private final String schemaName;
     private final String tableName;
+    private final Optional<List<CyodaColumnHandle>> projectedColumns;
     private final String requestHandlerKey;
-    private final String query;
 
     @JsonCreator
     public CyodaTableHandle(
             @JsonProperty("connectorId") String connectorId,
             @JsonProperty("schemaName") String schemaName,
             @JsonProperty("tableName") String tableName,
-            @JsonProperty("requestHandlerKey") String requestHandlerKey,
-            @JsonProperty("query") String query
+            @JsonProperty("projectedColumns") Optional<List<CyodaColumnHandle>> projectedColumns,
+            @JsonProperty("requestHandlerKey") String requestHandlerKey
     ) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.schemaName = requireNonNull(schemaName, "schemaName is null");
         this.tableName = requireNonNull(tableName, "tableName is null");
+        this.projectedColumns = requireNonNull(projectedColumns, "projectedColumns is null");
         this.requestHandlerKey = requireNonNull(requestHandlerKey, "requestHandlerKey is null");
-        this.query = query;
     }
 
     @JsonProperty
@@ -66,13 +67,13 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     }
 
     @JsonProperty
-    public String getRequestHandlerKey() {
-        return requestHandlerKey;
+    public Optional<List<CyodaColumnHandle>> getProjectedColumns() {
+        return projectedColumns;
     }
 
     @JsonProperty
-    public String getQuery() {
-        return query;
+    public String getRequestHandlerKey() {
+        return requestHandlerKey;
     }
 
     public SchemaTableName toSchemaTableName() {
@@ -100,4 +101,7 @@ public class CyodaTableHandle implements ConnectorTableHandle {
         return Joiner.on(":").join(connectorId, schemaName, requestHandlerKey);
     }
 
+    public CyodaTableHandle withProjectedColumns(List<CyodaColumnHandle> newProjectedColumns) {
+        return new CyodaTableHandle(connectorId, schemaName, tableName, Optional.of(newProjectedColumns), requestHandlerKey);
+    }
 }

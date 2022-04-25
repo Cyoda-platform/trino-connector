@@ -20,8 +20,12 @@ package com.cyoda.presto;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 
 import java.net.URI;
 import java.util.List;
@@ -39,6 +43,7 @@ public class CyodaTable {
     private final List<URI> sources;
 
     private final Boolean isPaged;
+    private final ImmutableMap<String, CyodaColumnHandle> columnsByName;
 
     @JsonCreator
     public CyodaTable(
@@ -58,6 +63,9 @@ public class CyodaTable {
             thisMeta.add(new ColumnMetadata(column.getColumnName(), column.getColumnType()));
         }
         this.columnsMetadata = thisMeta.build();
+        this.columnsByName = new ImmutableMap.Builder<String, CyodaColumnHandle>()
+                .putAll(Maps.uniqueIndex(this.columns, CyodaColumnHandle::getColumnName))
+                .build();
     }
 
     @JsonProperty
@@ -84,4 +92,10 @@ public class CyodaTable {
         return columnsMetadata;
     }
 
+    @JsonIgnore
+    public CyodaColumnHandle getColumn(String columnName) {
+        CyodaColumnHandle column = this.columnsByName.get(columnName);
+        Preconditions.checkArgument(column != null, "Table %s does not have a column %s", this.name, columnName);
+        return column;
+    }
 }

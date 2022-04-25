@@ -17,62 +17,46 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.handles.CyodaTableHandle;
+import com.facebook.presto.common.predicate.TupleDomain;
+import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorSplit;
 import com.facebook.presto.spi.HostAddress;
 import com.facebook.presto.spi.NodeProvider;
 import com.facebook.presto.spi.schedule.NodeSelectionStrategy;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 
 import java.net.URI;
 import java.util.List;
-import java.util.Optional;
 
 import static com.facebook.presto.spi.schedule.NodeSelectionStrategy.NO_PREFERENCE;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaSplit implements ConnectorSplit {
-    private final String connectorId;
-    private final String schemaName;
-    private final String tableName;
     private final URI uri;
     private final List<HostAddress> addresses;
-    private final String requestHandlerKey;
-    private final Optional<String> queryString;
+    private final TupleDomain<ColumnHandle> constraint;
+    private final CyodaTableHandle tableHandle;
 
     @JsonCreator
     public CyodaSplit(
-            @JsonProperty("connectorId") String connectorId,
-            @JsonProperty("schemaName") String schemaName,
-            @JsonProperty("tableName") String tableName,
+            @JsonProperty("tableHandle") CyodaTableHandle tableHandle,
             @JsonProperty("uri") URI uri,
-            @JsonProperty("requestHandlerKey") String requestHandlerKey,
-            @JsonProperty("query") String query) {
-        this.schemaName = requireNonNull(schemaName, "schema name is null");
-        this.connectorId = requireNonNull(connectorId, "connector id is null");
-        this.tableName = requireNonNull(tableName, "table name is null");
+            @JsonProperty("constraint") TupleDomain<ColumnHandle> constraint) {
+        this.tableHandle = requireNonNull(tableHandle, "tableHandle name is null");
         this.uri = requireNonNull(uri, "uri is null");
-        this.requestHandlerKey = requireNonNull(requestHandlerKey, "requestHandlerKey is null");
 
         addresses = ImmutableList.of(HostAddress.fromUri(uri));
-        this.queryString = Optional.ofNullable(query);
+        this.constraint = requireNonNull(constraint, "constraint name is null");
     }
 
 
     @JsonProperty
-    public String getConnectorId() {
-        return connectorId;
-    }
-
-    @JsonProperty
-    public String getSchemaName() {
-        return schemaName;
-    }
-
-    @JsonProperty
-    public String getTableName() {
-        return tableName;
+    public CyodaTableHandle getTableHandle() {
+        return tableHandle;
     }
 
     @JsonProperty
@@ -81,13 +65,8 @@ public class CyodaSplit implements ConnectorSplit {
     }
 
     @JsonProperty
-    public String getRequestHandlerKey() {
-        return requestHandlerKey;
-    }
-
-    @JsonProperty
-    public Optional<String> getQuery() {
-        return queryString;
+    public TupleDomain<ColumnHandle> getConstraint() {
+        return constraint;
     }
 
     @Override
@@ -109,4 +88,13 @@ public class CyodaSplit implements ConnectorSplit {
         return this;
     }
 
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("uri", uri)
+                .add("addresses", addresses)
+                .add("constraint", constraint)
+                .add("tableHandle", tableHandle)
+                .toString();
+    }
 }

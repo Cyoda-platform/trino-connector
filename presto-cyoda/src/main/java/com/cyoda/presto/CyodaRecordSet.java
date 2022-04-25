@@ -17,9 +17,9 @@
 
 package com.cyoda.presto;
 
-import com.cyoda.presto.client.paging.PagedIterator;
-import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.client.CyodaApiRequestHandler;
+import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.RecordCursor;
@@ -40,6 +40,7 @@ public class CyodaRecordSet<T> implements RecordSet {
 
     private static final Logger LOG = LoggerFactory.getLogger(CyodaRecordSet.class);
 
+    private final CyodaTableHandle tableHandle;
     private final List<CyodaColumnHandle> columnHandles;
     private final List<Type> columnTypes;
 
@@ -50,8 +51,8 @@ public class CyodaRecordSet<T> implements RecordSet {
     public CyodaRecordSet(CyodaClient client, CyodaSplit split, List<CyodaColumnHandle> columnHandles) {
 
         this.client = requireNonNull(client, "client is null");
-        requireNonNull(split, "split is null");
-        this.requestHandlerKey = split.getRequestHandlerKey();
+        this.requestHandlerKey = split.getTableHandle().getRequestHandlerKey();
+        this.tableHandle = split.getTableHandle();
 
         this.columnHandles = requireNonNull(columnHandles, "column handles is null");
         ImmutableList.Builder<Type> types = ImmutableList.builder();
@@ -59,14 +60,18 @@ public class CyodaRecordSet<T> implements RecordSet {
             types.add(column.getColumnType());
         }
         this.columnTypes = types.build();
-        response = () -> requestCollection(split).orElseThrow(() -> new PrestoException(CYODA_RESULT_ERROR,"No response from Cyoda API"));
+        response = () -> requestCollection(split).orElseThrow(() -> new PrestoException(CYODA_RESULT_ERROR, "No response from Cyoda API"));
     }
 
     private Optional<PagedModel<T>> requestCollection(CyodaSplit split) {
         @SuppressWarnings("unchecked")
-        CyodaApiRequestHandler<T> handler = client.getRequestHandlerProvider().getHandler(split.getRequestHandlerKey());
-        LOG.debug("Handler {} is loaded",handler.getHandlerKey());
-        return handler.retrievePage(0,0,null);
+        CyodaApiRequestHandler<T> handler = client.getRequestHandlerProvider().getHandler(split.getTableHandle().getRequestHandlerKey());
+        LOG.debug("Handler {} is loaded", handler.getHandlerKey());
+        return handler.retrievePage(
+                0, 0,
+                split.getConstraint(),
+                split.getTableHandle().getProjectedColumns().orElse(null)
+        );
     }
 
     @Override
@@ -78,6 +83,6 @@ public class CyodaRecordSet<T> implements RecordSet {
     public RecordCursor cursor() {
         @SuppressWarnings("unchecked")
         CyodaApiRequestHandler<T> requestHandler = client.getRequestHandlerProvider().getHandler(requestHandlerKey);
-        return new CyodaRecordCursor<>(requestHandler, columnHandles, response.get());
+        return new CyodaRecordCursor<>(requestHandler, tableHandle, columnHandles, response.get());
     }
 }

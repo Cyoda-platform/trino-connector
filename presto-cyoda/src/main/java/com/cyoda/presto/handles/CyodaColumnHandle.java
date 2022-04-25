@@ -17,6 +17,7 @@
 
 package com.cyoda.presto.handles;
 
+import com.cyoda.presto.client.types.DataType;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
@@ -34,19 +35,38 @@ public class CyodaColumnHandle implements ColumnHandle {
     private final Type columnType;
     private final int ordinalPosition;
     private final String requestHandlerKey;
+    private final DataType dataType;
+    private final boolean isNullable;
 
     @JsonCreator
     public CyodaColumnHandle(
             @JsonProperty("connectorId") String connectorId,
             @JsonProperty("columnName") String columnName,
             @JsonProperty("columnType") Type columnType,
+            @JsonProperty("dataType") DataType dataType,
             @JsonProperty("ordinalPosition") int ordinalPosition,
-            @JsonProperty("requestHandlerKey") String requestHandlerKey) {
+            @JsonProperty("requestHandlerKey") String requestHandlerKey,
+            @JsonProperty("isNullable") boolean isNullable
+    ) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.columnName = requireNonNull(columnName, "columnName is null");
         this.columnType = requireNonNull(columnType, "columnType is null");
+        this.dataType = requireNonNull(dataType, "dataType is null");
         this.ordinalPosition = ordinalPosition;
         this.requestHandlerKey = requireNonNull(requestHandlerKey, "requestHandlerKey is null");
+        this.isNullable = isNullable;
+
+    }
+
+    public CyodaColumnHandle(
+            String connectorId,
+            String columnName,
+            Type columnType,
+            DataType dataType,
+            int ordinalPosition,
+            String requestHandlerKey
+    ) {
+        this(connectorId, columnName, columnType, dataType, ordinalPosition, requestHandlerKey, true);
     }
 
     @JsonProperty
@@ -65,6 +85,11 @@ public class CyodaColumnHandle implements ColumnHandle {
     }
 
     @JsonProperty
+    public DataType getDataType() {
+        return dataType;
+    }
+
+    @JsonProperty
     public int getOrdinalPosition() {
         return ordinalPosition;
     }
@@ -72,6 +97,11 @@ public class CyodaColumnHandle implements ColumnHandle {
     @JsonProperty
     public String getRequestHandlerKey() {
         return requestHandlerKey;
+    }
+
+    @JsonProperty
+    public boolean getIsNullable() {
+        return isNullable;
     }
 
     public ColumnMetadata getColumnMetadata() {

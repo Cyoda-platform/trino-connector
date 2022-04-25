@@ -18,25 +18,24 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.client.CyodaApiRequestHandler;
-import com.cyoda.presto.client.SupportedDataType;
+import com.cyoda.presto.client.types.SupportedDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.facebook.airlift.json.JsonObjectMapperProvider;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.presto.common.Page;
 import com.facebook.presto.common.PageBuilder;
 import com.facebook.presto.common.block.BlockBuilder;
+import com.facebook.presto.common.predicate.TupleDomain;
 import com.facebook.presto.common.type.Type;
+import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorPageSource;
 import com.facebook.presto.spi.PrestoException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableList;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_PAGING_ERROR;
-import static com.google.common.base.Throwables.throwIfUnchecked;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.lang.Float.floatToRawIntBits;
 import static java.util.Objects.requireNonNull;
@@ -58,16 +57,17 @@ public class CyodaFilteringPageSource<T>
     private List<Type> columnTypes;
 
     public CyodaFilteringPageSource(
-            String query,
+            TupleDomain<ColumnHandle> constraint,
             CyodaApiRequestHandler<T> requestHandler,
+            CyodaTableHandle tableHandle,
             List<CyodaColumnHandle> columnHandles,
-            CyodaClient cyodaClient)
-    {
+            CyodaClient cyodaClient
+    ) {
         requireNonNull(requestHandler, "requestHandler is null");
         this.columnHandles = ImmutableList.copyOf(requireNonNull(columnHandles, "columnHandles is null"));
         requireNonNull(cyodaClient, "Cyoda client is null");
-        this.requestHandler = requireNonNull(requestHandler,"requestHandler is null");
-        this.responseSupplier = () -> requestHandler.getResponseIterator(cyodaClient.getRequestPageSize(),query);
+        this.requestHandler = requireNonNull(requestHandler, "requestHandler is null");
+        this.responseSupplier = () -> requestHandler.getResponseIterator(cyodaClient.getRequestPageSize(), tableHandle, constraint);
         this.finished = false;
         List<CyodaColumnHandle> handles = columnHandles.stream()
                 .collect(toImmutableList());
@@ -149,7 +149,7 @@ public class CyodaFilteringPageSource<T>
         for (int i = 0; i < columnHandles.size(); i++) {
             Type type = columnTypes.get(i);
             BlockBuilder blockBuilder = pageBuilder.getBlockBuilder(i);
-            SupportedDataType<?> supported = requestHandler.getValue(nextItem,i);
+            SupportedDataType<?> supported = requestHandler.getValue(nextItem, columnHandles.get(i));
             if (supported == null || supported.isNull()) {
                 blockBuilder.appendNull();
                 continue;

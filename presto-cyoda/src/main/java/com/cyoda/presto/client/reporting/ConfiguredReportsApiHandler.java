@@ -19,16 +19,29 @@ package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
+import com.cyoda.presto.CyodaErrorCode;
 import com.cyoda.presto.CyodaTable;
 import com.cyoda.presto.client.CyodaApiRequestHandler;
-import com.cyoda.presto.client.SupportedDataType;
-import com.cyoda.presto.client.paging.PagedIterator;
-import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.client.RestTemplateCustomizer;
+import com.cyoda.presto.client.logic.Any;
+import com.cyoda.presto.client.logic.LeafPredicateNode;
+import com.cyoda.presto.client.logic.Predicate;
+import com.cyoda.presto.client.logic.PredicateBuilder;
+import com.cyoda.presto.client.logic.PredicateNode;
 import com.cyoda.presto.client.neededatcyoda.GridConfigFieldsView;
+import com.cyoda.presto.client.paging.PagedIterator;
+import com.cyoda.presto.client.types.SupportedDataType;
+import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.cyoda.presto.handles.CyodaTableHandle;
+import com.facebook.presto.common.predicate.TupleDomain;
 import com.facebook.presto.common.type.TimestampType;
+import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.SchemaTableName;
+import com.facebook.presto.spi.StandardErrorCode;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.hateoas.MediaTypes;
@@ -47,17 +60,19 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
+import static com.cyoda.presto.client.types.DataType.LOCAL_DATE_TIME;
+import static com.cyoda.presto.client.types.DataType.STRING;
 import static com.facebook.presto.common.type.VarcharType.createUnboundedVarcharType;
-import static com.google.common.base.MoreObjects.toStringHelper;
-import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public class ConfiguredReportsApiHandler implements CyodaApiRequestHandler<GridConfigFieldsView> {
@@ -66,6 +81,22 @@ public class ConfiguredReportsApiHandler implements CyodaApiRequestHandler<GridC
 
     public static final String REPORT_DEFS_ENDPOINT = "/api/platform-api/reporting/definitions";
     public static final int DEFAULT_PAGE_SIZE = 10;
+    public static final String ID_COLUMN_NAME = "id";
+    public static final String DESCRIPTION_COLUMN_NAME = "description";
+    public static final String TYPE_COLUMN_NAME = "type";
+    public static final String USER_ID_COLUMN_NAME = "userId";
+    public static final String CREATION_DATE_COLUMN_NAME = "creationDate";
+
+    public static final List<String> selectedFields = ImmutableList.<String>builder()
+            .add(ID_COLUMN_NAME)
+            .add(DESCRIPTION_COLUMN_NAME)
+            .add(TYPE_COLUMN_NAME)
+            .add(USER_ID_COLUMN_NAME)
+            .add(CREATION_DATE_COLUMN_NAME)
+            .build();
+    public static final List<String> filterableColumnNames = ImmutableList.<String>builder()
+            .add(TYPE_COLUMN_NAME).build();
+    private final List<CyodaColumnHandle> filterableColumns;
 
     private final CyodaConnectorId connectorId;
     private final CyodaConfig config;
@@ -77,10 +108,15 @@ public class ConfiguredReportsApiHandler implements CyodaApiRequestHandler<GridC
     public ConfiguredReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config) throws URISyntaxException {
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.config = requireNonNull(config, "config is null");
+
         // TODO: This means that the authentication parameters are fixed at startup. Need to make this more flexible, without restarting presto.
         this.restTemplate = RestTemplateCustomizer.newRestTemplate(config, MediaTypes.HAL_JSON);
+
         this.tableMap = setupTables();
         this.cyodaTables = ImmutableList.copyOf(tableMap.values());
+        this.filterableColumns = cyodaTables.stream().flatMap(it -> it.getColumns().stream())
+                .filter(it -> filterableColumnNames.contains(it.getColumnName()))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -97,11 +133,11 @@ public class ConfiguredReportsApiHandler implements CyodaApiRequestHandler<GridC
         // TODO: Replace this hard-coded prototype. The information should come from the Dist Reporting API component.
         ImmutableList.Builder<CyodaColumnHandle> builder = ImmutableList.builder();
         int pos = 0;
-        builder.add(new CyodaColumnHandle(connectorId.toString(), "id", createUnboundedVarcharType(), pos++, getHandlerKey()));
-        builder.add(new CyodaColumnHandle(connectorId.toString(), "description", createUnboundedVarcharType(), pos++, getHandlerKey()));
-        builder.add(new CyodaColumnHandle(connectorId.toString(), "type", createUnboundedVarcharType(), pos++, getHandlerKey()));
-        builder.add(new CyodaColumnHandle(connectorId.toString(), "userId", createUnboundedVarcharType(), pos++, getHandlerKey()));
-        builder.add(new CyodaColumnHandle(connectorId.toString(), "creationDate", TimestampType.TIMESTAMP, pos, getHandlerKey()));
+        builder.add(new CyodaColumnHandle(connectorId.toString(), ID_COLUMN_NAME, createUnboundedVarcharType(), STRING, pos++, getHandlerKey()));
+        builder.add(new CyodaColumnHandle(connectorId.toString(), DESCRIPTION_COLUMN_NAME, createUnboundedVarcharType(), STRING, pos++, getHandlerKey()));
+        builder.add(new CyodaColumnHandle(connectorId.toString(), TYPE_COLUMN_NAME, createUnboundedVarcharType(), STRING, pos++, getHandlerKey()));
+        builder.add(new CyodaColumnHandle(connectorId.toString(), USER_ID_COLUMN_NAME, createUnboundedVarcharType(), STRING, pos++, getHandlerKey()));
+        builder.add(new CyodaColumnHandle(connectorId.toString(), CREATION_DATE_COLUMN_NAME, TimestampType.TIMESTAMP, LOCAL_DATE_TIME, pos, getHandlerKey()));
 
         URI uri = config.getServerUrl().toURI().resolve(REPORT_DEFS_ENDPOINT);
         List<URI> sources = Collections.singletonList(uri);
@@ -117,58 +153,120 @@ public class ConfiguredReportsApiHandler implements CyodaApiRequestHandler<GridC
 
     @Override
     public Optional<PagedModel<GridConfigFieldsView>> retrievePage(
-            Integer pageNum,
-            Integer pageSize,
-            String query) {
+            int page,
+            int pageSize,
+            TupleDomain<ColumnHandle> constraint,
+            List<CyodaColumnHandle> projectedColumns) {
 
-        int page = (pageNum == null ) ? 0 : pageNum;
-        int size = (pageSize == null ) ? DEFAULT_PAGE_SIZE : pageSize;
+        int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
 
-        List<String> selectedFields = Arrays.asList("id","description","type","userId","creationDate");
 
-        UriTemplate uriTemplate = setupUriTemplate(query);
+        Map<String, Optional<Set<SupportedDataType<String>>>> filterSettings = Collections.emptyMap();
 
-        URI templatedUri = uriTemplate.expand(page, size, selectedFields);
+        PredicateNode<Any> predicates = PredicateBuilder.setupConstraintPredicates(constraint);
+        Collection<PredicateNode<?>> conjunctions = PredicateNode.conjunctions(predicates);
+        Set<String> columnsWithFilter = conjunctions.stream().filter(PredicateNode::isLeaf)
+                .map(it -> (LeafPredicateNode<?>) it)
+                .map(LeafPredicateNode::forceGet)
+                .map(it -> it.getColumn().getColumnName())
+                .collect(Collectors.toSet());
+
+
+        UriTemplate uriTemplate = setupUriTemplate(columnsWithFilter);
+
+        ImmutableMap.Builder<String, Object> expansionBuilder = ImmutableMap.<String, Object>builder()
+                .put("page", page)
+                .put("size", size)
+                .put("fields", selectedFields);
+
+        ImmutableSet.Builder<String> filterByTypeBuilder = ImmutableSet.builder();
+
+//        filterSettings.entrySet().stream().filter(it->it.getKey().equals(TYPE_COLUMN_NAME))
+//                .map(Map.Entry::getValue)
+//                .filter(Optional::isPresent)
+//                .map(Optional::get)
+//                .findAny()
+//                .ifPresent(predicateInfo -> predicateInfo.forEach(v->filterByTypeBuilder.add(v.value)));
+
+        // We only can filter by type, using equals or IN.
+        conjunctions.stream().filter(PredicateNode::isLeaf)
+                .map(it -> (LeafPredicateNode<?>) it)
+                .map(LeafPredicateNode::forceGet)
+                .filter(it -> it.getColumn().getColumnName().equals(TYPE_COLUMN_NAME))
+                .forEach(it -> {
+                    Predicate.PredicateType type = it.getType();
+                    switch (type) {
+                        case IN_LIST: {
+                            it.getInListValues().forEach(item -> filterByTypeBuilder.add(item.value.toString()));
+                            break;
+                        }
+                        case EQUALITY: {
+                            filterByTypeBuilder.add(it.getLower().value.toString());
+                            break;
+                        }
+                        case RANGE: {
+                            filterByTypeBuilder.add(it.getLower().toString(), it.getUpper().value.toString());
+                            break;
+                        }
+                        default:
+                            throw new PrestoException(
+                                    CyodaErrorCode.CYODA_PUSHDOWN_UNSUPPORTED_EXPRESSION,
+                                    "Only support other things");
+                    }
+                });
+
+        Set<String> filterByType = filterByTypeBuilder.build();
+
+        if (!filterByType.isEmpty()) {
+            expansionBuilder.put("filterByType", filterByType);
+        }
+
+
+        URI templatedUri = uriTemplate.expand(expansionBuilder.build());
 
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
         traverson.setRestOperations(restTemplate);
 
-
-        PagedModelType<GridConfigFieldsView> typeReference = new PagedModelType<GridConfigFieldsView>() {};
+        PagedModelType<GridConfigFieldsView> typeReference = new PagedModelType<GridConfigFieldsView>() {
+        };
 
         try {
             final PagedModel<GridConfigFieldsView> gridConfigFieldsViews = traverson
-                .follow()
-                .toObject(typeReference);
+                    .follow()
+                    .toObject(typeReference);
             return Optional.ofNullable(gridConfigFieldsViews);
         } catch (HttpClientErrorException e) {
-            throw requestFailedException(this,"retrieveCollection", e, templatedUri);
+            throw requestFailedException(this, "retrieveCollection", e, templatedUri);
         }
     }
 
 
-    private UriTemplate setupUriTemplate(String query) {
+    private UriTemplate setupUriTemplate(Set<String> additionalVars) {
         URI uri;
         try {
             uri = config.getServerUrl().toURI().resolve(REPORT_DEFS_ENDPOINT);
         } catch (URISyntaxException e) {
-            throw new IllegalStateException(e);
+            throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, e);
         }
         final ImmutableList.Builder<TemplateVariable> builder = ImmutableList.builder();
         builder.add(
                 TemplateVariable.requestParameter("page"),
-                TemplateVariable.requestParameterContinued("size")//,
-                //TemplateVariable.requestParameterContinued("fields")
+                TemplateVariable.requestParameterContinued("size"),
+                TemplateVariable.requestParameterContinued("fields")
         );
-        if (query!=null && !query.isEmpty()) builder.add(TemplateVariable.requestParameterContinued("filterByType"));
+        if (additionalVars.contains(TYPE_COLUMN_NAME))
+            builder.add(TemplateVariable.requestParameterContinued("filterByType"));
+
         TemplateVariables vars = new TemplateVariables(builder.build());
         return UriTemplate.of(uri.toASCIIString())
                 .with(vars);
     }
+
     @Override
-    public SupportedDataType<?> getValue(GridConfigFieldsView entity, int field) {
+    public SupportedDataType<?> getValue(GridConfigFieldsView entity, CyodaColumnHandle columnHandle) {
         requireNonNull(entity, "entity is null");
         Map<String, String> fields = entity.getGridConfigFields();
+        int field = columnHandle.getOrdinalPosition();
         switch (field) {
             case 0:
                 return SupportedDataType.of(fields.get("id"), String.class);
@@ -186,8 +284,10 @@ public class ConfiguredReportsApiHandler implements CyodaApiRequestHandler<GridC
     }
 
     @Override
-    public Iterator<GridConfigFieldsView> getResponseIterator(Integer pageSize, String query) {
-        return new PagedIterator<>(this,10,null).iterator();
+    public Iterator<GridConfigFieldsView> getResponseIterator(int pageSize,
+                                                              CyodaTableHandle cyodaTableHandle,
+                                                              TupleDomain<ColumnHandle> constraint) {
+        return new PagedIterator<>(this, pageSize, cyodaTableHandle, constraint).iterator();
     }
 
 

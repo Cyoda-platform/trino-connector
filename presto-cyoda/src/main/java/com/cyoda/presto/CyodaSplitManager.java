@@ -19,6 +19,8 @@ package com.cyoda.presto;
 
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.CyodaTableLayoutHandle;
+import com.facebook.presto.common.predicate.TupleDomain;
+import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorSplit;
 import com.facebook.presto.spi.ConnectorSplitSource;
@@ -40,6 +42,7 @@ public class CyodaSplitManager implements ConnectorSplitManager {
     private final String connectorId;
     private final CyodaClient cyodaClient;
 
+
     @Inject
     public CyodaSplitManager(CyodaConnectorId connectorId, CyodaClient exampleClient) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
@@ -58,13 +61,11 @@ public class CyodaSplitManager implements ConnectorSplitManager {
         // this can happen if table is removed during a query
         checkState(table != null, "Table %s.%s no longer exists", tableHandle.getSchemaName(), tableHandle.getTableName());
 
+        TupleDomain<ColumnHandle> constraint = layoutHandle.getConstraint();
+
         List<ConnectorSplit> splits = new ArrayList<>();
         for (URI uri : table.getSources()) {
-            splits.add(new CyodaSplit(connectorId,
-                    tableHandle.getSchemaName(),
-                    tableHandle.getTableName(),
-                    uri,
-                    tableHandle.getRequestHandlerKey(), tableHandle.getQuery()));
+            splits.add(new CyodaSplit(tableHandle, uri, constraint));
         }
         Collections.shuffle(splits);
 

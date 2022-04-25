@@ -46,7 +46,7 @@ public class CyodaRecordSetProvider implements ConnectorRecordSetProvider {
     public RecordSet getRecordSet(ConnectorTransactionHandle transactionHandle, ConnectorSession session, ConnectorSplit split, List<? extends ColumnHandle> columns) {
         requireNonNull(split, "partitionChunk is null");
         CyodaSplit cyodaSplit = (CyodaSplit) split;
-        checkArgument(cyodaSplit.getConnectorId().equals(connectorId), "split is not for this connector");
+        checkArgument(cyodaSplit.getTableHandle().getConnectorId().equals(connectorId), "split is not for this connector");
 
         ImmutableList.Builder<CyodaColumnHandle> handles = ImmutableList.builder();
         for (ColumnHandle handle : columns) {

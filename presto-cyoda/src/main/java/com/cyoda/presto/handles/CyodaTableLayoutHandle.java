@@ -25,19 +25,20 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
-import static com.google.common.base.MoreObjects.toStringHelper;
-
 public class CyodaTableLayoutHandle implements ConnectorTableLayoutHandle {
 
     private final CyodaTableHandle table;
     private final TupleDomain<ColumnHandle> constraint;
 
     @JsonCreator
-    public CyodaTableLayoutHandle(@JsonProperty("table") CyodaTableHandle table,
-                                  @JsonProperty("constraint") TupleDomain<ColumnHandle> constraint) {
+    public CyodaTableLayoutHandle(
+            @JsonProperty("table") CyodaTableHandle table,
+            @JsonProperty("constraint") TupleDomain<ColumnHandle> constraint
+    ) {
         this.table = table;
         this.constraint = constraint;
     }
+
 
     @JsonProperty
     public CyodaTableHandle getTable() {
@@ -50,18 +51,19 @@ public class CyodaTableLayoutHandle implements ConnectorTableLayoutHandle {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
+    public String toString() {
+        return "CyodaTableLayoutHandle{" +
+                "table=" + table +
+                ", constraint=" + constraint +
+                '}';
+    }
 
-        if (obj == null || getClass() != obj.getClass()) {
-            return false;
-        }
-
-        CyodaTableLayoutHandle other = (CyodaTableLayoutHandle) obj;
-        return Objects.equals(table, other.table)
-                && Objects.equals(constraint, other.constraint);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        CyodaTableLayoutHandle that = (CyodaTableLayoutHandle) o;
+        return table.equals(that.table) && constraint.equals(that.constraint);
     }
 
     @Override
@@ -69,11 +71,4 @@ public class CyodaTableLayoutHandle implements ConnectorTableLayoutHandle {
         return Objects.hash(table, constraint);
     }
 
-    @Override
-    public String toString() {
-        return toStringHelper(this)
-                .add("table", table)
-                .add("constraint", constraint)
-                .toString();
-    }
 }

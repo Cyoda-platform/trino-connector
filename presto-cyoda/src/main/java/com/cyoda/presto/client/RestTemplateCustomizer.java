@@ -32,7 +32,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.net.InetSocketAddress;
 import java.net.Proxy;
-import java.text.ParseException;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 

@@ -18,10 +18,13 @@
 package com.cyoda.presto.client.paging;
 
 import com.cyoda.presto.client.CyodaApiRequestHandler;
+import com.cyoda.presto.handles.CyodaTableHandle;
+import com.facebook.presto.common.predicate.TupleDomain;
+import com.facebook.presto.spi.ColumnHandle;
 import org.springframework.hateoas.PagedModel;
 
+import java.util.Collections;
 import java.util.Optional;
-import java.util.function.Supplier;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
 public class PagingHandle<T> {
@@ -30,8 +33,8 @@ public class PagingHandle<T> {
     private final Optional<PagedModel<T>> pagedModel;
 
 
-    public PagingHandle(CyodaApiRequestHandler<T> requestHandler, int pageNum, int pageSize, String query) {
-        this.pagedModel = requestHandler.retrievePage(pageNum,pageSize,query);
+    public PagingHandle(CyodaApiRequestHandler<T> requestHandler, int pageNum, int pageSize, CyodaTableHandle tableHandle, TupleDomain<ColumnHandle> constraint) {
+        this.pagedModel = requestHandler.retrievePage(pageNum, pageSize, constraint, tableHandle.getProjectedColumns().orElse(Collections.emptyList()));
         this.pageMeta = pagedModel.map(PagedModel::getMetadata);
     }
 

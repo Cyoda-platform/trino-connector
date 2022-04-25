@@ -15,15 +15,25 @@
  *
  */
 
-package com.cyoda.presto.client;
+package com.cyoda.presto.client.types;
 
 import com.facebook.airlift.json.JsonCodec;
+import com.facebook.presto.common.type.BigintType;
+import com.facebook.presto.common.type.BooleanType;
 import com.facebook.presto.common.type.DecimalType;
 import com.facebook.presto.common.type.Decimals;
+import com.facebook.presto.common.type.DoubleType;
+import com.facebook.presto.common.type.IntegerType;
+import com.facebook.presto.common.type.RealType;
+import com.facebook.presto.common.type.SmallintType;
+import com.facebook.presto.common.type.TimestampType;
+import com.facebook.presto.common.type.TinyintType;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.VarbinaryType;
 import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.PrestoException;
+import com.facebook.presto.spi.StandardErrorCode;
+import com.google.common.base.Preconditions;
 import io.airlift.slice.Slice;
 
 import java.math.BigDecimal;
@@ -41,39 +51,100 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_INCORRECT_TYPE_ERROR;
-import static com.cyoda.presto.client.DataType.*;
-import static com.facebook.presto.spi.StandardErrorCode.NOT_SUPPORTED;
+import static com.cyoda.presto.client.types.DataType.*;
 import static io.airlift.slice.Slices.*;
+import static java.lang.Float.intBitsToFloat;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
-public class SupportedDataType<T> {
+public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
     public final T value;
     public final Class<T> javaType;
     public final DataType dataType;
 
-    private SupportedDataType(T value,Class<T> javaType) {
+    private SupportedDataType(T value, Class<T> javaType) {
         this.value = value;
-        if ( value != null && ! javaType.isAssignableFrom(value.getClass())) {
+        if (value != null && !javaType.isAssignableFrom(value.getClass())) {
             throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR,
-                    format("Incompatible type. %s is not assignable from %s",javaType,value.getClass()));
+                    format("Incompatible type. %s is not assignable from %s", javaType, value.getClass()));
         }
         this.javaType = javaType;
         final DataType fromJavaType = DataType.classToDataType.get(javaType);
-        requireNonNull(fromJavaType,javaType+" not mapped as a DataType");
+        requireNonNull(fromJavaType, javaType + " not mapped as a DataType");
         this.dataType = fromJavaType;
     }
 
     public static <S> SupportedDataType<S> of(S value, Class<S> javaType) {
-        return new SupportedDataType<>(value,javaType);
+        return new SupportedDataType<>(value, javaType);
+    }
+
+    public static <S> SupportedDataType<S> ofPrestoNativeValue(Type type, Object nativeValue, Class<S> targetClass) {
+        Object obj = getJavaValue(type, nativeValue);
+        Preconditions.checkArgument(targetClass.isAssignableFrom(obj.getClass()));
+        //noinspection unchecked
+        return of((S) obj, targetClass);
     }
 
     public static SupportedDataType<Object> ofObject(Object value) {
-        return new SupportedDataType<>(value,Object.class);
+        return new SupportedDataType<>(value, Object.class);
+    }
+
+    // Taken from Kudu TypeHelper
+    public static Object getJavaValue(Type type, Object nativeValue) {
+        if (type instanceof VarcharType) {
+            return ((Slice) nativeValue).toStringUtf8();
+        } else if (type == TimestampType.TIMESTAMP) {
+            return ((Long) nativeValue) * 1000;
+        } else if (type == BigintType.BIGINT) {
+            return nativeValue;
+        } else if (type == IntegerType.INTEGER) {
+            return ((Long) nativeValue).intValue();
+        } else if (type == SmallintType.SMALLINT) {
+            return ((Long) nativeValue).shortValue();
+        } else if (type == TinyintType.TINYINT) {
+            return ((Long) nativeValue).byteValue();
+        } else if (type == DoubleType.DOUBLE) {
+            return nativeValue;
+        } else if (type == RealType.REAL) {
+            // conversion can result in precision lost
+            return intBitsToFloat(((Long) nativeValue).intValue());
+        } else if (type == BooleanType.BOOLEAN) {
+            return nativeValue;
+        } else if (type instanceof VarbinaryType) {
+            return ((Slice) nativeValue).toByteBuffer();
+        } else if (type instanceof DecimalType) {
+            return nativeValue;
+        } else {
+            throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Back conversion not implemented for " + type);
+        }
+    }
+
+
+    @Override
+    public String toString() {
+        return "SupportedDataType{" +
+                "value=" + value +
+                ", javaType=" + javaType +
+                ", dataType=" + dataType +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SupportedDataType<?> that = (SupportedDataType<?>) o;
+        return Objects.equals(value, that.value) && javaType.equals(that.javaType) && dataType == that.dataType;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value, javaType, dataType);
     }
 
     public String stringify() {
@@ -83,7 +154,8 @@ public class SupportedDataType<T> {
             case INTEGER:
             case SHORT:
             case CHARACTER:
-            case LONG: return value.toString();
+            case LONG:
+                return value.toString();
             case DOUBLE:
             case BIG_DECIMAL:
             case BIG_INTEGER:
@@ -300,12 +372,23 @@ public class SupportedDataType<T> {
         return getCast();
     }
 
+    public Number asNumber() {
+        return getCast();
+    }
+
     private PrestoException wrongDataTypeException(DataType required) {
         return new PrestoException(CYODA_INCORRECT_TYPE_ERROR,
-                format("DataType %s is wrong. Need %s",this.dataType,required));
+                format("DataType %s is wrong. Need %s", this.dataType, required));
     }
 
     public boolean isNull() {
         return value == null || dataType == NULL;
+    }
+
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public int compareTo(SupportedDataType<T> o) {
+        return ((Comparable<T>) this.value).compareTo(o.value);
     }
 }

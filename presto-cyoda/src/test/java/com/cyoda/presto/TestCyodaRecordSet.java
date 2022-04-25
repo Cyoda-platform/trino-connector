@@ -16,20 +16,23 @@
  */
 package com.cyoda.presto;
 
-import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.client.neededatcyoda.GridConfigFieldsView;
-import com.cyoda.presto.client.reporting.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.CyodaApiRequestHandler;
 import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
+import com.cyoda.presto.client.neededatcyoda.GridConfigFieldsView;
+import com.cyoda.presto.client.reporting.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.presto.common.Page;
+import com.facebook.presto.common.predicate.TupleDomain;
+import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.RecordSet;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import io.airlift.slice.Slice;
-import org.springframework.core.io.Resource;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -43,6 +46,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -70,23 +74,25 @@ public class TestCyodaRecordSet {
         assertEquals(tables.size(), 1); // There is only one table for that.
 
         setupReponseMapper();
-        
+
         URI dataUri = ourHttpServer.getBaseUri().resolve(ConfiguredReportsApiHandler.REPORT_DEFS_ENDPOINT);
 
+        TupleDomain<ColumnHandle> constraint = TupleDomain.all();
+        CyodaTableHandle tableHandle = new CyodaTableHandle(connectorId.toString(), "schema", "table", Optional.empty(), requestHandlerKey);
         RecordSet recordSet = new CyodaRecordSet<GridConfigFieldsView>(
                 client,
-                new CyodaSplit(connectorId.toString(), "schema", "table", dataUri, requestHandlerKey, null),
+                new CyodaSplit(tableHandle, dataUri, constraint),
                 tables.get(0).getColumns()
         );
         RecordCursor cursor = recordSet.cursor();
         assertNotNull(cursor);
-        int cnt=0;
-        while(cursor.advanceNextPosition())  {
+        int cnt = 0;
+        while (cursor.advanceNextPosition()) {
             cnt++;
             Slice id = cursor.getSlice(0);
             assertNotNull(id.toStringUtf8());
         }
-        assertEquals(cnt,DEFAULT_PAGE_SIZE);
+        assertEquals(cnt, DEFAULT_PAGE_SIZE);
 
 
     }
@@ -139,16 +145,18 @@ public class TestCyodaRecordSet {
 
         setupReponseMapper();
 
-        CyodaFilteringPageSource<GridConfigFieldsView> pageSource = 
-                new CyodaFilteringPageSource<>(null,apiHandler,tables.get(0).getColumns(),client);
+        TupleDomain<CyodaColumnHandle> constraint = TupleDomain.all();
+        CyodaTableHandle tableHandle = new CyodaTableHandle(connectorId.toString(), "schema", "table", Optional.empty(), requestHandlerKey);
+        CyodaFilteringPageSource<GridConfigFieldsView> pageSource =
+                new CyodaFilteringPageSource(constraint, apiHandler, tableHandle, tables.get(0).getColumns(), client);
 
         assertNotNull(pageSource);
         int total = 0;
-        while(!pageSource.isFinished())  {
+        while (!pageSource.isFinished()) {
             Page page = pageSource.getNextPage();
             boolean isFinished = pageSource.isFinished();
             assertNotNull(page);
-            assertEquals(page.getChannelCount(),tables.get(0).getColumns().size());
+            assertEquals(page.getChannelCount(), tables.get(0).getColumns().size());
             total += page.getPositionCount();
         }
         // The source shall only read up to the page size, even if there are more elements.
@@ -174,18 +182,20 @@ public class TestCyodaRecordSet {
         URI dataUri = ourHttpServer.getBaseUri().resolve(ConfiguredReportsApiHandler.REPORT_DEFS_ENDPOINT);
 
         RecordSet recordSet;
-        recordSet = new CyodaRecordSet<>(client, new CyodaSplit("test", "schema", "table", dataUri, requestHandlerKey, null), ImmutableList.of(
-                new CyodaColumnHandle("test", "value", BIGINT, 1, requestHandlerKey),
-                new CyodaColumnHandle("test", "text", createUnboundedVarcharType(), 0, requestHandlerKey)));
+        CyodaTableHandle tableHandle = new CyodaTableHandle(connectorId.toString(), "schema", "table", Optional.empty(), requestHandlerKey);
+
+        recordSet = new CyodaRecordSet<>(client, new CyodaSplit(tableHandle, dataUri, null), ImmutableList.of(
+                new CyodaColumnHandle("test", "value", BIGINT, DataType.BIG_INTEGER, 1, requestHandlerKey),
+                new CyodaColumnHandle("test", "text", createUnboundedVarcharType(), DataType.STRING, 0, requestHandlerKey)));
         assertEquals(recordSet.getColumnTypes(), ImmutableList.of(BIGINT, createUnboundedVarcharType()));
 
-        recordSet = new CyodaRecordSet<>(client, new CyodaSplit("test", "schema", "table", dataUri, requestHandlerKey, null), ImmutableList.of(
-                new CyodaColumnHandle("test", "value", BIGINT, 1, requestHandlerKey),
-                new CyodaColumnHandle("test", "value", BIGINT, 1, requestHandlerKey),
-                new CyodaColumnHandle("test", "text", createUnboundedVarcharType(), 0, requestHandlerKey)));
+        recordSet = new CyodaRecordSet<>(client, new CyodaSplit(tableHandle, dataUri, null), ImmutableList.of(
+                new CyodaColumnHandle("test", "value", BIGINT, DataType.BIG_INTEGER, 1, requestHandlerKey),
+                new CyodaColumnHandle("test", "value", BIGINT, DataType.BIG_INTEGER, 1, requestHandlerKey),
+                new CyodaColumnHandle("test", "text", createUnboundedVarcharType(), DataType.STRING, 0, requestHandlerKey)));
         assertEquals(recordSet.getColumnTypes(), ImmutableList.of(BIGINT, BIGINT, createUnboundedVarcharType()));
 
-        recordSet = new CyodaRecordSet<>(client, new CyodaSplit("test", "schema", "table", dataUri, requestHandlerKey, null), ImmutableList.of());
+        recordSet = new CyodaRecordSet<>(client, new CyodaSplit(tableHandle, dataUri, null), ImmutableList.of());
         assertEquals(recordSet.getColumnTypes(), ImmutableList.of());
     }
 

@@ -17,6 +17,8 @@
 
 package com.cyoda.presto.client;
 
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.SupportedDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.type.TinyintType;
 import org.testng.annotations.Test;
@@ -27,7 +29,7 @@ import java.time.LocalTime;
 import java.time.Year;
 import java.time.YearMonth;
 
-import static org.testng.Assert.*;
+import static org.testng.Assert.assertEquals;
 
 public class SupportedDataTypeTest {
 
@@ -75,7 +77,7 @@ public class SupportedDataTypeTest {
 
     @Test
     public void testStringifyObject() {
-        CyodaColumnHandle cch = new CyodaColumnHandle("connector 1","happy column", TinyintType.TINYINT,2,"myKey");
+        CyodaColumnHandle cch = new CyodaColumnHandle("connector 1", "happy column", TinyintType.TINYINT, DataType.SHORT, 2, "myKey");
         SupportedDataType<Object> sdt = SupportedDataType.ofObject(cch);
         String str = sdt.stringify();
         String expected ="{\n" +

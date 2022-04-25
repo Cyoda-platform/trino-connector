@@ -15,7 +15,7 @@
  *
  */
 
-package com.cyoda.presto.client;
+package com.cyoda.presto.client.types;
 
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.Type;
@@ -24,17 +24,15 @@ import com.facebook.presto.common.type.Type;
  * Utility class for Presto Type-related functionality.
  * Taken fro Accumulo connector. Thanks!
  */
-public final class Types
-{
-    private Types() {}
+public final class TypesUtil {
+    private TypesUtil() {
+    }
 
-    public static boolean isArrayType(Type type)
-    {
+    public static boolean isArrayType(Type type) {
         return type.getTypeSignature().getBase().equals(StandardTypes.ARRAY);
     }
 
-    public static boolean isMapType(Type type)
-    {
+    public static boolean isMapType(Type type) {
         return type.getTypeSignature().getBase().equals(StandardTypes.MAP);
     }
 
@@ -44,7 +42,7 @@ public final class Types
      * @param type An array type
      * @return Element type of the array
      * @throws IndexOutOfBoundsException If type is not an array
-     * @see Types#isArrayType
+     * @see TypesUtil#isArrayType
      */
     public static Type getElementType(Type type)
     {
@@ -57,7 +55,7 @@ public final class Types
      * @param type A map type
      * @return Key type of the map
      * @throws IndexOutOfBoundsException If type is not a map
-     * @see Types#isMapType
+     * @see TypesUtil#isMapType
      */
     public static Type getKeyType(Type type)
     {
@@ -70,7 +68,7 @@ public final class Types
      * @param type A map type
      * @return Value type of the map
      * @throws IndexOutOfBoundsException If type is not a map
-     * @see Types#isMapType
+     * @see TypesUtil#isMapType
      */
     public static Type getValueType(Type type)
     {

@@ -37,10 +37,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import javax.inject.Inject;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
@@ -75,14 +77,25 @@ public class CyodaMetadata implements ConnectorMetadata {
             return null;
         }
         final String handlerKey = client.getRequestHandlerProvider().getHandler(tableName).getHandlerKey();
-        return new CyodaTableHandle(connectorId, tableName.getSchemaName(), tableName.getTableName(), handlerKey,null);
+        return new CyodaTableHandle(connectorId, tableName.getSchemaName(), tableName.getTableName(), Optional.empty(), handlerKey);
     }
 
     @Override
     public List<ConnectorTableLayoutResult> getTableLayouts(ConnectorSession session, ConnectorTableHandle table, Constraint<ColumnHandle> constraint, Optional<Set<ColumnHandle>> desiredColumns) {
-        CyodaTableHandle tableHandle = (CyodaTableHandle) table;
-        ConnectorTableLayout layout = new ConnectorTableLayout(new CyodaTableLayoutHandle(tableHandle, constraint.getSummary()));
+        CyodaTableHandle tableHandle = (desiredColumns.isPresent()) ?
+                ((CyodaTableHandle) table).withProjectedColumns(convertDesiredColumns(desiredColumns.orElse(Collections.emptySet()))) :
+                ((CyodaTableHandle) table);
+        ConnectorTableLayout layout = new ConnectorTableLayout(
+                new CyodaTableLayoutHandle(
+                        tableHandle,
+                        constraint.getSummary()
+                )
+        );
         return ImmutableList.of(new ConnectorTableLayoutResult(layout, constraint.getSummary()));
+    }
+
+    private List<CyodaColumnHandle> convertDesiredColumns(Set<ColumnHandle> desiredColumns) {
+        return desiredColumns.stream().map(CyodaColumnHandle.class::cast).collect(Collectors.toList());
     }
 
     @Override

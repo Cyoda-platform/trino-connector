@@ -15,8 +15,10 @@
  *
  */
 
-package com.cyoda.presto.client;
+package com.cyoda.presto.client.types;
 
+import com.cyoda.presto.client.logic.Any;
+import com.cyoda.presto.client.logic.Nothing;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -42,6 +44,7 @@ import java.util.stream.Collectors;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_INCORRECT_TYPE_ERROR;
 
+// TODO: Add Presto Type and adjust CyodaColumnHandle constructor.
 public enum DataType {
     STRING(String.class),
     BYTE(Byte.class),
@@ -71,7 +74,9 @@ public enum DataType {
     ARRAY(Object[].class),
     LIST(List.class),
     MAP(Map.class),
-    SET(Set.class);
+    SET(Set.class),
+    ANY(Any.class), // Placeholder for anything.
+    NOTHING(Nothing.class); // Placeholder for nothing.
 
 
     private final Class<?> javaType;
@@ -81,16 +86,18 @@ public enum DataType {
     }
 
 
-
     public Class<?> getJavaType() {
         return javaType;
     }
+
     public boolean isNumber() {
         return Number.class.isAssignableFrom(javaType);
     }
+
     public boolean isSerializable() {
         return Serializable.class.isAssignableFrom(javaType);
     }
+
     public boolean isBinary() {
         return this == BYTE_ARRAY || this == OBJECT ;
     }
