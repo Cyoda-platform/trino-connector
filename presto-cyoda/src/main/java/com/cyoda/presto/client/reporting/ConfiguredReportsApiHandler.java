@@ -269,15 +269,15 @@ public class ConfiguredReportsApiHandler implements CyodaApiRequestHandler<GridC
         int field = columnHandle.getOrdinalPosition();
         switch (field) {
             case 0:
-                return SupportedDataType.of(fields.get("id"), String.class);
+                return SupportedDataType.of(fields.get(ID_COLUMN_NAME), String.class);
             case 1:
-                return SupportedDataType.of(fields.get("description"), String.class);
+                return SupportedDataType.of(fields.get(DESCRIPTION_COLUMN_NAME), String.class);
             case 2:
-                return SupportedDataType.of(fields.get("type"), String.class);
+                return SupportedDataType.of(fields.get(TYPE_COLUMN_NAME), String.class);
             case 3:
-                return SupportedDataType.of(fields.get("userId"), String.class);
+                return SupportedDataType.of(fields.get(USER_ID_COLUMN_NAME), String.class);
             case 4:
-                return SupportedDataType.of(toLocalDateTime(fields.get("creationDate")), LocalDateTime.class);
+                return SupportedDataType.of(toLocalDateTime(fields.get(CREATION_DATE_COLUMN_NAME)), LocalDateTime.class);
             default:
                 throw new IllegalArgumentException("field index " + field + " is out of bounds. valid is 0..4");
         }
