@@ -184,18 +184,18 @@ public class TestCyodaRecordSet {
         RecordSet recordSet;
         CyodaTableHandle tableHandle = new CyodaTableHandle(connectorId.toString(), "schema", "table", Optional.empty(), requestHandlerKey);
 
-        recordSet = new CyodaRecordSet<>(client, new CyodaSplit(tableHandle, dataUri, null), ImmutableList.of(
+        recordSet = new CyodaRecordSet<>(client, new CyodaSplit(tableHandle, dataUri, TupleDomain.all()), ImmutableList.of(
                 new CyodaColumnHandle("test", "value", BIGINT, DataType.BIG_INTEGER, 1, requestHandlerKey),
                 new CyodaColumnHandle("test", "text", createUnboundedVarcharType(), DataType.STRING, 0, requestHandlerKey)));
         assertEquals(recordSet.getColumnTypes(), ImmutableList.of(BIGINT, createUnboundedVarcharType()));
 
-        recordSet = new CyodaRecordSet<>(client, new CyodaSplit(tableHandle, dataUri, null), ImmutableList.of(
+        recordSet = new CyodaRecordSet<>(client, new CyodaSplit(tableHandle, dataUri, TupleDomain.all()), ImmutableList.of(
                 new CyodaColumnHandle("test", "value", BIGINT, DataType.BIG_INTEGER, 1, requestHandlerKey),
                 new CyodaColumnHandle("test", "value", BIGINT, DataType.BIG_INTEGER, 1, requestHandlerKey),
                 new CyodaColumnHandle("test", "text", createUnboundedVarcharType(), DataType.STRING, 0, requestHandlerKey)));
         assertEquals(recordSet.getColumnTypes(), ImmutableList.of(BIGINT, BIGINT, createUnboundedVarcharType()));
 
-        recordSet = new CyodaRecordSet<>(client, new CyodaSplit(tableHandle, dataUri, null), ImmutableList.of());
+        recordSet = new CyodaRecordSet<>(client, new CyodaSplit(tableHandle, dataUri, TupleDomain.none()), ImmutableList.of());
         assertEquals(recordSet.getColumnTypes(), ImmutableList.of());
     }
 
