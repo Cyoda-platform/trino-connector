@@ -18,7 +18,6 @@
 package com.cyoda.presto.client.types;
 
 import com.cyoda.presto.client.logic.Any;
-import com.cyoda.presto.client.logic.Nothing;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -75,8 +74,7 @@ public enum DataType {
     LIST(List.class),
     MAP(Map.class),
     SET(Set.class),
-    ANY(Any.class), // Placeholder for anything.
-    NOTHING(Nothing.class); // Placeholder for nothing.
+    ANY(Any.class); // Placeholder for anything. To differentiate from Object.
 
 
     private final Class<?> javaType;
