@@ -8,7 +8,7 @@ It configures only the cyoda-presto plugin, so startup is quicker, too.
 image::doc/image-2022-04-22-07-25-01-924.png[]
 
 .JVM args to pass to the runtime config
-[source,properties]
+[source,shell script]
 ----
 -ea
 -XX:+UseG1GC
