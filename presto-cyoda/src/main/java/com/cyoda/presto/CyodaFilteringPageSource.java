@@ -18,15 +18,16 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.client.CyodaApiRequestHandler;
+import com.cyoda.presto.client.logic.Any;
+import com.cyoda.presto.client.logic.PredicateNode;
+import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.client.types.SupportedDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.presto.common.Page;
 import com.facebook.presto.common.PageBuilder;
 import com.facebook.presto.common.block.BlockBuilder;
-import com.facebook.presto.common.predicate.TupleDomain;
 import com.facebook.presto.common.type.Type;
-import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorPageSource;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.collect.ImmutableList;
@@ -51,23 +52,22 @@ public class CyodaFilteringPageSource<T>
     private long readTimeNanos;
     private long completedBytes;
     private long completedPositions;
-    private Supplier<Iterator<T>> responseSupplier;
+    private final Supplier<Iterator<T>> responseSupplier;
     private Iterator<T> responseIterator = null;
     private final PageBuilder pageBuilder;
-    private List<Type> columnTypes;
+    private final List<Type> columnTypes;
 
     public CyodaFilteringPageSource(
-            TupleDomain<ColumnHandle> constraint,
             CyodaApiRequestHandler<T> requestHandler,
             CyodaTableHandle tableHandle,
             List<CyodaColumnHandle> columnHandles,
-            CyodaClient cyodaClient
+            CyodaClient cyodaClient, PredicateNode<Any> predicates
     ) {
         requireNonNull(requestHandler, "requestHandler is null");
         this.columnHandles = ImmutableList.copyOf(requireNonNull(columnHandles, "columnHandles is null"));
         requireNonNull(cyodaClient, "Cyoda client is null");
         this.requestHandler = requireNonNull(requestHandler, "requestHandler is null");
-        this.responseSupplier = () -> requestHandler.getResponseIterator(cyodaClient.getRequestPageSize(), tableHandle, constraint);
+        this.responseSupplier = () -> requestHandler.getResponseIterator(cyodaClient.getRequestPageSize(), tableHandle, predicates);
         this.finished = false;
         List<CyodaColumnHandle> handles = columnHandles.stream()
                 .collect(toImmutableList());
@@ -149,14 +149,16 @@ public class CyodaFilteringPageSource<T>
         for (int i = 0; i < columnHandles.size(); i++) {
             Type type = columnTypes.get(i);
             BlockBuilder blockBuilder = pageBuilder.getBlockBuilder(i);
-            SupportedDataType<?> supported = requestHandler.getValue(nextItem, columnHandles.get(i));
+            CyodaColumnHandle columnHandle = columnHandles.get(i);
+            SupportedDataType<?> supported = requestHandler.getValue(nextItem, columnHandle);
             if (supported == null || supported.isNull()) {
                 blockBuilder.appendNull();
                 continue;
             }
-            switch (supported.dataType) {
+            DataType dataType = columnHandle.getDataType();
+            switch (dataType) {
                 case BOOLEAN:
-                    type.writeBoolean(blockBuilder,supported.asBoolean());
+                    type.writeBoolean(blockBuilder, supported.asBoolean());
                     break;
                 case ARRAY:
                 case LIST:
@@ -167,7 +169,6 @@ public class CyodaFilteringPageSource<T>
                 case BYTE:
                 case INTEGER:
                 case SHORT:
-                case CHARACTER:
                 case LONG:
                 case BIG_INTEGER:
                     type.writeLong(blockBuilder, supported.asBigInteger().longValue());
@@ -184,8 +185,7 @@ public class CyodaFilteringPageSource<T>
                     type.writeLong(blockBuilder, supported.asTimestampMillis());
                     break;
                 case UUID_TYPE:
-                    type.writeSlice(blockBuilder, supported.asSlice(type));
-                    break;
+                case CHARACTER:
                 case YEAR:
                 case YEAR_MONTH:
                 case LOCAL_TIME:

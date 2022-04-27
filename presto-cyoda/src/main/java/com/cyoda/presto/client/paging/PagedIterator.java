@@ -18,12 +18,11 @@
 package com.cyoda.presto.client.paging;
 
 import com.cyoda.presto.client.CyodaApiRequestHandler;
+import com.cyoda.presto.client.logic.Any;
+import com.cyoda.presto.client.logic.PredicateNode;
 import com.cyoda.presto.handles.CyodaTableHandle;
-import com.facebook.presto.common.predicate.TupleDomain;
-import com.facebook.presto.spi.ColumnHandle;
+import com.facebook.airlift.log.Logger;
 import com.facebook.presto.spi.PrestoException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.hateoas.PagedModel;
 
 import java.util.Iterator;
@@ -33,13 +32,12 @@ import static com.cyoda.presto.CyodaErrorCode.CYODA_API_ERROR;
 
 public class PagedIterator<T> implements Iterable<T> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(PagedIterator.class);
+    private static final Logger LOG = Logger.get(PagedIterator.class);
     private final Function<Integer, PagingHandle<T>> pagingHandleSupplier;
 
     public PagedIterator(CyodaApiRequestHandler<T> requestHandler, int pageSize,
-                         CyodaTableHandle tableHandle,
-                         TupleDomain<ColumnHandle> constraint) {
-        pagingHandleSupplier = page -> new PagingHandle<T>(requestHandler, page, pageSize, tableHandle, constraint);
+                         CyodaTableHandle tableHandle, PredicateNode<Any> predicates) {
+        pagingHandleSupplier = page -> new PagingHandle<T>(requestHandler, page, pageSize, tableHandle, predicates);
 
     }
 
@@ -83,8 +81,7 @@ public class PagedIterator<T> implements Iterable<T> {
                     currentElementOnPage = 0;
                     pagedModel = pagingHandle.getPagedModel().orElse(PagedModel.empty());
                     iterator = pagedModel.iterator();
-                    boolean b = iterator.hasNext();
-                    return b;
+                    return iterator.hasNext();
                 }
                 return hasNext;
             }
@@ -95,7 +92,7 @@ public class PagedIterator<T> implements Iterable<T> {
                 currentElementOnPage++;
                 T next = iterator.next();
 
-                if ( LOG.isDebugEnabled() ) LOG.debug("got {}",next);
+                if ( LOG.isDebugEnabled() ) LOG.debug("got %s",next);
                 if ( currentPos > maxEntries ) {
                     LOG.error("Reading more than expected!");
                 }

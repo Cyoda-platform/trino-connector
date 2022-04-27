@@ -17,6 +17,9 @@
 
 package com.cyoda.presto.client.logic;
 
+import com.cyoda.presto.handles.CyodaColumnHandle;
+
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
@@ -28,6 +31,7 @@ public interface PredicateNode<T extends Comparable<T>> {
      * @param predicates the root node
      * @return the members or if the root node is a leaf, the leaf as a singleton collection
      */
+    @SuppressWarnings("java:S1452")
     static Collection<PredicateNode<?>> conjunctions(PredicateNode<Any> predicates) {
         return Optional.ofNullable(predicates).orElse(LeafPredicateNode.nothing(Any.class)).getMembers()
                 .orElse(Collections.singletonList(LeafPredicateNode.nothing(Any.class)));
@@ -35,11 +39,14 @@ public interface PredicateNode<T extends Comparable<T>> {
 
     boolean isLeaf();
 
-    PredicateNodeType getNodeType();
+    @Nonnull PredicateNodeType getPredicateNodeType();
 
-    Optional<Predicate<T>> getPredicate();
+    @Nonnull Optional<Predicate<T>> getPredicate();
 
-    Connective getConnective();
+    @Nonnull Connective getConnective();
 
-    Optional<Collection<PredicateNode<?>>> getMembers();
+    @SuppressWarnings("java:S1452")
+    @Nonnull Optional<Collection<PredicateNode<?>>> getMembers();
+
+    @Nonnull Optional<CyodaColumnHandle> getColumn();
 }

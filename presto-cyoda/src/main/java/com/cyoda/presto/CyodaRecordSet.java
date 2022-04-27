@@ -18,15 +18,17 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.client.CyodaApiRequestHandler;
+import com.cyoda.presto.client.logic.Any;
+import com.cyoda.presto.client.logic.PredicateBuilder;
+import com.cyoda.presto.client.logic.PredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.facebook.airlift.log.Logger;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.RecordSet;
 import com.google.common.collect.ImmutableList;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.hateoas.PagedModel;
 
 import java.util.List;
@@ -38,7 +40,7 @@ import static java.util.Objects.requireNonNull;
 
 public class CyodaRecordSet<T> implements RecordSet {
 
-    private static final Logger LOG = LoggerFactory.getLogger(CyodaRecordSet.class);
+    private static final Logger LOG = Logger.get(CyodaRecordSet.class);
 
     private final CyodaTableHandle tableHandle;
     private final List<CyodaColumnHandle> columnHandles;
@@ -53,6 +55,7 @@ public class CyodaRecordSet<T> implements RecordSet {
         this.client = requireNonNull(client, "client is null");
         this.requestHandlerKey = split.getTableHandle().getRequestHandlerKey();
         this.tableHandle = split.getTableHandle();
+        PredicateNode<Any> predicates = PredicateBuilder.setupConstraintPredicates(split.getConstraint());
 
         this.columnHandles = requireNonNull(columnHandles, "column handles is null");
         ImmutableList.Builder<Type> types = ImmutableList.builder();
@@ -60,17 +63,16 @@ public class CyodaRecordSet<T> implements RecordSet {
             types.add(column.getColumnType());
         }
         this.columnTypes = types.build();
-        response = () -> requestCollection(split).orElseThrow(() -> new PrestoException(CYODA_RESULT_ERROR, "No response from Cyoda API"));
+        response = () -> requestCollection(split, predicates).orElseThrow(() -> new PrestoException(CYODA_RESULT_ERROR, "No response from Cyoda API"));
     }
 
-    private Optional<PagedModel<T>> requestCollection(CyodaSplit split) {
+    private Optional<PagedModel<T>> requestCollection(CyodaSplit split, PredicateNode<Any> predicates) {
         @SuppressWarnings("unchecked")
         CyodaApiRequestHandler<T> handler = client.getRequestHandlerProvider().getHandler(split.getTableHandle().getRequestHandlerKey());
-        LOG.debug("Handler {} is loaded", handler.getHandlerKey());
+        LOG.debug("Handler %s is loaded", handler.getHandlerKey());
         return handler.retrievePage(
                 0, 0,
-                split.getConstraint(),
-                split.getTableHandle().getProjectedColumns().orElse(null)
+                split.getTableHandle().getProjectedColumns().orElse(null), predicates
         );
     }
 

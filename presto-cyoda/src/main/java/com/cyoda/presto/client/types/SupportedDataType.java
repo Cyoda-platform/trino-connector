@@ -54,6 +54,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_INCORRECT_TYPE_ERROR;
 import static com.cyoda.presto.client.types.DataType.*;
@@ -390,5 +391,12 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
     @Override
     public int compareTo(SupportedDataType<T> o) {
         return ((Comparable<T>) this.value).compareTo(o.value);
+    }
+
+    public <S> SupportedDataType<S> as(Class<S> clazz, Function<T,S> convert) {
+        if ( this.value != null && !clazz.isAssignableFrom(this.value.getClass())) {
+            throw new IllegalArgumentException("value is not a "+clazz.getName());
+        }
+        return new SupportedDataType<>(convert.apply(this.value),clazz);
     }
 }

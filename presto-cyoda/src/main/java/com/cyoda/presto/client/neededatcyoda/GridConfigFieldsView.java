@@ -17,6 +17,8 @@
 
 package com.cyoda.presto.client.neededatcyoda;
 
+import com.google.common.base.MoreObjects;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,5 +31,12 @@ public class GridConfigFieldsView {
 
     public Map<String, String> getGridConfigFields() {
         return gridConfigFields;
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("gridConfigFields", gridConfigFields)
+                .toString();
     }
 }

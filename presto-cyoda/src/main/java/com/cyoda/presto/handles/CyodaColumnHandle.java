@@ -22,6 +22,7 @@ import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
@@ -104,6 +105,7 @@ public class CyodaColumnHandle implements ColumnHandle {
         return isNullable;
     }
 
+    @JsonIgnore
     public ColumnMetadata getColumnMetadata() {
         return new ColumnMetadata(columnName, columnType);
     }

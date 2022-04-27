@@ -19,6 +19,7 @@ package com.cyoda.presto.client.logic;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -49,6 +50,7 @@ public class LeafPredicateNode<T extends Comparable<T>> implements PredicateNode
         return predicate != null;
     }
 
+    @Nonnull
     @Override
     public Optional<Predicate<T>> getPredicate() {
         return Optional.of(predicate);
@@ -59,17 +61,25 @@ public class LeafPredicateNode<T extends Comparable<T>> implements PredicateNode
     }
 
     @Override
-    public PredicateNodeType getNodeType() {
+    public @Nonnull PredicateNodeType getPredicateNodeType() {
         return PredicateNodeType.LEAF;
     }
 
+    @Nonnull
     @Override
     public Connective getConnective() {
         return Connective.NONE;
     }
 
+    @Nonnull
     @Override
     public Optional<Collection<PredicateNode<?>>> getMembers() {
         return Optional.empty();
+    }
+
+    @Nonnull
+    @Override
+    public Optional<CyodaColumnHandle> getColumn() {
+        return Optional.ofNullable(predicate.getColumn());
     }
 }
