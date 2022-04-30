@@ -17,23 +17,30 @@
 
 package com.cyoda.presto;
 
-import com.cyoda.presto.client.CyodaApiRequestHandler;
+import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateNode;
-import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.client.types.SupportedDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.presto.common.Page;
 import com.facebook.presto.common.PageBuilder;
 import com.facebook.presto.common.block.BlockBuilder;
+import com.facebook.presto.common.type.ArrayType;
+import com.facebook.presto.common.type.MapType;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.ConnectorPageSource;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.collect.ImmutableList;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_PAGING_ERROR;
@@ -42,11 +49,11 @@ import static java.lang.Float.floatToRawIntBits;
 import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("UnstableApiUsage")
-public class CyodaFilteringPageSource<T>
+public class CyodaFilteringPageSource<S,T>
         implements ConnectorPageSource
 {
     private final List<CyodaColumnHandle> columnHandles;
-    private final CyodaApiRequestHandler<T> requestHandler;
+    private final ApiRequestHandler<S,T> requestHandler;
 
     private boolean finished;
     private long readTimeNanos;
@@ -58,7 +65,7 @@ public class CyodaFilteringPageSource<T>
     private final List<Type> columnTypes;
 
     public CyodaFilteringPageSource(
-            CyodaApiRequestHandler<T> requestHandler,
+            ApiRequestHandler<S,T> requestHandler,
             CyodaTableHandle tableHandle,
             List<CyodaColumnHandle> columnHandles,
             CyodaClient cyodaClient, PredicateNode<Any> predicates
@@ -155,51 +162,94 @@ public class CyodaFilteringPageSource<T>
                 blockBuilder.appendNull();
                 continue;
             }
-            DataType dataType = columnHandle.getDataType();
-            switch (dataType) {
-                case BOOLEAN:
-                    type.writeBoolean(blockBuilder, supported.asBoolean());
-                    break;
-                case ARRAY:
-                case LIST:
-                case MAP:
-                case SET:
-                    type.writeObject(blockBuilder,supported.value);
-                    break;
-                case BYTE:
-                case INTEGER:
-                case SHORT:
-                case LONG:
-                case BIG_INTEGER:
-                    type.writeLong(blockBuilder, supported.asBigInteger().longValue());
-                    break;
-                case DOUBLE:
-                    type.writeDouble(blockBuilder, supported.asDouble());
-                    break;
-                case FLOAT:
-                    type.writeLong(blockBuilder, floatToRawIntBits(supported.asFloat()));
-                    break;
-                case DATE:
-                case LOCAL_DATE_TIME:
-                case ZONED_DATE_TIME:
-                    type.writeLong(blockBuilder, supported.asTimestampMillis());
-                    break;
-                case UUID_TYPE:
-                case CHARACTER:
-                case YEAR:
-                case YEAR_MONTH:
-                case LOCAL_TIME:
-                case LOCAL_DATE:
-                case CLASS:
-                case LOCALE:
-                case STRING:
-                case BIG_DECIMAL:
-                default:
-                    type.writeSlice(blockBuilder, supported.asSlice(type));
-                    break;
-            }
+            writeObject(type, blockBuilder, supported);
         }
     }
+
+    private void writeObject(Type type, BlockBuilder blockBuilder, SupportedDataType<?> supported) {
+        switch (supported.dataType) {
+            case BOOLEAN:
+                type.writeBoolean(blockBuilder, supported.asBoolean());
+                break;
+            case BYTE:
+                type.writeLong(blockBuilder, supported.asByte().longValue());
+                break;
+            case INTEGER:
+                type.writeLong(blockBuilder, supported.asInt().longValue());
+                break;
+            case SHORT:
+                type.writeLong(blockBuilder, supported.asShort().longValue());
+                break;
+            case LONG:
+                type.writeLong(blockBuilder, supported.asLong());
+                break;
+            case BIG_INTEGER:
+                type.writeLong(blockBuilder, supported.asBigInteger().longValue());
+                break;
+            case DOUBLE:
+                type.writeDouble(blockBuilder, supported.asDouble());
+                break;
+            case FLOAT:
+                type.writeLong(blockBuilder, floatToRawIntBits(supported.asFloat()));
+                break;
+            case DATE:
+            case LOCAL_DATE_TIME:
+            case ZONED_DATE_TIME:
+                type.writeLong(blockBuilder, supported.asTimestampMillis());
+                break;
+            case SET: {
+                Type elementType = ((ArrayType) type).getElementType();
+                BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
+                Optional.ofNullable((Set<?>) supported.value).orElse(Collections.emptySet())
+                        .forEach(item -> writeObject(elementType, arrayBuilder, SupportedDataType.byType(item, elementType)));
+                blockBuilder.closeEntry();
+                break;
+            }
+            case LIST: {
+                Type elementType = ((ArrayType) type).getElementType();
+                BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
+                Optional.ofNullable((Collection<?>) supported.value).orElse(Collections.emptyList())
+                        .forEach(item -> writeObject(elementType,arrayBuilder,SupportedDataType.byType(item,elementType)));
+                blockBuilder.closeEntry();
+                break;
+            }
+            case ARRAY: {
+                Type elementType = ((ArrayType) type).getElementType();
+                BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
+                Arrays.stream(Optional.ofNullable((Object[]) supported.value).orElse(new Object[0]))
+                        .forEach(item -> writeObject(elementType,arrayBuilder,SupportedDataType.byType(item,elementType)));
+                blockBuilder.closeEntry();
+                break;
+            }
+            case MAP: {
+
+                // WARNING: This is not going to work. ofObject() is not going to give us much here.
+                // This is just an idea...
+                MapType mapType = (MapType) type;
+                BlockBuilder mapBlockBuilder = blockBuilder.beginBlockEntry();
+                for (Map.Entry<?, ?> entry : Optional.ofNullable((Map<?, ?>) supported.value).orElse(Collections.emptyMap()).entrySet()) {
+                    writeObject(mapType.getKeyType(),mapBlockBuilder, SupportedDataType.ofObject(entry.getKey()));
+                    writeObject(mapType.getValueType(),mapBlockBuilder, SupportedDataType.ofObject(entry.getValue()));
+                }
+                blockBuilder.closeEntry();
+                throw new UnsupportedOperationException("Maps not yet supported");
+            }
+            case BIG_DECIMAL:
+            case CLASS:
+            case YEAR:
+            case YEAR_MONTH:
+            case LOCAL_TIME:
+            case LOCAL_DATE:
+            case LOCALE:
+            case CHARACTER:
+            case STRING:
+            case UUID_TYPE:
+            default:
+                type.writeSlice(blockBuilder, supported.asSlice(type));
+                break;
+        }
+    }
+
 
     @Override
     public long getSystemMemoryUsage()

@@ -429,6 +429,7 @@ public class Predicate<T extends Comparable<T>> {
     }
 
 
+    @SuppressWarnings("java:S1452")
     static Predicate<?> newInListPredicate(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
         // TODO: This does not yet cover all cases.
         switch (columnHandle.getDataType()) {
@@ -627,7 +628,7 @@ public class Predicate<T extends Comparable<T>> {
                 column.getColumnType().getDisplayName()));
     }
 
-    public static <T extends Comparable<T>> Predicate<T> nothing(Class<T> clazz) {
+    public static <T extends Comparable<T>> Predicate<T> nothing() {
         return new Predicate<>(null, null, null, null);
     }
 
@@ -926,6 +927,8 @@ public class Predicate<T extends Comparable<T>> {
 
                 List<String> strings = Optional.ofNullable(inListValues).orElse(Collections.emptySortedSet()).stream()
                         .map(SupportedDataType::stringify)
+                        .filter(Optional::isPresent)
+                        .map(Optional::get)
                         .collect(Collectors.toList());
                 return String.format("`%s` IN (%s)", column.getColumnName(), Joiner.on(", ").join(strings));
             }
@@ -941,7 +944,8 @@ public class Predicate<T extends Comparable<T>> {
     }
 
     private Optional<String> valueToString(SupportedDataType<?> value) {
-        return Optional.ofNullable(value).map(SupportedDataType::stringify);
+        if ( value == null ) return Optional.empty();
+        return value.stringify();
     }
 
     @Override

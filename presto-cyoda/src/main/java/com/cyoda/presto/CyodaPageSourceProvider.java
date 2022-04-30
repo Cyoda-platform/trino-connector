@@ -17,7 +17,7 @@
 
 package com.cyoda.presto;
 
-import com.cyoda.presto.client.CyodaApiRequestHandler;
+import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateBuilder;
 import com.cyoda.presto.client.logic.PredicateNode;
@@ -66,7 +66,7 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
         TupleDomain<ColumnHandle> constraint = ((CyodaSplit) split).getConstraint();
         PredicateNode<Any> predicates = PredicateBuilder.setupConstraintPredicates(constraint);
         String requestHandlerKey = ((CyodaSplit) split).getTableHandle().getRequestHandlerKey();
-        CyodaApiRequestHandler<?> requestHandler = Optional.ofNullable(client.getRequestHandlerProvider().getHandler(requestHandlerKey))
+        ApiRequestHandler<?,?> requestHandler = Optional.ofNullable(client.getRequestHandlerProvider().getHandler(requestHandlerKey))
                 .orElseThrow(() -> new IllegalArgumentException("Handler " + requestHandlerKey + " not found"));
         CyodaTableHandle tableHandle = ((CyodaSplit) split).getTableHandle();
         Preconditions.checkArgument(connectorId.equals(tableHandle.getConnectorId()),"tableHandle not for this connectorId");

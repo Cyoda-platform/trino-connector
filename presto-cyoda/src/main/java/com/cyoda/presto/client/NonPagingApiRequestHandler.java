@@ -17,34 +17,19 @@
 
 package com.cyoda.presto.client;
 
-import com.cyoda.presto.CyodaTable;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateNode;
-import com.cyoda.presto.client.types.SupportedDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
-import com.facebook.presto.spi.SchemaTableName;
-import org.springframework.hateoas.PagedModel;
+import org.springframework.hateoas.EntityModel;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 
-public interface CyodaApiRequestHandler<T> {
-    String getHandlerKey();
+public interface NonPagingApiRequestHandler<T> extends ApiRequestHandler<EntityModel<T>,T> {
 
-    boolean hasTable(SchemaTableName tableName);
-
-    List<CyodaTable> getTables();
-
-
-    Optional<PagedModel<T>> retrievePage(
-            int pageNum,
+    Optional<EntityModel<T>> retrievePage(
+            int page,
             int pageSize,
             List<CyodaColumnHandle> projectedColumns, PredicateNode<Any> predicates);
 
-    @SuppressWarnings("java:S1452")
-    SupportedDataType<?> getValue(T entity, CyodaColumnHandle field);
-
-    Iterator<T> getResponseIterator(int pageSize, CyodaTableHandle tableHandle, PredicateNode<Any> predicates);
 }

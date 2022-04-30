@@ -65,6 +65,7 @@ public class PredicateTraversal {
                 .filter(it -> it.getPredicateNodeType() == PredicateNodeType.LEAF)
                 .map(it -> (LeafPredicateNode<?>) it)
                 .map(LeafPredicateNode::forceGet)
+                .filter(it-> it.getColumn().getColumnName().equals(columnName))
                 .collect(Collectors.toList());
 
         // two leaves in a conjunction on a string will always filter everything.
@@ -98,6 +99,7 @@ public class PredicateTraversal {
                 }
             });
         }
+        filterValues.addAll(leafFilterValues);
         ImmutableSet<String> result = filterValues.build();
         LOG.debug(Joiner.on(",").join(result));
         return Optional.of(result);

@@ -15,12 +15,21 @@
  *
  */
 
-package com.cyoda.presto.client.reporting;
+package com.cyoda.presto.client;
 
-public enum CyodaStaticReportTable {
-    REPORTS,
-    REPORT_DETAILS,
-    REPORT_HISTORIES,
-    REPORT_GROUPS,
-    REPORT_ROWS
+import com.cyoda.presto.client.logic.Any;
+import com.cyoda.presto.client.logic.PredicateNode;
+import com.cyoda.presto.handles.CyodaColumnHandle;
+import org.springframework.hateoas.PagedModel;
+
+import java.util.List;
+import java.util.Optional;
+
+public interface PagingApiRequestHandler<T> extends ApiRequestHandler<PagedModel<T>,T> {
+
+    Optional<PagedModel<T>> retrievePage(
+            int page,
+            int pageSize,
+            List<CyodaColumnHandle> projectedColumns, PredicateNode<Any> predicates);
+
 }

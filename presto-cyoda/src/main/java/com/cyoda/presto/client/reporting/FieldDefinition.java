@@ -17,10 +17,13 @@
 
 package com.cyoda.presto.client.reporting;
 
-public enum CyodaStaticReportTable {
-    REPORTS,
-    REPORT_DETAILS,
-    REPORT_HISTORIES,
-    REPORT_GROUPS,
-    REPORT_ROWS
+import com.cyoda.presto.client.types.DataType;
+import com.facebook.presto.common.type.Type;
+
+public interface FieldDefinition {
+    int getPos();
+    String getFieldName();
+    String getFieldTypeString();
+    DataType getDataType();
+    Type getParType();
 }

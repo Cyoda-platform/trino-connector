@@ -23,6 +23,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class GridConfigFieldsView {
+    public static final String ID_COLUMN_NAME = "id";
+    public static final String NAME_COLUMN_NAME = "reportName";
+    public static final String DESCRIPTION_COLUMN_NAME = "description";
+    public static final String TYPE_COLUMN_NAME = "type";
+    public static final String USER_ID_COLUMN_NAME = "userId";
+    public static final String CREATION_DATE_COLUMN_NAME = "creationDate";
+
     private final Map<String, String> gridConfigFields = new HashMap<>();
 
     public void addField(String fieldName, String fieldValue) {

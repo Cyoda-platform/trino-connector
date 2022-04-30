@@ -28,8 +28,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Year;
 import java.time.YearMonth;
+import java.util.Optional;
 
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertTrue;
 
 public class SupportedDataTypeTest {
 
@@ -38,7 +40,9 @@ public class SupportedDataTypeTest {
         final int isoYear = 2020;
         Year year = Year.of(isoYear);
         SupportedDataType<Year> sdt = SupportedDataType.of(year,Year.class);
-        String str = sdt.stringify();
+        Optional<String> stringify = sdt.stringify();
+        assertTrue(stringify.isPresent());
+        String str = stringify.get();
         assertEquals(str, "2020");
     }
 
@@ -46,7 +50,9 @@ public class SupportedDataTypeTest {
     public void testStringifyYearMonth() {
         YearMonth yearMonth = YearMonth.of(2020,11);
         SupportedDataType<YearMonth> sdt = SupportedDataType.of(yearMonth,YearMonth.class);
-        String str = sdt.stringify();
+        Optional<String> stringify = sdt.stringify();
+        assertTrue(stringify.isPresent());
+        String str = stringify.get();
         assertEquals(str, "2020-11");
     }
 
@@ -55,7 +61,9 @@ public class SupportedDataTypeTest {
     public void testStringifyLocalDate() {
         LocalDate ld = LocalDate.of(2020,11,1);
         SupportedDataType<LocalDate> sdt = SupportedDataType.of(ld,LocalDate.class);
-        String str = sdt.stringify();
+        Optional<String> stringify = sdt.stringify();
+        assertTrue(stringify.isPresent());
+        String str = stringify.get();
         assertEquals(str, "2020-11-01");
     }
 
@@ -63,7 +71,9 @@ public class SupportedDataTypeTest {
     public void testStringifyLocalDateTime() {
         LocalDateTime ldt = LocalDateTime.of(2020,11,1,8,12,34,22023);
         SupportedDataType<LocalDateTime> sdt = SupportedDataType.of(ldt,LocalDateTime.class);
-        String str = sdt.stringify();
+        Optional<String> stringify = sdt.stringify();
+        assertTrue(stringify.isPresent());
+        String str = stringify.get();
         assertEquals(str, "2020-11-01T08:12:34.000022023");
     }
 
@@ -71,15 +81,19 @@ public class SupportedDataTypeTest {
     public void testStringifyLocalTime() {
         LocalTime lt = LocalTime.of(14,15,16);
         SupportedDataType<LocalTime> sdt = SupportedDataType.of(lt,LocalTime.class);
-        String str = sdt.stringify();
+        Optional<String> stringify = sdt.stringify();
+        assertTrue(stringify.isPresent());
+        String str = stringify.get();
         assertEquals(str, "14:15:16");
     }
 
     @Test
     public void testStringifyObject() {
         CyodaColumnHandle cch = new CyodaColumnHandle("connector 1", "happy column", TinyintType.TINYINT, DataType.SHORT, 2, "myKey");
-        SupportedDataType<Object> sdt = SupportedDataType.ofObject(cch);
-        String str = sdt.stringify();
+        SupportedDataType<?> sdt = SupportedDataType.ofObject(cch);
+        Optional<String> stringify = sdt.stringify();
+        assertTrue(stringify.isPresent());
+        String str = stringify.get();
         String expected ="{\n" +
                 "  \"connectorId\" : \"connector 1\",\n" +
                 "  \"columnName\" : \"happy column\",\n" +

@@ -24,6 +24,7 @@ import com.facebook.presto.common.type.DecimalType;
 import com.facebook.presto.common.type.Decimals;
 import com.facebook.presto.common.type.DoubleType;
 import com.facebook.presto.common.type.IntegerType;
+import com.facebook.presto.common.type.JsonType;
 import com.facebook.presto.common.type.RealType;
 import com.facebook.presto.common.type.SmallintType;
 import com.facebook.presto.common.type.TimestampType;
@@ -33,9 +34,12 @@ import com.facebook.presto.common.type.VarbinaryType;
 import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
+import com.facebook.presto.type.UuidType;
 import com.google.common.base.Preconditions;
 import io.airlift.slice.Slice;
+import io.airlift.slice.Slices;
 
+import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -52,19 +56,21 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_INCORRECT_TYPE_ERROR;
 import static com.cyoda.presto.client.types.DataType.*;
-import static io.airlift.slice.Slices.*;
+import static io.airlift.slice.Slices.EMPTY_SLICE;
+import static io.airlift.slice.Slices.wrappedBuffer;
 import static java.lang.Float.intBitsToFloat;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
-    public final T value;
+    @Nullable public final T value;
     public final Class<T> javaType;
     public final DataType dataType;
 
@@ -84,6 +90,25 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
         return new SupportedDataType<>(value, javaType);
     }
 
+    @SuppressWarnings({"java:S1452", "java:S3740", "rawtypes"})
+    public static SupportedDataType<?> ofAny(Object value, Class<?> javaType) {
+        return new SupportedDataType(value, javaType);
+    }
+
+    @SuppressWarnings({"java:S1452", "java:S3740", "rawtypes"})
+    public static SupportedDataType<?> byType(Object value, Type type) {
+        DataType dataType = fromType(type);
+        return new SupportedDataType(value, dataType.getJavaType());
+    }
+
+    private static DataType fromType(Type type) {
+        if ( type.getTypeSignature().getBase().equals(VarcharType.VARCHAR.getTypeSignature().getBase())) {
+            return STRING;
+        }
+        throw new UnsupportedOperationException("Mapping of "+type+" to DataType not yet implemented");
+    }
+
+
     public static <S> SupportedDataType<S> ofPrestoNativeValue(Type type, Object nativeValue, Class<S> targetClass) {
         Object obj = getJavaValue(type, nativeValue);
         Preconditions.checkArgument(targetClass.isAssignableFrom(obj.getClass()));
@@ -94,6 +119,7 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
     public static SupportedDataType<Object> ofObject(Object value) {
         return new SupportedDataType<>(value, Object.class);
     }
+
 
     // Taken from Kudu TypeHelper
     public static Object getJavaValue(Type type, Object nativeValue) {
@@ -148,7 +174,10 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
         return Objects.hash(value, javaType, dataType);
     }
 
-    public String stringify() {
+    public Optional<String> stringify() {
+        if ( this.value == null ) return Optional.empty();
+
+        String result;
         switch (this.dataType) {
             case STRING:
             case BYTE:
@@ -156,7 +185,8 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
             case SHORT:
             case CHARACTER:
             case LONG:
-                return value.toString();
+                result = value.toString();
+                break;
             case DOUBLE:
             case BIG_DECIMAL:
             case BIG_INTEGER:
@@ -176,26 +206,33 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
             case LIST:
             case MAP:
             case SET: // Let Jackson do the work, so that we have consistent formatting
-                final String result = JsonCodec.jsonCodec(this.javaType).toJson(this.value);
-                return result.substring(1,result.length()-1);
+                final String json = JsonCodec.jsonCodec(this.javaType).toJson(this.value);
+                result =  json.substring(1,json.length()-1);
+                break;
             case OBJECT: // Let Jackson do the work, so that we have consistent formatting
-                return JsonCodec.jsonCodec(this.javaType).toJson(this.value);
+                result = JsonCodec.jsonCodec(this.javaType).toJson(this.value);
+                break;
             case BYTE_ARRAY:
-                return Base64.getEncoder().encodeToString((byte[]) this.value);
+                result = Base64.getEncoder().encodeToString((byte[]) this.value);
+                break;
             case BYTE_BUFFER:
                 ByteBuffer bb = (ByteBuffer) this.value;
                 byte[] b = new byte[bb.remaining()];
                 bb.get(b);
-                return Base64.getEncoder().encodeToString(b);
-            case NULL: return "NULL";
+                result = Base64.getEncoder().encodeToString(b);
+                break;
+            case NULL:
+                result = null;
+                break;
             default: throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR, "[Cyoda] "+this.dataType + " not supported for stringifying");
         }
+        return Optional.ofNullable(result);
 
     }
 
-    public ByteBuffer encode() {
-        if ( this.dataType == BYTE_ARRAY) return ByteBuffer.wrap((byte[]) this.value);
-        if ( this.dataType == BYTE_BUFFER) return (ByteBuffer) this.value;
+    public Optional<ByteBuffer> encode() {
+        if ( this.dataType == BYTE_ARRAY) return Optional.ofNullable(this.value).map(it->ByteBuffer.wrap((byte[]) it));
+        if ( this.dataType == BYTE_BUFFER) return Optional.ofNullable((ByteBuffer) this.value);
         throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR, "[Cyoda] "+this.dataType + " not supported for encoding");
     }
 
@@ -229,18 +266,33 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
     public Slice asSlice(Type type) {
         if ( isNull() ) return EMPTY_SLICE;
         if (type instanceof VarbinaryType) {
-            return (value == null) ? EMPTY_SLICE : wrappedBuffer(encode());
+            return wrappedBuffer(encode().orElse(ByteBuffer.wrap(new byte[0])));
         }
         else if (type instanceof DecimalType) {
-            return (value == null) ? EMPTY_SLICE : Decimals.encodeScaledValue(asBigDecimal());
+            return Decimals.encodeScaledValue(asBigDecimal());
         }
         else if (type instanceof VarcharType) {
-            return (value == null) ? EMPTY_SLICE : utf8Slice(stringify());
+            return stringify().map(Slices::utf8Slice).orElse(EMPTY_SLICE);
+        }
+        else if (type instanceof JsonType) {
+            return stringify().map(Slices::utf8Slice).orElse(EMPTY_SLICE);
+        }
+        else if (type.getTypeSignature().getBase().equals(UuidType.UUID.getTypeSignature().getBase())) {
+            return wrappedBuffer(uuidToBytes(asUUID()));
         }
         else {
             throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR, "Creating Slices not supported for type " + type);
         }
 
+    }
+
+    // Only useful for Trino. Presto wants a String!
+    public static byte[] uuidToBytes(UUID uuid)
+    {
+        return ByteBuffer.allocate(16)
+                .putLong(uuid.getMostSignificantBits())
+                .putLong(uuid.getLeastSignificantBits())
+                .array();
     }
 
     public Long asTimestampMillis() {

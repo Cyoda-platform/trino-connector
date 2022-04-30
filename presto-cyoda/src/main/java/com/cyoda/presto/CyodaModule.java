@@ -16,9 +16,11 @@
  */
 package com.cyoda.presto;
 
-import com.cyoda.presto.client.CyodaApiRequestHandler;
+import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
 import com.cyoda.presto.client.reporting.ConfiguredReportsApiHandler;
+import com.cyoda.presto.client.reporting.ReportConfigDetailsApiHandler;
+import com.cyoda.presto.client.reporting.ReportHistoryApiHandler;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -56,14 +58,14 @@ public class CyodaModule implements Module {
         binder.bind(CyodaMetadata.class).in(Scopes.SINGLETON);
         binder.bind(CyodaClient.class).in(Scopes.SINGLETON);
         binder.bind(CyodaSplitManager.class).in(Scopes.SINGLETON);
-        binder.bind(CyodaRecordSetProvider.class).in(Scopes.SINGLETON);
         binder.bind(CyodaPageSourceProvider.class).in(Scopes.SINGLETON);
 
-
         @SuppressWarnings({"squid:S3740", "rawtypes"})
-        Multibinder<CyodaApiRequestHandler> shapeBinder =
-                Multibinder.newSetBinder(binder, CyodaApiRequestHandler.class);
+        Multibinder<ApiRequestHandler> shapeBinder =
+                Multibinder.newSetBinder(binder, ApiRequestHandler.class);
         shapeBinder.addBinding().to(ConfiguredReportsApiHandler.class);
+        shapeBinder.addBinding().to(ReportHistoryApiHandler.class);
+        shapeBinder.addBinding().to(ReportConfigDetailsApiHandler.class);
 
         binder.bind(CyodaApiRequestHandlerProvider.class).in(Scopes.SINGLETON);
 

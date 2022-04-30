@@ -17,15 +17,21 @@
 
 package com.cyoda.presto.client.neededatcyoda;
 
+import java.util.HashMap;
 import java.util.Map;
 
 public class ReportHistoryFieldsView {
 
-    private final Map<String, Object> reportHistoryFields;
+    public static final String CREATE_TIME_COLUMN_NAME = "createTime";
+    public static final String TYPE_COLUMN_NAME = "type";
+    public static final String STATUS_NAME_COLUMN_NAME = "status";
+    public static final String REPORT_ID_COLUMN_NAME = "reportId";
+    public static final String HIERARHY_ENABLE_COLUMN_NAME = "hierarhyEnable";
+    public static final String GROUPING_VERSION_COLUMN_NAME = "groupingVersion";
+    public static final String GROUPING_COLUMNS_COLUMN_NAME = "groupingColumns";
+    public static final String USER_NAME_COLUMN_NAME = "username";
 
-    public ReportHistoryFieldsView(Map<String, Object> reportHistoryFields) {
-        this.reportHistoryFields = reportHistoryFields;
-    }
+    private final Map<String, Object> reportHistoryFields = new HashMap<>();
 
     public Map<String, Object> getReportHistoryFields() {
         return reportHistoryFields;

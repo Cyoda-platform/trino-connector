@@ -219,7 +219,8 @@ public class PredicateBuilder {
         }
     }
 
-    private static Predicate<?> createEqualsPredicate(CyodaColumnHandle columnHandle, Object nativeValue) {
+    @SuppressWarnings("java:S1452")
+    public static Predicate<?> createEqualsPredicate(CyodaColumnHandle columnHandle, Object nativeValue) {
         return createComparisonPredicate(columnHandle, Predicate.ComparisonOp.EQUAL, nativeValue);
     }
 
@@ -234,7 +235,7 @@ public class PredicateBuilder {
 
 
     @SuppressWarnings("unused")
-    private static <T extends Comparable<T>> Predicate<T> createEqualsPredicate(CyodaColumnHandle columnHandle, SupportedDataType<T> nativeValue) {
+    public static <T extends Comparable<T>> Predicate<T> createEqualsPredicate(CyodaColumnHandle columnHandle, SupportedDataType<T> nativeValue) {
         return createComparisonPredicate(columnHandle, Predicate.ComparisonOp.EQUAL, nativeValue);
     }
 
