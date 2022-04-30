@@ -37,8 +37,8 @@ public class LeafPredicateNode<T extends Comparable<T>> implements PredicateNode
         return new LeafPredicateNode<>(Predicate.all(handle));
     }
 
-    public static <T extends Comparable<T>> PredicateNode<T> nothing(Class<T> clazz) {
-        return new LeafPredicateNode<>(Predicate.nothing(clazz));
+    public static <T extends Comparable<T>> PredicateNode<T> nothing() {
+        return new LeafPredicateNode<>(Predicate.<T>nothing());
     }
 
     public static <T extends Comparable<T>> LeafPredicateNode<T> leaf(Predicate<T> predicate) {

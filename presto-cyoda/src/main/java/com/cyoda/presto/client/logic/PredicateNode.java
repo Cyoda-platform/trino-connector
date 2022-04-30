@@ -33,8 +33,8 @@ public interface PredicateNode<T extends Comparable<T>> {
      */
     @SuppressWarnings("java:S1452")
     static Collection<PredicateNode<?>> conjunctions(PredicateNode<Any> predicates) {
-        return Optional.ofNullable(predicates).orElse(LeafPredicateNode.nothing(Any.class)).getMembers()
-                .orElse(Collections.singletonList(LeafPredicateNode.nothing(Any.class)));
+        return Optional.ofNullable(predicates).orElse(LeafPredicateNode.nothing()).getMembers()
+                .orElse(Collections.singletonList(LeafPredicateNode.nothing()));
     }
 
     boolean isLeaf();
