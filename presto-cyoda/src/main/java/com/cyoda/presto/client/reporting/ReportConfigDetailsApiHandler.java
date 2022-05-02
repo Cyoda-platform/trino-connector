@@ -17,12 +17,13 @@
 
 package com.cyoda.presto.client.reporting;
 
+import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.client.PagingApiRequestHandler;
+import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateNode;
-import com.cyoda.presto.client.neededatcyoda.GridConfigFieldsView;
 import com.cyoda.presto.client.neededatcyoda.ReportDefinitionsView;
 import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.types.DataType;
@@ -30,10 +31,10 @@ import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.airlift.json.JsonCodec;
 import com.facebook.presto.common.type.StandardTypes;
-import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
@@ -63,26 +64,33 @@ import static com.cyoda.presto.client.types.DataType.STRING;
 public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<PagedModel<ReportDefinitionsView>,ReportDefinitionsView>
         implements PagingApiRequestHandler<ReportDefinitionsView> {
 
-
     private final ConfiguredReportsApiHandler configuredReportsApiHandler;
 
     enum FieldDef implements FieldDefinition {
-        ID(0, REPORT_ID_COLUMN_NAME, StandardTypes.VARCHAR, STRING, null),
-        REPORT_NAME(1, REPORT_NAME_COLUMN_NAME, StandardTypes.VARCHAR, STRING, null),
-        REPORT_JSON(2, REPORT_JSON_COLUMN_NAME, StandardTypes.JSON, STRING, null);
+        ID(0, REPORT_ID_COLUMN_NAME, StandardTypes.VARCHAR, STRING),
+        REPORT_NAME(1, REPORT_NAME_COLUMN_NAME, StandardTypes.VARCHAR, STRING),
+        REPORT_JSON(2, REPORT_JSON_COLUMN_NAME, StandardTypes.JSON, STRING);
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("pos", pos)
+                    .add("fieldName", fieldName)
+                    .add("fieldTypeString", fieldTypeString)
+                    .add("dataType", dataType)
+                    .toString();
+        }
 
         private final int pos;
         private final String fieldName;
         private final String fieldTypeString;
         private final DataType dataType;
-        private final Type parType;
 
-        FieldDef(int pos, String fieldName, String fieldTypeString, DataType dateType, Type parType) {
+        FieldDef(int pos, String fieldName, String fieldTypeString, DataType dateType) {
             this.pos = pos;
             this.fieldName = fieldName;
             this.fieldTypeString = fieldTypeString;
             this.dataType = dateType;
-            this.parType = parType;
         }
 
         @Override
@@ -104,19 +112,14 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<PagedMo
         public DataType getDataType() {
             return dataType;
         }
-
-        @Override
-        public Type getParType() {
-            return parType;
-        }
     }
 
     @Inject
     public ReportConfigDetailsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
-                                         ConfiguredReportsApiHandler configuredReportsApiHandler) {
+                                         RestTemplateCustomizer restTemplateCustomizer) {
         super(connectorId, config, typeManager,
-                REPORT_DETAILS_ENDPOINT, CyodaStaticReportTable.REPORT_DETAILS.name(), FieldDef.values());
-        this.configuredReportsApiHandler = configuredReportsApiHandler;
+                REPORT_DETAILS_ENDPOINT, CyodaStaticReportTable.REPORT_DETAILS.name(), FieldDef.values(),restTemplateCustomizer);
+        this.configuredReportsApiHandler = new ConfiguredReportsApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
     }
 
 
@@ -141,7 +144,8 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<PagedMo
     private List<ReportDefinitionsView> getReportDefinitionsViews(UriTemplate uriTemplate, @Nonnull Set<String> ids) {
 
         if ( ids.isEmpty() ) return Collections.emptyList();
-        List<ReportDefinitionsView> result = ids.stream().map(reportId -> {
+        ImmutableList.Builder<ReportDefinitionsView> builder = ImmutableList.builder();
+        ids.forEach(reportId -> {
             URI templatedUri = uriTemplate.expand(Collections.singletonMap(REPORT_ID_COLUMN_NAME, reportId));
 
             Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
@@ -158,11 +162,12 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<PagedMo
                 @SuppressWarnings("unchecked")
                 Map<String,Object> repDef = Optional.ofNullable((Map<String,Object>) map.get("content")).orElse(Collections.emptyMap());
                 String json = JsonCodec.mapJsonCodec(String.class, Object.class).toJson(repDef);
-                return new ReportDefinitionsView(id, repName, json);
+                builder.add(new ReportDefinitionsView(id, repName, json));
             } catch (HttpClientErrorException e) {
                 throw requestFailedException(this, "retrieveCollection", e, templatedUri);
             }
-        }).collect(Collectors.toList());
+        });
+        List<ReportDefinitionsView> result = builder.build();
         LOG.debug("Got %s report definitions",result.size());
         return result;
 

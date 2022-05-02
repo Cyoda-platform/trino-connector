@@ -74,4 +74,5 @@ public final class TypesUtil {
     {
         return type.getTypeParameters().get(1);
     }
+
 }

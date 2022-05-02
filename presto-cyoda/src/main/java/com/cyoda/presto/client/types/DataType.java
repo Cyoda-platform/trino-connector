@@ -18,9 +18,11 @@
 package com.cyoda.presto.client.types;
 
 import com.cyoda.presto.client.logic.Any;
+import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -37,55 +39,66 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_INCORRECT_TYPE_ERROR;
 
-// TODO: Add Presto Type and adjust CyodaColumnHandle constructor.
+/**
+ * This might help to figure out what the correct presto type is: com.facebook.presto.client.FixJsonDataUtils
+ */
 public enum DataType {
-    STRING(String.class),
-    BYTE(Byte.class),
-    DOUBLE(Double.class),
-    INTEGER(Integer.class),
-    BIG_DECIMAL(BigDecimal.class),
-    BIG_INTEGER(BigInteger.class),
-    BOOLEAN(Boolean.class),
-    LOCAL_DATE(LocalDate.class),
-    LOCAL_DATE_TIME(LocalDateTime.class),
-    SHORT(Short.class),
-    CHARACTER(Character.class),
-    LONG(Long.class),
-    FLOAT(Float.class),
-    DATE(Date.class),
-    ZONED_DATE_TIME(ZonedDateTime.class),
-    YEAR(Year.class),
-    YEAR_MONTH(YearMonth.class),
-    LOCAL_TIME(LocalTime.class),
-    UUID_TYPE(UUID.class),
-    BYTE_ARRAY(byte[].class),
-    BYTE_BUFFER(ByteBuffer.class),
-    CLASS(Class.class),
-    LOCALE(Locale.class),
-    NULL(null),
-    OBJECT(Object.class),
-    ARRAY(Object[].class),
-    LIST(List.class),
-    MAP(Map.class),
-    SET(Set.class),
-    ANY(Any.class); // Placeholder for anything. To differentiate from Object.
+    STRING(String.class, StandardTypes.VARCHAR),
+    BYTE(Byte.class, StandardTypes.TINYINT),
+    DOUBLE(Double.class, StandardTypes.DOUBLE),
+    INTEGER(Integer.class, StandardTypes.INTEGER),
+    BIG_DECIMAL(BigDecimal.class, StandardTypes.DECIMAL),
+    BIG_INTEGER(BigInteger.class, StandardTypes.BIGINT),
+    BOOLEAN(Boolean.class,StandardTypes.BOOLEAN),
+    LOCAL_DATE(LocalDate.class,StandardTypes.DATE),
+    LOCAL_DATE_TIME(LocalDateTime.class,StandardTypes.TIMESTAMP),
+    SHORT(Short.class,StandardTypes.SMALLINT),
+    CHARACTER(Character.class,StandardTypes.CHAR),
+    LONG(Long.class,StandardTypes.BIGINT),
+    FLOAT(Float.class, StandardTypes.REAL),
+    DATE(Date.class,StandardTypes.TIMESTAMP),
+    ZONED_DATE_TIME(ZonedDateTime.class,StandardTypes.TIMESTAMP_WITH_TIME_ZONE),
+    YEAR(Year.class,StandardTypes.VARCHAR),
+    YEAR_MONTH(YearMonth.class,StandardTypes.VARCHAR),
+    LOCAL_TIME(LocalTime.class,StandardTypes.TIME_WITH_TIME_ZONE),
+    UUID_TYPE(UUID.class,StandardTypes.VARCHAR),
+    BYTE_ARRAY(byte[].class,StandardTypes.VARBINARY), // Unsure
+    BYTE_BUFFER(ByteBuffer.class,StandardTypes.VARBINARY), // Unsure
+    CLASS(Class.class,StandardTypes.VARCHAR),
+    LOCALE(Locale.class,StandardTypes.VARCHAR),
+    NULL(null,null),
+    OBJECT(Object.class,StandardTypes.JSON), //Unsure. We will transform these to Json strings.
+    ARRAY(Object[].class,StandardTypes.ARRAY),
+    LIST(List.class,StandardTypes.ARRAY),
+    MAP(Map.class,StandardTypes.MAP),
+    SET(Set.class,StandardTypes.ARRAY),
+    ANY(Any.class,null); // Placeholder for anything. To differentiate from Object.
 
 
     private final Class<?> javaType;
+    private final String typeString;
 
-    DataType(Class<?> javaType) {
+
+    DataType(Class<?> javaType, String typeString) {
         this.javaType = javaType;
+        this.typeString = typeString;
     }
 
 
     public Class<?> getJavaType() {
         return javaType;
+    }
+
+    public String getTypeString() {
+        return typeString;
     }
 
     public boolean isNumber() {
@@ -127,12 +140,41 @@ public enum DataType {
         }
     }
 
-    public static final Map<Class<?>, DataType> classToDataType = ImmutableMap.copyOf(
+    public static final Map<Class<?>, DataType> objectClassToDataType = ImmutableMap.copyOf(
             Arrays.stream(DataType.values()).filter(it -> it.javaType != null).collect(Collectors.toMap(it -> it.javaType, it -> it))
     );
 
+    public static final Map<Class<?>, DataType> primitiveClassToDataType = ImmutableMap.<Class<?>, DataType>builder()
+            .put(char.class,CHARACTER)
+            .put(boolean.class,BOOLEAN)
+            .put(byte.class,BYTE)
+            .put(short.class,SHORT)
+            .put(int.class,INTEGER)
+            .put(long.class,LONG)
+            .put(float.class,FLOAT)
+            .put(double.class,DOUBLE)
+            .build();
+
+    public static final Map<Class<?>, DataType> classToDataType = ImmutableMap.<Class<?>, DataType>builder()
+            .putAll(objectClassToDataType)
+            .putAll(primitiveClassToDataType)
+            .build();
+
+    public static Optional<DataType> fromClass(Class<?> clazz) {
+       return Optional.ofNullable(classToDataType.get(clazz));
+    }
+
+    public static final Set<String> supportedPrestoTypes = ImmutableSet.copyOf(
+            Arrays.stream(DataType.values())
+                    .map(DataType::getTypeString)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toSet())
+    );
+
     public static final List<DataType> numberTypes = ImmutableList.copyOf(
-            Arrays.stream(DataType.values()).filter(it -> it.javaType != null && Number.class.isAssignableFrom(it.javaType)).collect(Collectors.toList())
+            Arrays.stream(DataType.values())
+                    .filter(it -> it.javaType != null && Number.class.isAssignableFrom(it.javaType))
+                    .collect(Collectors.toList())
     );
 
     private static final List<String> stringValues = Arrays.stream(DataType.values()).map(Enum::toString).collect(Collectors.toList());

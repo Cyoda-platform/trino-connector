@@ -15,7 +15,7 @@
  *
  */
 
-package com.cyoda.presto.client.neededatcyoda;
+package com.cyoda.api.view;
 
 import com.google.common.base.MoreObjects;
 

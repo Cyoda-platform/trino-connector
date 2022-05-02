@@ -17,23 +17,25 @@
 
 package com.cyoda.presto.client.reporting;
 
+import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.client.PagingApiRequestHandler;
+import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateNode;
-import com.cyoda.presto.client.neededatcyoda.GridConfigFieldsView;
 import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.type.StandardTypes;
-import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
+import com.facebook.presto.common.type.TypeSignature;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
 import com.google.common.base.Joiner;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.springframework.hateoas.MediaTypes;
@@ -62,9 +64,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static com.cyoda.api.view.GridConfigFieldsView.ID_COLUMN_NAME;
+import static com.cyoda.api.view.GridConfigFieldsView.NAME_COLUMN_NAME;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
-import static com.cyoda.presto.client.neededatcyoda.GridConfigFieldsView.ID_COLUMN_NAME;
-import static com.cyoda.presto.client.neededatcyoda.GridConfigFieldsView.NAME_COLUMN_NAME;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORTS;
 import static com.cyoda.presto.client.types.DataType.LOCAL_DATE_TIME;
 import static com.cyoda.presto.client.types.DataType.STRING;
@@ -116,10 +118,19 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<PagedMode
         }
 
         @Override
-        public Type getParType() {
+        public TypeSignature getParType() {
             return null;
         }
 
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("pos", pos)
+                    .add("fieldName", fieldName)
+                    .add("fieldTypeString", fieldTypeString)
+                    .add("dataType", dataType)
+                    .toString();
+        }
     }
     public static final List<String> selectedFields = ImmutableList.copyOf(
             Arrays.stream(FieldDef.values()).map(FieldDef::getFieldName).collect(Collectors.toList())
@@ -127,9 +138,10 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<PagedMode
 
 
     @Inject
-    public ConfiguredReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager) {
+    public ConfiguredReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
+                                       RestTemplateCustomizer restTemplateCustomizer) {
         super(connectorId, config, typeManager,
-                REPORT_DEFS_ENDPOINT, REPORTS.name(),FieldDef.values());
+                REPORT_DEFS_ENDPOINT, REPORTS.name(),FieldDef.values(),restTemplateCustomizer);
     }
 
     @Override
@@ -162,7 +174,10 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<PagedMode
 
         Optional<Set<String>> filterByType = traversal.assembleFilterings(GridConfigFieldsView.TYPE_COLUMN_NAME);
 
-        if (filterByType.isPresent() && !filterByType.get().isEmpty()) {
+        // If the optional is empty, it means the predicates are such that everything must be filtered.
+        if (!filterByType.isPresent()) return Optional.empty();
+
+        if (!filterByType.get().isEmpty()) {
             expansionBuilder.put("filterByType", filterByType.get());
         }
 

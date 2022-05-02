@@ -20,6 +20,7 @@ package com.cyoda.presto.client.types;
 import com.facebook.airlift.json.JsonCodec;
 import com.facebook.presto.common.type.BigintType;
 import com.facebook.presto.common.type.BooleanType;
+import com.facebook.presto.common.type.DateType;
 import com.facebook.presto.common.type.DecimalType;
 import com.facebook.presto.common.type.Decimals;
 import com.facebook.presto.common.type.DoubleType;
@@ -30,6 +31,7 @@ import com.facebook.presto.common.type.SmallintType;
 import com.facebook.presto.common.type.TimestampType;
 import com.facebook.presto.common.type.TinyintType;
 import com.facebook.presto.common.type.Type;
+import com.facebook.presto.common.type.TypeSignature;
 import com.facebook.presto.common.type.VarbinaryType;
 import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.PrestoException;
@@ -104,6 +106,9 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
     private static DataType fromType(Type type) {
         if ( type.getTypeSignature().getBase().equals(VarcharType.VARCHAR.getTypeSignature().getBase())) {
             return STRING;
+        }
+        if ( type.getTypeSignature().getBase().equals(IntegerType.INTEGER.getTypeSignature().getBase())) {
+            return INTEGER;
         }
         throw new UnsupportedOperationException("Mapping of "+type+" to DataType not yet implemented");
     }
@@ -235,6 +240,26 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
         if ( this.dataType == BYTE_BUFFER) return Optional.ofNullable((ByteBuffer) this.value);
         throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR, "[Cyoda] "+this.dataType + " not supported for encoding");
     }
+
+
+    public static TypeSignature toPrestoTypeSignature(DataType dataType) {
+        switch (dataType) {
+            case BOOLEAN: return BooleanType.BOOLEAN.getTypeSignature();
+            case BYTE: return TinyintType.TINYINT.getTypeSignature();
+            case SHORT: return SmallintType.SMALLINT.getTypeSignature();
+            case INTEGER: return IntegerType.INTEGER.getTypeSignature();
+            case LONG: return BigintType.BIGINT.getTypeSignature();
+            case FLOAT: return RealType.REAL.getTypeSignature();
+            case DOUBLE: return DoubleType.DOUBLE.getTypeSignature();
+            case STRING: return VarcharType.VARCHAR.getTypeSignature();
+            case DATE: return DateType.DATE.getTypeSignature();
+            case LOCAL_DATE_TIME: return TimestampType.TIMESTAMP.getTypeSignature();
+            case LOCAL_DATE: return BigintType.BIGINT.getTypeSignature();
+            case YEAR: return VarcharType.VARCHAR.getTypeSignature();
+            default: throw new UnsupportedOperationException("Not yet done");
+        }
+    }
+
 
     public Long parseToLong() {
         switch (dataType) {

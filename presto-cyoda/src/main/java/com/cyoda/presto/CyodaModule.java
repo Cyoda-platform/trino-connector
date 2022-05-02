@@ -18,9 +18,11 @@ package com.cyoda.presto;
 
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
+import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.ReportConfigDetailsApiHandler;
 import com.cyoda.presto.client.reporting.ReportHistoryApiHandler;
+import com.cyoda.presto.client.reporting.ReportStatisticsApiHandler;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -66,14 +68,16 @@ public class CyodaModule implements Module {
         shapeBinder.addBinding().to(ConfiguredReportsApiHandler.class);
         shapeBinder.addBinding().to(ReportHistoryApiHandler.class);
         shapeBinder.addBinding().to(ReportConfigDetailsApiHandler.class);
+        shapeBinder.addBinding().to(ReportStatisticsApiHandler.class);
 
         binder.bind(CyodaApiRequestHandlerProvider.class).in(Scopes.SINGLETON);
 
-
-        binder.bind(ConfiguredReportsApiHandler.class).in(Scopes.SINGLETON);
         configBinder(binder).bindConfig(CyodaConfig.class);
 
         jsonBinder(binder).addDeserializerBinding(Type.class).to(TypeDeserializer.class);
+
+        binder.bind(RestTemplateCustomizer.class).in(Scopes.SINGLETON);
+
         jsonCodecBinder(binder).bindMapJsonCodec(String.class, listJsonCodec(CyodaTable.class));
     }
 

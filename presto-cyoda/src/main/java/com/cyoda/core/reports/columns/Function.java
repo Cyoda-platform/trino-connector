@@ -15,13 +15,16 @@
  *
  */
 
-package com.cyoda.presto.client.reporting;
+package com.cyoda.core.reports.columns;
 
-public enum CyodaStaticReportTable {
-    REPORTS,
-    REPORT_DETAILS,
-    REPORT_STATS,
-    REPORT_HISTORIES,
-    REPORT_GROUPS,
-    REPORT_ROWS
+public enum Function {
+    MAX, MIN, SUM, AVG, COUNT, COUNT_UNIQUE;
+
+    public static Function getByName(String func) {
+        try {
+            return valueOf(func.toUpperCase());
+        } catch (Exception e) {
+            return null;
+        }
+    }
 }

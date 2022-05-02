@@ -226,13 +226,15 @@ public class CyodaFilteringPageSource<S,T>
                 // WARNING: This is not going to work. ofObject() is not going to give us much here.
                 // This is just an idea...
                 MapType mapType = (MapType) type;
+                Type keyType = mapType.getKeyType();
+                Type valueType = mapType.getValueType();
                 BlockBuilder mapBlockBuilder = blockBuilder.beginBlockEntry();
                 for (Map.Entry<?, ?> entry : Optional.ofNullable((Map<?, ?>) supported.value).orElse(Collections.emptyMap()).entrySet()) {
-                    writeObject(mapType.getKeyType(),mapBlockBuilder, SupportedDataType.ofObject(entry.getKey()));
-                    writeObject(mapType.getValueType(),mapBlockBuilder, SupportedDataType.ofObject(entry.getValue()));
+                    writeObject(keyType,mapBlockBuilder, SupportedDataType.byType(entry.getKey(),keyType));
+                    writeObject(valueType,mapBlockBuilder, SupportedDataType.byType(entry.getValue(),valueType));
                 }
                 blockBuilder.closeEntry();
-                throw new UnsupportedOperationException("Maps not yet supported");
+                break;
             }
             case BIG_DECIMAL:
             case CLASS:

@@ -17,24 +17,26 @@
 
 package com.cyoda.presto.client.reporting;
 
+import com.cyoda.api.view.GridConfigFieldsView;
+import com.cyoda.core.model.reports.ReportHistoryFieldsView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.client.PagingApiRequestHandler;
+import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateNode;
-import com.cyoda.presto.client.neededatcyoda.GridConfigFieldsView;
-import com.cyoda.presto.client.neededatcyoda.ReportHistoryFieldsView;
 import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.type.StandardTypes;
-import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
+import com.facebook.presto.common.type.TypeSignature;
 import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.springframework.hateoas.MediaTypes;
@@ -65,8 +67,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.cyoda.core.model.reports.ReportHistoryFieldsView.*;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
-import static com.cyoda.presto.client.neededatcyoda.ReportHistoryFieldsView.*;
 import static com.cyoda.presto.client.types.DataType.*;
 
 public class ReportHistoryApiHandler extends BaseReportsApiHandler<PagedModel<ReportHistoryFieldsView>,ReportHistoryFieldsView>
@@ -83,17 +85,28 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<PagedModel<Re
         HIERARCHY_ENABLE(4, HIERARHY_ENABLE_COLUMN_NAME, StandardTypes.BOOLEAN, BOOLEAN, null),
         // For Trino this can be a UUID, but Presto wants VARCHAR.
         GROUPING_VERSION(5, GROUPING_VERSION_COLUMN_NAME, StandardTypes.VARCHAR, UUID_TYPE, null),
-        GROUPING_COLUMNS(6, GROUPING_COLUMNS_COLUMN_NAME, StandardTypes.ARRAY, LIST, VarcharType.VARCHAR),
+        GROUPING_COLUMNS(6, GROUPING_COLUMNS_COLUMN_NAME, StandardTypes.ARRAY, LIST, VarcharType.VARCHAR.getTypeSignature()),
         USER_NAME(6,USER_NAME_COLUMN_NAME, StandardTypes.VARCHAR,STRING,null);
 
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("pos", pos)
+                    .add("fieldName", fieldName)
+                    .add("fieldTypeString", fieldTypeString)
+                    .add("dataType", dataType)
+                    .add("parType", parType)
+                    .toString();
+        }
 
         private final int pos;
         private final String fieldName;
         private final String fieldTypeString;
         private final DataType dataType;
-        private final Type parType;
+        private final TypeSignature parType;
 
-        FieldDef(int pos, String fieldName, String fieldTypeString, DataType dateType, Type parType) {
+        FieldDef(int pos, String fieldName, String fieldTypeString, DataType dateType, TypeSignature parType) {
             this.pos = pos;
             this.fieldName = fieldName;
             this.fieldTypeString = fieldTypeString;
@@ -122,7 +135,7 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<PagedModel<Re
         }
 
         @Override
-        public Type getParType() {
+        public TypeSignature getParType() {
             return parType;
         }
     }
@@ -132,9 +145,10 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<PagedModel<Re
     );
 
     @Inject
-    public ReportHistoryApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager) {
+    public ReportHistoryApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
+                                   RestTemplateCustomizer restTemplateCustomizer) {
         super(connectorId, config, typeManager, REPORT_HISTORY_ENDPOINT, CyodaStaticReportTable.REPORT_HISTORIES.name(),
-                FieldDef.values());
+                FieldDef.values(),restTemplateCustomizer);
     }
 
 
@@ -169,7 +183,10 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<PagedModel<Re
         Optional<Set<String>> filterByType = traversal.assembleFilterings(GridConfigFieldsView.TYPE_COLUMN_NAME);
         LOG.debug("selecting by types:",()->filterByType.map(it-> String.join(",", it)));
 
-        if (filterByType.isPresent() && !filterByType.get().isEmpty()) {
+        // If the optional is empty, it means the predicates are such that everything must be filtered.
+        if (!filterByType.isPresent()) return Optional.empty();
+
+        if (!filterByType.get().isEmpty()) {
             expansionBuilder.put("filterByType", filterByType.get());
         }
 

@@ -15,13 +15,24 @@
  *
  */
 
-package com.cyoda.presto.client.reporting;
+package com.cyoda.core.reports.columns;
 
-public enum CyodaStaticReportTable {
-    REPORTS,
-    REPORT_DETAILS,
-    REPORT_STATS,
-    REPORT_HISTORIES,
-    REPORT_GROUPS,
-    REPORT_ROWS
+import org.joda.beans.ImmutableBean;
+
+public interface ReportColumn extends ImmutableBean {
+
+    enum Type {
+        SIMPLE_COLUMN, ALIAS/*, VALUATION*/
+    }
+
+    Type getType();
+
+    /**
+     * returns name of column.
+     *  if its SIMPLE_COLUMN then it will be string representation of CyodaColumnPath(s)
+     *  if its ALIASE, then its just alias name
+     * @return name of column
+     */
+    String getName();
+
 }

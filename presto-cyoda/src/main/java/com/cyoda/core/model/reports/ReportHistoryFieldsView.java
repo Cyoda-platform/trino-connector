@@ -15,7 +15,7 @@
  *
  */
 
-package com.cyoda.presto.client.neededatcyoda;
+package com.cyoda.core.model.reports;
 
 import java.util.HashMap;
 import java.util.Map;

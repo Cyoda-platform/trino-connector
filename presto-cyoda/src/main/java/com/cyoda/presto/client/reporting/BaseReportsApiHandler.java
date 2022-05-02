@@ -22,6 +22,7 @@ import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.CyodaTable;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
+import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.client.types.SupportedDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -32,7 +33,6 @@ import com.facebook.presto.common.type.TypeSignature;
 import com.facebook.presto.common.type.TypeSignatureParameter;
 import com.facebook.presto.spi.SchemaTableName;
 import com.google.common.collect.ImmutableList;
-import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.RepresentationModel;
 import org.springframework.web.client.RestTemplate;
 
@@ -55,6 +55,7 @@ abstract class BaseReportsApiHandler<S extends RepresentationModel<?>,T> impleme
     public static final String REPORT_DEFS_ENDPOINT = "/api/platform-api/reporting/definitions";
     public static final String REPORT_HISTORY_ENDPOINT = "/api/platform-api/reporting/history";
     public static final String REPORT_DETAILS_ENDPOINT = REPORT_DEFS_ENDPOINT + "/";
+    public static final String REPORT_ENDPOINT = "/api/platform-api/reporting/report";
 
     public static final int DEFAULT_PAGE_SIZE = 10;
 
@@ -67,14 +68,14 @@ abstract class BaseReportsApiHandler<S extends RepresentationModel<?>,T> impleme
     protected final TypeManager typeManager;
 
     protected BaseReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager, String endpoint, String tableName,
-                                    FieldDefinition[] fieldDefs) {
+                                    FieldDefinition[] fieldDefs, RestTemplateCustomizer restTemplateCustomizer) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.config = requireNonNull(config, "config is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.fieldDefs = requireNonNull(fieldDefs,"fieldDefs are null");
 
         // TODO: This means that the authentication parameters are fixed at startup. Need to make this more flexible, without restarting presto.
-        this.restTemplate = RestTemplateCustomizer.newRestTemplate(config, MediaTypes.HAL_JSON);
+        restTemplate = restTemplateCustomizer.getRestTemplate();
 
         this.tableMap = setupTables(endpoint, tableName);
         this.cyodaTables = ImmutableList.copyOf(tableMap.values());
@@ -108,19 +109,24 @@ abstract class BaseReportsApiHandler<S extends RepresentationModel<?>,T> impleme
         return Collections.singletonMap(key, table);
     }
 
-    private static final List<String> supportedTypes = ImmutableList.of(
-            StandardTypes.VARCHAR,StandardTypes.TIMESTAMP,StandardTypes.BOOLEAN,StandardTypes.UUID,StandardTypes.JSON
-    );
+
     private Type toType(FieldDefinition fieldDef) {
         String fieldTypeString = fieldDef.getFieldTypeString();
         if (fieldTypeString.equals(StandardTypes.ARRAY)) {
             return typeManager.getParameterizedType(StandardTypes.ARRAY,
-                    ImmutableList.of(TypeSignatureParameter.of(fieldDef.getParType().getTypeSignature())));
+                    ImmutableList.of(TypeSignatureParameter.of(fieldDef.getParType())));
         }
-        if (supportedTypes.contains(fieldTypeString)) {
+        if (fieldTypeString.equals(StandardTypes.MAP)) {
+            return typeManager.getParameterizedType(StandardTypes.MAP,
+                    ImmutableList.of(
+                            TypeSignatureParameter.of(fieldDef.getParType()),
+                            TypeSignatureParameter.of(fieldDef.getMapValuetype()))
+            );
+        }
+        if (DataType.supportedPrestoTypes.contains(fieldTypeString)) {
             return typeManager.getType(new TypeSignature(fieldTypeString));
         } else {
-            throw new UnsupportedOperationException(fieldDef + "Not yet mapped");
+            throw new UnsupportedOperationException(fieldDef + " Not yet mapped");
         }
     }
 

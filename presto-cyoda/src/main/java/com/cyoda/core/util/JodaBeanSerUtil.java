@@ -15,13 +15,22 @@
  *
  */
 
-package com.cyoda.presto.client.reporting;
+package com.cyoda.core.util;
+import org.joda.beans.ser.JodaBeanSer;
 
-public enum CyodaStaticReportTable {
-    REPORTS,
-    REPORT_DETAILS,
-    REPORT_STATS,
-    REPORT_HISTORIES,
-    REPORT_GROUPS,
-    REPORT_ROWS
+public class JodaBeanSerUtil {
+
+    private static final JodaBeanSer COMPACT = JodaBeanSer.COMPACT.withIncludeDerived(true).withShortTypes(false);
+    private static final JodaBeanSer PRETTY = JodaBeanSer.PRETTY.withIncludeDerived(true).withShortTypes(false);
+
+    private JodaBeanSerUtil() {
+    }
+
+    public static JodaBeanSer compact() {
+        return COMPACT;
+    }
+
+    public static JodaBeanSer pretty() {
+        return PRETTY;
+    }
 }

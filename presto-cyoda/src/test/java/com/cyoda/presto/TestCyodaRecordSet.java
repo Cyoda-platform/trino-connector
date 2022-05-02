@@ -16,30 +16,33 @@
  */
 package com.cyoda.presto;
 
+import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.presto.client.ApiRequestHandler;
-import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
+import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateBuilder;
 import com.cyoda.presto.client.logic.PredicateNode;
-import com.cyoda.presto.client.neededatcyoda.GridConfigFieldsView;
 import com.cyoda.presto.client.reporting.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
-import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.presto.common.Page;
 import com.facebook.presto.common.predicate.TupleDomain;
+import com.facebook.presto.common.type.TimestampType;
 import com.facebook.presto.common.type.TypeManager;
-import com.facebook.presto.metadata.FunctionAndTypeManager;
+import com.facebook.presto.common.type.TypeSignature;
+import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.ColumnHandle;
-import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.RecordSet;
-import com.google.common.collect.ImmutableList;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
-import io.airlift.slice.Slice;
+import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
+import org.springframework.hateoas.client.Traverson;
+import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
@@ -57,9 +60,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.cyoda.presto.client.reporting.ConfiguredReportsApiHandler.DEFAULT_PAGE_SIZE;
-import static com.facebook.presto.common.type.BigintType.BIGINT;
-import static com.facebook.presto.common.type.VarcharType.createUnboundedVarcharType;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 import static org.testng.Assert.*;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -70,10 +72,10 @@ public class TestCyodaRecordSet {
 
     @Test
     public void testPage1ConfiguredReports() throws IOException, URISyntaxException {
-        CyodaConfig mockCyodaConfig = createCyodaConfig();
+        CyodaConfig testCyodaConfig = createCyodaConfig();
 
-        CyodaApiRequestHandlerProvider handlerProvider = setupHandlerProvider(mockCyodaConfig);
-        CyodaClient client = new CyodaClient(connectorId, mockCyodaConfig, handlerProvider);
+        CyodaApiRequestHandlerProvider handlerProvider = setupHandlerProvider(testCyodaConfig);
+        CyodaClient client = new CyodaClient(connectorId, testCyodaConfig, handlerProvider);
 
         ApiRequestHandler<?,?> apiHandler = handlerProvider.getHandler(requestHandlerKey);
         List<CyodaTable> tables = apiHandler.getTables();
@@ -105,10 +107,20 @@ public class TestCyodaRecordSet {
     }
 
     private CyodaApiRequestHandlerProvider setupHandlerProvider(CyodaConfig mockCyodaConfig) throws URISyntaxException {
-        TypeManager mockTypeManager = new MockTypeManager();
+        TypeManager mockTypeManager = mock(TypeManager.class);
+        TypeSignature varcharTypeSig = new TypeSignature(VarcharType.VARCHAR.getTypeSignature().getBase());
+        TypeSignature localDateTimeSig = new TypeSignature(TimestampType.TIMESTAMP.getTypeSignature().getBase());
+        when(mockTypeManager.getType(varcharTypeSig)).thenReturn(VarcharType.VARCHAR);
+        when(mockTypeManager.getType(localDateTimeSig)).thenReturn(TimestampType.TIMESTAMP);
+
+        HttpMessageConverter<?> converter = Traverson.getDefaultMessageConverters(MediaTypes.HAL_JSON).stream()
+                .filter(it -> MappingJackson2HttpMessageConverter.class.isAssignableFrom(it.getClass()))
+                .findAny().orElseThrow(() -> new RuntimeException("not found"));
+
+        RestTemplateCustomizer restTemplateCustomizer = new RestTemplateCustomizer(mockCyodaConfig);
         @SuppressWarnings("rawtypes")
         Set<ApiRequestHandler> handlers = Collections.singleton(
-                new ConfiguredReportsApiHandler(connectorId, mockCyodaConfig, mockTypeManager)
+                new ConfiguredReportsApiHandler(connectorId, mockCyodaConfig, mockTypeManager, restTemplateCustomizer)
         );
 
         CyodaApiRequestHandlerProvider handlerProvider = new CyodaApiRequestHandlerProvider(handlers);
@@ -143,10 +155,10 @@ public class TestCyodaRecordSet {
     @SuppressWarnings("unchecked")
     @Test
     public void testPagedIteratorWithConfiguredReports() throws IOException, URISyntaxException {
-        CyodaConfig mockCyodaConfig = createCyodaConfig();
+        CyodaConfig testCyodaConfig = createCyodaConfig();
 
-        CyodaApiRequestHandlerProvider handlerProvider = setupHandlerProvider(mockCyodaConfig);
-        CyodaClient client = new CyodaClient(connectorId, mockCyodaConfig, handlerProvider);
+        CyodaApiRequestHandlerProvider handlerProvider = setupHandlerProvider(testCyodaConfig);
+        CyodaClient client = new CyodaClient(connectorId, testCyodaConfig, handlerProvider);
 
         ApiRequestHandler<PagedModel<GridConfigFieldsView>,GridConfigFieldsView> apiHandler =
                 (ApiRequestHandler<PagedModel<GridConfigFieldsView>,GridConfigFieldsView>) handlerProvider.getHandler(requestHandlerKey);
@@ -186,10 +198,10 @@ public class TestCyodaRecordSet {
 
     @Test
     public void testThatColumnTypesAreCorrect() throws MalformedURLException, URISyntaxException {
-        CyodaConfig mockCyodaConfig = createCyodaConfig();
+        CyodaConfig testCyodaConfig = createCyodaConfig();
 
-        CyodaApiRequestHandlerProvider handlerProvider = setupHandlerProvider(mockCyodaConfig);
-        CyodaClient client = new CyodaClient(connectorId, mockCyodaConfig, handlerProvider);
+        CyodaApiRequestHandlerProvider handlerProvider = setupHandlerProvider(testCyodaConfig);
+        CyodaClient client = new CyodaClient(connectorId, testCyodaConfig, handlerProvider);
 
         URI dataUri = ourHttpServer.getBaseUri().resolve(ConfiguredReportsApiHandler.REPORT_DEFS_ENDPOINT);
 
