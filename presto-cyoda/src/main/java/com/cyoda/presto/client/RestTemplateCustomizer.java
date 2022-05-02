@@ -25,11 +25,13 @@ import okhttp3.ConnectionPool;
 import okhttp3.Credentials;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
+import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.client.Traverson;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
+import javax.inject.Inject;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.util.Optional;
@@ -44,12 +46,23 @@ import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("UnstableApiUsage")
 public class RestTemplateCustomizer {
-    private RestTemplateCustomizer() {
+
+    private final CyodaConfig config;
+    private final RestTemplate restTemplate;
+
+    @Inject
+    public RestTemplateCustomizer(CyodaConfig config) {
+        this.config = config;
+        this.restTemplate = newRestTemplate(MediaTypes.HAL_JSON);
     }
 
-    public static RestTemplate newRestTemplate(CyodaConfig config, MediaType... mediaTypes) {
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.setMessageConverters(Traverson.getDefaultMessageConverters(mediaTypes));
+    public RestTemplate getRestTemplate() {
+        return restTemplate;
+    }
+
+    private RestTemplate newRestTemplate(MediaType... mediaTypes) {
+        RestTemplate template = new RestTemplate();
+        template.setMessageConverters(Traverson.getDefaultMessageConverters(mediaTypes));
 
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         ConnectionPool okHttpConnectionPool = new ConnectionPool(config.getMaxHttpIdle(), config.getMaxHttpKeepalive(),
@@ -62,9 +75,9 @@ public class RestTemplateCustomizer {
         setupHttpProxy(builder, config);
         setupAuthentication(builder, config);
 
-        restTemplate.setRequestFactory(new OkHttp3ClientHttpRequestFactory(builder.build()));
+        template.setRequestFactory(new OkHttp3ClientHttpRequestFactory(builder.build()));
 
-        return restTemplate;
+        return template;
     }
 
     private static void setupAuthentication(

@@ -22,10 +22,7 @@
 
     <files>
         <file>
-            <source>README.txt</source>
-        </file>
-        <file>
-            <source>NOTICE</source>
+            <source>README.adoc</source>
         </file>
     </files>
 

@@ -27,7 +27,6 @@ import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
-import io.netty.util.CharsetUtil;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -41,6 +40,8 @@ import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
+
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A predicate which can be used to filter rows based on the value of a column.
@@ -397,7 +398,7 @@ public class Predicate<T extends Comparable<T>> {
                                                     String value) {
         checkColumn(column, DataType.STRING);
 
-        byte[] bytes = value.getBytes(CharsetUtil.UTF_8);
+        byte[] bytes = value.getBytes(UTF_8);
 
         if (op == ComparisonOp.LESS_EQUAL) {
             bytes = Arrays.copyOf(bytes, bytes.length + 1);
@@ -407,7 +408,7 @@ public class Predicate<T extends Comparable<T>> {
             op = ComparisonOp.GREATER_EQUAL;
         }
 
-        String string = new String(bytes, CharsetUtil.UTF_8);
+        String string = new String(bytes, UTF_8);
         SupportedDataType<String> wrapped = SupportedDataType.of(string, String.class);
 
         switch (op) {
