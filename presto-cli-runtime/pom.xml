@@ -29,12 +29,14 @@
     <properties>
         <air.main.basedir>${project.parent.basedir}</air.main.basedir>
         <main-class>com.facebook.presto.cli.Presto</main-class>
+        <sonar.skip>true</sonar.skip>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>com.facebook.presto</groupId>
             <artifactId>presto-cli</artifactId>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
