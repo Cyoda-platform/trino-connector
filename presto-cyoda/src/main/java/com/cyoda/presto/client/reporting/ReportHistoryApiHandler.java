@@ -27,12 +27,15 @@ import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateNode;
 import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.TypesUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.type.StandardTypes;
+import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.common.type.TypeSignature;
+import com.facebook.presto.common.type.TypeUtils;
 import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
@@ -78,7 +81,7 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<PagedModel<Re
 
     enum FieldDef implements FieldDefinition {
         ID(0, REPORT_ID_COLUMN_NAME, StandardTypes.VARCHAR, STRING, null),
-        CREATION_DATE(1, CREATE_TIME_COLUMN_NAME, StandardTypes.TIMESTAMP, DATE, null),
+        CREATION_DATE(1, CREATE_TIME_COLUMN_NAME, StandardTypes.TIMESTAMP, LOCAL_DATE_TIME, null),
 
         TYPE(2, TYPE_COLUMN_NAME, StandardTypes.VARCHAR, STRING, null),
         STATUS(3, STATUS_NAME_COLUMN_NAME, StandardTypes.VARCHAR, STRING, null),
@@ -246,6 +249,9 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<PagedModel<Re
         if (columnHandle.getDataType() == DATE) {
             return toDate((String) value);
         }
+        if (columnHandle.getDataType() == LOCAL_DATE_TIME) {
+            return toLocalDateTime((String) value);
+        }
         if (columnHandle.getDataType() == UUID_TYPE) {
             return UUID.fromString((String) value);
         }
@@ -256,8 +262,12 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<PagedModel<Re
 
     private Date toDate(String str) {
         if (str == null) return null;
-        LocalDateTime localDateTime = LocalDateTime.parse(str, DateTimeFormatter.ISO_DATE_TIME);
+        LocalDateTime localDateTime = toLocalDateTime(str);
         return Timestamp.valueOf(localDateTime);
+    }
+
+    private LocalDateTime toLocalDateTime(String str) {
+        return LocalDateTime.parse(str, DateTimeFormatter.ISO_DATE_TIME);
     }
 
     @Override
