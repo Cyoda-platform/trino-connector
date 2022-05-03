@@ -39,9 +39,22 @@ public class JodaBeanJacksonDeserializer<T extends Bean> extends StdDeserializer
         this.clazz = vc;
     }
 
+    /**
+     * {@link org.joda.convert.StringConvert#loadType} will throw a {@link ClassNotFoundException}
+     * if the contextClassLoader on the current thread is not null. As a workaround, in this method we set it to null,
+     * to force it to use {@Class#forName}. Before returning, the contextClassLoader is put back.
+     *
+     * @param p the JsonParser instance
+     * @param ctxt the DeserializationContext
+     * @return the Object
+     * @throws IOException if something goes wrong.
+     */
+    @SuppressWarnings("JavadocReference")
     @Override
     public T deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
         String json = p.readValueAsTree().toString();
+
+        // If someone has a better idea, go for it!
         ClassLoader contextClassLoader = Thread.currentThread().getContextClassLoader();
         try {
             Thread.currentThread().setContextClassLoader(null);
