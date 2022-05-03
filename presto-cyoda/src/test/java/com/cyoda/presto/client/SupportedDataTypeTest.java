@@ -98,8 +98,10 @@ public class SupportedDataTypeTest {
                 "  \"connectorId\" : \"connector 1\",\n" +
                 "  \"columnName\" : \"happy column\",\n" +
                 "  \"columnType\" : \"tinyint\",\n" +
+                "  \"dataType\" : \"SHORT\",\n" +
                 "  \"ordinalPosition\" : 2,\n" +
-                "  \"requestHandlerKey\" : \"myKey\"\n" +
+                "  \"requestHandlerKey\" : \"myKey\",\n" +
+                "  \"isNullable\" : true\n" +
                 "}";
         assertEquals(str, expected);
     }
