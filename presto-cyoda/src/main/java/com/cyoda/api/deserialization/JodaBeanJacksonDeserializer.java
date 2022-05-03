@@ -42,7 +42,7 @@ public class JodaBeanJacksonDeserializer<T extends Bean> extends StdDeserializer
     /**
      * {@link org.joda.convert.StringConvert#loadType} will throw a {@link ClassNotFoundException}
      * if the contextClassLoader on the current thread is not null. As a workaround, in this method we set it to null,
-     * to force it to use {@Class#forName}. Before returning, the contextClassLoader is put back.
+     * to force it to use {@link Class#forName}. Before returning, the contextClassLoader is put back.
      *
      * @param p the JsonParser instance
      * @param ctxt the DeserializationContext
