@@ -15,21 +15,21 @@
  *
  */
 
-package com.cyoda.presto.client.reporting;
+package com.cyoda.presto.client.reporting.groups;
 
-import com.cyoda.presto.client.types.DataType;
-import com.facebook.presto.common.type.TypeSignature;
+import com.cyoda.service.api.beans.GroupHeader;
 
-public interface FieldDefinition {
-    int getPos();
-    String getFieldName();
-    String getFieldTypeString();
-    DataType getDataType();
-    default TypeSignature getParType() {
-        return null;
+import java.util.UUID;
+
+public class GroupingHandle {
+
+    final String reportId;
+    final UUID groupingVersion;
+    final GroupHeader groupHeader;
+
+    public GroupingHandle(String reportId, UUID groupingVersion, GroupHeader groupHeader) {
+        this.reportId = reportId;
+        this.groupingVersion = groupingVersion;
+        this.groupHeader = groupHeader;
     }
-    default TypeSignature getMapValuetype() {
-        return null;
-    }
-
 }

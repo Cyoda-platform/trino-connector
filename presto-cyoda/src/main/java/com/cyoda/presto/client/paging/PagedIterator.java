@@ -20,12 +20,13 @@ package com.cyoda.presto.client.paging;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateNode;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.airlift.log.Logger;
 import com.facebook.presto.spi.PrestoException;
 import org.springframework.hateoas.PagedModel;
 
 import java.util.Iterator;
+import java.util.List;
 import java.util.function.Function;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_API_ERROR;
@@ -36,8 +37,8 @@ public class PagedIterator<T> implements Iterable<T> {
     private final Function<Integer, PagingHandle<T>> pagingHandleSupplier;
 
     public PagedIterator(PagingApiRequestHandler<T> requestHandler, int pageSize,
-                         CyodaTableHandle tableHandle, PredicateNode<Any> predicates) {
-        pagingHandleSupplier = page -> new PagingHandle<T>(requestHandler, page, pageSize, tableHandle, predicates);
+                         List<CyodaColumnHandle> projectedColumns, PredicateNode<Any> predicates) {
+        pagingHandleSupplier = page -> new PagingHandle<T>(requestHandler, page, pageSize, projectedColumns, predicates);
 
     }
 

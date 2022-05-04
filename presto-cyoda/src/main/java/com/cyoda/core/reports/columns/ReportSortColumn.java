@@ -17,6 +17,8 @@
 
 package com.cyoda.core.reports.columns;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.joda.beans.Bean;
 import org.joda.beans.ImmutableBean;
 import org.joda.beans.JodaBeanUtils;
@@ -35,13 +37,16 @@ import java.util.NoSuchElementException;
 @BeanDefinition(builderScope = "public")
 public class ReportSortColumn implements ImmutableBean {
 
+    @JsonProperty
     @PropertyDefinition(validate = "notNull")
     private final ReportColumn column;
 
+    @JsonProperty
     @PropertyDefinition(validate = "notNull")
     private final boolean reverse;
 
-    public ReportSortColumn(ReportColumn column) {
+    @JsonCreator
+    public ReportSortColumn(@JsonProperty("column") ReportColumn column) {
         this(column, false);
     }
 

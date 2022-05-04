@@ -32,6 +32,8 @@ import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.ConnectorPageSource;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.collect.ImmutableList;
+import io.airlift.slice.Slice;
+import io.airlift.slice.Slices;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -45,15 +47,16 @@ import java.util.function.Supplier;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_PAGING_ERROR;
 import static com.google.common.collect.ImmutableList.toImmutableList;
+import static io.airlift.slice.Slices.EMPTY_SLICE;
 import static java.lang.Float.floatToRawIntBits;
 import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("UnstableApiUsage")
-public class CyodaFilteringPageSource<S,T>
+public class CyodaFilteringPageSource<T>
         implements ConnectorPageSource
 {
     private final List<CyodaColumnHandle> columnHandles;
-    private final ApiRequestHandler<S,T> requestHandler;
+    private final ApiRequestHandler<T> requestHandler;
 
     private boolean finished;
     private long readTimeNanos;
@@ -65,7 +68,7 @@ public class CyodaFilteringPageSource<S,T>
     private final List<Type> columnTypes;
 
     public CyodaFilteringPageSource(
-            ApiRequestHandler<S,T> requestHandler,
+            ApiRequestHandler<T> requestHandler,
             CyodaTableHandle tableHandle,
             List<CyodaColumnHandle> columnHandles,
             CyodaClient cyodaClient, PredicateNode<Any> predicates
@@ -74,7 +77,11 @@ public class CyodaFilteringPageSource<S,T>
         this.columnHandles = ImmutableList.copyOf(requireNonNull(columnHandles, "columnHandles is null"));
         requireNonNull(cyodaClient, "Cyoda client is null");
         this.requestHandler = requireNonNull(requestHandler, "requestHandler is null");
-        this.responseSupplier = () -> requestHandler.getResponseIterator(cyodaClient.getRequestPageSize(), tableHandle, predicates);
+        this.responseSupplier = () -> requestHandler.getResponseIterator(
+                cyodaClient.getRequestPageSize(),
+                tableHandle.getProjectedColumns().orElse(Collections.emptyList()),
+                predicates
+        );
         this.finished = false;
         List<CyodaColumnHandle> handles = columnHandles.stream()
                 .collect(toImmutableList());
@@ -145,7 +152,7 @@ public class CyodaFilteringPageSource<S,T>
             return page;
         } catch (Exception e) {
             finished = true;
-            throw new PrestoException(CYODA_PAGING_ERROR,"Failure getting next page", e);
+            throw new PrestoException(CYODA_PAGING_ERROR,"Failure getting next page: " + e.getMessage(), e);
         } finally {
             readTimeNanos += System.nanoTime() - start;
         }
@@ -236,6 +243,10 @@ public class CyodaFilteringPageSource<S,T>
                 blockBuilder.closeEntry();
                 break;
             }
+            case OBJECT:
+                Slice slice = supported.stringify().map(Slices::utf8Slice).orElse(EMPTY_SLICE);
+                type.writeSlice(blockBuilder, slice);
+                break;
             case BIG_DECIMAL:
             case CLASS:
             case YEAR:

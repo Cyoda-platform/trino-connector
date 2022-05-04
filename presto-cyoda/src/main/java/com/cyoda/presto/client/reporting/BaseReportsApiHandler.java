@@ -32,15 +32,14 @@ import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.common.type.TypeSignature;
 import com.facebook.presto.common.type.TypeSignatureParameter;
 import com.facebook.presto.spi.SchemaTableName;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import org.springframework.hateoas.RepresentationModel;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +47,7 @@ import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
-abstract class BaseReportsApiHandler<S extends RepresentationModel<?>,T> implements ApiRequestHandler<S,T> {
+public abstract class BaseReportsApiHandler<T> implements ApiRequestHandler<T> {
 
     protected static final SupplierLogger LOG = SupplierLogger.get(BaseReportsApiHandler.class);
 
@@ -64,11 +63,11 @@ abstract class BaseReportsApiHandler<S extends RepresentationModel<?>,T> impleme
     protected final RestTemplate restTemplate;
     protected final Map<SchemaTableName, CyodaTable> tableMap;
     protected final List<CyodaTable> cyodaTables;
-    protected final FieldDefinition[] fieldDefs;
+    protected final List<ColumnDefinition> fieldDefs;
     protected final TypeManager typeManager;
 
     protected BaseReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager, String endpoint, String tableName,
-                                    FieldDefinition[] fieldDefs, RestTemplateCustomizer restTemplateCustomizer) {
+                                    List<ColumnDefinition> fieldDefs, RestTemplateCustomizer restTemplateCustomizer) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.config = requireNonNull(config, "config is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
@@ -84,7 +83,7 @@ abstract class BaseReportsApiHandler<S extends RepresentationModel<?>,T> impleme
 
     protected Map<SchemaTableName, CyodaTable> setupTables(String endpoint, String tableName) {
         ImmutableList<CyodaColumnHandle> cyodaColumnHandles = ImmutableList.copyOf(
-                Arrays.stream(fieldDefs).map(it ->
+                fieldDefs.stream().map(it ->
                         new CyodaColumnHandle(
                                 connectorId.toString(),
                                 it.getFieldName(),
@@ -110,7 +109,7 @@ abstract class BaseReportsApiHandler<S extends RepresentationModel<?>,T> impleme
     }
 
 
-    private Type toType(FieldDefinition fieldDef) {
+    private Type toType(ColumnDefinition fieldDef) {
         String fieldTypeString = fieldDef.getFieldTypeString();
         if (fieldTypeString.equals(StandardTypes.ARRAY)) {
             return typeManager.getParameterizedType(StandardTypes.ARRAY,
@@ -149,10 +148,21 @@ abstract class BaseReportsApiHandler<S extends RepresentationModel<?>,T> impleme
         return SupportedDataType.ofAny(mappedField,columnHandle.getDataType().getJavaType());
     }
 
-    protected abstract @Nonnull Object mapFieldValue(@Nonnull Object field, CyodaColumnHandle columnHandle);
+    protected @Nonnull Object mapFieldValue(@Nonnull Object value, CyodaColumnHandle columnHandle) {
+        return value;
+    }
 
     protected abstract @Nullable Object getFieldValueFromEntity(@Nonnull T field, CyodaColumnHandle columnHandle);
 
-
-
+    protected static String toReportName(String reportId) {
+        int start = reportId.lastIndexOf('-');
+        if (start < 0) {
+            throw new IllegalArgumentException("report ID "+reportId+" has incompatible format." +
+                    " It should be <Tenant>-<EntityTypee>-<ReportName>");
+        }
+        String reportName = reportId.substring(start + 1);
+        Preconditions.checkArgument(!reportName.isEmpty(),"report ID '%s' has incompatible format." +
+                " It should be <Tenant>-<EntityTypee>-<ReportName>",reportId);
+        return reportName;
+    }
 }

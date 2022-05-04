@@ -78,9 +78,9 @@ public class PredicateTraversal {
 
         // We only can filter by type, using equals or IN.
         conjunctions.stream()
-                .filter(it -> it.getColumn().isPresent())
+                //.filter(it -> it.getColumn().isPresent())
                 .filter(it->it.getPredicateNodeType() == PredicateNodeType.COMPOUND)
-                .filter(it-> it.getColumn().get().getColumnName().equals(columnName))
+                //.filter(it-> it.getColumn().get().getColumnName().equals(columnName))
                 .map(CompoundPredicateNode.class::cast)
                 .filter(it->it.getConnective() == Connective.OR)
                 .forEach(queue::add);
@@ -91,9 +91,11 @@ public class PredicateTraversal {
             Collection<PredicateNode<?>> members = node.getMembers().orElse(Collections.emptyList());
             members.forEach(member -> {
                 if ( member instanceof LeafPredicateNode ) {
-                    extractFilterValues(((LeafPredicateNode<?>) member).forceGet())
-                            .filter(it->!leafFilterValues.contains(it))
-                            .forEach(filterValues::add);
+                    if ( member.getColumn().isPresent() && member.getColumn().get().getColumnName().equals(columnName)) {
+                        extractFilterValues(((LeafPredicateNode<?>) member).forceGet())
+                                .filter(it -> !leafFilterValues.contains(it))
+                                .forEach(filterValues::add);
+                    }
                 } else {
                     queue.add((CompoundPredicateNode) member);
                 }

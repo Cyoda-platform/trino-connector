@@ -17,11 +17,8 @@
 
 package com.cyoda.core.model.reports;
 
-import com.cyoda.api.deserialization.JodaBeanJacksonDeserializer;
-import com.cyoda.api.serialization.JodaBeanJacksonSerializer;
 import com.cyoda.core.reports.columns.ReportColumns;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableMap;
 import org.joda.beans.Bean;
 import org.joda.beans.ImmutableBean;
@@ -40,96 +37,150 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
-@JsonDeserialize(using = DistributedReportInfoView.JacksonDeserializer.class)
-@JsonSerialize(using = DistributedReportInfoView.JacksonSerializer.class)
 @BeanDefinition
 public class DistributedReportInfoView implements ImmutableBean {
-
-    public static class JacksonDeserializer extends JodaBeanJacksonDeserializer<DistributedReportInfoView> {
-
-        public JacksonDeserializer() {
-            super(DistributedReportInfoView.class);
-        }
-    }
-
-    public static class JacksonSerializer extends JodaBeanJacksonSerializer<DistributedReportInfoView> {
-
-        public JacksonSerializer() {
-            super(DistributedReportInfoView.class);
-        }
-    }
-
+    
     // Fields from DistributedReportStatisticsCql
 
+    @JsonProperty
     @PropertyDefinition
     private final String id;
 
+    @JsonProperty
     @PropertyDefinition
     private final Date createTime;
 
+    @JsonProperty
     @PropertyDefinition
     private final Date finishTime;
 
+    @JsonProperty
     @PropertyDefinition
     private final boolean reportFailed;
 
+    @JsonProperty
     @PropertyDefinition
     private final boolean secondPhaseFinished;
 
+    @JsonProperty
     @PropertyDefinition
     private final int groupsCount;
 
+    @JsonProperty
     @PropertyDefinition
     private final long totalRowsCount;
 
+    @JsonProperty
     @PropertyDefinition
     private final boolean markedAsCancelled;
 
+    @JsonProperty
     @PropertyDefinition
     private final Map<String, Integer> rowsCountForFinishedShards;
 
+    @JsonProperty
     @PropertyDefinition
     private final Map<String, String> reportFailedShards;
 
     // Fields from DistributedReport
 
+    @JsonProperty
     @PropertyDefinition
     private final String userName;
 
+    @JsonProperty
     @PropertyDefinition
     private final UUID userId;
 
+    @JsonProperty
     @PropertyDefinition
     private final String configName;
 
+    @JsonProperty
     @PropertyDefinition
     private final String gridConfigId;
 
+    @JsonProperty
     @PropertyDefinition
     private final Long version; //timestamp of report
 
+    @JsonProperty
     @PropertyDefinition
     private final Date pointTime;
 
+    @JsonProperty
     @PropertyDefinition
     private final Date valuationPointTime;
 
+    @JsonProperty
     @PropertyDefinition
     private final String description;
 
     // Fields from DRGroupingInfo
+    @JsonProperty
     @PropertyDefinition
     private final UUID groupingVersion;
 
+    @JsonProperty
     @PropertyDefinition
     private final boolean hierarchy;
 
+    @JsonProperty
     @PropertyDefinition
     private final boolean regroupingPossible;
 
+    @JsonProperty
     @PropertyDefinition
     private final ReportColumns groupingCols;
 
+    public DistributedReportInfoView(
+            @JsonProperty("id") String id,
+            @JsonProperty("createTime") Date createTime,
+            @JsonProperty("finishTime") Date finishTime,
+            @JsonProperty("reportFailed") boolean reportFailed,
+            @JsonProperty("secondPhaseFinished") boolean secondPhaseFinished,
+            @JsonProperty("groupsCount") int groupsCount,
+            @JsonProperty("totalRowsCount") long totalRowsCount,
+            @JsonProperty("markedAsCancelled") boolean markedAsCancelled,
+            @JsonProperty("rowsCountForFinishedShards") Map<String, Integer> rowsCountForFinishedShards,
+            @JsonProperty("reportFailedShards") Map<String, String> reportFailedShards,
+            @JsonProperty("userName") String userName,
+            @JsonProperty("userId") UUID userId,
+            @JsonProperty("configName") String configName,
+            @JsonProperty("gridConfigId") String gridConfigId,
+            @JsonProperty("version") Long version,
+            @JsonProperty("pointTime") Date pointTime,
+            @JsonProperty("valuationPointTime") Date valuationPointTime,
+            @JsonProperty("description") String description,
+            @JsonProperty("groupingVersion") UUID groupingVersion,
+            @JsonProperty("hierarchy") boolean hierarchy,
+            @JsonProperty("regroupingPossible") boolean regroupingPossible,
+            @JsonProperty("groupingCols") ReportColumns groupingCols
+    ) {
+        
+        this.id = id;
+        this.createTime = createTime;
+        this.finishTime = finishTime;
+        this.reportFailed = reportFailed;
+        this.secondPhaseFinished = secondPhaseFinished;
+        this.groupsCount = groupsCount;
+        this.totalRowsCount = totalRowsCount;
+        this.markedAsCancelled = markedAsCancelled;
+        this.rowsCountForFinishedShards = rowsCountForFinishedShards;
+        this.reportFailedShards = reportFailedShards;
+        this.userName = userName;
+        this.userId = userId;
+        this.configName = configName;
+        this.gridConfigId = gridConfigId;
+        this.version = version;
+        this.pointTime = pointTime;
+        this.valuationPointTime = valuationPointTime;
+        this.description = description;
+        this.groupingVersion = groupingVersion;
+        this.hierarchy = hierarchy;
+        this.regroupingPossible = regroupingPossible;
+        this.groupingCols = groupingCols;
+    }
 
     //------------------------- AUTOGENERATED START -------------------------
     /**

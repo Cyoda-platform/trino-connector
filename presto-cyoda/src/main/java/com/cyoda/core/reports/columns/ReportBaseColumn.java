@@ -17,6 +17,7 @@
 
 package com.cyoda.core.reports.columns;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.joda.beans.Bean;
 import org.joda.beans.ImmutableBean;
 import org.joda.beans.JodaBeanUtils;
@@ -35,6 +36,7 @@ import java.util.NoSuchElementException;
 @BeanDefinition(builderScope = "public")
 public abstract class ReportBaseColumn implements ReportColumn, ImmutableBean {
 
+    @JsonProperty
     @PropertyDefinition(validate = "notNull")
     private final String name;
 

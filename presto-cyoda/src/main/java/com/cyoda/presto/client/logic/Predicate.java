@@ -39,6 +39,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -156,7 +157,84 @@ public class Predicate<T extends Comparable<T>> {
         }
     }
 
+    /**
+     * Creates a new {@code CyodaPredicate} on a boolean column.
+     *
+     * @param column the column schema
+     * @param op     the comparison operation
+     * @param value  the value to compare against
+     */
+    static Predicate<UUID> newComparisonPredicate(CyodaColumnHandle column,
+                                                     ComparisonOp op,
+                                                     UUID value) {
+        checkColumn(column, DataType.UUID_TYPE);
 
+        SupportedDataType<UUID> wrapped = SupportedDataType.of(value, UUID.class);
+
+        BigInteger bigIntValue = convertToBigInteger(value);
+
+        return delegateToBigDecimal(column, op, wrapped, bigIntValue);
+
+    }
+
+    private static <S extends Comparable<S>> Predicate<S> delegateToBigDecimal(CyodaColumnHandle column, ComparisonOp op, SupportedDataType<S> wrapped, BigInteger bigIntValue) {
+        // This is to circumvent the check on data type when delegating to bigdecimal.
+        // We won't use the predicate created, so this isn't an issue.
+        CyodaColumnHandle bigDecimalColumn = new CyodaColumnHandle(
+                column.getConnectorId(),
+                column.getColumnName(),
+                column.getColumnType(),
+                DataType.BIG_DECIMAL,
+                column.getOrdinalPosition(),
+                column.getRequestHandlerKey(),
+                column.getIsNullable()
+        );
+        Predicate<BigDecimal> bigDecimalPredicate = newComparisonPredicate(bigDecimalColumn, op, new BigDecimal(bigIntValue));
+
+        boolean setLower = bigDecimalPredicate.getLower() != null;
+        boolean setUpper = bigDecimalPredicate.getUpper() != null;
+        return new Predicate<>(bigDecimalPredicate.getType(), column,
+                setLower ? wrapped : null,
+                setUpper ? wrapped : null
+        );
+    }
+
+
+    private static final BigInteger B = BigInteger.ONE.shiftLeft(64); // 2^64
+    private static final BigInteger L = BigInteger.valueOf(Long.MAX_VALUE);
+    private static final BigInteger MAX_LONG_BIGINT = BigInteger.valueOf(Long.MAX_VALUE);
+    private static final BigInteger MAX_UUID_VALUE = MAX_LONG_BIGINT.add(MAX_LONG_BIGINT.multiply(B));
+
+    public static BigInteger convertToBigInteger(UUID id)
+    {
+        BigInteger lo = BigInteger.valueOf(id.getLeastSignificantBits());
+        BigInteger hi = BigInteger.valueOf(id.getMostSignificantBits());
+
+        // If any of lo/hi parts is negative interpret as unsigned
+
+        if (hi.signum() < 0)
+            hi = hi.add(B);
+
+        if (lo.signum() < 0)
+            lo = lo.add(B);
+
+        return lo.add(hi.multiply(B));
+    }
+
+    public static UUID convertFromBigInteger(BigInteger x)
+    {
+        BigInteger[] parts = x.divideAndRemainder(B);
+        BigInteger hi = parts[0];
+        BigInteger lo = parts[1];
+
+        if (L.compareTo(lo) < 0)
+            lo = lo.subtract(B);
+
+        if (L.compareTo(hi) < 0)
+            hi = hi.subtract(B);
+
+        return new UUID(hi.longValueExact(), lo.longValueExact());
+    }
     /**
      * Creates a new comparison predicate on an integer or timestamp column.
      *
@@ -214,6 +292,21 @@ public class Predicate<T extends Comparable<T>> {
             default:
                 throw unknownComparisonException();
         }
+    }
+
+    /**
+     * Creates a new comparison predicate on a BIGINT column. We delegate the logic to BigDecimal.
+     *
+     * @param column the column schema
+     * @param op     the comparison operation
+     * @param value  the value to compare against
+     */
+    static Predicate<BigInteger> newComparisonPredicate(CyodaColumnHandle column,
+                                                        ComparisonOp op,
+                                                        BigInteger value) {
+        checkColumn(column, DataType.BIG_INTEGER);
+        SupportedDataType<BigInteger> wrapped = SupportedDataType.of(value, BigInteger.class);
+        return delegateToBigDecimal(column, op, wrapped, value);
     }
 
     /**

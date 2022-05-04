@@ -35,11 +35,9 @@ import com.facebook.presto.common.type.TypeSignature;
 import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.RecordSet;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.client.Traverson;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -77,7 +75,7 @@ public class TestCyodaRecordSet {
         CyodaApiRequestHandlerProvider handlerProvider = setupHandlerProvider(testCyodaConfig);
         CyodaClient client = new CyodaClient(connectorId, testCyodaConfig, handlerProvider);
 
-        ApiRequestHandler<?,?> apiHandler = handlerProvider.getHandler(requestHandlerKey);
+        ApiRequestHandler<?> apiHandler = handlerProvider.getHandler(requestHandlerKey);
         List<CyodaTable> tables = apiHandler.getTables();
         assertTrue(apiHandler instanceof ConfiguredReportsApiHandler);
         assertEquals(tables.size(), 1); // There is only one table for that.
@@ -160,8 +158,8 @@ public class TestCyodaRecordSet {
         CyodaApiRequestHandlerProvider handlerProvider = setupHandlerProvider(testCyodaConfig);
         CyodaClient client = new CyodaClient(connectorId, testCyodaConfig, handlerProvider);
 
-        ApiRequestHandler<PagedModel<GridConfigFieldsView>,GridConfigFieldsView> apiHandler =
-                (ApiRequestHandler<PagedModel<GridConfigFieldsView>,GridConfigFieldsView>) handlerProvider.getHandler(requestHandlerKey);
+        ApiRequestHandler<GridConfigFieldsView> apiHandler =
+                (ApiRequestHandler<GridConfigFieldsView>) handlerProvider.getHandler(requestHandlerKey);
         List<CyodaTable> tables = apiHandler.getTables();
         assertTrue(apiHandler instanceof ConfiguredReportsApiHandler);
         assertEquals(tables.size(), 1); // There is only one table for that.
@@ -171,7 +169,7 @@ public class TestCyodaRecordSet {
         TupleDomain<CyodaColumnHandle> constraint = TupleDomain.all();
         CyodaTableHandle tableHandle = new CyodaTableHandle(connectorId.toString(), "schema", "table", Optional.empty(), requestHandlerKey);
         PredicateNode<Any> predicates = PredicateBuilder.setupConstraintPredicates(TupleDomain.all());
-        CyodaFilteringPageSource<PagedModel<GridConfigFieldsView>,GridConfigFieldsView> pageSource =
+        CyodaFilteringPageSource<GridConfigFieldsView> pageSource =
                 new CyodaFilteringPageSource<>(apiHandler, tableHandle, tables.get(0).getColumns(), client, predicates);
 
         assertNotNull(pageSource);

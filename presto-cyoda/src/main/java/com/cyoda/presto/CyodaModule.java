@@ -23,6 +23,7 @@ import com.cyoda.presto.client.reporting.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.ReportConfigDetailsApiHandler;
 import com.cyoda.presto.client.reporting.ReportHistoryApiHandler;
 import com.cyoda.presto.client.reporting.ReportStatisticsApiHandler;
+import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -69,6 +70,7 @@ public class CyodaModule implements Module {
         shapeBinder.addBinding().to(ReportHistoryApiHandler.class);
         shapeBinder.addBinding().to(ReportConfigDetailsApiHandler.class);
         shapeBinder.addBinding().to(ReportStatisticsApiHandler.class);
+        shapeBinder.addBinding().to(ReportGroupsApiHandler.class);
 
         binder.bind(CyodaApiRequestHandlerProvider.class).in(Scopes.SINGLETON);
 

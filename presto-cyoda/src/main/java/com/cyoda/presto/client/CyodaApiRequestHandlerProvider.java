@@ -31,7 +31,7 @@ import static java.util.Objects.requireNonNull;
 
 public class CyodaApiRequestHandlerProvider {
 
-    private final Map<String, ApiRequestHandler<?,?>> handlers;
+    private final Map<String, ApiRequestHandler<?>> handlers;
 
     @SuppressWarnings({"unchecked", "squid:S3740", "rawtypes"})
     @Inject
@@ -40,13 +40,13 @@ public class CyodaApiRequestHandlerProvider {
     }
 
     @SuppressWarnings({"java:S1452"})
-    public ApiRequestHandler<?,?> getHandler(String type) {
+    public ApiRequestHandler<?> getHandler(String type) {
         requireNonNull(type, "type is null");
         return handlers.get(type);
     }
 
     @SuppressWarnings({"squid:S1452"})
-    public ApiRequestHandler<?,?> getHandler(SchemaTableName tableName) {
+    public ApiRequestHandler<?> getHandler(SchemaTableName tableName) {
         return handlers.values().stream().filter(h -> h.hasTable(tableName)).findAny().orElseThrow(
                 () -> new PrestoException(GENERIC_INTERNAL_ERROR, "[Cyoda]:" + this.getClass().getSimpleName() +
                         ":unexpected error trying to get the Handler for table " + tableName)
@@ -54,7 +54,7 @@ public class CyodaApiRequestHandlerProvider {
     }
 
     @SuppressWarnings({"squid:S1452"})
-    public Collection<ApiRequestHandler<?,?>> getHandlers() {
+    public Collection<ApiRequestHandler<?>> getHandlers() {
         return handlers.values();
     }
 }

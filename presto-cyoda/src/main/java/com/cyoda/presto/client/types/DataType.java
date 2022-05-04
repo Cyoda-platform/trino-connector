@@ -69,7 +69,7 @@ public enum DataType {
     YEAR(Year.class,StandardTypes.VARCHAR),
     YEAR_MONTH(YearMonth.class,StandardTypes.VARCHAR),
     LOCAL_TIME(LocalTime.class,StandardTypes.TIME_WITH_TIME_ZONE),
-    UUID_TYPE(UUID.class,StandardTypes.VARCHAR),
+    UUID_TYPE(UUID.class,StandardTypes.VARCHAR),  // StandardType.UUID does not work. Presto wants a String. Trino supports UUID.
     BYTE_ARRAY(byte[].class,StandardTypes.VARBINARY), // Unsure
     BYTE_BUFFER(ByteBuffer.class,StandardTypes.VARBINARY), // Unsure
     CLASS(Class.class,StandardTypes.VARCHAR),

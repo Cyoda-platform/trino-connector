@@ -18,6 +18,7 @@
 package com.cyoda.presto.client.types;
 
 import com.facebook.airlift.json.JsonCodec;
+import com.facebook.airlift.json.JsonObjectMapperProvider;
 import com.facebook.presto.common.type.BigintType;
 import com.facebook.presto.common.type.BooleanType;
 import com.facebook.presto.common.type.DateType;
@@ -28,6 +29,7 @@ import com.facebook.presto.common.type.IntegerType;
 import com.facebook.presto.common.type.JsonType;
 import com.facebook.presto.common.type.RealType;
 import com.facebook.presto.common.type.SmallintType;
+import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TimestampType;
 import com.facebook.presto.common.type.TinyintType;
 import com.facebook.presto.common.type.Type;
@@ -37,7 +39,10 @@ import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
 import com.facebook.presto.type.UuidType;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Suppliers;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
@@ -62,9 +67,11 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_INCORRECT_TYPE_ERROR;
 import static com.cyoda.presto.client.types.DataType.*;
+import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT;
 import static io.airlift.slice.Slices.EMPTY_SLICE;
 import static io.airlift.slice.Slices.wrappedBuffer;
 import static java.lang.Float.intBitsToFloat;
@@ -110,6 +117,9 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
         if ( type.getTypeSignature().getBase().equals(IntegerType.INTEGER.getTypeSignature().getBase())) {
             return INTEGER;
         }
+        if ( type.getTypeSignature().getBase().equals(JsonType.JSON.getTypeSignature().getBase())) {
+            return OBJECT;
+        }
         throw new UnsupportedOperationException("Mapping of "+type+" to DataType not yet implemented");
     }
 
@@ -151,6 +161,8 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
             return ((Slice) nativeValue).toByteBuffer();
         } else if (type instanceof DecimalType) {
             return nativeValue;
+        } else if (type.getTypeSignature().getBase().equals(StandardTypes.UUID)) {
+            return UUID.fromString(((Slice) nativeValue).toStringUtf8());
         } else {
             throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Back conversion not implemented for " + type);
         }
@@ -178,6 +190,9 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
     public int hashCode() {
         return Objects.hash(value, javaType, dataType);
     }
+
+    private static final Supplier<ObjectMapper> OBJECT_MAPPER_SUPPLIER = Suppliers.memoize(
+            () -> new JsonObjectMapperProvider().get().enable(INDENT_OUTPUT))::get;
 
     public Optional<String> stringify() {
         if ( this.value == null ) return Optional.empty();
@@ -214,9 +229,14 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
                 final String json = JsonCodec.jsonCodec(this.javaType).toJson(this.value);
                 result =  json.substring(1,json.length()-1);
                 break;
-            case OBJECT: // Let Jackson do the work, so that we have consistent formatting
-                result = JsonCodec.jsonCodec(this.javaType).toJson(this.value);
+            case OBJECT: { // Let Jackson/JodaBeans do the work, so that we have consistent formatting
+                try {
+                    result = OBJECT_MAPPER_SUPPLIER.get().writerFor(this.value.getClass()).writeValueAsString(this.value);
+                } catch (JsonProcessingException e) {
+                    throw new IllegalStateException(e);
+                }
                 break;
+            }
             case BYTE_ARRAY:
                 result = Base64.getEncoder().encodeToString((byte[]) this.value);
                 break;
@@ -256,7 +276,8 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
             case LOCAL_DATE_TIME: return TimestampType.TIMESTAMP.getTypeSignature();
             case LOCAL_DATE: return BigintType.BIGINT.getTypeSignature();
             case YEAR: return VarcharType.VARCHAR.getTypeSignature();
-            default: throw new UnsupportedOperationException("Not yet done");
+            case OBJECT: return JsonType.JSON.getTypeSignature();
+            default: throw new UnsupportedOperationException(dataType + " Not yet done");
         }
     }
 

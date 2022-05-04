@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static com.cyoda.presto.client.logic.LeafPredicateNode.leaf;
 import static com.cyoda.presto.client.logic.Predicate.newIsNotNullPredicateAny;
@@ -214,6 +215,8 @@ public class PredicateBuilder {
                 return prestoNativeToPredicate(columnHandle, op, nativeValue, Float.class);
             case BOOLEAN:
                 return prestoNativeToPredicate(columnHandle, op, nativeValue, Boolean.class);
+            case UUID_TYPE:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, UUID.class);
             default:
                 throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "DataType  " + columnHandle.getDataType() + " not yet supported");
         }
@@ -262,6 +265,8 @@ public class PredicateBuilder {
                 return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asFloat());
             case BOOLEAN:
                 return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asBoolean());
+            case UUID_TYPE:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asUUID());
             default:
                 throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Unexpected java value for column "
                         + columnHandle.getColumnName() + ": " + value.value + "(" + value.dataType + ")");

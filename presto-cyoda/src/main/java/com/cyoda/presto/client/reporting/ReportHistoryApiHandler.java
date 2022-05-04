@@ -27,15 +27,11 @@ import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateNode;
 import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.TypesUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.type.StandardTypes;
-import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.common.type.TypeSignature;
-import com.facebook.presto.common.type.TypeUtils;
 import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
@@ -74,12 +70,12 @@ import static com.cyoda.core.model.reports.ReportHistoryFieldsView.*;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.types.DataType.*;
 
-public class ReportHistoryApiHandler extends BaseReportsApiHandler<PagedModel<ReportHistoryFieldsView>,ReportHistoryFieldsView>
+public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistoryFieldsView>
         implements PagingApiRequestHandler<ReportHistoryFieldsView> {
 
     private static final SupplierLogger LOG = SupplierLogger.get(ReportHistoryApiHandler.class);
 
-    enum FieldDef implements FieldDefinition {
+    enum ColumnDef implements ColumnDefinition {
         ID(0, REPORT_ID_COLUMN_NAME, StandardTypes.VARCHAR, STRING, null),
         CREATION_DATE(1, CREATE_TIME_COLUMN_NAME, StandardTypes.TIMESTAMP, LOCAL_DATE_TIME, null),
 
@@ -109,7 +105,7 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<PagedModel<Re
         private final DataType dataType;
         private final TypeSignature parType;
 
-        FieldDef(int pos, String fieldName, String fieldTypeString, DataType dateType, TypeSignature parType) {
+        ColumnDef(int pos, String fieldName, String fieldTypeString, DataType dateType, TypeSignature parType) {
             this.pos = pos;
             this.fieldName = fieldName;
             this.fieldTypeString = fieldTypeString;
@@ -144,14 +140,14 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<PagedModel<Re
     }
 
     public static final List<String> selectedFields = ImmutableList.copyOf(
-            Arrays.stream(FieldDef.values()).map(ReportHistoryApiHandler.FieldDef::getFieldName).collect(Collectors.toList())
+            Arrays.stream(ColumnDef.values()).map(ColumnDef::getFieldName).collect(Collectors.toList())
     );
 
     @Inject
     public ReportHistoryApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                    RestTemplateCustomizer restTemplateCustomizer) {
         super(connectorId, config, typeManager, REPORT_HISTORY_ENDPOINT, CyodaStaticReportTable.REPORT_HISTORIES.name(),
-                FieldDef.values(),restTemplateCustomizer);
+                ImmutableList.copyOf(ColumnDef.values()),restTemplateCustomizer);
     }
 
 
@@ -184,7 +180,7 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<PagedModel<Re
 
         // Filter criteria: filterByType, user (single), creationdate range.
         Optional<Set<String>> filterByType = traversal.assembleFilterings(GridConfigFieldsView.TYPE_COLUMN_NAME);
-        LOG.debug("selecting by types:",()->filterByType.map(it-> String.join(",", it)));
+        LOG.debug("selecting by types:",()->filterByType.map(it-> String.join(",", it)).orElse("EMPTY"));
 
         // If the optional is empty, it means the predicates are such that everything must be filtered.
         if (!filterByType.isPresent()) return Optional.empty();
@@ -273,10 +269,10 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<PagedModel<Re
     @Override
     public Iterator<ReportHistoryFieldsView> getResponseIterator(
             int pageSize,
-            CyodaTableHandle cyodaTableHandle,
+            List<CyodaColumnHandle> projectedColumns,
             PredicateNode<Any> predicates
     ) {
-        return new PagedIterator<>(this, pageSize, cyodaTableHandle, predicates).iterator();
+        return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();
     }
 
 }

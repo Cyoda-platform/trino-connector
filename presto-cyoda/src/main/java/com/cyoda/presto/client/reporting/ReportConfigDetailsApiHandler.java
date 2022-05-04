@@ -28,7 +28,6 @@ import com.cyoda.presto.client.neededatcyoda.ReportDefinitionsView;
 import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.airlift.json.JsonCodec;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeManager;
@@ -61,12 +60,12 @@ import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.neededatcyoda.ReportDefinitionsView.*;
 import static com.cyoda.presto.client.types.DataType.STRING;
 
-public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<PagedModel<ReportDefinitionsView>,ReportDefinitionsView>
+public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportDefinitionsView>
         implements PagingApiRequestHandler<ReportDefinitionsView> {
 
     private final ConfiguredReportsApiHandler configuredReportsApiHandler;
 
-    enum FieldDef implements FieldDefinition {
+    enum ColumnDef implements ColumnDefinition {
         ID(0, REPORT_ID_COLUMN_NAME, StandardTypes.VARCHAR, STRING),
         REPORT_NAME(1, REPORT_NAME_COLUMN_NAME, StandardTypes.VARCHAR, STRING),
         REPORT_JSON(2, REPORT_JSON_COLUMN_NAME, StandardTypes.JSON, STRING);
@@ -86,7 +85,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<PagedMo
         private final String fieldTypeString;
         private final DataType dataType;
 
-        FieldDef(int pos, String fieldName, String fieldTypeString, DataType dateType) {
+        ColumnDef(int pos, String fieldName, String fieldTypeString, DataType dateType) {
             this.pos = pos;
             this.fieldName = fieldName;
             this.fieldTypeString = fieldTypeString;
@@ -118,7 +117,8 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<PagedMo
     public ReportConfigDetailsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                          RestTemplateCustomizer restTemplateCustomizer) {
         super(connectorId, config, typeManager,
-                REPORT_DETAILS_ENDPOINT, CyodaStaticReportTable.REPORT_DETAILS.name(), FieldDef.values(),restTemplateCustomizer);
+                REPORT_DETAILS_ENDPOINT, CyodaStaticReportTable.REPORT_DETAILS.name(),
+                ImmutableList.copyOf(ColumnDef.values()),restTemplateCustomizer);
         this.configuredReportsApiHandler = new ConfiguredReportsApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
     }
 
@@ -150,6 +150,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<PagedMo
 
             Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
             traverson.setRestOperations(restTemplate);
+            String reportName =  toReportName(reportId);
 
             try {
                 @SuppressWarnings("unchecked")
@@ -157,12 +158,10 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<PagedMo
                                 .follow()
                                 .toObject(Map.class))
                         .orElse(Collections.emptyMap());
-                String id = null;
-                String repName = null;
                 @SuppressWarnings("unchecked")
                 Map<String,Object> repDef = Optional.ofNullable((Map<String,Object>) map.get("content")).orElse(Collections.emptyMap());
                 String json = JsonCodec.mapJsonCodec(String.class, Object.class).toJson(repDef);
-                builder.add(new ReportDefinitionsView(id, repName, json));
+                builder.add(new ReportDefinitionsView(reportId, reportName, json));
             } catch (HttpClientErrorException e) {
                 throw requestFailedException(this, "retrieveCollection", e, templatedUri);
             }
@@ -213,10 +212,10 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<PagedMo
     @Override
     public Iterator<ReportDefinitionsView> getResponseIterator(
             int pageSize,
-            CyodaTableHandle cyodaTableHandle,
+            List<CyodaColumnHandle> projectedColumns,
             PredicateNode<Any> predicates
     ) {
-        return new PagedIterator<>(this, pageSize, cyodaTableHandle, predicates).iterator();
+        return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();
     }
 
 }

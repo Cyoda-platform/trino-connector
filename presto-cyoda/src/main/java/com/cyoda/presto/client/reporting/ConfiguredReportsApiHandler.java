@@ -27,7 +27,6 @@ import com.cyoda.presto.client.logic.PredicateNode;
 import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeManager;
@@ -44,7 +43,7 @@ import org.springframework.hateoas.TemplateVariable;
 import org.springframework.hateoas.TemplateVariables;
 import org.springframework.hateoas.UriTemplate;
 import org.springframework.hateoas.client.Traverson;
-import org.springframework.hateoas.server.core.TypeReferences.PagedModelType;
+import org.springframework.hateoas.server.core.TypeReferences;
 import org.springframework.web.client.HttpClientErrorException;
 
 import javax.annotation.Nonnull;
@@ -71,13 +70,13 @@ import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORTS;
 import static com.cyoda.presto.client.types.DataType.LOCAL_DATE_TIME;
 import static com.cyoda.presto.client.types.DataType.STRING;
 
-public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<PagedModel<GridConfigFieldsView>,GridConfigFieldsView>
+public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfigFieldsView>
         implements PagingApiRequestHandler<GridConfigFieldsView> {
 
     protected static final SupplierLogger LOG = SupplierLogger.get(ConfiguredReportsApiHandler.class);
 
 
-    enum FieldDef implements FieldDefinition {
+    enum ColumnDef implements ColumnDefinition {
         ID              (0, ID_COLUMN_NAME, StandardTypes.VARCHAR,STRING),
         NAME            (1, NAME_COLUMN_NAME,StandardTypes.VARCHAR, STRING),
         DESCRIPTION     (1, GridConfigFieldsView.DESCRIPTION_COLUMN_NAME,StandardTypes.VARCHAR,STRING),
@@ -90,7 +89,7 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<PagedMode
         private final String fieldTypeString;
         private final DataType dataType;
 
-        FieldDef(int pos, String fieldName, String fieldTypeString, DataType dateType) {
+        ColumnDef(int pos, String fieldName, String fieldTypeString, DataType dateType) {
             this.pos = pos;
             this.fieldName = fieldName;
             this.fieldTypeString = fieldTypeString;
@@ -133,7 +132,7 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<PagedMode
         }
     }
     public static final List<String> selectedFields = ImmutableList.copyOf(
-            Arrays.stream(FieldDef.values()).map(FieldDef::getFieldName).collect(Collectors.toList())
+            Arrays.stream(ColumnDef.values()).map(ColumnDef::getFieldName).collect(Collectors.toList())
     );
 
 
@@ -141,7 +140,7 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<PagedMode
     public ConfiguredReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                        RestTemplateCustomizer restTemplateCustomizer) {
         super(connectorId, config, typeManager,
-                REPORT_DEFS_ENDPOINT, REPORTS.name(),FieldDef.values(),restTemplateCustomizer);
+                REPORT_DEFS_ENDPOINT, REPORTS.name(), ImmutableList.copyOf(ColumnDef.values()),restTemplateCustomizer);
     }
 
     @Override
@@ -186,9 +185,8 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<PagedMode
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
         traverson.setRestOperations(restTemplate);
 
-        PagedModelType<GridConfigFieldsView> typeReference = new PagedModelType<GridConfigFieldsView>() {
-        };
-
+        TypeReferences.PagedModelType<GridConfigFieldsView> typeReference
+                = new TypeReferences.PagedModelType<GridConfigFieldsView>() {};
         try {
             final PagedModel<GridConfigFieldsView> gridConfigFieldsViews = traverson
                     .follow()
@@ -205,7 +203,7 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<PagedMode
         Collection<GridConfigFieldsView> content = gridConfigFieldsViews.getContent();
         content.forEach( it -> {
             String id = it.getGridConfigFields().get(ID_COLUMN_NAME);
-            String repName = id.replaceFirst("^(.+?)([^-]+)$","$2");
+            String repName = toReportName(id);
             it.addField(NAME_COLUMN_NAME,repName);
         });
     }
@@ -246,9 +244,12 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<PagedMode
     }
 
     @Override
-    public Iterator<GridConfigFieldsView> getResponseIterator(int pageSize,
-                                                              CyodaTableHandle cyodaTableHandle, PredicateNode<Any> predicates) {
-        return new PagedIterator<>(this, pageSize, cyodaTableHandle, predicates).iterator();
+    public Iterator<GridConfigFieldsView> getResponseIterator(
+            int pageSize,
+            List<CyodaColumnHandle> projectedColumns,
+            PredicateNode<Any> predicates
+    ) {
+        return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();
     }
 
 

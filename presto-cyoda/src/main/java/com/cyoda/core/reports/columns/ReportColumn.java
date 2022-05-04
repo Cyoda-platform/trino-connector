@@ -17,8 +17,15 @@
 
 package com.cyoda.core.reports.columns;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import org.joda.beans.ImmutableBean;
 
+@JsonTypeInfo( use = JsonTypeInfo.Id.NAME, property = "type")
+@JsonSubTypes({
+        @JsonSubTypes.Type(value = ReportAliasColumn.class, name = "ALIAS"),
+        @JsonSubTypes.Type(value = ReportSimpleColumn.class, name = "SIMPLE_COLUMN"),
+})
 public interface ReportColumn extends ImmutableBean {
 
     enum Type {

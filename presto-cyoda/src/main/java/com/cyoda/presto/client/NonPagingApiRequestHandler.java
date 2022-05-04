@@ -25,7 +25,7 @@ import org.springframework.hateoas.EntityModel;
 import java.util.List;
 import java.util.Optional;
 
-public interface NonPagingApiRequestHandler<T> extends ApiRequestHandler<EntityModel<T>,T> {
+public interface NonPagingApiRequestHandler<T> extends ApiRequestHandler<T> {
 
     Optional<EntityModel<T>> retrievePage(
             int page,

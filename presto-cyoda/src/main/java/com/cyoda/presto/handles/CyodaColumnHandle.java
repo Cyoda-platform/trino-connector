@@ -56,7 +56,6 @@ public class CyodaColumnHandle implements ColumnHandle {
         this.ordinalPosition = ordinalPosition;
         this.requestHandlerKey = requireNonNull(requestHandlerKey, "requestHandlerKey is null");
         this.isNullable = isNullable;
-
     }
 
     public CyodaColumnHandle(

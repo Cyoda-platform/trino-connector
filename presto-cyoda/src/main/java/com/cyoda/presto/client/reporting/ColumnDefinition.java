@@ -15,21 +15,21 @@
  *
  */
 
-package com.cyoda.presto.client;
+package com.cyoda.presto.client.reporting;
 
-import com.cyoda.presto.client.logic.Any;
-import com.cyoda.presto.client.logic.PredicateNode;
-import com.cyoda.presto.handles.CyodaColumnHandle;
-import org.springframework.hateoas.PagedModel;
+import com.cyoda.presto.client.types.DataType;
+import com.facebook.presto.common.type.TypeSignature;
 
-import java.util.List;
-import java.util.Optional;
-
-public interface PagingApiRequestHandler<T> extends ApiRequestHandler<T> {
-
-    Optional<PagedModel<T>> retrievePage(
-            int page,
-            int pageSize,
-            List<CyodaColumnHandle> projectedColumns, PredicateNode<Any> predicates);
+public interface ColumnDefinition {
+    int getPos();
+    String getFieldName();
+    String getFieldTypeString();
+    DataType getDataType();
+    default TypeSignature getParType() {
+        return null;
+    }
+    default TypeSignature getMapValuetype() {
+        return null;
+    }
 
 }

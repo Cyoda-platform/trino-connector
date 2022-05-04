@@ -17,6 +17,8 @@
 
 package com.cyoda.core.reports.columns;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.joda.beans.JodaBeanUtils;
 import org.joda.beans.MetaBean;
 import org.joda.beans.MetaProperty;
@@ -28,7 +30,8 @@ import java.util.Map;
 @BeanDefinition(builderScope = "public")
 public class ReportSimpleColumn extends ReportBaseColumn {
 
-    public ReportSimpleColumn(String name) {
+    @JsonCreator
+    public ReportSimpleColumn(@JsonProperty("name") String name) {
         super(name);
     }
 
