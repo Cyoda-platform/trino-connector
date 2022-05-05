@@ -15,29 +15,9 @@
  *
  */
 
-package com.cyoda.api.view;
-
-import com.google.common.base.MoreObjects;
+package com.cyoda.service.api.beans;
 
 import java.util.HashMap;
-import java.util.Map;
 
-public class GridConfigFieldsView {
-
-    private final Map<String, String> gridConfigFields = new HashMap<>();
-
-    public void addField(String fieldName, String fieldValue) {
-        gridConfigFields.put(fieldName, fieldValue);
-    }
-
-    public Map<String, String> getGridConfigFields() {
-        return gridConfigFields;
-    }
-
-    @Override
-    public String toString() {
-        return MoreObjects.toStringHelper(this)
-                .add("gridConfigFields", gridConfigFields)
-                .toString();
-    }
+public final class ReportRow extends HashMap<String, Object> {
 }

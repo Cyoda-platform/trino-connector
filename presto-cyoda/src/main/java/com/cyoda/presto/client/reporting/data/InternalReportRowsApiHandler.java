@@ -15,7 +15,7 @@
  *
  */
 
-package com.cyoda.presto.client.reporting.groups;
+package com.cyoda.presto.client.reporting.data;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
@@ -30,13 +30,13 @@ import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.service.api.beans.GroupHeader;
+import com.cyoda.service.api.beans.ReportRow;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
-import org.joda.beans.MetaProperty;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.UriTemplate;
@@ -56,37 +56,30 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_ID_COLUMN;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_GROUPS;
-import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_PARENT_COLUMN;
-import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_VERSION_COLUMN;
+import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_GROUP_JSON_BASE64_VARIABLE;
+import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_HISTORY_ID_COLUMN;
 import static com.cyoda.presto.client.types.DataType.STRING;
-import static com.cyoda.presto.client.types.DataType.UUID_TYPE;
 
-/**
- * This is not intended to be exposed as a table, but used internally to fill the real table.
- */
-public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle>
-        implements PagingApiRequestHandler<GroupingHandle> {
+public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
+        implements PagingApiRequestHandler<RowHandle> {
 
-
-
-    public static final String REPORT_GROUPS_TEMPLATE = "/{" + HISTORY_ID_COLUMN + "" +
-            "}/{" +
-            GROUPING_VERSION_COLUMN + "}/groups/" + "{" + GROUPING_PARENT_COLUMN + "}";
+    static final String REPORT_ROWS_TEMPLATE = "/{" + ROW_HISTORY_ID_COLUMN + "" +
+            "}/group_rows/{" +
+            ROW_GROUP_JSON_BASE64_VARIABLE + "}";
 
     private static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
-            .add(new StandardColumnDefinition(0, HISTORY_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))
-            .add(new StandardColumnDefinition(0, GROUPING_VERSION_COLUMN, StandardTypes.VARCHAR, UUID_TYPE, null, null))
+            .add(new StandardColumnDefinition(0, ROW_HISTORY_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))
+            .add(new StandardColumnDefinition(0, ROW_GROUP_JSON_BASE64_VARIABLE, StandardTypes.VARCHAR, STRING, null, null))
             .add(GroupHeader.meta())
             .build();
 
     @Inject
-    public InternalReportGroupsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
+    public InternalReportRowsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                           RestTemplateCustomizer restTemplateCustomizer) {
         super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer);
     }
@@ -102,7 +95,7 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
     }
 
     @Override
-    public Optional<PagedModel<GroupingHandle>> retrievePage(
+    public Optional<PagedModel<RowHandle>> retrievePage(
             int page,
             int pageSize,
             List<CyodaColumnHandle> projectedColumns,
@@ -121,26 +114,25 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
                 .put("size", size);
 
 
-        String historyId = mixinColumn(expansionBuilder,traversal, HISTORY_ID_COLUMN);
-        String groupingVersionString = mixinColumn(expansionBuilder,traversal, GROUPING_VERSION_COLUMN);
-        UUID groupingVersion = UUID.fromString(groupingVersionString);
+        String historyId = mixinColumn(expansionBuilder,traversal, ROW_HISTORY_ID_COLUMN);
+        String groupJsonString = mixinColumn(expansionBuilder,traversal, ROW_GROUP_JSON_BASE64_VARIABLE);
 
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
 
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
         traverson.setRestOperations(restTemplate);
 
-        TypeReferences.PagedModelType<GroupHeader> typeReference =
-                new TypeReferences.PagedModelType<GroupHeader>() {};
+        TypeReferences.PagedModelType<ReportRow> typeReference =
+                new TypeReferences.PagedModelType<ReportRow>() {};
 
         try {
-            final PagedModel<GroupHeader> fieldsViews = traverson
+            final PagedModel<ReportRow> fieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
             return Optional.ofNullable(fieldsViews)
                     .map(item->{
-                        List<GroupingHandle> handles = item.getContent().stream()
-                                .map(handle -> new GroupingHandle(historyId, groupingVersion, handle))
+                        List<RowHandle> handles = item.getContent().stream()
+                                .map(handle -> new RowHandle(historyId, groupJsonString, handle))
                                 .collect(Collectors.toList());
                         return PagedModel.of(handles,item.getMetadata());
                     });
@@ -150,7 +142,7 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
     }
 
     private String mixinColumn(ImmutableMap.Builder<String, Object> expansionBuilder,
-                                PredicateTraversal traversal,String columnName
+                               PredicateTraversal traversal,String columnName
     ) {
         Optional<Set<String>> values = traversal.assembleFilterings(columnName);
         LOG.debug("selecting values:",()->values.map(it-> String.join(",", it)).orElse("EMPTY"));
@@ -176,27 +168,23 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
         } catch (URISyntaxException e) {
             throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, e);
         }
-        return UriTemplate.of(uri.toASCIIString()+ REPORT_GROUPS_TEMPLATE);
+        return UriTemplate.of(uri.toASCIIString()+ REPORT_ROWS_TEMPLATE);
     }
 
     @Nullable
     @Override
-    protected Object getFieldValueFromEntity(@Nonnull GroupingHandle field, CyodaColumnHandle columnHandle) {
-        if ( HISTORY_ID_COLUMN.equals(columnHandle.getColumnName()) ) {
+    protected Object getFieldValueFromEntity(@Nonnull RowHandle field, CyodaColumnHandle columnHandle) {
+        if ( ROW_HISTORY_ID_COLUMN.equals(columnHandle.getColumnName()) ) {
             return field.historyId;
         }
-        if ( GROUPING_VERSION_COLUMN.equals(columnHandle.getColumnName()) ) {
-            return field.groupingVersion;
+        if ( ROW_GROUP_JSON_BASE64_VARIABLE.equals(columnHandle.getColumnName()) ) {
+            return field.groupJsonBase64;
         }
-        MetaProperty<?> metaProperty = field.groupHeader.metaBean().metaPropertyMap().get(columnHandle.getColumnName());
-        if ( metaProperty == null ) {
-            throw new IllegalArgumentException(columnHandle.getColumnName()+" is not defined on ReportDefinitionsView");
-        }
-        return field.groupHeader.metaBean().metaProperty(columnHandle.getColumnName()).get(field.groupHeader);
+        return field.reportRow.get(columnHandle.getColumnName());
     }
 
     @Override
-    public Iterator<GroupingHandle> getResponseIterator(
+    public Iterator<RowHandle> getResponseIterator(
             int pageSize,
             List<CyodaColumnHandle> projectedColumns,
             PredicateNode<Any> predicates
@@ -207,3 +195,4 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
 
 
 }
+

@@ -34,26 +34,31 @@ import com.facebook.presto.common.type.TypeSignatureParameter;
 import com.facebook.presto.spi.SchemaTableName;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.cyoda.presto.client.types.DataType.*;
 import static java.util.Objects.requireNonNull;
 
-public abstract class BaseReportsApiHandler<T> implements ApiRequestHandler<T> {
+public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder implements ApiRequestHandler<T> {
 
     protected static final SupplierLogger LOG = SupplierLogger.get(BaseReportsApiHandler.class);
 
-    public static final String REPORT_DEFS_ENDPOINT = "/api/platform-api/reporting/definitions";
-    public static final String REPORT_HISTORY_ENDPOINT = "/api/platform-api/reporting/history";
-    public static final String REPORT_DETAILS_ENDPOINT = REPORT_DEFS_ENDPOINT + "/";
     public static final String REPORT_ENDPOINT = "/api/platform-api/reporting/report";
 
     public static final int DEFAULT_PAGE_SIZE = 10;
@@ -61,40 +66,18 @@ public abstract class BaseReportsApiHandler<T> implements ApiRequestHandler<T> {
     protected final CyodaConnectorId connectorId;
     protected final CyodaConfig config;
     protected final RestTemplate restTemplate;
-    protected final Map<SchemaTableName, CyodaTable> tableMap;
-    protected final List<CyodaTable> cyodaTables;
-    protected final List<ColumnDefinition> fieldDefs;
     protected final TypeManager typeManager;
 
-    protected BaseReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager, String endpoint, String tableName,
-                                    List<ColumnDefinition> fieldDefs, RestTemplateCustomizer restTemplateCustomizer) {
+    protected BaseReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager, String endpoint, RestTemplateCustomizer restTemplateCustomizer) {
+        super(endpoint);
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.config = requireNonNull(config, "config is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
-        this.fieldDefs = requireNonNull(fieldDefs,"fieldDefs are null");
-
         // TODO: This means that the authentication parameters are fixed at startup. Need to make this more flexible, without restarting presto.
         restTemplate = restTemplateCustomizer.getRestTemplate();
-
-        this.tableMap = setupTables(endpoint, tableName);
-        this.cyodaTables = ImmutableList.copyOf(tableMap.values());
-
     }
 
-    protected Map<SchemaTableName, CyodaTable> setupTables(String endpoint, String tableName) {
-        ImmutableList<CyodaColumnHandle> cyodaColumnHandles = ImmutableList.copyOf(
-                fieldDefs.stream().map(it ->
-                        new CyodaColumnHandle(
-                                connectorId.toString(),
-                                it.getFieldName(),
-                                toType(it),
-                                it.getDataType(),
-                                it.getPos(),
-                                getHandlerKey()
-                        )
-                ).collect(Collectors.toList())
-        );
-
+    protected Map<SchemaTableName, CyodaTable> setupTableMap(String endpoint, Map<String, List<ColumnDefinition>> fieldDefs) {
         final URI uri;
         try {
             uri = config.getServerUrl().toURI().resolve(endpoint);
@@ -103,40 +86,65 @@ public abstract class BaseReportsApiHandler<T> implements ApiRequestHandler<T> {
             throw new IllegalArgumentException("Bad endpoint: "+endpoint,e);
         }
         List<URI> sources = Collections.singletonList(uri);
-        CyodaTable table = new CyodaTable(tableName, cyodaColumnHandles, sources, true);
-        SchemaTableName key = new SchemaTableName(config.getSchemaName(), table.getName());
-        return Collections.singletonMap(key, table);
+        Map<String,List<CyodaColumnHandle>> cyodaColumnHandles = createCyodaColumnHandles(fieldDefs);
+        return cyodaColumnHandles.entrySet().stream().collect(Collectors.toMap(
+                entry-> new SchemaTableName(config.getSchemaName(), entry.getKey()),
+                entry -> new CyodaTable(entry.getKey(), cyodaColumnHandles.get(entry.getKey()), sources, true)
+        ));
+    }
+
+    protected Map<String,List<CyodaColumnHandle>> createCyodaColumnHandles(Map<String, List<ColumnDefinition>> fieldDefs) {
+        return ImmutableMap.copyOf(
+                this.getFieldDefs().entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey, it->
+                                it.getValue().stream()
+                                        .map(fieldDef -> new CyodaColumnHandle(
+                                                connectorId.toString(),
+                                                fieldDef.getFieldName(),
+                                                toType(fieldDef),
+                                                fieldDef.getDataType(),
+                                                fieldDef.getPos(),
+                                                getHandlerKey()
+                                        )).collect(Collectors.toList())
+                        ))
+        );
     }
 
 
-    private Type toType(ColumnDefinition fieldDef) {
+    protected Type toType(ColumnDefinition fieldDef) {
         String fieldTypeString = fieldDef.getFieldTypeString();
+        TypeSignature parType = fieldDef.getParType();
+        TypeSignature mapValueType = fieldDef.getMapValuetype();
+        return toType(fieldTypeString,parType,mapValueType);
+
+    }
+    protected Type toType(String fieldTypeString,TypeSignature parType, TypeSignature mapValueType) {
         if (fieldTypeString.equals(StandardTypes.ARRAY)) {
             return typeManager.getParameterizedType(StandardTypes.ARRAY,
-                    ImmutableList.of(TypeSignatureParameter.of(fieldDef.getParType())));
+                    ImmutableList.of(TypeSignatureParameter.of(parType)));
         }
         if (fieldTypeString.equals(StandardTypes.MAP)) {
             return typeManager.getParameterizedType(StandardTypes.MAP,
                     ImmutableList.of(
-                            TypeSignatureParameter.of(fieldDef.getParType()),
-                            TypeSignatureParameter.of(fieldDef.getMapValuetype()))
+                            TypeSignatureParameter.of(parType),
+                            TypeSignatureParameter.of(mapValueType))
             );
         }
         if (DataType.supportedPrestoTypes.contains(fieldTypeString)) {
             return typeManager.getType(new TypeSignature(fieldTypeString));
         } else {
-            throw new UnsupportedOperationException(fieldDef + " Not yet mapped");
+            throw new UnsupportedOperationException(fieldTypeString + " Not yet mapped");
         }
     }
 
     @Override
     public boolean hasTable(SchemaTableName tableName) {
-        return tableMap.containsKey(tableName);
+        return getTableMap().containsKey(tableName);
     }
 
     @Override
     public List<CyodaTable> getTables() {
-        return cyodaTables;
+        return ImmutableList.copyOf(getTableMap().values());
     }
 
     @Override
@@ -148,13 +156,33 @@ public abstract class BaseReportsApiHandler<T> implements ApiRequestHandler<T> {
         return SupportedDataType.ofAny(mappedField,columnHandle.getDataType().getJavaType());
     }
 
-    protected @Nonnull Object mapFieldValue(@Nonnull Object value, CyodaColumnHandle columnHandle) {
+    protected @Nonnull Object mapFieldValue(@Nonnull final Object value, CyodaColumnHandle columnHandle) {
+        if (columnHandle.getDataType() == UUID_TYPE && value instanceof String) {
+            return UUID.fromString((String) value);
+        }
+        if (columnHandle.getDataType() == DATE) {
+            return toDate((String) value);
+        }
+        if (columnHandle.getDataType() == LOCAL_DATE_TIME) {
+            return toLocalDateTime((String) value);
+        }
         return value;
+    }
+
+    private Date toDate(String str) {
+        if (str == null) return null;
+        LocalDateTime localDateTime = toLocalDateTime(str);
+        return Timestamp.valueOf(localDateTime);
+    }
+
+    private LocalDateTime toLocalDateTime(String str) {
+        return LocalDateTime.parse(str, DateTimeFormatter.ISO_DATE_TIME);
     }
 
     protected abstract @Nullable Object getFieldValueFromEntity(@Nonnull T field, CyodaColumnHandle columnHandle);
 
-    protected static String toReportName(String reportId) {
+    protected static String toReportName(@Nonnull String reportId) {
+        Preconditions.checkNotNull(reportId,"reportId is null");
         int start = reportId.lastIndexOf('-');
         if (start < 0) {
             throw new IllegalArgumentException("report ID "+reportId+" has incompatible format." +
@@ -164,5 +192,17 @@ public abstract class BaseReportsApiHandler<T> implements ApiRequestHandler<T> {
         Preconditions.checkArgument(!reportName.isEmpty(),"report ID '%s' has incompatible format." +
                 " It should be <Tenant>-<EntityTypee>-<ReportName>",reportId);
         return reportName;
+    }
+
+    protected static @Nonnull String reportNameToTableName(@Nonnull String reportName) {
+        Preconditions.checkNotNull(reportName,"reportName is null");
+        Preconditions.checkArgument(!reportName.isEmpty(),"reportName is empty");
+        String result = reportName
+                .replace(" ", "")
+                .replaceAll("[$\\-&%§@*#']", "") // Let's not allow complicated things.
+                .replaceAll("([a-z])([A-Z]+)", "$1_$2")
+                .toUpperCase(Locale.ROOT);
+        Preconditions.checkArgument(!result.isEmpty(),"generated tableName is empty");
+        return result;
     }
 }

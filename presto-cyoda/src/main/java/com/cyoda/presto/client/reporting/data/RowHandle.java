@@ -15,21 +15,20 @@
  *
  */
 
-package com.cyoda.presto.client.reporting.groups;
+package com.cyoda.presto.client.reporting.data;
 
-import com.cyoda.service.api.beans.GroupHeader;
+import com.cyoda.service.api.beans.ReportRow;
 
-import java.util.UUID;
+public class RowHandle {
 
-public class GroupingHandle {
+    final String historyId;
+    final String groupJsonBase64;
+    final ReportRow reportRow;
 
-    public final String historyId;
-    public final UUID groupingVersion;
-    public final GroupHeader groupHeader;
-
-    public GroupingHandle(String historyId, UUID groupingVersion, GroupHeader groupHeader) {
+    public RowHandle(String historyId, String groupJsonBase64, ReportRow reportRow) {
         this.historyId = historyId;
-        this.groupingVersion = groupingVersion;
-        this.groupHeader = groupHeader;
+        this.groupJsonBase64 = groupJsonBase64;
+        this.reportRow = reportRow;
     }
+
 }

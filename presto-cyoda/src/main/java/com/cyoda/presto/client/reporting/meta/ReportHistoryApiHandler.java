@@ -15,9 +15,8 @@
  *
  */
 
-package com.cyoda.presto.client.reporting;
+package com.cyoda.presto.client.reporting.meta;
 
-import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.core.model.reports.ReportHistoryFieldsView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
@@ -26,6 +25,9 @@ import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateNode;
 import com.cyoda.presto.client.paging.PagedIterator;
+import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
+import com.cyoda.presto.client.reporting.ColumnDefinition;
+import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -57,17 +59,18 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.*;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
+import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_HISTORIES;
 import static com.cyoda.presto.client.types.DataType.*;
 
 public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistoryFieldsView>
@@ -75,17 +78,18 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
 
     private static final SupplierLogger LOG = SupplierLogger.get(ReportHistoryApiHandler.class);
 
-    enum ColumnDef implements ColumnDefinition {
-        ID(0, REPORT_ID_COLUMN_NAME, StandardTypes.VARCHAR, STRING, null),
-        CREATION_DATE(1, CREATE_TIME_COLUMN_NAME, StandardTypes.TIMESTAMP, LOCAL_DATE_TIME, null),
+    public static final String REPORT_HISTORY_ENDPOINT = "/api/platform-api/reporting/history";
 
-        TYPE(2, TYPE_COLUMN_NAME, StandardTypes.VARCHAR, STRING, null),
-        STATUS(3, STATUS_NAME_COLUMN_NAME, StandardTypes.VARCHAR, STRING, null),
-        HIERARCHY_ENABLE(4, HIERARHY_ENABLE_COLUMN_NAME, StandardTypes.BOOLEAN, BOOLEAN, null),
+    enum ColumnDef implements ColumnDefinition {
+        ID(0, HISTORY_ID_COLUMN, StandardTypes.VARCHAR, STRING, null),
+        CREATION_DATE(2, HISTORY_CREATE_TIME_COLUMN, StandardTypes.TIMESTAMP, LOCAL_DATE_TIME, null),
+        TYPE(3, HISTORY_TYPE_COLUMN, StandardTypes.VARCHAR, STRING, null),
+        STATUS(4, HISTORY_STATUS_NAME_COLUMN, StandardTypes.VARCHAR, STRING, null),
+        HIERARCHY_ENABLE(5, HISTORY_HIERARHY_ENABLE_COLUMN, StandardTypes.BOOLEAN, BOOLEAN, null),
         // For Trino this can be a UUID, but Presto wants VARCHAR.
-        GROUPING_VERSION(5, GROUPING_VERSION_COLUMN_NAME, StandardTypes.VARCHAR, UUID_TYPE, null),
-        GROUPING_COLUMNS(6, GROUPING_COLUMNS_COLUMN_NAME, StandardTypes.ARRAY, LIST, VarcharType.VARCHAR.getTypeSignature()),
-        USER_NAME(6,USER_NAME_COLUMN_NAME, StandardTypes.VARCHAR,STRING,null);
+        GROUPING_VERSION(6, HISTORY_GROUPING_VERSION_COLUMN, StandardTypes.VARCHAR, UUID_TYPE, null),
+        GROUPING_COLUMNS(7, HISTORY_GROUPING_COLUMNS_COLUMN, StandardTypes.ARRAY, LIST, VarcharType.VARCHAR.getTypeSignature()),
+        USER_NAME(8, HISTORY_USER_NAME_COLUMN, StandardTypes.VARCHAR,STRING,null);
 
 
         @Override
@@ -146,14 +150,17 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
     @Inject
     public ReportHistoryApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                    RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager, REPORT_HISTORY_ENDPOINT, CyodaStaticReportTable.REPORT_HISTORIES.name(),
-                ImmutableList.copyOf(ColumnDef.values()),restTemplateCustomizer);
+        super(connectorId, config, typeManager, REPORT_HISTORY_ENDPOINT,restTemplateCustomizer);
     }
 
+    @Override
+    protected Map<String, List<ColumnDefinition>> setupFieldDefs() {
+        return Collections.singletonMap(REPORT_HISTORIES.name(),ImmutableList.copyOf(ColumnDef.values()));
+    }
 
     @Override
     public String getHandlerKey() {
-        return CyodaStaticReportTable.REPORT_HISTORIES.name();
+        return REPORT_HISTORIES.name();
     }
 
 
@@ -179,7 +186,7 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
 
 
         // Filter criteria: filterByType, user (single), creationdate range.
-        Optional<Set<String>> filterByType = traversal.assembleFilterings(GridConfigFieldsView.TYPE_COLUMN_NAME);
+        Optional<Set<String>> filterByType = traversal.assembleFilterings(HISTORY_TYPE_COLUMN);
         LOG.debug("selecting by types:",()->filterByType.map(it-> String.join(",", it)).orElse("EMPTY"));
 
         // If the optional is empty, it means the predicates are such that everything must be filtered.
@@ -237,33 +244,12 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
     @Override
     protected @Nullable Object getFieldValueFromEntity(@Nonnull ReportHistoryFieldsView entity, CyodaColumnHandle columnHandle) {
         Map<String, Object> fields = entity.getReportHistoryFields();
-        return fields.get(columnHandle.getColumnName());
-    }
 
-    @Override
-    protected @Nonnull Object mapFieldValue(@Nonnull Object value, CyodaColumnHandle columnHandle) {
-        if (columnHandle.getDataType() == DATE) {
-            return toDate((String) value);
+        String columnName = columnHandle.getColumnName();
+        if ( HISTORY_ID_COLUMN.equals(columnName)) {
+            columnName = "id";
         }
-        if (columnHandle.getDataType() == LOCAL_DATE_TIME) {
-            return toLocalDateTime((String) value);
-        }
-        if (columnHandle.getDataType() == UUID_TYPE) {
-            return UUID.fromString((String) value);
-        }
-        return value;
-    }
-
-
-
-    private Date toDate(String str) {
-        if (str == null) return null;
-        LocalDateTime localDateTime = toLocalDateTime(str);
-        return Timestamp.valueOf(localDateTime);
-    }
-
-    private LocalDateTime toLocalDateTime(String str) {
-        return LocalDateTime.parse(str, DateTimeFormatter.ISO_DATE_TIME);
+        return fields.get(columnName);
     }
 
     @Override

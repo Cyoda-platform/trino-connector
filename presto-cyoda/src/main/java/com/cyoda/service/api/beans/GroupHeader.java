@@ -82,13 +82,14 @@ public class GroupHeader implements ImmutableBean {
 
     @JsonProperty
     @PropertyDefinition
-    private final Map<String, Optional<?>> commonGroupValues;
+    private final Map<String, Optional> commonGroupValues;
 
     @JsonIgnore
     public Set<String> getColumnNames() {
         return summary.keySet();
     }
 
+    // Need this (and a non-final class) because of the Optional. Cyoda is sending null elements.
     @JsonCreator
     public GroupHeader(
             @JsonProperty("groupValuesJson") String groupValuesJson,
@@ -233,7 +234,7 @@ public class GroupHeader implements ImmutableBean {
      * Gets the commonGroupValues.
      * @return the value of the property
      */
-    public Map<String, Optional<?>> getCommonGroupValues() {
+    public Map<String, Optional> getCommonGroupValues() {
         return commonGroupValues;
     }
 
@@ -362,7 +363,7 @@ public class GroupHeader implements ImmutableBean {
          * The meta-property for the {@code commonGroupValues} property.
          */
         @SuppressWarnings({"unchecked", "rawtypes" })
-        private final MetaProperty<Map<String, Optional<?>>> commonGroupValues = DirectMetaProperty.ofImmutable(
+        private final MetaProperty<Map<String, Optional>> commonGroupValues = DirectMetaProperty.ofImmutable(
                 this, "commonGroupValues", GroupHeader.class, (Class) Map.class);
         /**
          * The meta-properties.
@@ -494,7 +495,7 @@ public class GroupHeader implements ImmutableBean {
          * The meta-property for the {@code commonGroupValues} property.
          * @return the meta-property, not null
          */
-        public final MetaProperty<Map<String, Optional<?>>> commonGroupValues() {
+        public final MetaProperty<Map<String, Optional>> commonGroupValues() {
             return commonGroupValues;
         }
 
@@ -549,7 +550,7 @@ public class GroupHeader implements ImmutableBean {
         private boolean isNext;
         private boolean leaf;
         private Map<String, Summary> summary;
-        private Map<String, Optional<?>> commonGroupValues;
+        private Map<String, Optional> commonGroupValues;
 
         /**
          * Restricted constructor.
@@ -629,7 +630,7 @@ public class GroupHeader implements ImmutableBean {
                     this.summary = (Map<String, Summary>) newValue;
                     break;
                 case -1146351210:  // commonGroupValues
-                    this.commonGroupValues = (Map<String, Optional<?>>) newValue;
+                    this.commonGroupValues = (Map<String, Optional>) newValue;
                     break;
                 default:
                     throw new NoSuchElementException("Unknown property: " + propertyName);
@@ -744,7 +745,7 @@ public class GroupHeader implements ImmutableBean {
          * @param commonGroupValues  the new value
          * @return this, for chaining, not null
          */
-        public Builder commonGroupValues(Map<String, Optional<?>> commonGroupValues) {
+        public Builder commonGroupValues(Map<String, Optional> commonGroupValues) {
             this.commonGroupValues = commonGroupValues;
             return this;
         }

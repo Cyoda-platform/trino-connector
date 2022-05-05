@@ -31,8 +31,7 @@ import com.cyoda.presto.client.logic.PredicateBuilder;
 import com.cyoda.presto.client.logic.PredicateNode;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
-import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
-import com.cyoda.presto.client.reporting.ReportStatisticsApiHandler;
+import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 import com.cyoda.presto.client.types.SupportedDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.service.api.beans.GroupHeader;
@@ -49,10 +48,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.StreamSupport;
 
-import static com.cyoda.presto.client.reporting.groups.InternalReportGroupsApiHandler.GROUPING_VERSION_COLUMN_NAME;
-import static com.cyoda.presto.client.reporting.groups.InternalReportGroupsApiHandler.REPORT_ID_COLUMN_NAME;
+import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_ID_COLUMN;
+import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_GROUPS;
 import static com.cyoda.presto.client.types.DataType.STRING;
 import static com.cyoda.presto.client.types.DataType.UUID_TYPE;
 
@@ -62,28 +62,30 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
     private final ReportStatisticsApiHandler statisticsApiHandler;
     private final InternalReportGroupsApiHandler reportGroupsHandler;
 
+    public static final String GROUPING_VERSION_COLUMN = "groupingVersion";
+    public static final String GROUPING_PARENT_COLUMN = "group_json";
+
     private static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
-            .add(new StandardColumnDefinition(0,REPORT_ID_COLUMN_NAME, StandardTypes.VARCHAR, STRING, null, null))
-            .add(new StandardColumnDefinition(0,GROUPING_VERSION_COLUMN_NAME, StandardTypes.VARCHAR, UUID_TYPE, null, null))
+            .add(new StandardColumnDefinition(0, HISTORY_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))
+            .add(new StandardColumnDefinition(0, GROUPING_VERSION_COLUMN, StandardTypes.VARCHAR, UUID_TYPE, null, null))
             .add(GroupHeader.meta())
             .build();
 
-    private final CyodaColumnHandle reportIdColumn;
+    private final CyodaColumnHandle historyIdColumn;
     private final CyodaColumnHandle groupingVersionColumn;
 
     @Inject
     public ReportGroupsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                   RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager,
-                REPORT_ENDPOINT, CyodaStaticReportTable.REPORT_GROUPS.name(), COLUMN_DEFS,restTemplateCustomizer);
+        super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer);
         this.statisticsApiHandler = new ReportStatisticsApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
         this.reportGroupsHandler = new InternalReportGroupsApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
-        this.reportIdColumn = reportGroupsHandler.getTables().get(0).getColumns().stream()
-                .filter(it -> it.getColumnName().equals(REPORT_ID_COLUMN_NAME))
+        this.historyIdColumn = reportGroupsHandler.getTables().get(0).getColumns().stream()
+                .filter(it -> it.getColumnName().equals(HISTORY_ID_COLUMN))
                 .findAny()
                 .orElseThrow(()->new IllegalStateException("Report ID Column not found!"));
         this.groupingVersionColumn = reportGroupsHandler.getTables().get(0).getColumns().stream()
-                .filter(it -> it.getColumnName().equals(GROUPING_VERSION_COLUMN_NAME))
+                .filter(it -> it.getColumnName().equals(GROUPING_VERSION_COLUMN))
                 .map(it->new CyodaColumnHandle(
                         it.getConnectorId(),
                         it.getColumnName(),
@@ -97,8 +99,13 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
     }
 
     @Override
+    protected Map<String, List<ColumnDefinition>> setupFieldDefs() {
+        return Collections.singletonMap(REPORT_GROUPS.name(), COLUMN_DEFS);
+    }
+
+    @Override
     public String getHandlerKey() {
-        return CyodaStaticReportTable.REPORT_GROUPS.name();
+        return REPORT_GROUPS.name();
     }
 
     protected Iterable<GroupingHandle> groupsIterator(
@@ -106,15 +113,15 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
             List<CyodaColumnHandle> projectedColumns,
             @Nonnull DistributedReportInfoView stats
     ) {
-        String reportId = stats.getId();
+        String historyId = stats.getId();
         String groupingVersion = stats.getGroupingVersion().toString();
 
         if (stats.getGroupsCount() == 0 ) return Collections::emptyIterator;
 
-        Slice reportIdSlice = SupportedDataType.of(reportId,String.class).asSlice(VarcharType.VARCHAR);
+        Slice reportIdSlice = SupportedDataType.of(historyId,String.class).asSlice(VarcharType.VARCHAR);
         Slice groupingVersionSlice = SupportedDataType.of(groupingVersion,String.class).asSlice(VarcharType.VARCHAR);
         List<PredicateNode<?>> members = Arrays.asList(
-                LeafPredicateNode.leaf(PredicateBuilder.createEqualsPredicate(reportIdColumn, reportIdSlice)),
+                LeafPredicateNode.leaf(PredicateBuilder.createEqualsPredicate(historyIdColumn, reportIdSlice)),
                 LeafPredicateNode.leaf(PredicateBuilder.createEqualsPredicate(groupingVersionColumn, groupingVersionSlice))
         );
         PredicateNode<Any> predicates = CompoundPredicateNode.of(members, Connective.AND);
@@ -125,10 +132,10 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
     @Nullable
     @Override
     protected Object getFieldValueFromEntity(@Nonnull GroupingHandle field, CyodaColumnHandle columnHandle) {
-        if ( REPORT_ID_COLUMN_NAME.equals(columnHandle.getColumnName()) ) {
-            return field.reportId;
+        if ( HISTORY_ID_COLUMN.equals(columnHandle.getColumnName()) ) {
+            return field.historyId;
         }
-        if ( GROUPING_VERSION_COLUMN_NAME.equals(columnHandle.getColumnName()) ) {
+        if ( GROUPING_VERSION_COLUMN.equals(columnHandle.getColumnName()) ) {
             return field.groupingVersion;
         }
         MetaProperty<?> metaProperty = field.groupHeader.metaBean().metaPropertyMap().get(columnHandle.getColumnName());
@@ -139,8 +146,8 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
     }
 
     @Override
-    protected @Nonnull Object mapFieldValue(@Nonnull Object value, CyodaColumnHandle columnHandle) {
-        return value;
+    protected @Nonnull Object mapFieldValue(@Nonnull final Object value, CyodaColumnHandle columnHandle) {
+        return super.mapFieldValue(value,columnHandle);
     }
 
 

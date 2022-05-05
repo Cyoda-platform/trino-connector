@@ -17,7 +17,7 @@
 
 package com.cyoda.core.reports.columns;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.joda.beans.Bean;
 import org.joda.beans.ImmutableBean;
@@ -31,11 +31,12 @@ import org.joda.beans.impl.direct.DirectMetaBean;
 import org.joda.beans.impl.direct.DirectMetaProperty;
 import org.joda.beans.impl.direct.DirectMetaPropertyMap;
 
+import java.beans.ConstructorProperties;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-@BeanDefinition(builderScope = "public")
-public class ReportSortColumn implements ImmutableBean {
+@BeanDefinition(builderScope = "public",constructorScope = "public@ConstructorProperties")
+public final class ReportSortColumn implements ImmutableBean {
 
     @JsonProperty
     @PropertyDefinition(validate = "notNull")
@@ -45,20 +46,12 @@ public class ReportSortColumn implements ImmutableBean {
     @PropertyDefinition(validate = "notNull")
     private final boolean reverse;
 
-    @JsonCreator
-    public ReportSortColumn(@JsonProperty("column") ReportColumn column) {
-        this(column, false);
-    }
-
-    public ReportSortColumn(ReportColumn column, boolean reverse) {
-        this.column = column;
-        this.reverse = reverse;
-    }
-
+    @JsonIgnore
     public String getColumnName() {
         return column.getName();
     }
 
+    @JsonIgnore
     public ReportColumn.Type getColumnType() {
         return column.getType();
     }
@@ -85,14 +78,18 @@ public class ReportSortColumn implements ImmutableBean {
     }
 
     /**
-     * Restricted constructor.
-     * @param builder  the builder to copy from, not null
+     * Creates an instance.
+     * @param column  the value of the property, not null
+     * @param reverse  the value of the property, not null
      */
-    protected ReportSortColumn(ReportSortColumn.Builder builder) {
-        JodaBeanUtils.notNull(builder.column, "column");
-        JodaBeanUtils.notNull(builder.reverse, "reverse");
-        this.column = builder.column;
-        this.reverse = builder.reverse;
+    @ConstructorProperties({"column", "reverse"})
+    public ReportSortColumn(
+            ReportColumn column,
+            boolean reverse) {
+        JodaBeanUtils.notNull(column, "column");
+        JodaBeanUtils.notNull(reverse, "reverse");
+        this.column = column;
+        this.reverse = reverse;
     }
 
     @Override
@@ -152,25 +149,17 @@ public class ReportSortColumn implements ImmutableBean {
     public String toString() {
         StringBuilder buf = new StringBuilder(96);
         buf.append("ReportSortColumn{");
-        int len = buf.length();
-        toString(buf);
-        if (buf.length() > len) {
-            buf.setLength(buf.length() - 2);
-        }
+        buf.append("column").append('=').append(JodaBeanUtils.toString(column)).append(',').append(' ');
+        buf.append("reverse").append('=').append(JodaBeanUtils.toString(reverse));
         buf.append('}');
         return buf.toString();
-    }
-
-    protected void toString(StringBuilder buf) {
-        buf.append("column").append('=').append(JodaBeanUtils.toString(column)).append(',').append(' ');
-        buf.append("reverse").append('=').append(JodaBeanUtils.toString(reverse)).append(',').append(' ');
     }
 
     //-----------------------------------------------------------------------
     /**
      * The meta-bean for {@code ReportSortColumn}.
      */
-    public static class Meta extends DirectMetaBean {
+    public static final class Meta extends DirectMetaBean {
         /**
          * The singleton instance of the meta-bean.
          */
@@ -197,7 +186,7 @@ public class ReportSortColumn implements ImmutableBean {
         /**
          * Restricted constructor.
          */
-        protected Meta() {
+        private Meta() {
         }
 
         @Override
@@ -231,7 +220,7 @@ public class ReportSortColumn implements ImmutableBean {
          * The meta-property for the {@code column} property.
          * @return the meta-property, not null
          */
-        public final MetaProperty<ReportColumn> column() {
+        public MetaProperty<ReportColumn> column() {
             return column;
         }
 
@@ -239,7 +228,7 @@ public class ReportSortColumn implements ImmutableBean {
          * The meta-property for the {@code reverse} property.
          * @return the meta-property, not null
          */
-        public final MetaProperty<Boolean> reverse() {
+        public MetaProperty<Boolean> reverse() {
             return reverse;
         }
 
@@ -270,7 +259,7 @@ public class ReportSortColumn implements ImmutableBean {
     /**
      * The bean-builder for {@code ReportSortColumn}.
      */
-    public static class Builder extends DirectFieldsBeanBuilder<ReportSortColumn> {
+    public static final class Builder extends DirectFieldsBeanBuilder<ReportSortColumn> {
 
         private ReportColumn column;
         private boolean reverse;
@@ -278,14 +267,14 @@ public class ReportSortColumn implements ImmutableBean {
         /**
          * Restricted constructor.
          */
-        protected Builder() {
+        private Builder() {
         }
 
         /**
          * Restricted copy constructor.
          * @param beanToCopy  the bean to copy from, not null
          */
-        protected Builder(ReportSortColumn beanToCopy) {
+        private Builder(ReportSortColumn beanToCopy) {
             this.column = beanToCopy.getColumn();
             this.reverse = beanToCopy.isReverse();
         }
@@ -326,7 +315,9 @@ public class ReportSortColumn implements ImmutableBean {
 
         @Override
         public ReportSortColumn build() {
-            return new ReportSortColumn(this);
+            return new ReportSortColumn(
+                    column,
+                    reverse);
         }
 
         //-----------------------------------------------------------------------
@@ -357,18 +348,10 @@ public class ReportSortColumn implements ImmutableBean {
         public String toString() {
             StringBuilder buf = new StringBuilder(96);
             buf.append("ReportSortColumn.Builder{");
-            int len = buf.length();
-            toString(buf);
-            if (buf.length() > len) {
-                buf.setLength(buf.length() - 2);
-            }
+            buf.append("column").append('=').append(JodaBeanUtils.toString(column)).append(',').append(' ');
+            buf.append("reverse").append('=').append(JodaBeanUtils.toString(reverse));
             buf.append('}');
             return buf.toString();
-        }
-
-        protected void toString(StringBuilder buf) {
-            buf.append("column").append('=').append(JodaBeanUtils.toString(column)).append(',').append(' ');
-            buf.append("reverse").append('=').append(JodaBeanUtils.toString(reverse)).append(',').append(' ');
         }
 
     }

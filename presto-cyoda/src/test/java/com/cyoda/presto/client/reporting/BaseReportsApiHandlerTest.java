@@ -60,5 +60,54 @@ public class BaseReportsApiHandlerTest {
             assertNotNull(message);
             assertTrue(message.length()>0);
         }
+
+        // Invalid case
+        try {
+            //noinspection ConstantConditions
+            BaseReportsApiHandler.toReportName(null);
+            fail("should not get here");
+        } catch (NullPointerException e) {
+            String message = e.getMessage();
+            assertNotNull(message);
+            assertTrue(message.length()>0);
+        }
+    }
+
+    @Test
+    public void testToTableName() {
+        assertEquals(BaseReportsApiHandler.reportNameToTableName("My NameIsNobody"),"MY_NAME_IS_NOBODY");
+        assertEquals(BaseReportsApiHandler.reportNameToTableName("$My Name-IsNo&bod%y"),"MY_NAME_IS_NOBODY");
+
+        // Invalid case
+        try {
+            BaseReportsApiHandler.reportNameToTableName("-");
+            fail("should not get here");
+        } catch (IllegalArgumentException e) {
+            String message = e.getMessage();
+            assertNotNull(message);
+            assertTrue(message.length()>0);
+        }
+
+        // Invalid case
+        try {
+            BaseReportsApiHandler.reportNameToTableName("");
+            fail("should not get here");
+        } catch (IllegalArgumentException e) {
+            String message = e.getMessage();
+            assertNotNull(message);
+            assertTrue(message.length()>0);
+        }
+
+        // Invalid case
+        try {
+            //noinspection ConstantConditions
+            BaseReportsApiHandler.reportNameToTableName(null);
+            fail("should not get here");
+        } catch (NullPointerException e) {
+            String message = e.getMessage();
+            assertNotNull(message);
+            assertTrue(message.length()>0);
+        }
+
     }
 }

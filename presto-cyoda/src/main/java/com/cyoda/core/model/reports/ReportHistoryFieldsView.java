@@ -22,14 +22,14 @@ import java.util.Map;
 
 public class ReportHistoryFieldsView {
 
-    public static final String CREATE_TIME_COLUMN_NAME = "createTime";
-    public static final String TYPE_COLUMN_NAME = "type";
-    public static final String STATUS_NAME_COLUMN_NAME = "status";
-    public static final String REPORT_ID_COLUMN_NAME = "reportId";
-    public static final String HIERARHY_ENABLE_COLUMN_NAME = "hierarhyEnable";
-    public static final String GROUPING_VERSION_COLUMN_NAME = "groupingVersion";
-    public static final String GROUPING_COLUMNS_COLUMN_NAME = "groupingColumns";
-    public static final String USER_NAME_COLUMN_NAME = "username";
+    public static final String HISTORY_ID_COLUMN = "id";
+    public static final String HISTORY_CREATE_TIME_COLUMN = "createTime";
+    public static final String HISTORY_TYPE_COLUMN = "type";
+    public static final String HISTORY_STATUS_NAME_COLUMN = "status";
+    public static final String HISTORY_HIERARHY_ENABLE_COLUMN = "hierarhyEnable";
+    public static final String HISTORY_GROUPING_VERSION_COLUMN = "groupingVersion";
+    public static final String HISTORY_GROUPING_COLUMNS_COLUMN = "groupingColumns";
+    public static final String HISTORY_USER_NAME_COLUMN = "username";
 
     private final Map<String, Object> reportHistoryFields = new HashMap<>();
 

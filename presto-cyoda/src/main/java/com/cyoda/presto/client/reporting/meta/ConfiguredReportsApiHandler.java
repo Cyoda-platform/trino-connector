@@ -15,7 +15,7 @@
  *
  */
 
-package com.cyoda.presto.client.reporting;
+package com.cyoda.presto.client.reporting.meta;
 
 import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.presto.CyodaConfig;
@@ -25,6 +25,9 @@ import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateNode;
 import com.cyoda.presto.client.paging.PagedIterator;
+import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
+import com.cyoda.presto.client.reporting.ColumnDefinition;
+import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -63,10 +66,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.cyoda.api.view.GridConfigFieldsView.ID_COLUMN_NAME;
-import static com.cyoda.api.view.GridConfigFieldsView.NAME_COLUMN_NAME;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORTS;
+import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.*;
 import static com.cyoda.presto.client.types.DataType.LOCAL_DATE_TIME;
 import static com.cyoda.presto.client.types.DataType.STRING;
 
@@ -75,14 +77,15 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
 
     protected static final SupplierLogger LOG = SupplierLogger.get(ConfiguredReportsApiHandler.class);
 
+    public static final String REPORT_DEFS_ENDPOINT = "/api/platform-api/reporting/definitions";
 
     enum ColumnDef implements ColumnDefinition {
-        ID              (0, ID_COLUMN_NAME, StandardTypes.VARCHAR,STRING),
-        NAME            (1, NAME_COLUMN_NAME,StandardTypes.VARCHAR, STRING),
-        DESCRIPTION     (1, GridConfigFieldsView.DESCRIPTION_COLUMN_NAME,StandardTypes.VARCHAR,STRING),
-        TYPE            (2, GridConfigFieldsView.TYPE_COLUMN_NAME,StandardTypes.VARCHAR,STRING),
-        USER_ID         (3, GridConfigFieldsView.USER_ID_COLUMN_NAME,StandardTypes.VARCHAR,STRING),
-        CREATION_DATE   (4, GridConfigFieldsView.CREATION_DATE_COLUMN_NAME,StandardTypes.TIMESTAMP, LOCAL_DATE_TIME);
+        ID              (0, REPORT_ID_COLUMN, StandardTypes.VARCHAR,STRING),
+        NAME            (1, REPORT_NAME_COLUMN,StandardTypes.VARCHAR, STRING),
+        DESCRIPTION     (1, REPORT_DESCRIPTION_COLUMN,StandardTypes.VARCHAR,STRING),
+        TYPE            (2, REPORT_TYPE_COLUMN,StandardTypes.VARCHAR,STRING),
+        USER_ID         (3, REPORT_USER_ID_COLUMN,StandardTypes.VARCHAR,STRING),
+        CREATION_DATE   (4, REPORT_CREATION_DATE_COLUMN,StandardTypes.TIMESTAMP, LOCAL_DATE_TIME);
 
         private final int pos;
         private final String fieldName;
@@ -139,8 +142,12 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
     @Inject
     public ConfiguredReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                        RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager,
-                REPORT_DEFS_ENDPOINT, REPORTS.name(), ImmutableList.copyOf(ColumnDef.values()),restTemplateCustomizer);
+        super(connectorId, config, typeManager, REPORT_DEFS_ENDPOINT,restTemplateCustomizer);
+    }
+
+    @Override
+    protected Map<String, List<ColumnDefinition>> setupFieldDefs() {
+        return Collections.singletonMap(REPORTS.name(),ImmutableList.copyOf(ColumnDef.values()));
     }
 
     @Override
@@ -161,7 +168,7 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
         Collection<PredicateNode<?>> conjunctions = PredicateNode.conjunctions(predicates);
         PredicateTraversal traversal = PredicateTraversal.of(conjunctions);
 
-        List<String> columnsWithFilter = Collections.singletonList(GridConfigFieldsView.TYPE_COLUMN_NAME);
+        List<String> columnsWithFilter = Collections.singletonList(REPORT_TYPE_COLUMN);
         LOG.debug("Columns with Filter: %s",() -> Joiner.on(", ").join(columnsWithFilter));
 
         UriTemplate uriTemplate = setupUriTemplate();
@@ -171,7 +178,7 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
                 .put("size", size)
                 .put("fields", selectedFields);
 
-        Optional<Set<String>> filterByType = traversal.assembleFilterings(GridConfigFieldsView.TYPE_COLUMN_NAME);
+        Optional<Set<String>> filterByType = traversal.assembleFilterings(REPORT_TYPE_COLUMN);
 
         // If the optional is empty, it means the predicates are such that everything must be filtered.
         if (!filterByType.isPresent()) return Optional.empty();
@@ -202,9 +209,9 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
         if ( gridConfigFieldsViews == null ) return;
         Collection<GridConfigFieldsView> content = gridConfigFieldsViews.getContent();
         content.forEach( it -> {
-            String id = it.getGridConfigFields().get(ID_COLUMN_NAME);
+            String id = it.getGridConfigFields().get("id");
             String repName = toReportName(id);
-            it.addField(NAME_COLUMN_NAME,repName);
+            it.addField(REPORT_NAME_COLUMN,repName);
         });
     }
 

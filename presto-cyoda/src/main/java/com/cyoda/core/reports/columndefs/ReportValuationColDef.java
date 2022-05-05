@@ -15,21 +15,8 @@
  *
  */
 
-package com.cyoda.presto.client.reporting.groups;
+package com.cyoda.core.reports.columndefs;
 
-import com.cyoda.service.api.beans.GroupHeader;
-
-import java.util.UUID;
-
-public class GroupingHandle {
-
-    public final String historyId;
-    public final UUID groupingVersion;
-    public final GroupHeader groupHeader;
-
-    public GroupingHandle(String historyId, UUID groupingVersion, GroupHeader groupHeader) {
-        this.historyId = historyId;
-        this.groupingVersion = groupingVersion;
-        this.groupHeader = groupHeader;
-    }
+// TODO: implement when understand how valuations work!
+public class ReportValuationColDef /*implements ImmutableBean */{
 }

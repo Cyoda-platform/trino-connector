@@ -15,7 +15,7 @@
  *
  */
 
-package com.cyoda.presto.client.reporting;
+package com.cyoda.presto.client.reporting.meta;
 
 import com.cyoda.core.model.reports.DistributedReportInfoView;
 import com.cyoda.core.model.reports.ReportHistoryFieldsView;
@@ -27,6 +27,8 @@ import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateNode;
 import com.cyoda.presto.client.paging.PagedIterator;
+import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
+import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.spi.PrestoException;
@@ -51,19 +53,21 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_ID_COLUMN;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
+import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_STATS;
 
 public class ReportStatisticsApiHandler extends BaseReportsApiHandler<DistributedReportInfoView>
         implements PagingApiRequestHandler<DistributedReportInfoView> {
 
-    private static final String REPORT_ID_COLUMN_NAME = "id";
-    private static final String GROUPING_VERSION_COLUMN_NAME = "groupingVersion";
+    private static final String GROUPING_VERSION_COLUMN = "groupingVersion";
 
     @SuppressWarnings("java:S1075")
-    public static final String REPORT_STATS_TEMPLATE = "/{" + REPORT_ID_COLUMN_NAME + "}/{" +
-            GROUPING_VERSION_COLUMN_NAME + "}/stats{?full}";
+    public static final String REPORT_STATS_TEMPLATE = "/{" + HISTORY_ID_COLUMN + "}/{" +
+            GROUPING_VERSION_COLUMN + "}/stats{?full}";
 
     private final ReportHistoryApiHandler reportHistoryApiHandler;
 
@@ -74,14 +78,18 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
     @Inject
     public ReportStatisticsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                       RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager,
-                REPORT_ENDPOINT, CyodaStaticReportTable.REPORT_STATS.name(), COLUMN_DEFS,restTemplateCustomizer);
+        super(connectorId, config, typeManager, REPORT_ENDPOINT ,restTemplateCustomizer);
         this.reportHistoryApiHandler = new ReportHistoryApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
     }
 
     @Override
+    protected Map<String, List<ColumnDefinition>> setupFieldDefs() {
+        return Collections.singletonMap(REPORT_STATS.name(),COLUMN_DEFS);
+    }
+
+    @Override
     public String getHandlerKey() {
-        return CyodaStaticReportTable.REPORT_STATS.name();
+        return REPORT_STATS.name();
     }
 
     @Override
@@ -114,12 +122,12 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
         ImmutableList.Builder<DistributedReportInfoView> builder = ImmutableList.builder();
 
         history.forEach(element -> {
-            String reportId = element.getReportHistoryFields().get(REPORT_ID_COLUMN_NAME).toString();
-            String groupingVersion = element.getReportHistoryFields().get(GROUPING_VERSION_COLUMN_NAME).toString();
+            String historyId = element.getReportHistoryFields().get(HISTORY_ID_COLUMN).toString();
+            String groupingVersion = element.getReportHistoryFields().get(GROUPING_VERSION_COLUMN).toString();
             URI templatedUri = uriTemplate.expand(
                     ImmutableMap.of(
-                            REPORT_ID_COLUMN_NAME, reportId,
-                            GROUPING_VERSION_COLUMN_NAME,groupingVersion,
+                            HISTORY_ID_COLUMN, historyId,
+                            GROUPING_VERSION_COLUMN,groupingVersion,
                             "full",true
                     )
             );
@@ -136,7 +144,7 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
                         .toObject(typeReference);
                 Optional<DistributedReportInfoView> reportStatistics = Optional.ofNullable(entityModel)
                         .map(EntityModel::getContent);
-                builder.add(reportStatistics.orElse(DistributedReportInfoView.builder().id(reportId).build()));
+                builder.add(reportStatistics.orElse(DistributedReportInfoView.builder().id(historyId).build()));
             } catch (HttpClientErrorException e) {
                 throw requestFailedException(this, "retrieveCollection", e, templatedUri);
             }
