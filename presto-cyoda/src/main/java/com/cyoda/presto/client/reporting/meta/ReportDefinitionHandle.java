@@ -32,20 +32,20 @@ public class ReportDefinitionHandle {
     public static final String REPORT_COLUMNS_COLUMN = "columns";
     public static final String REPORT_JSON_COLUMN = "json";
 
-    final String reportId;
+    final String reportConfigId;
     final String reportName;
     final List<CyodaColumnHandle> columns;
     final String json;
 
-    public ReportDefinitionHandle(String reportId, String reportName, List<CyodaColumnHandle> columns, String json) {
-        this.reportId = reportId;
+    public ReportDefinitionHandle(String reportConfigId, String reportName, List<CyodaColumnHandle> columns, String json) {
+        this.reportConfigId = reportConfigId;
         this.reportName = reportName;
         this.columns = columns;
         this.json = json;
     }
 
-    public String getReportId() {
-        return reportId;
+    public String getReportConfigId() {
+        return reportConfigId;
     }
 
     public String getReportName() {

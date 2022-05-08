@@ -628,10 +628,10 @@ public class Predicate<T extends Comparable<T>> {
     }
 
     /**
-     * Factory function for a {@code None} predicate.
+     * Factory function for a predicate that filters nothing on the given column
      *
      * @param column the column to which the predicate applies
-     * @return a None predicate
+     * @return a ALL predicate
      */
     static Predicate<Any> all(CyodaColumnHandle column) {
         return new Predicate<>(PredicateType.ALL, column, null, null);

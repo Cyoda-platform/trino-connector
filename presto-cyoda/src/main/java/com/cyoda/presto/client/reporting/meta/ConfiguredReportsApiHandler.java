@@ -30,6 +30,7 @@ import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeManager;
@@ -54,8 +55,6 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -67,8 +66,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
+import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORTS;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.*;
+import static com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler.HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER;
 import static com.cyoda.presto.client.types.DataType.LOCAL_DATE_TIME;
 import static com.cyoda.presto.client.types.DataType.STRING;
 
@@ -146,8 +147,8 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
     }
 
     @Override
-    protected Map<String, List<ColumnDefinition>> setupFieldDefs() {
-        return Collections.singletonMap(REPORTS.name(),ImmutableList.copyOf(ColumnDef.values()));
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> setupFieldDefs() {
+        return Collections.singletonMap(asTableDefinitionHandle(REPORTS.name()),ImmutableList.copyOf(ColumnDef.values()));
     }
 
     @Override
@@ -174,17 +175,16 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
         UriTemplate uriTemplate = setupUriTemplate();
 
          ImmutableMap.Builder<String, Object> expansionBuilder = ImmutableMap.<String, Object>builder()
-                .put("page", page)
-                .put("size", size)
-                .put("fields", selectedFields);
+                .put(PAGE_REQUEST_PARAMETER, page)
+                .put(SIZE_REQUEST_PARAMETER, size)
+                .put(FIELDS_REQUEST_PARAMETER, selectedFields);
 
         Optional<Set<String>> filterByType = traversal.assembleFilterings(REPORT_TYPE_COLUMN);
 
-        // If the optional is empty, it means the predicates are such that everything must be filtered.
         if (!filterByType.isPresent()) return Optional.empty();
 
         if (!filterByType.get().isEmpty()) {
-            expansionBuilder.put("filterByType", filterByType.get());
+            expansionBuilder.put(HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER, filterByType.get());
         }
 
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
@@ -224,10 +224,10 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
         }
         final ImmutableList.Builder<TemplateVariable> builder = ImmutableList.builder();
         builder.add(
-                TemplateVariable.requestParameter("page"),
-                TemplateVariable.requestParameterContinued("size"),
-                TemplateVariable.requestParameterContinued("fields"),
-                TemplateVariable.requestParameterContinued("filterByType")
+                TemplateVariable.requestParameter(PAGE_REQUEST_PARAMETER),
+                TemplateVariable.requestParameterContinued(SIZE_REQUEST_PARAMETER),
+                TemplateVariable.requestParameterContinued(FIELDS_REQUEST_PARAMETER),
+                TemplateVariable.requestParameterContinued(HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER)
         );
 
         TemplateVariables vars = new TemplateVariables(builder.build());
@@ -253,16 +253,11 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
     @Override
     public Iterator<GridConfigFieldsView> getResponseIterator(
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns,
+            CyodaTableHandle tableHandle,
             PredicateNode<Any> predicates
     ) {
+        List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
         return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();
-    }
-
-
-    private LocalDateTime toLocalDateTime(String str) {
-        if (str == null) return null;
-        return LocalDateTime.parse(str, DateTimeFormatter.ISO_DATE_TIME);
     }
 
 

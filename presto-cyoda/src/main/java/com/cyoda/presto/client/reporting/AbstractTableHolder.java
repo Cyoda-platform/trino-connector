@@ -30,14 +30,14 @@ import java.util.Optional;
 public abstract class AbstractTableHolder {
 
     @Nullable private Map<SchemaTableName, CyodaTable> tableMap = null;
-    @Nullable private Map<String, List<ColumnDefinition>> fieldDefs = null;
+    @Nullable private Map<TableDefinitionHandle, List<ColumnDefinition>> fieldDefs = null;
     @Nonnull protected final String endpoint;
 
     protected AbstractTableHolder(@Nonnull String endpoint) {
         this.endpoint = Preconditions.checkNotNull(endpoint,"endpoint is null");
     }
 
-    protected final Map<String,List<ColumnDefinition>> initFieldDefs() {
+    protected final Map<TableDefinitionHandle,List<ColumnDefinition>> initFieldDefs() {
         fieldDefs = setupFieldDefs();
         return fieldDefs;
     }
@@ -47,13 +47,36 @@ public abstract class AbstractTableHolder {
         return tableMap;
     }
 
-    protected final Map<String,List<ColumnDefinition>> getFieldDefs() {
+    protected final Map<TableDefinitionHandle,List<ColumnDefinition>> getFieldDefs() {
         return Optional.ofNullable(fieldDefs).orElse(initFieldDefs());
     }
     protected final Map<SchemaTableName, CyodaTable> getTableMap() {
         return Optional.ofNullable(tableMap).orElse(initTableMap());
     }
 
-    protected abstract Map<String, List<ColumnDefinition>> setupFieldDefs();
-    abstract Map<SchemaTableName, CyodaTable> setupTableMap(String endpoint, Map<String, List<ColumnDefinition>> fieldDefs);
+    protected abstract Map<TableDefinitionHandle, List<ColumnDefinition>> setupFieldDefs();
+    abstract Map<SchemaTableName, CyodaTable> setupTableMap(String endpoint, Map<TableDefinitionHandle, List<ColumnDefinition>> fieldDefs);
+
+    public static class TableDefinitionHandle {
+        protected final String tableName;
+        protected final String reportConfigurationId;
+
+        public TableDefinitionHandle(String tableName) {
+            this.tableName = tableName;
+            this.reportConfigurationId = null;
+        }
+
+        public TableDefinitionHandle(String tableName, String reportConfigurationId) {
+            this.tableName = tableName;
+            this.reportConfigurationId = reportConfigurationId;
+        }
+
+        public static TableDefinitionHandle asTableDefinitionHandle(String tableName) {
+            return new TableDefinitionHandle(tableName);
+        }
+
+        public static TableDefinitionHandle asTableDefinitionHandle(String tableName,String reportConfigurationId) {
+            return new TableDefinitionHandle(tableName,reportConfigurationId);
+        }
+    }
 }

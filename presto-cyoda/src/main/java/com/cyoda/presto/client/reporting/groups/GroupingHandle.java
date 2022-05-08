@@ -23,13 +23,15 @@ import java.util.UUID;
 
 public class GroupingHandle {
 
-    public final String historyId;
+    public final String reportId;
     public final UUID groupingVersion;
     public final GroupHeader groupHeader;
+    public final String reportConfigId;
 
-    public GroupingHandle(String historyId, UUID groupingVersion, GroupHeader groupHeader) {
-        this.historyId = historyId;
+    public GroupingHandle(String reportId, UUID groupingVersion, GroupHeader groupHeader, String reportConfigId) {
+        this.reportId = reportId;
         this.groupingVersion = groupingVersion;
         this.groupHeader = groupHeader;
+        this.reportConfigId = reportConfigId;
     }
 }

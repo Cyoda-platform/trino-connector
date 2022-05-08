@@ -29,6 +29,7 @@ import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.service.api.beans.GroupHeader;
 import com.cyoda.service.api.beans.ReportRow;
 import com.facebook.presto.common.type.StandardTypes;
@@ -58,22 +59,22 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_ID_COLUMN;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
+import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_GROUPS;
 import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_GROUP_JSON_BASE64_VARIABLE;
-import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_HISTORY_ID_COLUMN;
+import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_REPORT_ID_COLUMN;
 import static com.cyoda.presto.client.types.DataType.STRING;
 
 public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         implements PagingApiRequestHandler<RowHandle> {
 
-    static final String REPORT_ROWS_TEMPLATE = "/{" + ROW_HISTORY_ID_COLUMN + "" +
+    static final String REPORT_ROWS_TEMPLATE = "/{" + ROW_REPORT_ID_COLUMN + "" +
             "}/group_rows/{" +
             ROW_GROUP_JSON_BASE64_VARIABLE + "}";
 
     private static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
-            .add(new StandardColumnDefinition(0, ROW_HISTORY_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))
+            .add(new StandardColumnDefinition(0, ROW_REPORT_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))
             .add(new StandardColumnDefinition(0, ROW_GROUP_JSON_BASE64_VARIABLE, StandardTypes.VARCHAR, STRING, null, null))
             .add(GroupHeader.meta())
             .build();
@@ -85,8 +86,8 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
     }
 
     @Override
-    protected Map<String, List<ColumnDefinition>> setupFieldDefs() {
-        return Collections.singletonMap(REPORT_GROUPS.name(), COLUMN_DEFS);
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> setupFieldDefs() {
+        return Collections.singletonMap(asTableDefinitionHandle(REPORT_GROUPS.name()), COLUMN_DEFS);
     }
 
     @Override
@@ -110,11 +111,11 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
         UriTemplate uriTemplate = setupUriTemplate();
 
         ImmutableMap.Builder<String, Object> expansionBuilder = ImmutableMap.<String, Object>builder()
-                .put("page", page)
-                .put("size", size);
+                .put(PAGE_REQUEST_PARAMETER, page)
+                .put(SIZE_REQUEST_PARAMETER, size);
 
 
-        String historyId = mixinColumn(expansionBuilder,traversal, ROW_HISTORY_ID_COLUMN);
+        String reportId = mixinColumn(expansionBuilder,traversal, ROW_REPORT_ID_COLUMN);
         String groupJsonString = mixinColumn(expansionBuilder,traversal, ROW_GROUP_JSON_BASE64_VARIABLE);
 
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
@@ -132,7 +133,7 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
             return Optional.ofNullable(fieldsViews)
                     .map(item->{
                         List<RowHandle> handles = item.getContent().stream()
-                                .map(handle -> new RowHandle(historyId, groupJsonString, handle))
+                                .map(handle -> new RowHandle(reportId, groupJsonString, handle))
                                 .collect(Collectors.toList());
                         return PagedModel.of(handles,item.getMetadata());
                     });
@@ -174,8 +175,8 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
     @Nullable
     @Override
     protected Object getFieldValueFromEntity(@Nonnull RowHandle field, CyodaColumnHandle columnHandle) {
-        if ( ROW_HISTORY_ID_COLUMN.equals(columnHandle.getColumnName()) ) {
-            return field.historyId;
+        if ( ROW_REPORT_ID_COLUMN.equals(columnHandle.getColumnName()) ) {
+            return field.reportId;
         }
         if ( ROW_GROUP_JSON_BASE64_VARIABLE.equals(columnHandle.getColumnName()) ) {
             return field.groupJsonBase64;
@@ -186,9 +187,10 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
     @Override
     public Iterator<RowHandle> getResponseIterator(
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns,
+            CyodaTableHandle tableHandle,
             PredicateNode<Any> predicates
     ) {
+        List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
         return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();
     }
 

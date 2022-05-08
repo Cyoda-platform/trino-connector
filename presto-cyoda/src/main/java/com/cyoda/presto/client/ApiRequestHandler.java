@@ -22,6 +22,7 @@ import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateNode;
 import com.cyoda.presto.client.types.SupportedDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.presto.spi.SchemaTableName;
 
 import javax.annotation.Nullable;
@@ -38,5 +39,5 @@ public interface ApiRequestHandler<T> {
     @SuppressWarnings("java:S1452")
     SupportedDataType<?> getValue(@Nullable T entity, CyodaColumnHandle field);
 
-    Iterator<T> getResponseIterator(int pageSize, List<CyodaColumnHandle> projectedColumns, PredicateNode<Any> predicates);
+    Iterator<T> getResponseIterator(int pageSize, CyodaTableHandle tableHandle, PredicateNode<Any> predicates);
 }

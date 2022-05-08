@@ -23,17 +23,14 @@ import com.cyoda.presto.client.logic.Connective;
 import com.cyoda.presto.client.logic.LeafPredicateNode;
 import com.cyoda.presto.client.logic.Predicate;
 import com.cyoda.presto.client.logic.PredicateNode;
-import com.cyoda.presto.client.logic.PredicateNodeType;
-import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.spi.PrestoException;
-import com.google.common.base.Joiner;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.base.Preconditions;
 
+import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -41,70 +38,82 @@ import java.util.stream.Stream;
 
 public class PredicateTraversal {
 
-    private static final SupplierLogger LOG = SupplierLogger.get(PredicateTraversal.class);
+    private final CompoundPredicateNode conjunctions;
 
-    private final Collection<PredicateNode<?>> conjunctions;
-
-    private PredicateTraversal(Collection<PredicateNode<?>> conjunctions) {
-        this.conjunctions = conjunctions;
+    private PredicateTraversal(@Nonnull Collection<PredicateNode<?>> conjunctions) {
+        CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
+        conjunctions.forEach(builder::addMember);
+        this.conjunctions = builder.build();
     }
 
-    public static PredicateTraversal of(Collection<PredicateNode<?>> conjunctions){
+    public static @Nonnull PredicateTraversal of(@Nonnull Collection<PredicateNode<?>> conjunctions){
+        Preconditions.checkNotNull(conjunctions,"conjunctions is null");
         return new PredicateTraversal(conjunctions);
     }
 
+    private static class Predicated<T> {
+        private final T element;
+        private final Connective connective;
 
+        private Predicated(T element, Connective connective) {
+            this.element = element;
+            this.connective = connective;
+        }
+    }
     /**
      *
      * @param columnName to search filterings for
-     * @return empty if everything must be filtered, i.e. an empty result should be passed up the stack
+     * @return empty if nothing is to be selected, i.e. an empty result should be passed up the stack.
+     *
      */
     public Optional<Set<String>> assembleFilterings(String columnName) {
 
-        List<? extends Predicate<?>> leafPredicates = conjunctions.stream()
-                .filter(it -> it.getPredicateNodeType() == PredicateNodeType.LEAF)
-                .map(it -> (LeafPredicateNode<?>) it)
-                .map(LeafPredicateNode::forceGet)
-                .filter(it-> it.getColumn().getColumnName().equals(columnName))
-                .collect(Collectors.toList());
+        Deque<CompoundPredicateNode> compoundQueue = new ArrayDeque<>();
+        Deque<Predicated<LeafPredicateNode<?>>> leafQueue = new ArrayDeque<>();
 
-        // two leaves in a conjunction on a string will always filter everything.
-        if (leafPredicates.size() > 1) return Optional.empty();
+        compoundQueue.add(conjunctions);
 
-        Set<String> leafFilterValues = leafPredicates.stream().flatMap(this::extractFilterValues).collect(Collectors.toSet());
-
-        Deque<CompoundPredicateNode> queue = new ArrayDeque<>();
-        ImmutableSet.Builder<String> filterValues = ImmutableSet.builder();
-
-        // We only can filter by type, using equals or IN.
-        conjunctions.stream()
-                //.filter(it -> it.getColumn().isPresent())
-                .filter(it->it.getPredicateNodeType() == PredicateNodeType.COMPOUND)
-                //.filter(it-> it.getColumn().get().getColumnName().equals(columnName))
-                .map(CompoundPredicateNode.class::cast)
-                .filter(it->it.getConnective() == Connective.OR)
-                .forEach(queue::add);
-
-        while(!queue.isEmpty()) {
-            CompoundPredicateNode node = queue.pop();
-            // We assume it's an OR compound.
+        while(!compoundQueue.isEmpty()) {
+            CompoundPredicateNode node = compoundQueue.pop();
             Collection<PredicateNode<?>> members = node.getMembers().orElse(Collections.emptyList());
             members.forEach(member -> {
-                if ( member instanceof LeafPredicateNode ) {
-                    if ( member.getColumn().isPresent() && member.getColumn().get().getColumnName().equals(columnName)) {
-                        extractFilterValues(((LeafPredicateNode<?>) member).forceGet())
-                                .filter(it -> !leafFilterValues.contains(it))
-                                .forEach(filterValues::add);
+                if (member instanceof LeafPredicateNode) {
+                    if (member.getColumn().isPresent() && member.getColumn().get().getColumnName().equals(columnName)) {
+                        leafQueue.add(new Predicated<>((LeafPredicateNode<?>)member, node.getConnective()));
                     }
                 } else {
-                    queue.add((CompoundPredicateNode) member);
+                    compoundQueue.add((CompoundPredicateNode) member);
                 }
             });
         }
-        filterValues.addAll(leafFilterValues);
-        ImmutableSet<String> result = filterValues.build();
-        LOG.debug(Joiner.on(",").join(result));
-        return Optional.of(result);
+
+        Deque<Predicated<String>> resultBuilder = new ArrayDeque<>();
+        if ( !leafQueue.isEmpty() ) {
+            Predicated<LeafPredicateNode<?>> predicated = leafQueue.pop();
+            extractFilterValues(predicated.element.forceGet())
+                    .map(it->new Predicated<>(it,predicated.connective))
+                    .forEach(resultBuilder::add);
+        }
+        while (!leafQueue.isEmpty()) {
+            Predicated<LeafPredicateNode<?>> predicated = leafQueue.pop();
+            if ( predicated.element.forceGet().getColumn().getColumnName().equals(columnName) ) {
+                Predicated<String> last = resultBuilder.peekLast();
+                if (last == null) throw new IllegalStateException("This should not happen");
+                Connective previousConnective = last.connective;
+                if (previousConnective == Connective.OR) {
+                    extractFilterValues(predicated.element.forceGet())
+                            .map(it -> new Predicated<>(it, predicated.connective))
+                            .forEach(resultBuilder::add);
+
+                } else {
+                    Set<String> values = extractFilterValues(predicated.element.forceGet()).collect(Collectors.toSet());
+                    if (!values.contains(last.element) ) {
+                        return Optional.empty();
+                    }
+                }
+            }
+        }
+        return Optional.of(resultBuilder.stream().map(it->it.element).collect(Collectors.toSet()));
 
     }
 
@@ -112,18 +121,29 @@ public class PredicateTraversal {
         Predicate.PredicateType type = it.getType();
         switch (type) {
             case IN_LIST: {
-                return it.getInListValues().stream().map(item -> item.value.toString());
+                return it.getInListValues().stream()
+                        .map(item -> Optional.ofNullable(item.value)
+                                .map(Object::toString)
+                                .orElse(null)
+                        );
             }
             case EQUALITY: {
-                return Stream.of(it.getLower().value.toString());
+                return Stream.of(
+                        Optional.ofNullable(it.getLower().value)
+                                .map(Object::toString)
+                                .orElse(null)
+                );
             }
             case RANGE: {
-                return Stream.of(it.getLower().toString(), it.getUpper().value.toString());
+                return Stream.of(
+                        Optional.ofNullable(it.getLower()).map(Object::toString).orElse(null),
+                        Optional.ofNullable(it.getUpper()).map(Object::toString).orElse(null)
+                );
             }
             default:
                 throw new PrestoException(
                         CyodaErrorCode.CYODA_PUSHDOWN_UNSUPPORTED_EXPRESSION,
-                        "Only support other things");
+                        type + " is not supported here");
         }
     }
 }

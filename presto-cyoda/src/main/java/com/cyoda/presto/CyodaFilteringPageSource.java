@@ -79,7 +79,7 @@ public class CyodaFilteringPageSource<T>
         this.requestHandler = requireNonNull(requestHandler, "requestHandler is null");
         this.responseSupplier = () -> requestHandler.getResponseIterator(
                 cyodaClient.getRequestPageSize(),
-                tableHandle.getProjectedColumns().orElse(Collections.emptyList()),
+                tableHandle,
                 predicates
         );
         this.finished = false;

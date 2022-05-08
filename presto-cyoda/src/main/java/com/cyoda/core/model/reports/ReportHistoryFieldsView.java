@@ -22,14 +22,17 @@ import java.util.Map;
 
 public class ReportHistoryFieldsView {
 
-    public static final String HISTORY_ID_COLUMN = "id";
+    // TODO: Any field of the DistributedReport class can be selected. These are not all of them.
+    public static final String HISTORY_REPORT_NAME_VARIABLE = "configName";
+
+    public static final String HISTORY_REPORT_ID_COLUMN = "reportId";
     public static final String HISTORY_CREATE_TIME_COLUMN = "createTime";
     public static final String HISTORY_TYPE_COLUMN = "type";
     public static final String HISTORY_STATUS_NAME_COLUMN = "status";
     public static final String HISTORY_HIERARHY_ENABLE_COLUMN = "hierarhyEnable";
     public static final String HISTORY_GROUPING_VERSION_COLUMN = "groupingVersion";
     public static final String HISTORY_GROUPING_COLUMNS_COLUMN = "groupingColumns";
-    public static final String HISTORY_USER_NAME_COLUMN = "username";
+    public static final String HISTORY_USER_NAME_COLUMN = "userId";
 
     private final Map<String, Object> reportHistoryFields = new HashMap<>();
 

@@ -30,6 +30,7 @@ import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
@@ -56,17 +57,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_ID_COLUMN;
+import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_ID_COLUMN;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
+import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_STATS;
+import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_VERSION_COLUMN;
 
 public class ReportStatisticsApiHandler extends BaseReportsApiHandler<DistributedReportInfoView>
         implements PagingApiRequestHandler<DistributedReportInfoView> {
 
-    private static final String GROUPING_VERSION_COLUMN = "groupingVersion";
 
     @SuppressWarnings("java:S1075")
-    public static final String REPORT_STATS_TEMPLATE = "/{" + HISTORY_ID_COLUMN + "}/{" +
+    public static final String REPORT_STATS_TEMPLATE = "/{" + HISTORY_REPORT_ID_COLUMN + "}/{" +
             GROUPING_VERSION_COLUMN + "}/stats{?full}";
 
     private final ReportHistoryApiHandler reportHistoryApiHandler;
@@ -83,8 +85,8 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
     }
 
     @Override
-    protected Map<String, List<ColumnDefinition>> setupFieldDefs() {
-        return Collections.singletonMap(REPORT_STATS.name(),COLUMN_DEFS);
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> setupFieldDefs() {
+        return Collections.singletonMap(asTableDefinitionHandle(REPORT_STATS.name()),COLUMN_DEFS);
     }
 
     @Override
@@ -122,11 +124,11 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
         ImmutableList.Builder<DistributedReportInfoView> builder = ImmutableList.builder();
 
         history.forEach(element -> {
-            String historyId = element.getReportHistoryFields().get(HISTORY_ID_COLUMN).toString();
+            String reportId = element.getReportHistoryFields().get(HISTORY_REPORT_ID_COLUMN).toString();
             String groupingVersion = element.getReportHistoryFields().get(GROUPING_VERSION_COLUMN).toString();
             URI templatedUri = uriTemplate.expand(
                     ImmutableMap.of(
-                            HISTORY_ID_COLUMN, historyId,
+                            HISTORY_REPORT_ID_COLUMN, reportId,
                             GROUPING_VERSION_COLUMN,groupingVersion,
                             "full",true
                     )
@@ -144,7 +146,7 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
                         .toObject(typeReference);
                 Optional<DistributedReportInfoView> reportStatistics = Optional.ofNullable(entityModel)
                         .map(EntityModel::getContent);
-                builder.add(reportStatistics.orElse(DistributedReportInfoView.builder().id(historyId).build()));
+                builder.add(reportStatistics.orElse(DistributedReportInfoView.builder().id(reportId).build()));
             } catch (HttpClientErrorException e) {
                 throw requestFailedException(this, "retrieveCollection", e, templatedUri);
             }
@@ -180,9 +182,10 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
     @Override
     public Iterator<DistributedReportInfoView> getResponseIterator(
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns,
+            CyodaTableHandle tableHandle,
             PredicateNode<Any> predicates
     ) {
+        List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
         return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();
     }
 

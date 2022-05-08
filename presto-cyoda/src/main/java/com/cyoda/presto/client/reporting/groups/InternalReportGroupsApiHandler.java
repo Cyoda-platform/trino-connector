@@ -29,6 +29,7 @@ import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.service.api.beans.GroupHeader;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeManager;
@@ -59,8 +60,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_ID_COLUMN;
+import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_ID_COLUMN;
+import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_NAME_VARIABLE;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
+import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_GROUPS;
 import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_PARENT_COLUMN;
 import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_VERSION_COLUMN;
@@ -75,15 +78,17 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
 
 
 
-    public static final String REPORT_GROUPS_TEMPLATE = "/{" + HISTORY_ID_COLUMN + "" +
+    public static final String REPORT_GROUPS_TEMPLATE = "/{" + HISTORY_REPORT_ID_COLUMN + "" +
             "}/{" +
             GROUPING_VERSION_COLUMN + "}/groups/" + "{" + GROUPING_PARENT_COLUMN + "}";
 
     private static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
-            .add(new StandardColumnDefinition(0, HISTORY_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))
+            .add(new StandardColumnDefinition(0, HISTORY_REPORT_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))
             .add(new StandardColumnDefinition(0, GROUPING_VERSION_COLUMN, StandardTypes.VARCHAR, UUID_TYPE, null, null))
             .add(GroupHeader.meta())
             .build();
+    public static final String IN_PREDICATES = " in predicates";
+    public static final String NO_RESULT_FOUND_FOR_COLUMN = "no result found for column ";
 
     @Inject
     public InternalReportGroupsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
@@ -92,8 +97,8 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
     }
 
     @Override
-    protected Map<String, List<ColumnDefinition>> setupFieldDefs() {
-        return Collections.singletonMap(REPORT_GROUPS.name(), COLUMN_DEFS);
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> setupFieldDefs() {
+        return Collections.singletonMap(asTableDefinitionHandle(REPORT_GROUPS.name()), COLUMN_DEFS);
     }
 
     @Override
@@ -117,12 +122,15 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
         UriTemplate uriTemplate = setupUriTemplate();
 
         ImmutableMap.Builder<String, Object> expansionBuilder = ImmutableMap.<String, Object>builder()
-                .put("page", page)
-                .put("size", size);
+                .put(PAGE_REQUEST_PARAMETER, page)
+                .put(SIZE_REQUEST_PARAMETER, size);
 
 
-        String historyId = mixinColumn(expansionBuilder,traversal, HISTORY_ID_COLUMN);
-        String groupingVersionString = mixinColumn(expansionBuilder,traversal, GROUPING_VERSION_COLUMN);
+        String reportId = mixinColumn(expansionBuilder,traversal, HISTORY_REPORT_ID_COLUMN)
+                .orElseThrow(() -> new IllegalArgumentException(NO_RESULT_FOUND_FOR_COLUMN + HISTORY_REPORT_ID_COLUMN + IN_PREDICATES));
+        String groupingVersionString = mixinColumn(expansionBuilder,traversal, GROUPING_VERSION_COLUMN)
+                .orElseThrow(() -> new IllegalArgumentException(NO_RESULT_FOUND_FOR_COLUMN + GROUPING_VERSION_COLUMN + IN_PREDICATES));
+        String reportConfigName = mixinColumn(expansionBuilder,traversal, HISTORY_REPORT_NAME_VARIABLE).orElse(null);
         UUID groupingVersion = UUID.fromString(groupingVersionString);
 
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
@@ -140,7 +148,7 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
             return Optional.ofNullable(fieldsViews)
                     .map(item->{
                         List<GroupingHandle> handles = item.getContent().stream()
-                                .map(handle -> new GroupingHandle(historyId, groupingVersion, handle))
+                                .map(handle -> new GroupingHandle(reportId, groupingVersion, handle, reportConfigName))
                                 .collect(Collectors.toList());
                         return PagedModel.of(handles,item.getMetadata());
                     });
@@ -149,7 +157,7 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
         }
     }
 
-    private String mixinColumn(ImmutableMap.Builder<String, Object> expansionBuilder,
+    private Optional<String> mixinColumn(ImmutableMap.Builder<String, Object> expansionBuilder,
                                 PredicateTraversal traversal,String columnName
     ) {
         Optional<Set<String>> values = traversal.assembleFilterings(columnName);
@@ -158,15 +166,15 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
         Preconditions.checkArgument(values.isPresent());
 
         Set<String> theValues = values
-                .orElseThrow(()->new IllegalArgumentException("No consistent result found for column " + columnName + " in predicates"));
+                .orElseThrow(()->new IllegalArgumentException("No consistent result found for column " + columnName + IN_PREDICATES));
 
         if ( theValues.size() > 1 ) throw new IllegalStateException("Predicates should only have one element for " + columnName);
         if (!theValues.isEmpty()) {
             String result = theValues.iterator().next();
             expansionBuilder.put(columnName, result);
-            return result;
+            return Optional.of(result);
         }
-        throw new IllegalArgumentException("no result found for column " + columnName + " in predicates");
+        return Optional.empty();
     }
     private UriTemplate setupUriTemplate() {
 
@@ -182,8 +190,8 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
     @Nullable
     @Override
     protected Object getFieldValueFromEntity(@Nonnull GroupingHandle field, CyodaColumnHandle columnHandle) {
-        if ( HISTORY_ID_COLUMN.equals(columnHandle.getColumnName()) ) {
-            return field.historyId;
+        if ( HISTORY_REPORT_ID_COLUMN.equals(columnHandle.getColumnName()) ) {
+            return field.reportId;
         }
         if ( GROUPING_VERSION_COLUMN.equals(columnHandle.getColumnName()) ) {
             return field.groupingVersion;
@@ -198,9 +206,10 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
     @Override
     public Iterator<GroupingHandle> getResponseIterator(
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns,
+            CyodaTableHandle tableHandle,
             PredicateNode<Any> predicates
     ) {
+        List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
         return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();
     }
 

@@ -18,8 +18,10 @@
 package com.cyoda.presto.client.logic;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.google.common.base.Objects;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -28,21 +30,36 @@ import static java.util.Objects.requireNonNull;
 public class LeafPredicateNode<T extends Comparable<T>> implements PredicateNode<T> {
 
     private final Predicate<T> predicate;
+    private final CompoundPredicateNode parent;
 
-    private LeafPredicateNode(Predicate<T> predicate) {
+    private LeafPredicateNode(@Nullable CompoundPredicateNode parent, @Nonnull Predicate<T> predicate) {
         this.predicate = requireNonNull(predicate, "predicate is null");
+        this.parent = parent;
     }
 
-    public static PredicateNode<Any> all(CyodaColumnHandle handle) {
-        return new LeafPredicateNode<>(Predicate.all(handle));
+    public static PredicateNode<Any> all(CompoundPredicateNode parent,CyodaColumnHandle handle) {
+        return new LeafPredicateNode<>(parent,Predicate.all(handle));
     }
 
-    public static <T extends Comparable<T>> PredicateNode<T> nothing() {
-        return new LeafPredicateNode<>(Predicate.<T>nothing());
+    public static <T extends Comparable<T>> PredicateNode<T> rootNodeWithNothing() {
+        return new LeafPredicateNode<>(null,Predicate.<T>nothing());
     }
 
-    public static <T extends Comparable<T>> LeafPredicateNode<T> leaf(Predicate<T> predicate) {
-        return new LeafPredicateNode<>(predicate);
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LeafPredicateNode<?> that = (LeafPredicateNode<?>) o;
+        return Objects.equal(predicate, that.predicate) && Objects.equal(parent, that.parent);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(predicate, parent);
+    }
+
+    public static <T extends Comparable<T>> LeafPredicateNode<T> leaf(CompoundPredicateNode parent, Predicate<T> predicate) {
+        return new LeafPredicateNode<>(parent,predicate);
     }
 
     @Override
@@ -81,5 +98,17 @@ public class LeafPredicateNode<T extends Comparable<T>> implements PredicateNode
     @Override
     public Optional<CyodaColumnHandle> getColumn() {
         return Optional.ofNullable(predicate.getColumn());
+    }
+
+    @Nonnull
+    @Override
+    public Optional<CompoundPredicateNode> getParent() {
+        return Optional.ofNullable(parent);
+    }
+
+    @Nonnull
+    @Override
+    public PredicateNode<T> withParent(CompoundPredicateNode parent) {
+        return new LeafPredicateNode<>(parent,predicate);
     }
 }

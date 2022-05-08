@@ -38,23 +38,22 @@ public class CyodaTable {
     private final String name;
     private final List<CyodaColumnHandle> columns;
     private final List<ColumnMetadata> columnsMetadata;
+    private final String reportConfigurationId;
 
     //TODO: This might need to be something pulled from Reporting API.
     private final List<URI> sources;
 
-    private final Boolean isPaged;
     private final ImmutableMap<String, CyodaColumnHandle> columnsByName;
 
     @JsonCreator
     public CyodaTable(
             @JsonProperty("name") String name,
             @JsonProperty("columns") List<CyodaColumnHandle> columns,
-            @JsonProperty("sources") List<URI> sources,
-            @JsonProperty("isPaged") Boolean isPaged) {
+            @JsonProperty("reportConfigurationId") String reportConfigurationId,
+            @JsonProperty("sources") List<URI> sources) {
         checkArgument(!isNullOrEmpty(name), "name is null or is empty");
         this.name = requireNonNull(name, "name is null");
-        this.isPaged = requireNonNull(isPaged, "isPaged is null");
-
+        this.reportConfigurationId = reportConfigurationId;
         this.columns = ImmutableList.copyOf(requireNonNull(columns, "columns is null"));
         this.sources = ImmutableList.copyOf(requireNonNull(sources, "sources is null"));
 
@@ -84,13 +83,15 @@ public class CyodaTable {
     }
 
     @JsonProperty
-    public Boolean isPaged() {
-        return isPaged;
-    }
-
     public List<ColumnMetadata> getColumnsMetadata() {
         return columnsMetadata;
     }
+
+    public String getReportConfigurationId() {
+        return reportConfigurationId;
+    }
+
+    @JsonProperty
 
     @JsonIgnore
     public CyodaColumnHandle getColumn(String columnName) {

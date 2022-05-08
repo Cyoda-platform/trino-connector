@@ -21,12 +21,12 @@ import com.cyoda.service.api.beans.ReportRow;
 
 public class RowHandle {
 
-    final String historyId;
+    final String reportId;
     final String groupJsonBase64;
     final ReportRow reportRow;
 
-    public RowHandle(String historyId, String groupJsonBase64, ReportRow reportRow) {
-        this.historyId = historyId;
+    public RowHandle(String reportId, String groupJsonBase64, ReportRow reportRow) {
+        this.reportId = reportId;
         this.groupJsonBase64 = groupJsonBase64;
         this.reportRow = reportRow;
     }

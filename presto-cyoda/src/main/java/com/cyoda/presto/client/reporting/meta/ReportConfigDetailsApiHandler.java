@@ -29,6 +29,7 @@ import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.airlift.json.JsonCodec;
 import com.facebook.presto.common.type.JsonType;
 import com.facebook.presto.common.type.StandardTypes;
@@ -61,6 +62,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
+import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_DETAILS;
 import static com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler.REPORT_DEFS_ENDPOINT;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.*;
@@ -141,8 +143,8 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
     }
 
     @Override
-    protected Map<String, List<ColumnDefinition>> setupFieldDefs() {
-        return Collections.singletonMap(REPORT_DETAILS.name(),ImmutableList.copyOf(ColumnDef.values()));
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> setupFieldDefs() {
+        return Collections.singletonMap(asTableDefinitionHandle(REPORT_DETAILS.name()),ImmutableList.copyOf(ColumnDef.values()));
     }
 
     @Override
@@ -166,12 +168,12 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
 
         if ( ids.isEmpty() ) return Collections.emptyList();
         ImmutableList.Builder<ReportDefinitionHandle> builder = ImmutableList.builder();
-        ids.forEach(reportId -> {
-            URI templatedUri = uriTemplate.expand(Collections.singletonMap(REPORT_ID_COLUMN, reportId));
+        ids.forEach(reportConfigId -> {
+            URI templatedUri = uriTemplate.expand(Collections.singletonMap(REPORT_ID_COLUMN, reportConfigId));
 
             Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
             traverson.setRestOperations(restTemplate);
-            String reportName =  toReportName(reportId);
+            String reportName =  toReportName(reportConfigId);
 
             try {
                 @SuppressWarnings("unchecked")
@@ -186,7 +188,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
 
                 List<CyodaColumnHandle> cols = extractColumns(reportName,repDef);
 
-                builder.add(new ReportDefinitionHandle(reportId, reportName, cols, json));
+                builder.add(new ReportDefinitionHandle(reportConfigId, reportName, cols, json));
             } catch (HttpClientErrorException e) {
                 throw requestFailedException(this, "retrieveCollection", e, templatedUri);
             }
@@ -302,7 +304,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
     @Override
     protected Object getFieldValueFromEntity(@Nonnull ReportDefinitionHandle field, CyodaColumnHandle columnHandle) {
         if ( REPORT_ID_COLUMN.equals(columnHandle.getColumnName())) {
-            return field.reportId;
+            return field.reportConfigId;
         }
         if ( REPORT_NAME_COLUMN.equals(columnHandle.getColumnName())) {
             return field.reportName;
@@ -319,9 +321,10 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
     @Override
     public Iterator<ReportDefinitionHandle> getResponseIterator(
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns,
+            CyodaTableHandle tableHandle,
             PredicateNode<Any> predicates
     ) {
+        List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
         return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();
     }
 

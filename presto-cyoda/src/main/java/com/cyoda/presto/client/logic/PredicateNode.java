@@ -33,8 +33,8 @@ public interface PredicateNode<T extends Comparable<T>> {
      */
     @SuppressWarnings("java:S1452")
     static Collection<PredicateNode<?>> conjunctions(PredicateNode<Any> predicates) {
-        return Optional.ofNullable(predicates).orElse(LeafPredicateNode.nothing()).getMembers()
-                .orElse(Collections.singletonList(LeafPredicateNode.nothing()));
+        return Optional.ofNullable(predicates).orElse(LeafPredicateNode.rootNodeWithNothing()).getMembers()
+                .orElse(Collections.singletonList(LeafPredicateNode.rootNodeWithNothing()));
     }
 
     boolean isLeaf();
@@ -49,4 +49,8 @@ public interface PredicateNode<T extends Comparable<T>> {
     @Nonnull Optional<Collection<PredicateNode<?>>> getMembers();
 
     @Nonnull Optional<CyodaColumnHandle> getColumn();
+
+    @Nonnull Optional<CompoundPredicateNode> getParent();
+
+    @Nonnull PredicateNode<T> withParent(CompoundPredicateNode parent);
 }

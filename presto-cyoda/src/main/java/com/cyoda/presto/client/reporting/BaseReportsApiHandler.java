@@ -60,6 +60,9 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
     protected static final SupplierLogger LOG = SupplierLogger.get(BaseReportsApiHandler.class);
 
     public static final String REPORT_ENDPOINT = "/api/platform-api/reporting/report";
+    public static final String PAGE_REQUEST_PARAMETER = "page";
+    public static final String SIZE_REQUEST_PARAMETER = "size";
+    public static final String FIELDS_REQUEST_PARAMETER = "fields";
 
     public static final int DEFAULT_PAGE_SIZE = 10;
 
@@ -77,7 +80,7 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         restTemplate = restTemplateCustomizer.getRestTemplate();
     }
 
-    protected Map<SchemaTableName, CyodaTable> setupTableMap(String endpoint, Map<String, List<ColumnDefinition>> fieldDefs) {
+    protected Map<SchemaTableName, CyodaTable> setupTableMap(String endpoint, Map<TableDefinitionHandle, List<ColumnDefinition>> fieldDefs) {
         final URI uri;
         try {
             uri = config.getServerUrl().toURI().resolve(endpoint);
@@ -86,16 +89,16 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
             throw new IllegalArgumentException("Bad endpoint: "+endpoint,e);
         }
         List<URI> sources = Collections.singletonList(uri);
-        Map<String,List<CyodaColumnHandle>> cyodaColumnHandles = createCyodaColumnHandles(fieldDefs);
+        Map<TableDefinitionHandle,List<CyodaColumnHandle>> cyodaColumnHandles = createCyodaColumnHandles(fieldDefs);
         return cyodaColumnHandles.entrySet().stream().collect(Collectors.toMap(
-                entry-> new SchemaTableName(config.getSchemaName(), entry.getKey()),
-                entry -> new CyodaTable(entry.getKey(), cyodaColumnHandles.get(entry.getKey()), sources, true)
+                entry-> new SchemaTableName(config.getSchemaName(), entry.getKey().tableName),
+                entry -> new CyodaTable(entry.getKey().tableName, cyodaColumnHandles.get(entry.getKey()), entry.getKey().reportConfigurationId, sources)
         ));
     }
 
-    protected Map<String,List<CyodaColumnHandle>> createCyodaColumnHandles(Map<String, List<ColumnDefinition>> fieldDefs) {
+    protected Map<TableDefinitionHandle,List<CyodaColumnHandle>> createCyodaColumnHandles(Map<TableDefinitionHandle, List<ColumnDefinition>> fieldDefs) {
         return ImmutableMap.copyOf(
-                this.getFieldDefs().entrySet().stream()
+                fieldDefs.entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey, it->
                                 it.getValue().stream()
                                         .map(fieldDef -> new CyodaColumnHandle(
@@ -160,10 +163,10 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         if (columnHandle.getDataType() == UUID_TYPE && value instanceof String) {
             return UUID.fromString((String) value);
         }
-        if (columnHandle.getDataType() == DATE) {
+        if (columnHandle.getDataType() == DATE && value instanceof String) {
             return toDate((String) value);
         }
-        if (columnHandle.getDataType() == LOCAL_DATE_TIME) {
+        if (columnHandle.getDataType() == LOCAL_DATE_TIME && value instanceof String) {
             return toLocalDateTime((String) value);
         }
         return value;
@@ -175,22 +178,22 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         return Timestamp.valueOf(localDateTime);
     }
 
-    private LocalDateTime toLocalDateTime(String str) {
+    protected LocalDateTime toLocalDateTime(String str) {
         return LocalDateTime.parse(str, DateTimeFormatter.ISO_DATE_TIME);
     }
 
     protected abstract @Nullable Object getFieldValueFromEntity(@Nonnull T field, CyodaColumnHandle columnHandle);
 
-    protected static String toReportName(@Nonnull String reportId) {
-        Preconditions.checkNotNull(reportId,"reportId is null");
-        int start = reportId.lastIndexOf('-');
+    protected static String toReportName(@Nonnull String reportConfigId) {
+        Preconditions.checkNotNull(reportConfigId,"reportConfigId is null");
+        int start = reportConfigId.lastIndexOf('-');
         if (start < 0) {
-            throw new IllegalArgumentException("report ID "+reportId+" has incompatible format." +
+            throw new IllegalArgumentException("report ID "+reportConfigId+" has incompatible format." +
                     " It should be <Tenant>-<EntityTypee>-<ReportName>");
         }
-        String reportName = reportId.substring(start + 1);
+        String reportName = reportConfigId.substring(start + 1);
         Preconditions.checkArgument(!reportName.isEmpty(),"report ID '%s' has incompatible format." +
-                " It should be <Tenant>-<EntityTypee>-<ReportName>",reportId);
+                " It should be <Tenant>-<EntityTypee>-<ReportName>",reportConfigId);
         return reportName;
     }
 

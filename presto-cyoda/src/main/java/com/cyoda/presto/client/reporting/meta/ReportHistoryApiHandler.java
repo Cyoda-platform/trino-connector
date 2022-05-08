@@ -30,6 +30,7 @@ import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeManager;
@@ -54,13 +55,9 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.Timestamp;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +67,7 @@ import java.util.stream.Collectors;
 
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.*;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
+import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_HISTORIES;
 import static com.cyoda.presto.client.types.DataType.*;
 
@@ -79,9 +77,12 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
     private static final SupplierLogger LOG = SupplierLogger.get(ReportHistoryApiHandler.class);
 
     public static final String REPORT_HISTORY_ENDPOINT = "/api/platform-api/reporting/history";
+    public static final String HISTORY_REPORT_NAME_REQUEST_PARAMETER = "report_names";
+    public static final String HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER = "filterByType";
 
     enum ColumnDef implements ColumnDefinition {
-        ID(0, HISTORY_ID_COLUMN, StandardTypes.VARCHAR, STRING, null),
+        ID(0, HISTORY_REPORT_ID_COLUMN, StandardTypes.VARCHAR, STRING, null),
+        REPORT_NAME(1,HISTORY_REPORT_NAME_VARIABLE, StandardTypes.VARCHAR, STRING, null),
         CREATION_DATE(2, HISTORY_CREATE_TIME_COLUMN, StandardTypes.TIMESTAMP, LOCAL_DATE_TIME, null),
         TYPE(3, HISTORY_TYPE_COLUMN, StandardTypes.VARCHAR, STRING, null),
         STATUS(4, HISTORY_STATUS_NAME_COLUMN, StandardTypes.VARCHAR, STRING, null),
@@ -154,8 +155,8 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
     }
 
     @Override
-    protected Map<String, List<ColumnDefinition>> setupFieldDefs() {
-        return Collections.singletonMap(REPORT_HISTORIES.name(),ImmutableList.copyOf(ColumnDef.values()));
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> setupFieldDefs() {
+        return Collections.singletonMap(asTableDefinitionHandle(REPORT_HISTORIES.name()),ImmutableList.copyOf(ColumnDef.values()));
     }
 
     @Override
@@ -180,12 +181,12 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
         UriTemplate uriTemplate = setupUriTemplate();
 
         ImmutableMap.Builder<String, Object> expansionBuilder = ImmutableMap.<String, Object>builder()
-                .put("page", page)
-                .put("size", size)
-                .put("fields", selectedFields);
+                .put(PAGE_REQUEST_PARAMETER, page)
+                .put(SIZE_REQUEST_PARAMETER, size)
+                .put(FIELDS_REQUEST_PARAMETER, selectedFields);
 
 
-        // Filter criteria: filterByType, user (single), creationdate range.
+        // TODO: Add the other selection possibilities from the report history endpoint.
         Optional<Set<String>> filterByType = traversal.assembleFilterings(HISTORY_TYPE_COLUMN);
         LOG.debug("selecting by types:",()->filterByType.map(it-> String.join(",", it)).orElse("EMPTY"));
 
@@ -193,9 +194,15 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
         if (!filterByType.isPresent()) return Optional.empty();
 
         if (!filterByType.get().isEmpty()) {
-            expansionBuilder.put("filterByType", filterByType.get());
+            expansionBuilder.put(HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER, filterByType.get());
         }
 
+        Optional<Set<String>> reportNames = traversal.assembleFilterings(HISTORY_REPORT_NAME_VARIABLE);
+        LOG.debug("selecting by report names:",()->reportNames.map(it-> String.join(",", it)).orElse("EMPTY"));
+        if (!reportNames.isPresent()) return Optional.empty();
+        if (!reportNames.get().isEmpty()) {
+            expansionBuilder.put(HISTORY_REPORT_NAME_REQUEST_PARAMETER, reportNames.get());
+        }
 
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
 
@@ -226,12 +233,12 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
         }
         final ImmutableList.Builder<TemplateVariable> builder = ImmutableList.builder();
         builder.add(
-                TemplateVariable.requestParameter("page"),
-                TemplateVariable.requestParameterContinued("size"),
-                TemplateVariable.requestParameterContinued("fields"),
-                TemplateVariable.requestParameterContinued("filterByType"),
+                TemplateVariable.requestParameter(PAGE_REQUEST_PARAMETER),
+                TemplateVariable.requestParameterContinued(SIZE_REQUEST_PARAMETER),
+                TemplateVariable.requestParameterContinued(FIELDS_REQUEST_PARAMETER),
+                TemplateVariable.requestParameterContinued(HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER),
                 TemplateVariable.requestParameterContinued("username"),
-                TemplateVariable.requestParameterContinued("report_name"),
+                TemplateVariable.requestParameterContinued(HISTORY_REPORT_NAME_REQUEST_PARAMETER),
                 TemplateVariable.requestParameterContinued("from"),
                 TemplateVariable.requestParameterContinued("to")
         );
@@ -246,7 +253,7 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
         Map<String, Object> fields = entity.getReportHistoryFields();
 
         String columnName = columnHandle.getColumnName();
-        if ( HISTORY_ID_COLUMN.equals(columnName)) {
+        if ( HISTORY_REPORT_ID_COLUMN.equals(columnName)) {
             columnName = "id";
         }
         return fields.get(columnName);
@@ -255,9 +262,10 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
     @Override
     public Iterator<ReportHistoryFieldsView> getResponseIterator(
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns,
+            CyodaTableHandle tableHandle,
             PredicateNode<Any> predicates
     ) {
+        List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
         return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();
     }
 
