@@ -18,8 +18,6 @@
 package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.client.logic.Connective;
-import com.cyoda.presto.client.logic.LeafPredicateNode;
 import com.cyoda.presto.client.logic.Predicate;
 import com.cyoda.presto.client.logic.PredicateBuilder;
 import com.cyoda.presto.client.types.DataType;
@@ -27,13 +25,10 @@ import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.type.VarcharType;
 import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slices;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -83,7 +78,7 @@ public class PredicateTraversalTest {
         when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
         when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        Predicate<?> hello = PredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"));
+        Predicate<String> hello = PredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(
                 Collections.singletonList(builder(AND).addLeaf(hello).build())
         ).assembleFilterings(mockHandle1.getColumnName());
@@ -102,7 +97,7 @@ public class PredicateTraversalTest {
         when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
         when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        Predicate<?> hello = PredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"));
+        Predicate<String> hello = PredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(
                 Collections.singletonList(builder(AND).addLeaf(hello).build())
         ).assembleFilterings(mockHandle1.getColumnName());
@@ -120,8 +115,8 @@ public class PredicateTraversalTest {
         when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
         when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        Predicate<?> hello = PredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"));
-        Predicate<?> goodbye = PredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("goodbye"));
+        Predicate<String> hello = PredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
+        Predicate<String> goodbye = PredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("goodbye"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(hello).build(),
@@ -141,8 +136,8 @@ public class PredicateTraversalTest {
         when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
         when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        Predicate<?> hello = PredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"));
-        Predicate<?> sameAsHello = PredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"));
+        Predicate<String> hello = PredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
+        Predicate<String> sameAsHello = PredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(hello).build(),
@@ -169,8 +164,8 @@ public class PredicateTraversalTest {
         when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
         when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        Predicate<?> hello = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"));
-        Predicate<?> sameAsHello = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"));
+        Predicate<String> hello = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
+        Predicate<String> sameAsHello = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(hello).build(),
@@ -195,11 +190,11 @@ public class PredicateTraversalTest {
         when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
         when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        Predicate<?> myHello = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"));
-        Predicate<?> myGoodbye = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"));
+        Predicate<String> myHello = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
+        Predicate<String> myGoodbye = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"),String.class);
 
-        Predicate<?> notMyHello = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"));
-        Predicate<?> notMyGoodbye = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"));
+        Predicate<String> notMyHello = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
+        Predicate<String> notMyGoodbye = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(notMyHello).build(),
@@ -231,9 +226,9 @@ public class PredicateTraversalTest {
         when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
         when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        Predicate<?> myHello = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"));
+        Predicate<String> myHello = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
 
-        Predicate<?> notMyGoodbye = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"));
+        Predicate<String> notMyGoodbye = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(myHello).build(),
@@ -262,10 +257,10 @@ public class PredicateTraversalTest {
         when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
         when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        Predicate<?> myHello = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"));
-        Predicate<?> myGoodbye = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"));
+        Predicate<String> myHello = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
+        Predicate<String> myGoodbye = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"),String.class);
 
-        Predicate<?> notMyGoodbye = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"));
+        Predicate<String> notMyGoodbye = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(myHello).build(),
@@ -295,9 +290,9 @@ public class PredicateTraversalTest {
         when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
         when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        Predicate<?> myHello = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"));
+        Predicate<String> myHello = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
 
-        Predicate<?> notMyGoodbye = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"));
+        Predicate<String> notMyGoodbye = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(myHello).build(),
@@ -328,11 +323,11 @@ public class PredicateTraversalTest {
         when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
         when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        Predicate<?> myHello = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"));
-        Predicate<?> myGoodbye = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"));
+        Predicate<String> myHello = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
+        Predicate<String> myGoodbye = PredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"),String.class);
 
-        Predicate<?> notMyHello = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"));
-        Predicate<?> notMyGoodbye = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"));
+        Predicate<String> notMyHello = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
+        Predicate<String> notMyGoodbye = PredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(notMyHello).build(),

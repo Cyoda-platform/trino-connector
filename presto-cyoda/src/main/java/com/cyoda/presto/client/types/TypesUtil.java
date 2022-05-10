@@ -17,8 +17,13 @@
 
 package com.cyoda.presto.client.types;
 
+import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.Type;
+import com.facebook.presto.common.type.TypeManager;
+import com.facebook.presto.common.type.TypeSignature;
+import com.facebook.presto.common.type.TypeSignatureParameter;
+import com.google.common.collect.ImmutableList;
 
 /**
  * Utility class for Presto Type-related functionality.
@@ -75,4 +80,30 @@ public final class TypesUtil {
         return type.getTypeParameters().get(1);
     }
 
+
+    public static Type toType(ColumnDefinition fieldDef, TypeManager typeManager) {
+        String fieldTypeString = fieldDef.getFieldTypeString();
+        TypeSignature parType = fieldDef.getParType();
+        TypeSignature mapValueType = fieldDef.getMapValuetype();
+        return toType(fieldTypeString,parType,mapValueType,typeManager);
+
+    }
+    public static Type toType(String fieldTypeString, TypeSignature parType, TypeSignature mapValueType, TypeManager typeManager) {
+        if (fieldTypeString.equals(StandardTypes.ARRAY)) {
+            return typeManager.getParameterizedType(StandardTypes.ARRAY,
+                    ImmutableList.of(TypeSignatureParameter.of(parType)));
+        }
+        if (fieldTypeString.equals(StandardTypes.MAP)) {
+            return typeManager.getParameterizedType(StandardTypes.MAP,
+                    ImmutableList.of(
+                            TypeSignatureParameter.of(parType),
+                            TypeSignatureParameter.of(mapValueType))
+            );
+        }
+        if (DataType.supportedPrestoTypes.contains(fieldTypeString)) {
+            return typeManager.getType(new TypeSignature(fieldTypeString));
+        } else {
+            throw new UnsupportedOperationException(fieldTypeString + " Not yet mapped");
+        }
+    }
 }

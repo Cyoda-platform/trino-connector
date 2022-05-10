@@ -24,7 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 
-public interface PredicateNode<T extends Comparable<T>> {
+public interface PredicateNode<T extends Comparable<? super T>> {
     /**
      * Start with real things
      *

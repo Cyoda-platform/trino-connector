@@ -129,14 +129,14 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
 
         if (stats.getGroupsCount() == 0 ) return Collections::emptyIterator;
 
-        Slice reportIdSlice = SupportedDataType.of(reportId,String.class).asSlice(VarcharType.VARCHAR);
-        Slice groupingVersionSlice = SupportedDataType.of(groupingVersion,String.class).asSlice(VarcharType.VARCHAR);
-        Slice reportConfigIdSlice = SupportedDataType.of(reportConfigId,String.class).asSlice(VarcharType.VARCHAR);
+        Slice reportIdSlice = SupportedDataType.of(reportId).asSlice(VarcharType.VARCHAR);
+        Slice groupingVersionSlice = SupportedDataType.of(groupingVersion).asSlice(VarcharType.VARCHAR);
+        Slice reportConfigIdSlice = SupportedDataType.of(reportConfigId).asSlice(VarcharType.VARCHAR);
 
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
-        builder.addLeaf(PredicateBuilder.createEqualsPredicate(reportIdColumn, reportIdSlice));
-        builder.addLeaf(PredicateBuilder.createEqualsPredicate(groupingVersionColumn, groupingVersionSlice));
-        builder.addLeaf(PredicateBuilder.createEqualsPredicate(reportConfigurationIdColumn, reportConfigIdSlice));
+        builder.addLeaf(PredicateBuilder.createEqualsPredicate(reportIdColumn, reportIdSlice,String.class));
+        builder.addLeaf(PredicateBuilder.createEqualsPredicate(groupingVersionColumn, groupingVersionSlice,String.class));
+        builder.addLeaf(PredicateBuilder.createEqualsPredicate(reportConfigurationIdColumn, reportConfigIdSlice,String.class));
         builder.addMember(predicates);
 
         PredicateNode<Any> thesePredicates = builder.build();

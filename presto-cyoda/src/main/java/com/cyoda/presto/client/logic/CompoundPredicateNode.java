@@ -148,7 +148,7 @@ public class CompoundPredicateNode implements PredicateNode<Any> {
             return this;
         }
 
-        public Builder addLeaf(Predicate<?> predicate) {
+        public <S extends Comparable<? super S>> Builder addLeaf(Predicate<S> predicate) {
             membersBuilder.add(LeafPredicateNode.leaf(parent,predicate));
             return this;
         }

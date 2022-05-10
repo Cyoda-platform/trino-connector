@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
+import javax.xml.crypto.Data;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -66,12 +67,12 @@ public enum DataType {
     FLOAT(Float.class, StandardTypes.REAL),
     DATE(Date.class,StandardTypes.TIMESTAMP),
     ZONED_DATE_TIME(ZonedDateTime.class,StandardTypes.TIMESTAMP_WITH_TIME_ZONE),
-    YEAR(Year.class,StandardTypes.VARCHAR),
+    YEAR(Year.class,StandardTypes.INTEGER),
     YEAR_MONTH(YearMonth.class,StandardTypes.VARCHAR),
-    LOCAL_TIME(LocalTime.class,StandardTypes.TIME_WITH_TIME_ZONE),
+    LOCAL_TIME(LocalTime.class,StandardTypes.TIME), // Unsure
     UUID_TYPE(UUID.class,StandardTypes.VARCHAR),  // StandardType.UUID does not work. Presto wants a String. Trino supports UUID.
-    BYTE_ARRAY(byte[].class,StandardTypes.VARBINARY), // Unsure
-    BYTE_BUFFER(ByteBuffer.class,StandardTypes.VARBINARY), // Unsure
+    BYTE_ARRAY(byte[].class,StandardTypes.VARBINARY),
+    BYTE_BUFFER(ByteBuffer.class,StandardTypes.VARBINARY),
     CLASS(Class.class,StandardTypes.VARCHAR),
     LOCALE(Locale.class,StandardTypes.VARCHAR),
     NULL(null,null),
@@ -155,10 +156,20 @@ public enum DataType {
             .put(double.class,DOUBLE)
             .build();
 
-    public static final Map<Class<?>, DataType> classToDataType = ImmutableMap.<Class<?>, DataType>builder()
+    private static final Map<Class<?>, DataType> classToDataType = ImmutableMap.<Class<?>, DataType>builder()
             .putAll(objectClassToDataType)
             .putAll(primitiveClassToDataType)
             .build();
+
+    public static DataType dataTypeFromClass(Class<?> clazz) {
+        return Optional.ofNullable(classToDataType.get(clazz))
+                .orElse(Arrays.stream(DataType.values())
+                        .filter(it -> it.javaType != null)
+                        .filter(it->it.javaType.isAssignableFrom(clazz))
+                        .findAny()
+                        .orElse(null)
+                );
+    }
 
     public static Optional<DataType> fromClass(Class<?> clazz) {
        return Optional.ofNullable(classToDataType.get(clazz));

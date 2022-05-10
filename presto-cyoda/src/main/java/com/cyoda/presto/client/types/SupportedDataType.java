@@ -43,6 +43,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Suppliers;
+import com.google.common.primitives.UnsignedBytes;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
@@ -50,6 +51,7 @@ import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -58,6 +60,7 @@ import java.time.YearMonth;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -74,6 +77,7 @@ import static com.cyoda.presto.client.types.DataType.*;
 import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT;
 import static io.airlift.slice.Slices.EMPTY_SLICE;
 import static io.airlift.slice.Slices.wrappedBuffer;
+import static java.lang.Double.longBitsToDouble;
 import static java.lang.Float.intBitsToFloat;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
@@ -83,6 +87,11 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
     public final Class<T> javaType;
     public final DataType dataType;
 
+    private SupportedDataType(T value, DataType dataType) {
+        this.value = value;
+        this.dataType = dataType;
+        this.javaType = (Class<T>) dataType.getJavaType();
+    }
     private SupportedDataType(T value, Class<T> javaType) {
         this.value = value;
         if (value != null && !javaType.isAssignableFrom(value.getClass())) {
@@ -90,12 +99,12 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
                     format("Incompatible type. %s is not assignable from %s", javaType, value.getClass()));
         }
         this.javaType = javaType;
-        final DataType fromJavaType = DataType.classToDataType.get(javaType);
+        final DataType fromJavaType = DataType.dataTypeFromClass(javaType);
         requireNonNull(fromJavaType, javaType + " not mapped as a DataType");
         this.dataType = fromJavaType;
     }
 
-    public static <S> SupportedDataType<S> of(S value, Class<S> javaType) {
+    private static <S> SupportedDataType<S> of(S value, Class<S> javaType) {
         return new SupportedDataType<>(value, javaType);
     }
 
@@ -103,6 +112,16 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
     public static SupportedDataType<?> ofAny(Object value, Class<?> javaType) {
         return new SupportedDataType(value, javaType);
     }
+
+    public static <T> SupportedDataType<T> of(T value) {
+        //noinspection unchecked
+        return new SupportedDataType<>(value, (Class<T>) value.getClass());
+    }
+
+    public static <T> SupportedDataType<T> of(T value,DataType dataType) {
+        return new SupportedDataType<>(value, dataType);
+    }
+
 
     @SuppressWarnings({"java:S1452", "java:S3740", "rawtypes"})
     public static SupportedDataType<?> byType(Object value, Type type) {
@@ -126,7 +145,7 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
 
     public static <S> SupportedDataType<S> ofPrestoNativeValue(Type type, Object nativeValue, Class<S> targetClass) {
         Object obj = getJavaValue(type, nativeValue);
-        Preconditions.checkArgument(targetClass.isAssignableFrom(obj.getClass()));
+        Preconditions.checkArgument(targetClass.isAssignableFrom(obj.getClass()),"%s is not assignable from %s",targetClass,obj.getClass());
         //noinspection unchecked
         return of((S) obj, targetClass);
     }
@@ -150,8 +169,10 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
             return ((Long) nativeValue).shortValue();
         } else if (type == TinyintType.TINYINT) {
             return ((Long) nativeValue).byteValue();
+        } else if ( type == DateType.DATE) {
+            return LocalDate.ofEpochDay((Long) nativeValue);
         } else if (type == DoubleType.DOUBLE) {
-            return nativeValue;
+            return longBitsToDouble(((Long) nativeValue));
         } else if (type == RealType.REAL) {
             // conversion can result in precision lost
             return intBitsToFloat(((Long) nativeValue).intValue());
@@ -168,6 +189,18 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
         }
     }
 
+    @Nullable
+    public T getValue() {
+        return value;
+    }
+
+    public Class<T> getJavaType() {
+        return javaType;
+    }
+
+    public DataType getDataType() {
+        return dataType;
+    }
 
     @Override
     public String toString() {
@@ -225,13 +258,15 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
             case ARRAY:
             case LIST:
             case MAP:
-            case SET: // Let Jackson do the work, so that we have consistent formatting
+            case SET: {// Let Jackson do the work, so that we have consistent formatting
                 final String json = JsonCodec.jsonCodec(this.javaType).toJson(this.value);
-                result =  json.substring(1,json.length()-1);
+                result = cleanUpJson(json);
                 break;
+            }
             case OBJECT: { // Let Jackson/JodaBeans do the work, so that we have consistent formatting
                 try {
-                    result = OBJECT_MAPPER_SUPPLIER.get().writerFor(this.value.getClass()).writeValueAsString(this.value);
+                    String json = OBJECT_MAPPER_SUPPLIER.get().writerFor(this.value.getClass()).writeValueAsString(this.value);
+                    result = cleanUpJson(json);
                 } catch (JsonProcessingException e) {
                     throw new IllegalStateException(e);
                 }
@@ -243,7 +278,11 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
             case BYTE_BUFFER:
                 ByteBuffer bb = (ByteBuffer) this.value;
                 byte[] b = new byte[bb.remaining()];
-                bb.get(b);
+                try {
+                    bb.get(b);
+                } finally {
+                    bb.rewind();
+                }
                 result = Base64.getEncoder().encodeToString(b);
                 break;
             case NULL:
@@ -255,9 +294,26 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
 
     }
 
+    private String cleanUpJson(String json) {
+        String result;
+        if ( json.startsWith("{") || json.startsWith("\"")) {
+            result = json.substring(1, json.length() - 1);
+        } else {
+            result = json;
+        }
+        return result;
+    }
+
     public Optional<ByteBuffer> encode() {
         if ( this.dataType == BYTE_ARRAY) return Optional.ofNullable(this.value).map(it->ByteBuffer.wrap((byte[]) it));
         if ( this.dataType == BYTE_BUFFER) return Optional.ofNullable((ByteBuffer) this.value);
+        if ( this.dataType == STRING) return Optional.of(
+                ByteBuffer.wrap(Base64.getEncoder().encode(
+                        Optional.ofNullable(this.value).map(it->it.toString().getBytes(StandardCharsets.UTF_8))
+                                .orElse(new byte[0])
+                        )
+                )
+        );
         throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR, "[Cyoda] "+this.dataType + " not supported for encoding");
     }
 
@@ -287,11 +343,17 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
             case BYTE:
                 return asByte().longValue();
             case SHORT:
+                return asShort().longValue();
             case LONG:
+                return asLong();
             case FLOAT:
+                return asFloat().longValue();
             case DOUBLE:
+                return asDouble().longValue();
             case INTEGER:
+                return asInt().longValue();
             case BIG_DECIMAL:
+                return asBigDecimal().longValue();
             case BIG_INTEGER:
                 return asBigInteger().longValue();
             case BOOLEAN:
@@ -468,7 +530,9 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
     }
 
     public ByteBuffer asByteBuffer() {
-        return getCast();
+        ByteBuffer byteBuffer = getCast();
+        byteBuffer.rewind();
+        return byteBuffer;
     }
 
     public Number asNumber() {
@@ -484,10 +548,27 @@ public class SupportedDataType<T> implements Comparable<SupportedDataType<T>> {
         return value == null || dataType == NULL;
     }
 
+    private static byte[] getByteArray(ByteBuffer byteBuffer) {
+        try {
+            byte[] bb = new byte[byteBuffer.remaining()];
+            byteBuffer.get(bb);
+            return bb;
+        } finally {
+            byteBuffer.rewind();
+        }
+    }
 
+    private static final Comparator<byte[]> COMPARATOR = UnsignedBytes.lexicographicalComparator();
     @SuppressWarnings("unchecked")
     @Override
     public int compareTo(SupportedDataType<T> o) {
+        Preconditions.checkNotNull(o.value,"value must not be null");
+        Preconditions.checkNotNull(this.value,"cannot compare with null values");
+        Preconditions.checkArgument(this.value instanceof Comparable,"Cannot compare things that are not comparable");
+        Preconditions.checkArgument(o.value instanceof Comparable,"Cannot compare things that are not comparable");
+        if ( this.value instanceof ByteBuffer ) {
+            return COMPARATOR.compare(getByteArray((ByteBuffer) (this.value)),getByteArray((ByteBuffer)o.value));
+        }
         return ((Comparable<T>) this.value).compareTo(o.value);
     }
 

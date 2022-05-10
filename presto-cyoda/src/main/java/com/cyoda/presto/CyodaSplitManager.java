@@ -17,10 +17,10 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.CyodaTableLayoutHandle;
 import com.facebook.presto.common.predicate.TupleDomain;
-import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorSplit;
 import com.facebook.presto.spi.ConnectorSplitSource;
@@ -28,6 +28,7 @@ import com.facebook.presto.spi.ConnectorTableLayoutHandle;
 import com.facebook.presto.spi.FixedSplitSource;
 import com.facebook.presto.spi.connector.ConnectorSplitManager;
 import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
+import com.google.common.base.Preconditions;
 
 import javax.inject.Inject;
 import java.net.URI;
@@ -57,11 +58,12 @@ public class CyodaSplitManager implements ConnectorSplitManager {
             SplitSchedulingContext splitSchedulingContext) {
         CyodaTableLayoutHandle layoutHandle = (CyodaTableLayoutHandle) layout;
         CyodaTableHandle tableHandle = layoutHandle.getTable();
+        Preconditions.checkArgument(layoutHandle.getTable().getConnectorId().equals(connectorId),"This split manager is meant for connector id "+connectorId);
         CyodaTable table = cyodaClient.getTable(tableHandle.getSchemaName(), tableHandle.getTableName());
         // this can happen if table is removed during a query
         checkState(table != null, "Table %s.%s no longer exists", tableHandle.getSchemaName(), tableHandle.getTableName());
 
-        TupleDomain<ColumnHandle> constraint = layoutHandle.getConstraint();
+        TupleDomain<CyodaColumnHandle> constraint = layoutHandle.getConstraint();
 
         List<ConnectorSplit> splits = new ArrayList<>();
         for (URI uri : table.getSources()) {

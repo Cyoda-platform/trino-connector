@@ -63,7 +63,7 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
     ) {
         requireNonNull(split, "split is null");
         requireNonNull(splitContext, "splitContext is null");
-        TupleDomain<ColumnHandle> constraint = ((CyodaSplit) split).getConstraint();
+        TupleDomain<CyodaColumnHandle> constraint = ((CyodaSplit) split).getConstraint();
         PredicateNode<Any> predicates = PredicateBuilder.setupConstraintPredicates(constraint);
         String requestHandlerKey = ((CyodaSplit) split).getTableHandle().getRequestHandlerKey();
         ApiRequestHandler<?> requestHandler = Optional.ofNullable(client.getRequestHandlerProvider().getHandler(requestHandlerKey))

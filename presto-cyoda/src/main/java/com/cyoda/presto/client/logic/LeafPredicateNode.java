@@ -27,7 +27,7 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
-public class LeafPredicateNode<T extends Comparable<T>> implements PredicateNode<T> {
+public class LeafPredicateNode<T extends Comparable<? super T>> implements PredicateNode<T> {
 
     private final Predicate<T> predicate;
     private final CompoundPredicateNode parent;
@@ -58,7 +58,7 @@ public class LeafPredicateNode<T extends Comparable<T>> implements PredicateNode
         return Objects.hashCode(predicate, parent);
     }
 
-    public static <T extends Comparable<T>> LeafPredicateNode<T> leaf(CompoundPredicateNode parent, Predicate<T> predicate) {
+    public static <T extends Comparable<? super T>> LeafPredicateNode<T> leaf(CompoundPredicateNode parent, Predicate<T> predicate) {
         return new LeafPredicateNode<>(parent,predicate);
     }
 

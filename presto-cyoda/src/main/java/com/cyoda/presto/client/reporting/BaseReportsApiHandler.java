@@ -22,15 +22,13 @@ import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.CyodaTable;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.client.types.SupportedDataType;
+import com.cyoda.presto.client.types.TypesUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.common.type.TypeSignature;
-import com.facebook.presto.common.type.TypeSignatureParameter;
 import com.facebook.presto.spi.SchemaTableName;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -42,6 +40,7 @@ import javax.annotation.Nullable;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -115,29 +114,10 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
 
 
     protected Type toType(ColumnDefinition fieldDef) {
-        String fieldTypeString = fieldDef.getFieldTypeString();
-        TypeSignature parType = fieldDef.getParType();
-        TypeSignature mapValueType = fieldDef.getMapValuetype();
-        return toType(fieldTypeString,parType,mapValueType);
-
+        return TypesUtil.toType(fieldDef,typeManager);
     }
     protected Type toType(String fieldTypeString,TypeSignature parType, TypeSignature mapValueType) {
-        if (fieldTypeString.equals(StandardTypes.ARRAY)) {
-            return typeManager.getParameterizedType(StandardTypes.ARRAY,
-                    ImmutableList.of(TypeSignatureParameter.of(parType)));
-        }
-        if (fieldTypeString.equals(StandardTypes.MAP)) {
-            return typeManager.getParameterizedType(StandardTypes.MAP,
-                    ImmutableList.of(
-                            TypeSignatureParameter.of(parType),
-                            TypeSignatureParameter.of(mapValueType))
-            );
-        }
-        if (DataType.supportedPrestoTypes.contains(fieldTypeString)) {
-            return typeManager.getType(new TypeSignature(fieldTypeString));
-        } else {
-            throw new UnsupportedOperationException(fieldTypeString + " Not yet mapped");
-        }
+        return TypesUtil.toType(fieldTypeString,parType,mapValueType,typeManager);
     }
 
     @Override
@@ -169,6 +149,9 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         if (columnHandle.getDataType() == LOCAL_DATE_TIME && value instanceof String) {
             return toLocalDateTime((String) value);
         }
+        if (columnHandle.getDataType() == LOCAL_DATE && value instanceof String) {
+            return toLocalDate((String) value);
+        }
         return value;
     }
 
@@ -180,6 +163,10 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
 
     protected LocalDateTime toLocalDateTime(String str) {
         return LocalDateTime.parse(str, DateTimeFormatter.ISO_DATE_TIME);
+    }
+
+    protected LocalDate toLocalDate(String str) {
+        return LocalDate.parse(str, DateTimeFormatter.ISO_DATE);
     }
 
     protected abstract @Nullable Object getFieldValueFromEntity(@Nonnull T field, CyodaColumnHandle columnHandle);

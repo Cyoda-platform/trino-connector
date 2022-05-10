@@ -20,6 +20,7 @@ package com.cyoda.presto;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.CyodaTableLayoutHandle;
+import com.facebook.presto.common.predicate.TupleDomain;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
 import com.facebook.presto.spi.ConnectorSession;
@@ -85,10 +86,11 @@ public class CyodaMetadata implements ConnectorMetadata {
         CyodaTableHandle tableHandle = (desiredColumns.isPresent()) ?
                 ((CyodaTableHandle) table).withProjectedColumns(convertDesiredColumns(desiredColumns.orElse(Collections.emptySet()))) :
                 ((CyodaTableHandle) table);
+        TupleDomain<CyodaColumnHandle> summary = constraint.getSummary().transform(CyodaColumnHandle.class::cast);
         ConnectorTableLayout layout = new ConnectorTableLayout(
                 new CyodaTableLayoutHandle(
                         tableHandle,
-                        constraint.getSummary()
+                        summary
                 )
         );
         return ImmutableList.of(new ConnectorTableLayoutResult(layout, constraint.getSummary()));

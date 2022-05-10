@@ -21,7 +21,6 @@ import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.predicate.Domain;
 import com.facebook.presto.common.predicate.Range;
 import com.facebook.presto.common.predicate.TupleDomain;
-import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
 import com.google.common.base.Joiner;
@@ -44,8 +43,8 @@ public class PredicateBuilderDebugger {
 
     private PredicateBuilderDebugger() {}
 
-    static String debug(TupleDomain<ColumnHandle> constraintSummary) {
-        List<TupleDomain.ColumnDomain<ColumnHandle>> columnDomains = constraintSummary.getColumnDomains()
+    static String debug(TupleDomain<CyodaColumnHandle> constraintSummary) {
+        List<TupleDomain.ColumnDomain<CyodaColumnHandle>> columnDomains = constraintSummary.getColumnDomains()
                 .orElse(Collections.emptyList());
         List<Object> conjuncts = columnDomains.stream().map(PredicateBuilderDebugger::debug).collect(Collectors.toList());
         StringBuilder where = new StringBuilder("WHERE ");
@@ -53,9 +52,9 @@ public class PredicateBuilderDebugger {
     }
 
     private static String debug(
-            TupleDomain.ColumnDomain<ColumnHandle> columnDomain) {
+            TupleDomain.ColumnDomain<CyodaColumnHandle> columnDomain) {
         Domain domain = columnDomain.getDomain();
-        CyodaColumnHandle columnHandle = (CyodaColumnHandle) columnDomain.getColumn();
+        CyodaColumnHandle columnHandle = columnDomain.getColumn();
 
         String columnName = columnHandle.getColumnName();
         if (domain.getValues().isAll()) {

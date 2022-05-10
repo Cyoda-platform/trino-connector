@@ -39,7 +39,7 @@ public class SupportedDataTypeTest {
     public void testStringifyYear() {
         final int isoYear = 2020;
         Year year = Year.of(isoYear);
-        SupportedDataType<Year> sdt = SupportedDataType.of(year,Year.class);
+        SupportedDataType<Year> sdt = SupportedDataType.of(year);
         Optional<String> stringify = sdt.stringify();
         assertTrue(stringify.isPresent());
         String str = stringify.get();
@@ -49,7 +49,7 @@ public class SupportedDataTypeTest {
     @Test
     public void testStringifyYearMonth() {
         YearMonth yearMonth = YearMonth.of(2020,11);
-        SupportedDataType<YearMonth> sdt = SupportedDataType.of(yearMonth,YearMonth.class);
+        SupportedDataType<YearMonth> sdt = SupportedDataType.of(yearMonth);
         Optional<String> stringify = sdt.stringify();
         assertTrue(stringify.isPresent());
         String str = stringify.get();
@@ -60,7 +60,7 @@ public class SupportedDataTypeTest {
     @Test
     public void testStringifyLocalDate() {
         LocalDate ld = LocalDate.of(2020,11,1);
-        SupportedDataType<LocalDate> sdt = SupportedDataType.of(ld,LocalDate.class);
+        SupportedDataType<LocalDate> sdt = SupportedDataType.of(ld);
         Optional<String> stringify = sdt.stringify();
         assertTrue(stringify.isPresent());
         String str = stringify.get();
@@ -70,7 +70,7 @@ public class SupportedDataTypeTest {
     @Test
     public void testStringifyLocalDateTime() {
         LocalDateTime ldt = LocalDateTime.of(2020,11,1,8,12,34,22023);
-        SupportedDataType<LocalDateTime> sdt = SupportedDataType.of(ldt,LocalDateTime.class);
+        SupportedDataType<LocalDateTime> sdt = SupportedDataType.of(ldt);
         Optional<String> stringify = sdt.stringify();
         assertTrue(stringify.isPresent());
         String str = stringify.get();
@@ -80,7 +80,7 @@ public class SupportedDataTypeTest {
     @Test
     public void testStringifyLocalTime() {
         LocalTime lt = LocalTime.of(14,15,16);
-        SupportedDataType<LocalTime> sdt = SupportedDataType.of(lt,LocalTime.class);
+        SupportedDataType<LocalTime> sdt = SupportedDataType.of(lt);
         Optional<String> stringify = sdt.stringify();
         assertTrue(stringify.isPresent());
         String str = stringify.get();

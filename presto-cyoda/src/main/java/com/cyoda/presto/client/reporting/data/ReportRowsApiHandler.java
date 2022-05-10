@@ -217,12 +217,12 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
 
         if ( groupValueJsonBase64 == null ) return Collections::emptyIterator;
 
-        Slice historyIdSlice = SupportedDataType.of(reportId,String.class).asSlice(VarcharType.VARCHAR);
-        Slice groupingValueSlice = SupportedDataType.of(groupValueJsonBase64,String.class).asSlice(VarcharType.VARCHAR);
+        Slice historyIdSlice = SupportedDataType.of(reportId).asSlice(VarcharType.VARCHAR);
+        Slice groupingValueSlice = SupportedDataType.of(groupValueJsonBase64).asSlice(VarcharType.VARCHAR);
 
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
-        builder.addLeaf(PredicateBuilder.createEqualsPredicate(reportIdColumn, historyIdSlice));
-        builder.addLeaf(PredicateBuilder.createEqualsPredicate(groupJsonBase64Column, groupingValueSlice));
+        builder.addLeaf(PredicateBuilder.createEqualsPredicate(reportIdColumn, historyIdSlice,String.class));
+        builder.addLeaf(PredicateBuilder.createEqualsPredicate(groupJsonBase64Column, groupingValueSlice,String.class));
         builder.addMember(withReportPredicate);
         PredicateNode<Any> predicates = builder.build();
 
@@ -256,10 +256,10 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         String reportConfigurationId = getTableMap()
                 .get(new SchemaTableName(tableHandle.getSchemaName(), tableHandle.getTableName()))
                 .getReportConfigurationId();
-        Slice reportConfigIdSlice = SupportedDataType.of(reportConfigurationId,String.class).asSlice(VarcharType.VARCHAR);
+        Slice reportConfigIdSlice = SupportedDataType.of(reportConfigurationId).asSlice(VarcharType.VARCHAR);
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
         builder.addMember(predicates);
-        builder.addLeaf(PredicateBuilder.createEqualsPredicate(reportConfigIdColumn, reportConfigIdSlice));
+        builder.addLeaf(PredicateBuilder.createEqualsPredicate(reportConfigIdColumn, reportConfigIdSlice,String.class));
         PredicateNode<Any> withReportPredicate = builder.build();
 
         Iterable<GroupingHandle> statsIterable = () -> groupsApiHandler

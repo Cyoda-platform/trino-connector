@@ -17,14 +17,12 @@
 
 package com.cyoda.presto.client.logic;
 
-import com.cyoda.presto.client.types.SupportedDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.predicate.DiscreteValues;
 import com.facebook.presto.common.predicate.Domain;
 import com.facebook.presto.common.predicate.Range;
 import com.facebook.presto.common.predicate.TupleDomain;
-import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
 import com.google.common.base.Joiner;
@@ -34,11 +32,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import static com.cyoda.presto.client.logic.LeafPredicateNode.leaf;
-import static com.cyoda.presto.client.logic.Predicate.newIsNotNullPredicateAny;
-import static com.cyoda.presto.client.logic.Predicate.newIsNullPredicateAny;
+import static com.cyoda.presto.client.logic.Predicate.*;
 import static com.cyoda.presto.client.logic.PredicateBuilderDebugger.debug;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.nCopies;
@@ -53,7 +49,7 @@ public class PredicateBuilder {
     private PredicateBuilder() {
     }
 
-    public static PredicateNode<Any> setupConstraintPredicates(TupleDomain<ColumnHandle> constraintSummary) {
+    public static PredicateNode<Any> setupConstraintPredicates(TupleDomain<CyodaColumnHandle> constraintSummary) {
 
         LOG.debug("Taken from PredicateBuilderDebugger: %s",() -> debug(constraintSummary));
 
@@ -63,10 +59,10 @@ public class PredicateBuilder {
         if (constraintSummary.isNone()) return CompoundPredicateNode.empty(null);
 
         if (!constraintSummary.isAll()) {
-            List<TupleDomain.ColumnDomain<ColumnHandle>> columnDomains = constraintSummary.getColumnDomains()
+            List<TupleDomain.ColumnDomain<CyodaColumnHandle>> columnDomains = constraintSummary.getColumnDomains()
                     .orElse(Collections.emptyList());
-            for (TupleDomain.ColumnDomain<ColumnHandle> columnDomain : columnDomains) {
-                CyodaColumnHandle columnHandle = (CyodaColumnHandle) columnDomain.getColumn();
+            for (TupleDomain.ColumnDomain<CyodaColumnHandle> columnDomain : columnDomains) {
+                CyodaColumnHandle columnHandle = columnDomain.getColumn();
                 String columnName = columnHandle.getColumnName();
                 Domain domain = columnDomain.getDomain();
 
@@ -83,7 +79,8 @@ public class PredicateBuilder {
                         conjunctsBuilder.add(leaf(null,newIsNotNullPredicateAny(columnHandle)));
                         sqlConjunctsBuilder.add(columnName + " IS NOT NULL");
                     } else if (domain.isSingleValue()) {
-                        Predicate<?> predicate = createEqualsPredicate(columnHandle, domain.getSingleValue());
+
+                        Predicate predicate = createDumbEqualsPredicate(columnHandle, domain.getSingleValue());
                         conjunctsBuilder.add(leaf(null,predicate));
                         sqlConjunctsBuilder.add(columnHandle.getColumnName()+" = ?");
                     } else {
@@ -107,14 +104,16 @@ public class PredicateBuilder {
                                             if (!range.isLowUnbounded()) {
                                                 Predicate.ComparisonOp op = (range.isLowInclusive())
                                                         ? Predicate.ComparisonOp.GREATER_EQUAL : Predicate.ComparisonOp.GREATER;
-                                                LeafPredicateNode<?> leaf = leaf(null,createComparisonPredicate(columnHandle, op, range.getLowBoundedValue()));
+                                                Predicate predicate = newComparisonPredicateFromNative(columnHandle, op, range.getLowBoundedValue());
+                                                LeafPredicateNode<?> leaf = leaf(null, predicate);
                                                 rangeConjuncts.add(leaf);
                                                 rangeConjunctsColumnNames.add(columnName);
                                             }
                                             if (!range.isHighUnbounded()) {
                                                 Predicate.ComparisonOp op = (range.isHighInclusive())
                                                         ? Predicate.ComparisonOp.LESS_EQUAL : Predicate.ComparisonOp.LESS;
-                                                LeafPredicateNode<?> leaf = leaf(null,createComparisonPredicate(columnHandle, op, range.getHighBoundedValue()));
+                                                Predicate predicate = newComparisonPredicateFromNative(columnHandle, op, range.getHighBoundedValue());
+                                                LeafPredicateNode<?> leaf = leaf(null, predicate);
                                                 rangeConjuncts.add(leaf);
                                                 rangeConjunctsColumnNames.add(columnName);
                                             }
@@ -128,10 +127,11 @@ public class PredicateBuilder {
 
                                     // Add back all of the possible single values either as an equality or an IN predicate
                                     if (singleValues.size() == 1) {
-                                        disjunctsBuilder.add(leaf(null,createEqualsPredicate(columnHandle, singleValues.get(0))));
+                                        Predicate equalsPredicate = createDumbEqualsPredicate(columnHandle, singleValues.get(0));
+                                        disjunctsBuilder.add(leaf(null, equalsPredicate));
                                         disjunctSql.add(columnName +" = ?");
                                     } else if (singleValues.size() > 1) {
-                                        disjunctsBuilder.add(leaf(null,Predicate.newInListPredicate(columnHandle, new DiscreteValues() {
+                                        disjunctsBuilder.add(leaf(null,Predicate.newInListPredicateFromDiscrete(columnHandle, new DiscreteValues() {
                                             @Override
                                             public boolean isWhiteList() {
                                                 return true;
@@ -162,7 +162,7 @@ public class PredicateBuilder {
 
                                 discreteValues -> {
                                     boolean negate = !discreteValues.isWhiteList();
-                                    Predicate<?> predicate = Predicate.newInListPredicate(columnHandle, discreteValues).negate(negate);
+                                    Predicate predicate = Predicate.newInListPredicateFromDiscrete(columnHandle, discreteValues).negate(negate);
                                     LeafPredicateNode<?> leaf = leaf(null,predicate);
                                     conjunctsBuilder.add(leaf);
 
@@ -193,85 +193,13 @@ public class PredicateBuilder {
         return Joiner.on(" AND\n").appendTo(where, conjuncts).toString();
     }
 
-    @SuppressWarnings("java:S1452") // We want a wildcard here.
-    public static Predicate<?> createComparisonPredicate(
-            CyodaColumnHandle columnHandle,
-            Predicate.ComparisonOp op,
-            Object nativeValue) {
-        // TODO: This does not yet cover all cases.
-        switch (columnHandle.getDataType()) {
-            case LONG:
-                return prestoNativeToPredicate(columnHandle, op, nativeValue, Long.class);
-            case INTEGER:
-                return prestoNativeToPredicate(columnHandle, op, nativeValue, Integer.class);
-            case SHORT:
-                return prestoNativeToPredicate(columnHandle, op, nativeValue, Short.class);
-            case BYTE:
-                return prestoNativeToPredicate(columnHandle, op, nativeValue, Byte.class);
-            case STRING:
-                return prestoNativeToPredicate(columnHandle, op, nativeValue, String.class);
-            case DOUBLE:
-                return prestoNativeToPredicate(columnHandle, op, nativeValue, Double.class);
-            case FLOAT:
-                return prestoNativeToPredicate(columnHandle, op, nativeValue, Float.class);
-            case BOOLEAN:
-                return prestoNativeToPredicate(columnHandle, op, nativeValue, Boolean.class);
-            case UUID_TYPE:
-                return prestoNativeToPredicate(columnHandle, op, nativeValue, UUID.class);
-            default:
-                throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "DataType  " + columnHandle.getDataType() + " not yet supported");
-        }
+
+    private static Predicate<?> createDumbEqualsPredicate(CyodaColumnHandle columnHandle, Object nativeValue) {
+        return newComparisonPredicateFromNative(columnHandle, Predicate.ComparisonOp.EQUAL, nativeValue);
     }
 
-    @SuppressWarnings("java:S1452")
-    public static Predicate<?> createEqualsPredicate(CyodaColumnHandle columnHandle, Object nativeValue) {
-        return createComparisonPredicate(columnHandle, Predicate.ComparisonOp.EQUAL, nativeValue);
+    public static <S extends Comparable<? super S>> Predicate<S> createEqualsPredicate(CyodaColumnHandle columnHandle, Object nativeValue, Class<S> clazz) {
+        return newComparisonPredicateFromNative(columnHandle, Predicate.ComparisonOp.EQUAL, nativeValue,clazz);
     }
 
-    private static <T extends Comparable<T>> Predicate<T> prestoNativeToPredicate(
-            CyodaColumnHandle columnHandle,
-            Predicate.ComparisonOp op,
-            Object nativeValue,
-            Class<T> javaType) {
-        SupportedDataType<T> thing = SupportedDataType.ofPrestoNativeValue(columnHandle.getColumnType(), nativeValue, javaType);
-        return createComparisonPredicate(columnHandle, op, thing);
-    }
-
-
-    @SuppressWarnings("unused")
-    public static <T extends Comparable<T>> Predicate<T> createEqualsPredicate(CyodaColumnHandle columnHandle, SupportedDataType<T> nativeValue) {
-        return createComparisonPredicate(columnHandle, Predicate.ComparisonOp.EQUAL, nativeValue);
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T extends Comparable<T>> Predicate<T> createComparisonPredicate(
-            CyodaColumnHandle columnHandle,
-            Predicate.ComparisonOp op,
-            SupportedDataType<T> value) {
-        // TODO: This does not yet cover all cases.
-        switch (value.dataType) {
-            case LONG:
-                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asLong());
-            case INTEGER:
-                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asInt());
-            case SHORT:
-                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asShort());
-            case BYTE:
-                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asByte());
-            case STRING:
-                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asString());
-            case DOUBLE:
-                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asDouble());
-            case FLOAT:
-                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asFloat());
-            case BOOLEAN:
-                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asBoolean());
-            case UUID_TYPE:
-                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asUUID());
-            default:
-                throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Unexpected java value for column "
-                        + columnHandle.getColumnName() + ": " + value.value + "(" + value.dataType + ")");
-
-        }
-    }
 }

@@ -36,10 +36,13 @@ import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.joda.beans.MetaProperty;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
+import org.springframework.hateoas.TemplateVariable;
+import org.springframework.hateoas.TemplateVariables;
 import org.springframework.hateoas.UriTemplate;
 import org.springframework.hateoas.client.Traverson;
 import org.springframework.hateoas.server.core.TypeReferences;
@@ -184,7 +187,15 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
         } catch (URISyntaxException e) {
             throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, e);
         }
-        return UriTemplate.of(uri.toASCIIString()+ REPORT_GROUPS_TEMPLATE);
+        final ImmutableList.Builder<TemplateVariable> builder = ImmutableList.builder();
+        builder.add(
+                TemplateVariable.requestParameter(PAGE_REQUEST_PARAMETER),
+                TemplateVariable.requestParameterContinued(SIZE_REQUEST_PARAMETER)
+                );
+
+        TemplateVariables vars = new TemplateVariables(builder.build());
+        return UriTemplate.of(uri.toASCIIString()+ REPORT_GROUPS_TEMPLATE)
+                .with(vars);
     }
 
     @Nullable

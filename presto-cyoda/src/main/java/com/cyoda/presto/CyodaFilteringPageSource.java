@@ -204,6 +204,15 @@ public class CyodaFilteringPageSource<T>
             case ZONED_DATE_TIME:
                 type.writeLong(blockBuilder, supported.asTimestampMillis());
                 break;
+            case LOCAL_DATE:
+                type.writeLong(blockBuilder,supported.asLocalDate().toEpochDay());
+                break;
+            case YEAR:
+                type.writeLong(blockBuilder,supported.asYear().getValue());
+                break;
+            case LOCAL_TIME:
+                type.writeLong(blockBuilder,supported.asLocalDate().toEpochDay());
+                break;
             case SET: {
                 Type elementType = ((ArrayType) type).getElementType();
                 BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
@@ -249,12 +258,9 @@ public class CyodaFilteringPageSource<T>
                 break;
             case BIG_DECIMAL:
             case CLASS:
-            case YEAR:
-            case YEAR_MONTH:
-            case LOCAL_TIME:
-            case LOCAL_DATE:
             case LOCALE:
             case CHARACTER:
+            case YEAR_MONTH:
             case STRING:
             case UUID_TYPE:
             default:

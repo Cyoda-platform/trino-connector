@@ -17,9 +17,9 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.presto.common.predicate.TupleDomain;
-import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorSplit;
 import com.facebook.presto.spi.HostAddress;
 import com.facebook.presto.spi.NodeProvider;
@@ -38,14 +38,14 @@ import static java.util.Objects.requireNonNull;
 public class CyodaSplit implements ConnectorSplit {
     private final URI uri;
     private final List<HostAddress> addresses;
-    private final TupleDomain<ColumnHandle> constraint;
+    private final TupleDomain<CyodaColumnHandle> constraint;
     private final CyodaTableHandle tableHandle;
 
     @JsonCreator
     public CyodaSplit(
             @JsonProperty("tableHandle") CyodaTableHandle tableHandle,
             @JsonProperty("uri") URI uri,
-            @JsonProperty("constraint") TupleDomain<ColumnHandle> constraint) {
+            @JsonProperty("constraint") TupleDomain<CyodaColumnHandle> constraint) {
         this.tableHandle = requireNonNull(tableHandle, "tableHandle name is null");
         this.uri = requireNonNull(uri, "uri is null");
 
@@ -65,7 +65,7 @@ public class CyodaSplit implements ConnectorSplit {
     }
 
     @JsonProperty
-    public TupleDomain<ColumnHandle> getConstraint() {
+    public TupleDomain<CyodaColumnHandle> getConstraint() {
         return constraint;
     }
 

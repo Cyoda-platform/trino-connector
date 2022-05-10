@@ -26,29 +26,46 @@ import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
 import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.io.BaseEncoding;
+import com.google.common.primitives.UnsignedBytes;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.chrono.ChronoLocalDate;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.Iterator;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * A predicate which can be used to filter rows based on the value of a column.
+ * Adopted from org.apache.kudu.client.KuduPredicate of org.apache.kudu:kudu-client
  */
 @SuppressWarnings("unused")
-public class Predicate<T extends Comparable<T>> {
+public class Predicate<T extends Comparable<? super T>> {
 
     private final PredicateType type;
     private final CyodaColumnHandle column;
@@ -67,7 +84,7 @@ public class Predicate<T extends Comparable<T>> {
     /**
      * IN-list values.
      */
-    private final Collection<SupportedDataType<T>> inListValues;
+    private final SortedSet<SupportedDataType<T>> inListValues;
 
     /**
      * @param type   the predicate type
@@ -112,7 +129,7 @@ public class Predicate<T extends Comparable<T>> {
         // Create the comparison predicate. Range predicates on boolean values can
         // always be converted to either an equality, an IS NOT NULL (filtering only
         // null values), or NONE (filtering all values).
-        SupportedDataType<Boolean> supportedValue = SupportedDataType.of(value, Boolean.class);
+        SupportedDataType<Boolean> supportedValue = SupportedDataType.of(value);
         switch (op) {
             case GREATER: {
                 // b > true  -> b NONE
@@ -120,14 +137,14 @@ public class Predicate<T extends Comparable<T>> {
                 if (value) {
                     return none(column);
                 } else {
-                    return new Predicate<>(PredicateType.EQUALITY, column, supportedValue, null);
+                    return new Predicate<>(PredicateType.EQUALITY, column, SupportedDataType.of(true), null);
                 }
             }
             case GREATER_EQUAL: {
                 // b >= true  -> b = true
                 // b >= false -> b IS NOT NULL
                 if (value) {
-                    return new Predicate<>(PredicateType.EQUALITY, column, SupportedDataType.of(true, Boolean.class), null);
+                    return new Predicate<>(PredicateType.EQUALITY, column, SupportedDataType.of(true), null);
                 } else {
                     return newIsNotNullPredicate(column);
                 }
@@ -138,7 +155,7 @@ public class Predicate<T extends Comparable<T>> {
                 // b < true  -> b NONE
                 // b < false -> b = true
                 if (value) {
-                    return new Predicate<>(PredicateType.EQUALITY, column, SupportedDataType.of(false, Boolean.class), null);
+                    return new Predicate<>(PredicateType.EQUALITY, column, SupportedDataType.of(false), null);
                 } else {
                     return none(column);
                 }
@@ -149,7 +166,7 @@ public class Predicate<T extends Comparable<T>> {
                 if (value) {
                     return newIsNotNullPredicate(column);
                 } else {
-                    return new Predicate<>(PredicateType.EQUALITY, column, SupportedDataType.of(false, Boolean.class), null);
+                    return new Predicate<>(PredicateType.EQUALITY, column, SupportedDataType.of(false), null);
                 }
             }
             default:
@@ -169,16 +186,18 @@ public class Predicate<T extends Comparable<T>> {
                                                      UUID value) {
         checkColumn(column, DataType.UUID_TYPE);
 
-        SupportedDataType<UUID> wrapped = SupportedDataType.of(value, UUID.class);
+        SupportedDataType<UUID> wrapped = SupportedDataType.of(value);
 
         BigInteger bigIntValue = convertToBigInteger(value);
-
-        return delegateToBigDecimal(column, op, wrapped, bigIntValue);
-
+        return delegateToBigDecimal(column, op, bigIntValue)
+                .cloneTo(column,item->{
+                    BigInteger bigInteger = item.asBigDecimal().toBigIntegerExact();
+                    return convertFromBigInteger(bigInteger);
+                });
     }
 
-    private static <S extends Comparable<S>> Predicate<S> delegateToBigDecimal(CyodaColumnHandle column, ComparisonOp op, SupportedDataType<S> wrapped, BigInteger bigIntValue) {
-        // This is to circumvent the check on data type when delegating to bigdecimal.
+    private static Predicate<BigDecimal> delegateToBigDecimal(CyodaColumnHandle column, ComparisonOp op, BigInteger bigIntValue) {
+        // This is to circumvent the check on data type when delegating to BigDecimal.
         // We won't use the predicate created, so this isn't an issue.
         CyodaColumnHandle bigDecimalColumn = new CyodaColumnHandle(
                 column.getConnectorId(),
@@ -189,14 +208,66 @@ public class Predicate<T extends Comparable<T>> {
                 column.getRequestHandlerKey(),
                 column.getIsNullable()
         );
-        Predicate<BigDecimal> bigDecimalPredicate = newComparisonPredicate(bigDecimalColumn, op, new BigDecimal(bigIntValue));
+        return newComparisonPredicate(bigDecimalColumn, op, new BigDecimal(bigIntValue));
+    }
 
-        boolean setLower = bigDecimalPredicate.getLower() != null;
-        boolean setUpper = bigDecimalPredicate.getUpper() != null;
-        return new Predicate<>(bigDecimalPredicate.getType(), column,
-                setLower ? wrapped : null,
-                setUpper ? wrapped : null
+    private static Predicate<Long> delegateToLong(CyodaColumnHandle columnIn, ComparisonOp op, long value) {
+        // This is to circumvent the check on data type when delegating to long.
+        // We won't use the predicate created, so this isn't an issue.
+        CyodaColumnHandle longColumn = new CyodaColumnHandle(
+                columnIn.getConnectorId(),
+                columnIn.getColumnName(),
+                columnIn.getColumnType(),
+                DataType.LONG,
+                columnIn.getOrdinalPosition(),
+                columnIn.getRequestHandlerKey(),
+                columnIn.getIsNullable()
         );
+        long minValue = minIntValue(columnIn.getDataType());
+        long maxValue = maxIntValue(columnIn.getDataType());
+
+        Preconditions.checkArgument(value <= maxValue && value >= minValue,
+                "integer value out of range for %s column: %s",
+                columnIn.getDataType(), value);
+
+        if (op == ComparisonOp.LESS_EQUAL) {
+            if (value == maxValue) {
+                // If the value can't be incremented because it is at the top end of the
+                // range, then substitute the predicate with an IS NOT NULL predicate.
+                // This has the same effect as an inclusive upper bound on the maximum
+                // value. If the column is not nullable then the IS NOT NULL predicate
+                // is ignored.
+                return newIsNotNullPredicate(longColumn);
+            }
+            value += 1;
+            op = ComparisonOp.LESS;
+        } else if (op == ComparisonOp.GREATER) {
+            if (value == maxValue) {
+                return none(longColumn);
+            }
+            value += 1;
+            op = ComparisonOp.GREATER_EQUAL;
+        }
+
+
+        switch (op) {
+            case GREATER_EQUAL:
+                if (value == minValue) {
+                    return newIsNotNullPredicate(longColumn);
+                } else if (value == maxValue) {
+                    return new Predicate<>(PredicateType.EQUALITY, longColumn, SupportedDataType.of(value), null);
+                }
+                return new Predicate<>(PredicateType.RANGE, longColumn, SupportedDataType.of(value), null);
+            case EQUAL:
+                return new Predicate<>(PredicateType.EQUALITY, longColumn, SupportedDataType.of(value), null);
+            case LESS:
+                if (value == minValue) {
+                    return none(longColumn);
+                }
+                return new Predicate<>(PredicateType.RANGE, longColumn, null, SupportedDataType.of(value));
+            default:
+                throw unknownComparisonException();
+        }
     }
 
 
@@ -235,63 +306,56 @@ public class Predicate<T extends Comparable<T>> {
 
         return new UUID(hi.longValueExact(), lo.longValueExact());
     }
-    /**
-     * Creates a new comparison predicate on an integer or timestamp column.
-     *
-     * @param column the column schema
-     * @param op     the comparison operation
-     * @param value  the value to compare against
-     */
+
+    private <S extends Comparable<? super S>> Predicate<S> cloneTo(CyodaColumnHandle column, Function<SupportedDataType<T>,S> func ) {
+        Optional<S> lowerCast = Optional.ofNullable(this.getLower()).map(func);
+        Optional<S> upperCast = Optional.ofNullable(this.getUpper()).map(func);
+        return new Predicate<>(this.getType(),column,
+                lowerCast.map(SupportedDataType::of).orElse(null),
+                upperCast.map(SupportedDataType::of).orElse(null)
+        );
+    }
+
+    static Predicate<Character> newComparisonPredicate(CyodaColumnHandle column,
+                                                   ComparisonOp op,
+                                                   char value) {
+        CyodaColumnHandle stringHandle = new CyodaColumnHandle(
+                column.getConnectorId(),
+                column.getColumnName(),
+                column.getColumnType(),
+                DataType.STRING,
+                column.getOrdinalPosition(),
+                column.getRequestHandlerKey()
+        );
+        Predicate<String> stringPredicate = newComparisonPredicate(stringHandle, op, String.valueOf(value));
+
+        return stringPredicate.cloneTo(column,item->{
+            String s = item.asString();
+            char[] chars = s.toCharArray();
+            if ( chars.length != 1 ) throw new IllegalStateException("Corrupted converted predicate from String to Character "+ s);
+            return chars[0];
+        });
+    }
+    static Predicate<Byte> newComparisonPredicate(CyodaColumnHandle column,
+                                                  ComparisonOp op,
+                                                  byte value) {
+        return delegateToLong(column, op, value).cloneTo(column, item->item.parseToLong().byteValue());
+    }
+    static Predicate<Short> newComparisonPredicate(CyodaColumnHandle column,
+                                                  ComparisonOp op,
+                                                  short value) {
+        return delegateToLong(column, op, value).cloneTo(column, item -> item.asLong().shortValue());
+    }
+
+    static Predicate<Integer> newComparisonPredicate(CyodaColumnHandle column,
+                                                  ComparisonOp op,
+                                                  int value) {
+        return delegateToLong(column, op, value).cloneTo(column, item->item.asLong().intValue());
+    }
     static Predicate<Long> newComparisonPredicate(CyodaColumnHandle column,
                                                   ComparisonOp op,
                                                   long value) {
-        checkColumn(column, DataType.BYTE, DataType.CHARACTER, DataType.SHORT, DataType.INTEGER);
-
-        long minValue = minIntValue(column.getDataType());
-        long maxValue = maxIntValue(column.getDataType());
-        Preconditions.checkArgument(value <= maxValue && value >= minValue,
-                "integer value out of range for %s column: %s",
-                column.getDataType(), value);
-
-        if (op == ComparisonOp.LESS_EQUAL) {
-            if (value == maxValue) {
-                // If the value can't be incremented because it is at the top end of the
-                // range, then substitute the predicate with an IS NOT NULL predicate.
-                // This has the same effect as an inclusive upper bound on the maximum
-                // value. If the column is not nullable then the IS NOT NULL predicate
-                // is ignored.
-                return newIsNotNullPredicate(column);
-            }
-            value += 1;
-            op = ComparisonOp.LESS;
-        } else if (op == ComparisonOp.GREATER) {
-            if (value == maxValue) {
-                return none(column);
-            }
-            value += 1;
-            op = ComparisonOp.GREATER_EQUAL;
-        }
-
-        SupportedDataType<Long> wrapped = SupportedDataType.of(value, Long.class);
-
-        switch (op) {
-            case GREATER_EQUAL:
-                if (value == minValue) {
-                    return newIsNotNullPredicate(column);
-                } else if (value == maxValue) {
-                    return new Predicate<>(PredicateType.EQUALITY, column, wrapped, null);
-                }
-                return new Predicate<>(PredicateType.RANGE, column, wrapped, null);
-            case EQUAL:
-                return new Predicate<>(PredicateType.EQUALITY, column, wrapped, null);
-            case LESS:
-                if (value == minValue) {
-                    return none(column);
-                }
-                return new Predicate<>(PredicateType.RANGE, column, null, wrapped);
-            default:
-                throw unknownComparisonException();
-        }
+        return delegateToLong(column, op, value);
     }
 
     /**
@@ -305,9 +369,62 @@ public class Predicate<T extends Comparable<T>> {
                                                         ComparisonOp op,
                                                         BigInteger value) {
         checkColumn(column, DataType.BIG_INTEGER);
-        SupportedDataType<BigInteger> wrapped = SupportedDataType.of(value, BigInteger.class);
-        return delegateToBigDecimal(column, op, wrapped, value);
+        SupportedDataType<BigInteger> wrapped = SupportedDataType.of(value);
+        return delegateToBigDecimal(column, op, value)
+                .cloneTo(column,item->item.asBigDecimal().toBigIntegerExact());
     }
+
+    static Predicate<ChronoLocalDate> newComparisonPredicate(CyodaColumnHandle column,
+                                                        ComparisonOp op,
+                                                        LocalDate value) {
+
+        DataType dataType = DataType.LOCAL_DATE;
+        checkColumn(column, dataType);
+        return delegateToLong(column, op, value.toEpochDay())
+                .cloneTo(column,item-> LocalDate.ofEpochDay(item.parseToLong()));
+    }
+    static Predicate<LocalDateTime> newComparisonPredicate(CyodaColumnHandle column,
+                                                                 ComparisonOp op,
+                                                                 LocalDateTime value) {
+        DataType dataType = DataType.LOCAL_DATE_TIME;
+        checkColumn(column, dataType);
+        return delegateToLong(column, op, value.toInstant(ZoneOffset.UTC).toEpochMilli())
+                .cloneTo(column,item->LocalDateTime.ofInstant(Instant.ofEpochMilli(item.parseToLong()),ZoneId.of("UTC")));
+    }
+    static Predicate<ZonedDateTime> newComparisonPredicate(CyodaColumnHandle column,
+                                                                    ComparisonOp op,
+                                                                    ZonedDateTime value) {
+        DataType dataType = DataType.ZONED_DATE_TIME;
+        checkColumn(column, dataType);
+        return delegateToLong(column, op, value.toInstant().toEpochMilli())
+                .cloneTo(column,item->ZonedDateTime.ofInstant(Instant.ofEpochMilli(item.parseToLong()),value.getZone()));
+    }
+    static Predicate<Year> newComparisonPredicate(CyodaColumnHandle column,
+                                                                    ComparisonOp op,
+                                                                    Year value) {
+        DataType dataType = DataType.YEAR;
+        checkColumn(column, dataType);
+        SupportedDataType<Year> wrapped = SupportedDataType.of(value, dataType);
+        return delegateToLong(column, op, value.getValue())
+                .cloneTo(column,item->Year.of(item.parseToLong().intValue()));
+    }
+    static Predicate<YearMonth> newComparisonPredicate(CyodaColumnHandle column,
+                                                       ComparisonOp op,
+                                                       YearMonth value) {
+        DataType dataType = DataType.YEAR_MONTH;
+        checkColumn(column, dataType);
+        return delegateToLong(column, op, value.atEndOfMonth().toEpochDay())
+                .cloneTo(column,item->YearMonth.from(LocalDate.ofEpochDay(item.parseToLong())));
+    }
+    static Predicate<LocalTime> newComparisonPredicate(CyodaColumnHandle column,
+                                                       ComparisonOp op,
+                                                       LocalTime value) {
+        DataType dataType = DataType.LOCAL_TIME;
+        checkColumn(column, dataType);
+        return delegateToLong(column, op, value.toNanoOfDay())
+                .cloneTo(column,item->LocalTime.ofNanoOfDay(item.parseToLong()));
+    }
+
 
     /**
      * Creates a new comparison predicate on a Decimal column.
@@ -347,7 +464,7 @@ public class Predicate<T extends Comparable<T>> {
             op = ComparisonOp.GREATER_EQUAL;
         }
 
-        SupportedDataType<BigDecimal> wrapped = SupportedDataType.of(value, BigDecimal.class);
+        SupportedDataType<BigDecimal> wrapped = SupportedDataType.of(value);
 
         switch (op) {
             case GREATER_EQUAL:
@@ -377,12 +494,13 @@ public class Predicate<T extends Comparable<T>> {
      * @param op     the comparison operation
      * @param value  the value to compare against
      */
-    static Predicate<Long> newComparisonPredicate(CyodaColumnHandle column,
+    static Predicate<Date> newComparisonPredicate(CyodaColumnHandle column,
                                                   ComparisonOp op,
                                                   Date value) {
         checkColumn(column, DataType.DATE);
         long days = value.toInstant().toEpochMilli();
-        return newComparisonPredicate(column, op, days);
+        return delegateToLong(column, op, days)
+                .cloneTo(column,item->Date.from(Instant.ofEpochMilli(item.parseToLong())));
     }
 
     /**
@@ -410,7 +528,7 @@ public class Predicate<T extends Comparable<T>> {
             op = ComparisonOp.GREATER_EQUAL;
         }
 
-        SupportedDataType<Float> wrapped = SupportedDataType.of(value, Float.class);
+        SupportedDataType<Float> wrapped = SupportedDataType.of(value);
 
         switch (op) {
             case GREATER_EQUAL:
@@ -457,7 +575,7 @@ public class Predicate<T extends Comparable<T>> {
             op = ComparisonOp.GREATER_EQUAL;
         }
 
-        SupportedDataType<Double> wrapped = SupportedDataType.of(value, Double.class);
+        SupportedDataType<Double> wrapped = SupportedDataType.of(value);
 
         switch (op) {
             case GREATER_EQUAL:
@@ -502,7 +620,7 @@ public class Predicate<T extends Comparable<T>> {
         }
 
         String string = new String(bytes, UTF_8);
-        SupportedDataType<String> wrapped = SupportedDataType.of(string, String.class);
+        SupportedDataType<String> wrapped = SupportedDataType.of(string);
 
         switch (op) {
             case GREATER_EQUAL:
@@ -522,9 +640,185 @@ public class Predicate<T extends Comparable<T>> {
         }
     }
 
+    public static Predicate<ByteBuffer> newComparisonPredicate(CyodaColumnHandle column,
+                                                               ComparisonOp op,
+                                                               byte[] value) {
+        return newComparisonPredicate(column,op,ByteBuffer.wrap(value));
+    }
+
+    /**
+     * Creates a new comparison predicate on a binary column.
+     * @param column the column schema
+     * @param op the comparison operation
+     * @param valueIn the value to compare against
+     */
+    public static Predicate<ByteBuffer> newComparisonPredicate(CyodaColumnHandle column,
+                                                               ComparisonOp op,
+                                                               ByteBuffer valueIn) {
+        checkColumn(column,  DataType.BYTE_BUFFER, DataType.BYTE_ARRAY);
+
+        byte[] value = new byte[valueIn.remaining()];
+        try {
+            valueIn.get(value);
+        } finally {
+            valueIn.rewind();
+        }
+        if (op == ComparisonOp.LESS_EQUAL) {
+            value = Arrays.copyOf(value, value.length + 1);
+            op = ComparisonOp.LESS;
+        } else if (op == ComparisonOp.GREATER) {
+            value = Arrays.copyOf(value, value.length + 1);
+            op = ComparisonOp.GREATER_EQUAL;
+        }
+
+        SupportedDataType<ByteBuffer> wrapped = SupportedDataType.of(ByteBuffer.wrap(value));
+
+        switch (op) {
+            case GREATER_EQUAL:
+                if (value.length == 0) {
+                    return newIsNotNullPredicate(column);
+                }
+                return new Predicate<>(PredicateType.RANGE, column, wrapped, null);
+            case EQUAL:
+                return new Predicate<>(PredicateType.EQUALITY, column, wrapped, null);
+            case LESS:
+                if (value.length == 0) {
+                    return none(column);
+                }
+                return new Predicate<>(PredicateType.RANGE, column, null, wrapped);
+            default:
+                throw unknownComparisonException();
+        }
+    }
+
+    public static <S extends Comparable<? super S>> Predicate<S> newComparisonPredicateFromNative(
+            CyodaColumnHandle columnHandle,
+            Predicate.ComparisonOp op,
+            Object nativeValue,
+            Class<S> clazz) {
+        Predicate<?> predicate = newComparisonPredicateFromNative(columnHandle, op, nativeValue);
+        //noinspection unchecked
+        return (Predicate<S>) predicate;
+    }
+
+    @SuppressWarnings("java:S1452") // We want a wildcard here.
+    public static Predicate<?> newComparisonPredicateFromNative(
+            CyodaColumnHandle columnHandle,
+            Predicate.ComparisonOp op,
+            Object nativeValue) {
+        switch (columnHandle.getDataType()) {
+            case LONG:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, Long.class);
+            case INTEGER:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, Integer.class);
+            case SHORT:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, Short.class);
+            case BYTE:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, Byte.class);
+            case STRING:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, String.class);
+            case DOUBLE:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, Double.class);
+            case FLOAT:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, Float.class);
+            case BOOLEAN:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, Boolean.class);
+            case UUID_TYPE:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, UUID.class);
+            case BIG_DECIMAL:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, BigDecimal.class);
+            case BIG_INTEGER:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, BigInteger.class);
+            case LOCAL_DATE:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, LocalDate.class);
+            case LOCAL_DATE_TIME:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, LocalDateTime.class);
+            case CHARACTER:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, Character.class);
+            case DATE:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, Date.class);
+            case ZONED_DATE_TIME:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, ZonedDateTime.class );
+            case YEAR:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, Year.class);
+            case YEAR_MONTH:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, YearMonth.class);
+            case LOCAL_TIME:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, LocalTime.class);
+            case BYTE_BUFFER:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, ByteBuffer.class);
+            case BYTE_ARRAY:
+                return prestoNativeToPredicate(columnHandle, op, nativeValue, ByteBuffer.class);
+            default:
+                throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "DataType  " + columnHandle.getDataType() + " not yet supported");
+        }
+    }
+
+    private static <T extends Comparable<? super T>> Predicate<T> prestoNativeToPredicate(
+            CyodaColumnHandle columnHandle,
+            Predicate.ComparisonOp op,
+            Object nativeValue,
+            Class<T> javaType) {
+        SupportedDataType<T> thing = SupportedDataType.ofPrestoNativeValue(columnHandle.getColumnType(), nativeValue, javaType);
+        return newComparisonPredicate(columnHandle, op, thing);
+    }
+
+
+    @SuppressWarnings("unchecked")
+    private static <T extends Comparable<? super T>> Predicate<T> newComparisonPredicate(
+            CyodaColumnHandle columnHandle,
+            Predicate.ComparisonOp op,
+            SupportedDataType<T> value) {
+        switch (value.dataType) {
+            case LONG:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asLong());
+            case INTEGER:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asInt());
+            case SHORT:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asShort());
+            case BYTE:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asByte());
+            case STRING:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asString());
+            case DOUBLE:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asDouble());
+            case FLOAT:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asFloat());
+            case BOOLEAN:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asBoolean());
+            case UUID_TYPE:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asUUID());
+            case BIG_DECIMAL:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asBigDecimal());
+            case BIG_INTEGER:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asBigInteger());
+            case LOCAL_DATE:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asLocalDate());
+            case LOCAL_DATE_TIME:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asLocalDateTime());
+            case CHARACTER:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asChar());
+            case DATE:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asDate());
+            case ZONED_DATE_TIME:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asZonedDateTime());
+            case YEAR:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asYear());
+            case YEAR_MONTH:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asYearMonth());
+            case LOCAL_TIME:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asLocalTime());
+            case BYTE_BUFFER:
+                return (Predicate<T>) Predicate.newComparisonPredicate(columnHandle, op, value.asByteBuffer());
+            default:
+                throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Unexpected java value for column "
+                        + columnHandle.getColumnName() + ": " + value.value + "(" + value.dataType + ")");
+
+        }
+    }
 
     @SuppressWarnings("java:S1452")
-    static Predicate<?> newInListPredicate(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
+    static Predicate newInListPredicateFromDiscrete(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
         // TODO: This does not yet cover all cases.
         switch (columnHandle.getDataType()) {
             case LONG:
@@ -587,7 +881,7 @@ public class Predicate<T extends Comparable<T>> {
      * @param column the column that the predicate applies to
      * @return an {@code IS NOT NULL} predicate
      */
-    public static <T extends Comparable<T>> Predicate<T> newIsNotNullPredicate(CyodaColumnHandle column) {
+    public static <T extends Comparable<? super T>> Predicate<T> newIsNotNullPredicate(CyodaColumnHandle column) {
         return new Predicate<>(PredicateType.IS_NOT_NULL, column, null, null);
     }
 
@@ -623,7 +917,7 @@ public class Predicate<T extends Comparable<T>> {
      * @param column the column to which the predicate applies
      * @return a None predicate
      */
-    static <T extends Comparable<T>> Predicate<T> none(CyodaColumnHandle column) {
+    static <T extends Comparable<? super T>> Predicate<T> none(CyodaColumnHandle column) {
         return new Predicate<>(PredicateType.NONE, column, null, null);
     }
 
@@ -645,7 +939,7 @@ public class Predicate<T extends Comparable<T>> {
      * @param values the IN list values
      * @return an IN list predicate
      */
-    private static <T extends Comparable<T>> Predicate<T> buildInList(
+    private static <T extends Comparable<? super T>> Predicate<T> buildInList(
             CyodaColumnHandle column, SortedSet<SupportedDataType<T>> values
     ) {
         // IN (true, false) predicates can be simplified to IS NOT NULL.
@@ -677,6 +971,17 @@ public class Predicate<T extends Comparable<T>> {
                 return Short.MAX_VALUE;
             case INTEGER:
                 return Integer.MAX_VALUE;
+            case YEAR:
+                return Year.MAX_VALUE;
+            case YEAR_MONTH:
+                // TODO: Define a constanct
+                return YearMonth.from(LocalDate.MAX.atStartOfDay()).atEndOfMonth().toEpochDay();
+            case LOCAL_DATE:
+                return LocalDate.MAX.toEpochDay();
+            case ZONED_DATE_TIME:
+            case LOCAL_DATE_TIME:
+                return LocalDateTime.MAX.toInstant(ZoneOffset.UTC).toEpochMilli();
+            case DATE: // Unsure
             case LONG:
                 return Long.MAX_VALUE;
             default:
@@ -698,6 +1003,17 @@ public class Predicate<T extends Comparable<T>> {
                 return Short.MIN_VALUE;
             case INTEGER:
                 return Integer.MIN_VALUE;
+            case YEAR:
+                return Year.MIN_VALUE;
+            case YEAR_MONTH:
+                // TODO: Define a constanct
+                return YearMonth.from(LocalDate.MIN.atStartOfDay()).atEndOfMonth().toEpochDay();
+            case LOCAL_DATE:
+                return LocalDate.MIN.toEpochDay();
+            case ZONED_DATE_TIME:
+            case LOCAL_DATE_TIME:
+                return LocalDateTime.MIN.toInstant(ZoneOffset.UTC).toEpochMilli();
+            case DATE: // Unsure
             case LONG:
                 return Long.MIN_VALUE;
             default:
@@ -795,7 +1111,7 @@ public class Predicate<T extends Comparable<T>> {
                 return none(column);
             case EQUALITY: {
                 if (other.type == PredicateType.EQUALITY) {
-                    if (lower != null && lower.compareTo(other.lower) != 0) {
+                    if (lower != null && other.lower != null && lower.compareTo(other.lower) != 0) {
                         return none(this.column);
                     } else {
                         return this;
@@ -879,6 +1195,7 @@ public class Predicate<T extends Comparable<T>> {
                 (upper == null || value.compareTo(upper) < 0);
     }
 
+
     /**
      * Returns true if increment(a) == b.
      *
@@ -944,11 +1261,36 @@ public class Predicate<T extends Comparable<T>> {
                 if (m.length() + 1 != n.length() || n.charAt(n.length() - 1) != 0) {
                     return false;
                 }
-                return m.equals(n.substring(0, m.length() - 1));
+                return m.equals(n.substring(0, n.length() - 1));
             }
             case BYTE_ARRAY: {
                 byte[] m = a.asByteArray();
                 byte[] n = b.asByteArray();
+                if (m.length + 1 != n.length || n[m.length] != 0) {
+                    return false;
+                }
+                for (int i = 0; i < m.length; i++) {
+                    if (m[i] != n[i]) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+            case BYTE_BUFFER: {
+                ByteBuffer mBuffer = a.asByteBuffer();
+                ByteBuffer nBuffer = b.asByteBuffer();
+                byte[] m = new byte[mBuffer.remaining()];
+                try {
+                    mBuffer.get(m);
+                } finally {
+                    mBuffer.rewind();
+                }
+                byte[] n = new byte[nBuffer.remaining()];
+                try {
+                    nBuffer.get(n);
+                } finally {
+                    nBuffer.rewind();
+                }
                 if (m.length + 1 != n.length || n[m.length] != 0) {
                     return false;
                 }
@@ -1019,12 +1361,12 @@ public class Predicate<T extends Comparable<T>> {
             }
             case IN_LIST: {
 
-                List<String> strings = Optional.ofNullable(inListValues).orElse(Collections.emptySortedSet()).stream()
-                        .map(SupportedDataType::stringify)
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .collect(Collectors.toList());
-                return String.format("`%s` IN (%s)", column.getColumnName(), Joiner.on(", ").join(strings));
+                ImmutableList.Builder<String> builder = ImmutableList.builder();
+                Iterator<SupportedDataType<T>> iterator = Optional.ofNullable(inListValues).map(Set::iterator).orElse(Collections.emptyIterator());
+                while (iterator.hasNext()) {
+                    builder.add(Optional.ofNullable(valueToString(iterator.next())).orElse("NULL"));
+                }
+                return String.format("`%s` IN (%s)", column.getColumnName(), Joiner.on(", ").join(builder.build()));
             }
             case IS_NOT_NULL:
                 return String.format("`%s` IS NOT NULL", column.getColumnName());
@@ -1037,22 +1379,43 @@ public class Predicate<T extends Comparable<T>> {
         }
     }
 
-    private Optional<String> valueToString(SupportedDataType<?> value) {
-        if ( value == null ) return Optional.empty();
-        return value.stringify();
+    private String valueToString(SupportedDataType<?> value) {
+        if ( value == null ) return null;
+        if ( value.value instanceof String ) {
+            return "\"" + value.value + '"';
+        }
+        if ( value.value instanceof ByteBuffer ) {
+            ByteBuffer byteBuffer = (ByteBuffer) value.value;
+            byte[] m = new byte[byteBuffer.remaining()];
+            try {
+                byteBuffer.get(m);
+            } finally {
+                byteBuffer.rewind();
+            }
+            return hex(m);
+        }
+        return value.stringify().orElse(null);
+    }
+
+    public static String hex(byte[] bytes) {
+        return "0" + 'x' + BaseEncoding.base16().encode(bytes);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Predicate<?> that = (Predicate<?>) o;
-        return type == that.type && column.equals(that.column) && Objects.equals(lower, that.lower) && Objects.equals(upper, that.upper) && Objects.equals(inListValues, that.inListValues);
+        Predicate<?> predicate = (Predicate<?>) o;
+        return type == predicate.type &&
+                Objects.equal(column, predicate.column) &&
+                Objects.equal(lower,predicate.lower) &&
+                Objects.equal(upper, predicate.upper) &&
+                Objects.equal(inListValues, predicate.inListValues);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, column, lower, upper, inListValues);
+        return Objects.hashCode(type, column, lower, upper, inListValues);
     }
 
     /**

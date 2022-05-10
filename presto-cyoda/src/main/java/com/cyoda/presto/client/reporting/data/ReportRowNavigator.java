@@ -17,8 +17,6 @@
 
 package com.cyoda.presto.client.reporting.data;
 
-import com.cyoda.service.api.beans.ReportRow;
-
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Map;
@@ -31,7 +29,13 @@ public class ReportRowNavigator {
     private ReportRowNavigator() {
     }
 
-    public static Object getValue(String cyodaColumpath, ReportRow reportRow) {
+    /**
+     * Navigate through the CyodaColumnPath notation of a report row to get its value
+     * @param cyodaColumpath from the DistributedReport result
+     * @param reportRow (which is a HashMap)
+     * @return the Object found at end of the path
+     */
+    public static Object getValue(String cyodaColumpath, Map<String, Object> reportRow) {
         Deque<DequeHandle> deque = new ArrayDeque<>();
         deque.add(new DequeHandle(reportRow,cyodaColumpath));
         Object result = null;

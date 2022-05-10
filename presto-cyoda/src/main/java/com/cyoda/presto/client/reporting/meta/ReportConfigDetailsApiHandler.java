@@ -80,7 +80,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
     enum ColumnDef implements ColumnDefinition {
         ID(0, REPORT_ID_COLUMN, StandardTypes.VARCHAR, STRING, null),
         REPORT_NAME(1, REPORT_NAME_COLUMN, StandardTypes.VARCHAR, STRING, null),
-        REPORT_COLUMNS(1, REPORT_COLUMNS_COLUMN, StandardTypes.ARRAY, LIST, JsonType.JSON.getTypeSignature()),
+        REPORT_COLUMNS(2, REPORT_COLUMNS_COLUMN, StandardTypes.ARRAY, LIST, JsonType.JSON.getTypeSignature()),
         REPORT_JSON(3, REPORT_JSON_COLUMN, StandardTypes.JSON, STRING, null);
 
         @Override
@@ -246,7 +246,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
                  DataType dataType;
                 try {
                     Class<?> clazz  = Class.forName(columnClass.get());
-                    dataType = Optional.ofNullable(DataType.classToDataType.get(clazz)).orElse(DataType.OBJECT);
+                    dataType = Optional.ofNullable(DataType.dataTypeFromClass(clazz)).orElse(DataType.OBJECT);
                 } catch (ClassNotFoundException e) {
                     dataType = DataType.OBJECT;
                 }

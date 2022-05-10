@@ -18,7 +18,6 @@
 package com.cyoda.presto.handles;
 
 import com.facebook.presto.common.predicate.TupleDomain;
-import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorTableLayoutHandle;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -28,12 +27,12 @@ import java.util.Objects;
 public class CyodaTableLayoutHandle implements ConnectorTableLayoutHandle {
 
     private final CyodaTableHandle table;
-    private final TupleDomain<ColumnHandle> constraint;
+    private final TupleDomain<CyodaColumnHandle> constraint;
 
     @JsonCreator
     public CyodaTableLayoutHandle(
             @JsonProperty("table") CyodaTableHandle table,
-            @JsonProperty("constraint") TupleDomain<ColumnHandle> constraint
+            @JsonProperty("constraint") TupleDomain<CyodaColumnHandle> constraint
     ) {
         this.table = table;
         this.constraint = constraint;
@@ -46,7 +45,7 @@ public class CyodaTableLayoutHandle implements ConnectorTableLayoutHandle {
     }
 
     @JsonProperty
-    public TupleDomain<ColumnHandle> getConstraint() {
+    public TupleDomain<CyodaColumnHandle> getConstraint() {
         return constraint;
     }
 
