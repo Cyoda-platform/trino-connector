@@ -143,7 +143,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
     }
 
     @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> setupFieldDefs() {
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs() {
         return Collections.singletonMap(asTableDefinitionHandle(REPORT_DETAILS.name()),ImmutableList.copyOf(ColumnDef.values()));
     }
 

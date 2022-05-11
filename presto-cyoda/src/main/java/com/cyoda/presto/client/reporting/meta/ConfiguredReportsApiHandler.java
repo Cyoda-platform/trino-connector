@@ -147,7 +147,7 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
     }
 
     @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> setupFieldDefs() {
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs() {
         return Collections.singletonMap(asTableDefinitionHandle(REPORTS.name()),ImmutableList.copyOf(ColumnDef.values()));
     }
 

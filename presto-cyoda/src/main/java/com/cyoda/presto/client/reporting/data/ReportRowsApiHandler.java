@@ -149,7 +149,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
     }
 
     @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> setupFieldDefs() {
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs() {
         ImmutableMap.Builder<TableDefinitionHandle,List<ColumnDefinition>> builder = ImmutableMap.builder();
         StreamSupport.stream(handleIterable.spliterator(), true)
                 .forEach( item -> {
@@ -253,7 +253,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
             PredicateNode<Any> predicates
     ) {
 
-        String reportConfigurationId = getTableMap()
+        String reportConfigurationId = lookupTableMap()
                 .get(new SchemaTableName(tableHandle.getSchemaName(), tableHandle.getTableName()))
                 .getReportConfigurationId();
         Slice reportConfigIdSlice = DataTypeValue.of(reportConfigurationId).asSlice(VarcharType.VARCHAR);

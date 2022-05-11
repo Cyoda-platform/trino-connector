@@ -17,6 +17,9 @@
 
 package com.cyoda.presto.client.types;
 
+import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
+import com.cyoda.presto.client.types.impl.DateDataType;
+import com.cyoda.presto.client.types.impl.LocalDateDataType;
 import com.facebook.airlift.json.JsonCodec;
 import com.facebook.airlift.json.JsonObjectMapperProvider;
 import com.facebook.presto.common.type.BigintType;
@@ -146,7 +149,7 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
 
 
     public static <S> DataTypeValue<S> ofPrestoNativeValue(Type type, Object nativeValue, Class<S> targetClass) {
-        Object obj = getJavaValue(type, nativeValue);
+        Object obj = getJavaValue(type, nativeValue,targetClass);
         Preconditions.checkArgument(targetClass.isAssignableFrom(obj.getClass()),"%s is not assignable from %s",targetClass,obj.getClass());
         //noinspection unchecked
         return of((S) obj, targetClass);
@@ -317,15 +320,21 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
         }
     }
 
-    // TODO: Refactor logic to convert to/from Presto natiave value behind an interface for each datatype.
+    // TODO: Refactor logic to into PrestoValueConverterProvider.
     // It will be used here, in parseToLong and asSlice, and also in Predicate newComparisonPredicate(...) for each type.
     // Taken from Kudu TypeHelper
-    public static Object getJavaValue(Type type, Object nativeValue) {
+    public static Object getJavaValue(Type type, Object nativeValue, Class<?> javaType) {
         // It  needs to mirror the logic in asSlice / parseToLong
         if (type instanceof VarcharType) {
             return ((Slice) nativeValue).toStringUtf8();
         } else if (type == TimestampType.TIMESTAMP) {
-            return LocalDateTime.ofInstant(Instant.ofEpochMilli((Long) nativeValue), ZoneId.of("UTC"));
+            if ( LocalDateTime.class.isAssignableFrom(javaType)) {
+                return PrestoValueConverterProvider.getPrestoValueConverter(LocalDateDataType.INSTANCE).fromLong((Long)nativeValue);
+            } else if ( Date.class.isAssignableFrom(javaType)) {
+                return PrestoValueConverterProvider.getPrestoValueConverter(DateDataType.INSTANCE).fromLong((Long)nativeValue);
+            } else {
+                throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Timestamp Back conversion not implemented for " + javaType);
+            }
         } else if (type == BigintType.BIGINT) {
             return nativeValue;
         } else if (type == IntegerType.INTEGER) {
@@ -335,7 +344,7 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
         } else if (type == TinyintType.TINYINT) {
             return ((Long) nativeValue).byteValue();
         } else if ( type == DateType.DATE) {
-            return LocalDate.ofEpochDay((Long) nativeValue);
+            return PrestoValueConverterProvider.getPrestoValueConverter(LocalDateDataType.INSTANCE).fromLong((Long)nativeValue);
         } else if (type == DoubleType.DOUBLE) {
             return longBitsToDouble(((Long) nativeValue));
         } else if (type == RealType.REAL) {

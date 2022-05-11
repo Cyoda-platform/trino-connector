@@ -85,7 +85,7 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
     }
 
     @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> setupFieldDefs() {
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs() {
         return Collections.singletonMap(asTableDefinitionHandle(REPORT_STATS.name()),COLUMN_DEFS);
     }
 

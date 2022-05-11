@@ -37,24 +37,24 @@ public abstract class AbstractTableHolder {
         this.endpoint = Preconditions.checkNotNull(endpoint,"endpoint is null");
     }
 
-    protected final Map<TableDefinitionHandle,List<ColumnDefinition>> initFieldDefs() {
-        fieldDefs = setupFieldDefs();
-        return fieldDefs;
-    }
-    protected final Map<SchemaTableName, CyodaTable> initTableMap() {
-        fieldDefs = getFieldDefs();
+    private Map<SchemaTableName, CyodaTable> initTableMap(boolean refresh) {
+        fieldDefs = refresh ? refreshFieldDefs() : lookupFieldDefs();
         tableMap = setupTableMap(endpoint,fieldDefs);
         return tableMap;
     }
 
-    protected final Map<TableDefinitionHandle,List<ColumnDefinition>> getFieldDefs() {
-        return Optional.ofNullable(fieldDefs).orElse(initFieldDefs());
-    }
-    protected final Map<SchemaTableName, CyodaTable> getTableMap() {
-        return Optional.ofNullable(tableMap).orElse(initTableMap());
+    private Map<TableDefinitionHandle,List<ColumnDefinition>> lookupFieldDefs() {
+        return Optional.ofNullable(fieldDefs).orElse(refreshFieldDefs());
     }
 
-    protected abstract Map<TableDefinitionHandle, List<ColumnDefinition>> setupFieldDefs();
+    protected final Map<SchemaTableName, CyodaTable> lookupTableMap() {
+        return Optional.ofNullable(tableMap).orElse(initTableMap(false));
+    }
+    protected final Map<SchemaTableName, CyodaTable> refreshTableMap() {
+        return initTableMap(true);
+    }
+
+    protected abstract Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs();
     abstract Map<SchemaTableName, CyodaTable> setupTableMap(String endpoint, Map<TableDefinitionHandle, List<ColumnDefinition>> fieldDefs);
 
     public static class TableDefinitionHandle {

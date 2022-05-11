@@ -108,7 +108,7 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
     }
 
     @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> setupFieldDefs() {
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs() {
         return Collections.singletonMap(asTableDefinitionHandle(REPORT_GROUPS.name()), COLUMN_DEFS);
     }
 

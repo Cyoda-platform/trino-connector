@@ -122,12 +122,12 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
 
     @Override
     public boolean hasTable(SchemaTableName tableName) {
-        return getTableMap().containsKey(tableName);
+        return refreshTableMap().containsKey(tableName);
     }
 
     @Override
     public List<CyodaTable> getTables() {
-        return ImmutableList.copyOf(getTableMap().values());
+        return ImmutableList.copyOf(refreshTableMap().values());
     }
 
     @Override
