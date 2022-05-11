@@ -19,7 +19,7 @@ package com.cyoda.presto.client.jodabeans;
 
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.SupportedDataType;
+import com.cyoda.presto.client.types.DataTypeValue;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeSignature;
 import com.google.common.base.MoreObjects;
@@ -159,7 +159,7 @@ public class StandardColumnDefinition implements ColumnDefinition {
             if (! (valueType instanceof Class) ) throw new UnsupportedOperationException("Not done yet");
             DataType valueDataType = DataType.fromClass((Class<?>) valueType).orElse(DataType.OBJECT);
             return new StandardColumnDefinition(i, fieldName, StandardTypes.ARRAY, list,
-                    SupportedDataType.toPrestoTypeSignature(valueDataType), null);
+                    DataTypeValue.toPrestoTypeSignature(valueDataType), null);
         }
 
         private static StandardColumnDefinition handleMap(int pos, int i, String fieldName, ParameterizedType myType) {
@@ -172,8 +172,8 @@ public class StandardColumnDefinition implements ColumnDefinition {
                     fieldName,
                     StandardTypes.MAP,
                     DataType.MAP,
-                    SupportedDataType.toPrestoTypeSignature(keyDataType),
-                    SupportedDataType.toPrestoTypeSignature(valueDataType)
+                    DataTypeValue.toPrestoTypeSignature(keyDataType),
+                    DataTypeValue.toPrestoTypeSignature(valueDataType)
             );
         }
     }

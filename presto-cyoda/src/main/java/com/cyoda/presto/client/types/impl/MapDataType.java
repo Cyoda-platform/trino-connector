@@ -15,9 +15,26 @@
  *
  */
 
-package com.cyoda.presto.client.types;
+package com.cyoda.presto.client.types.impl;
 
-public interface SupportedDataType<T> {
-    DataType getDataType();
-    Class<T> getClazz();
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.SupportedDataType;
+
+import java.util.Map;
+
+@SuppressWarnings({"ALL","java:S3740"})
+public class MapDataType implements SupportedDataType<Map> {
+    public static final MapDataType INSTANCE = new MapDataType();
+
+    private MapDataType() {}
+
+    @Override
+    public DataType getDataType() {
+        return DataType.MAP;
+    }
+
+    @Override
+    public Class<Map> getClazz() {
+        return Map.class;
+    }
 }

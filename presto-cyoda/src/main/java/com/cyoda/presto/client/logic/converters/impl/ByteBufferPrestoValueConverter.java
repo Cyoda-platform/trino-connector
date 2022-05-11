@@ -15,9 +15,11 @@
  *
  */
 
-package com.cyoda.presto.client.types;
+package com.cyoda.presto.client.logic.converters.impl;
 
-public interface SupportedDataType<T> {
-    DataType getDataType();
-    Class<T> getClazz();
+import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+
+import java.nio.ByteBuffer;
+
+public class ByteBufferPrestoValueConverter implements PrestoValueConverter<ByteBuffer> {
 }

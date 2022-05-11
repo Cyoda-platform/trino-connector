@@ -38,11 +38,11 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Predi
     }
 
     public static PredicateNode<Any> all(CompoundPredicateNode parent,CyodaColumnHandle handle) {
-        return new LeafPredicateNode<>(parent,Predicate.all(handle));
+        return new LeafPredicateNode<>(parent,PredicateUtils.all(handle));
     }
 
     public static <T extends Comparable<T>> PredicateNode<T> rootNodeWithNothing() {
-        return new LeafPredicateNode<>(null,Predicate.<T>nothing());
+        return new LeafPredicateNode<>(null,PredicateUtils.<T>nothing());
     }
 
     @Override

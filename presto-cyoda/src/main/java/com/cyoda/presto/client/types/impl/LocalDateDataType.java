@@ -15,9 +15,24 @@
  *
  */
 
-package com.cyoda.presto.client.types;
+package com.cyoda.presto.client.types.impl;
 
-public interface SupportedDataType<T> {
-    DataType getDataType();
-    Class<T> getClazz();
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.SupportedDataType;
+
+import java.time.LocalDate;
+
+public class LocalDateDataType implements SupportedDataType<LocalDate> {
+    public static final LocalDateDataType INSTANCE = new LocalDateDataType();
+
+    private LocalDateDataType() {}
+
+    @Override
+    public DataType getDataType() {
+        return DataType.LOCAL_DATE;
+    }
+    @Override
+    public Class<LocalDate> getClazz() {
+        return LocalDate.class;
+    }
 }

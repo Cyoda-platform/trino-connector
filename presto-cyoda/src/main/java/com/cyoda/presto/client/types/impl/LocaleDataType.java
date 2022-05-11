@@ -15,9 +15,25 @@
  *
  */
 
-package com.cyoda.presto.client.types;
+package com.cyoda.presto.client.types.impl;
 
-public interface SupportedDataType<T> {
-    DataType getDataType();
-    Class<T> getClazz();
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.SupportedDataType;
+
+import java.util.Locale;
+
+public class LocaleDataType implements SupportedDataType<Locale> {
+    public static final LocaleDataType INSTANCE = new LocaleDataType();
+
+    private LocaleDataType() {}
+
+    @Override
+    public DataType getDataType() {
+        return DataType.LOCALE;
+    }
+
+    @Override
+    public Class<Locale> getClazz() {
+        return Locale.class;
+    }
 }

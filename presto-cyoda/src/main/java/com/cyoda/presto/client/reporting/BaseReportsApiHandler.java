@@ -22,7 +22,7 @@ import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.CyodaTable;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.types.SupportedDataType;
+import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.client.types.TypesUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -131,12 +131,13 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
     }
 
     @Override
-    public @Nullable SupportedDataType<?> getValue(@Nullable T entity, CyodaColumnHandle columnHandle) {
+    public @Nullable
+    DataTypeValue<?> getValue(@Nullable T entity, CyodaColumnHandle columnHandle) {
         if ( entity == null ) return null;
         Object value = getFieldValueFromEntity(entity,columnHandle);
         if ( value == null ) return null;
         Object mappedField = mapFieldValue(value,columnHandle);
-        return SupportedDataType.ofAny(mappedField,columnHandle.getDataType().getJavaType());
+        return DataTypeValue.ofAny(mappedField,columnHandle.getDataType().getJavaType());
     }
 
     protected @Nonnull Object mapFieldValue(@Nonnull final Object value, CyodaColumnHandle columnHandle) {

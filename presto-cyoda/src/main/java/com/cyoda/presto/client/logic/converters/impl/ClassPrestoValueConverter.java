@@ -15,9 +15,10 @@
  *
  */
 
-package com.cyoda.presto.client.types;
+package com.cyoda.presto.client.logic.converters.impl;
 
-public interface SupportedDataType<T> {
-    DataType getDataType();
-    Class<T> getClazz();
+import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+
+@SuppressWarnings({"ALL","java:S3740"})
+public class ClassPrestoValueConverter implements PrestoValueConverter<Class> {
 }

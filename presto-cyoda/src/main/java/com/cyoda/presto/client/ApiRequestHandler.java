@@ -20,7 +20,7 @@ package com.cyoda.presto.client;
 import com.cyoda.presto.CyodaTable;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateNode;
-import com.cyoda.presto.client.types.SupportedDataType;
+import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.presto.spi.SchemaTableName;
@@ -37,7 +37,7 @@ public interface ApiRequestHandler<T> {
     List<CyodaTable> getTables();
 
     @SuppressWarnings("java:S1452")
-    SupportedDataType<?> getValue(@Nullable T entity, CyodaColumnHandle field);
+    DataTypeValue<?> getValue(@Nullable T entity, CyodaColumnHandle field);
 
     Iterator<T> getResponseIterator(int pageSize, CyodaTableHandle tableHandle, PredicateNode<Any> predicates);
 }

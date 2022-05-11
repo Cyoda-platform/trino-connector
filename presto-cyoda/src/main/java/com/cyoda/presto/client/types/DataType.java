@@ -18,13 +18,36 @@
 package com.cyoda.presto.client.types;
 
 import com.cyoda.presto.client.logic.Any;
+import com.cyoda.presto.client.types.impl.ArrayDataType;
+import com.cyoda.presto.client.types.impl.BigDecimalDataType;
+import com.cyoda.presto.client.types.impl.BigIntegerDataType;
+import com.cyoda.presto.client.types.impl.BooleanDataType;
+import com.cyoda.presto.client.types.impl.ByteArrayDataType;
+import com.cyoda.presto.client.types.impl.ByteBufferDataType;
+import com.cyoda.presto.client.types.impl.ByteDataType;
+import com.cyoda.presto.client.types.impl.DateDataType;
+import com.cyoda.presto.client.types.impl.DoubleDataType;
+import com.cyoda.presto.client.types.impl.FloatDataType;
+import com.cyoda.presto.client.types.impl.IntegerDataType;
+import com.cyoda.presto.client.types.impl.ListDataType;
+import com.cyoda.presto.client.types.impl.LocalDateDataType;
+import com.cyoda.presto.client.types.impl.LocalDateTimeDataType;
+import com.cyoda.presto.client.types.impl.LocalTimeDataType;
+import com.cyoda.presto.client.types.impl.LongDataType;
+import com.cyoda.presto.client.types.impl.MapDataType;
+import com.cyoda.presto.client.types.impl.ObjectDataType;
+import com.cyoda.presto.client.types.impl.SetDataType;
+import com.cyoda.presto.client.types.impl.ShortDataType;
+import com.cyoda.presto.client.types.impl.StringDataType;
+import com.cyoda.presto.client.types.impl.UUIDDataType;
+import com.cyoda.presto.client.types.impl.YearDataType;
+import com.cyoda.presto.client.types.impl.YearMonthDataType;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
-import javax.xml.crypto.Data;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -114,6 +137,38 @@ public enum DataType {
         return this == BYTE_ARRAY || this == OBJECT ;
     }
 
+    @SuppressWarnings("unchecked")
+    public <S> SupportedDataType<S> asSupported() {
+        switch (this) {
+            case LOCAL_DATE: return (SupportedDataType<S>) LocalDateDataType.INSTANCE;
+            case LOCAL_DATE_TIME: return (SupportedDataType<S>) LocalDateTimeDataType.INSTANCE;
+            case LOCAL_TIME: return (SupportedDataType<S>) LocalTimeDataType.INSTANCE;
+            case DATE: return (SupportedDataType<S>) DateDataType.INSTANCE;
+            case STRING: return (SupportedDataType<S>) StringDataType.INSTANCE;
+            case OBJECT: return (SupportedDataType<S>) ObjectDataType.INSTANCE;
+            case YEAR: return (SupportedDataType<S>) YearDataType.INSTANCE;
+            case YEAR_MONTH: return (SupportedDataType<S>) YearMonthDataType.INSTANCE;
+            case BOOLEAN: return (SupportedDataType<S>) BooleanDataType.INSTANCE;
+            case LONG: return (SupportedDataType<S>) LongDataType.INSTANCE;
+            case INTEGER: return (SupportedDataType<S>) IntegerDataType.INSTANCE;
+            case SHORT: return (SupportedDataType<S>) ShortDataType.INSTANCE;
+            case FLOAT: return (SupportedDataType<S>) FloatDataType.INSTANCE;
+            case DOUBLE: return (SupportedDataType<S>) DoubleDataType.INSTANCE;
+            case BYTE: return (SupportedDataType<S>) ByteDataType.INSTANCE;
+            case BYTE_BUFFER: return (SupportedDataType<S>) ByteBufferDataType.INSTANCE;
+            case BYTE_ARRAY: return (SupportedDataType<S>) ByteArrayDataType.INSTANCE;
+            case BIG_DECIMAL: return (SupportedDataType<S>) BigDecimalDataType.INSTANCE;
+            case BIG_INTEGER: return (SupportedDataType<S>) BigIntegerDataType.INSTANCE;
+            case UUID_TYPE: return (SupportedDataType<S>) UUIDDataType.INSTANCE;
+            case LIST: return (SupportedDataType<S>) ListDataType.INSTANCE;
+            case MAP: return (SupportedDataType<S>) MapDataType.INSTANCE;
+            case SET: return (SupportedDataType<S>) SetDataType.INSTANCE;
+            case ARRAY: return (SupportedDataType<S>) ArrayDataType.INSTANCE;
+            default:
+                throw new UnsupportedOperationException(this+ " Not yet implemented");
+        }
+    }
+
     public Serializable parseToSerializable(String input) {
         switch (this) {
             case STRING:
@@ -182,16 +237,27 @@ public enum DataType {
                     .collect(Collectors.toSet())
     );
 
-    public static final List<DataType> numberTypes = ImmutableList.copyOf(
-            Arrays.stream(DataType.values())
-                    .filter(it -> it.javaType != null && Number.class.isAssignableFrom(it.javaType))
-                    .collect(Collectors.toList())
-    );
+    private static List<DataType> integerBasedTypes = ImmutableList.<DataType>builder()
+            .add(BYTE)
+            .add(SHORT)
+            .add(INTEGER)
+            .add(LONG)
+            .add(YEAR)
+            .add(YEAR_MONTH)
+            .add(LOCAL_DATE_TIME)
+            .add(ZONED_DATE_TIME)
+            .add(LOCAL_DATE)
+            .add(DATE)
+            .build();
 
-    private static final List<String> stringValues = Arrays.stream(DataType.values()).map(Enum::toString).collect(Collectors.toList());
-
-    public static boolean isvalidDataTypeString(String str) {
-        return stringValues.contains(str);
+    // TODO: Theoretically, for performance purposes, we could add this as an attribute of DataType
+    /**
+     * Can this DataType be converted to/from a long ?
+     * @param dataType to check
+     * @return if this DataType can be converted to/from a long
+     */
+    public static boolean isIntType(DataType dataType) {
+        return integerBasedTypes.contains(dataType);
     }
 
 }

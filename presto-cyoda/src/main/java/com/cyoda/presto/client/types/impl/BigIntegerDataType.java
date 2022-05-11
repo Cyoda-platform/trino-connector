@@ -15,9 +15,25 @@
  *
  */
 
-package com.cyoda.presto.client.types;
+package com.cyoda.presto.client.types.impl;
 
-public interface SupportedDataType<T> {
-    DataType getDataType();
-    Class<T> getClazz();
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.SupportedDataType;
+
+import java.math.BigInteger;
+
+public class BigIntegerDataType implements SupportedDataType<BigInteger> {
+    public static final BigIntegerDataType INSTANCE = new BigIntegerDataType();
+
+    private BigIntegerDataType() {}
+
+    @Override
+    public DataType getDataType() {
+        return DataType.BIG_INTEGER;
+    }
+
+    @Override
+    public Class<BigInteger> getClazz() {
+        return BigInteger.class;
+    }
 }

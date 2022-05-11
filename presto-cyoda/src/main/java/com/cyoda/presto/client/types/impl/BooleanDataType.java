@@ -15,9 +15,23 @@
  *
  */
 
-package com.cyoda.presto.client.types;
+package com.cyoda.presto.client.types.impl;
 
-public interface SupportedDataType<T> {
-    DataType getDataType();
-    Class<T> getClazz();
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.SupportedDataType;
+
+public class BooleanDataType implements SupportedDataType<Boolean> {
+    public static final BooleanDataType INSTANCE = new BooleanDataType();
+
+    private BooleanDataType() {}
+
+    @Override
+    public DataType getDataType() {
+        return DataType.BOOLEAN;
+    }
+
+    @Override
+    public Class<Boolean> getClazz() {
+        return Boolean.class;
+    }
 }

@@ -15,9 +15,25 @@
  *
  */
 
-package com.cyoda.presto.client.types;
+package com.cyoda.presto.client.types.impl;
 
-public interface SupportedDataType<T> {
-    DataType getDataType();
-    Class<T> getClazz();
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.SupportedDataType;
+
+import java.util.UUID;
+
+public class UUIDDataType implements SupportedDataType<UUID> {
+    public static final UUIDDataType INSTANCE = new UUIDDataType();
+
+    private UUIDDataType() {}
+
+    @Override
+    public DataType getDataType() {
+        return DataType.UUID_TYPE;
+    }
+
+    @Override
+    public Class<UUID> getClazz() {
+        return UUID.class;
+    }
 }

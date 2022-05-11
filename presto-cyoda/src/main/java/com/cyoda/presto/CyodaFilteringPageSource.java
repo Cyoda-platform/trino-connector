@@ -20,7 +20,7 @@ package com.cyoda.presto;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicateNode;
-import com.cyoda.presto.client.types.SupportedDataType;
+import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.presto.common.Page;
@@ -164,7 +164,7 @@ public class CyodaFilteringPageSource<T>
             Type type = columnTypes.get(i);
             BlockBuilder blockBuilder = pageBuilder.getBlockBuilder(i);
             CyodaColumnHandle columnHandle = columnHandles.get(i);
-            SupportedDataType<?> supported = requestHandler.getValue(nextItem, columnHandle);
+            DataTypeValue<?> supported = requestHandler.getValue(nextItem, columnHandle);
             if (supported == null || supported.isNull()) {
                 blockBuilder.appendNull();
                 continue;
@@ -173,8 +173,8 @@ public class CyodaFilteringPageSource<T>
         }
     }
 
-    private void writeObject(Type type, BlockBuilder blockBuilder, SupportedDataType<?> supported) {
-        switch (supported.dataType) {
+    private void writeObject(Type type, BlockBuilder blockBuilder, DataTypeValue<?> supported) {
+        switch (supported.supportedDataType.getDataType()) {
             case BOOLEAN:
                 type.writeBoolean(blockBuilder, supported.asBoolean());
                 break;
@@ -217,7 +217,7 @@ public class CyodaFilteringPageSource<T>
                 Type elementType = ((ArrayType) type).getElementType();
                 BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
                 Optional.ofNullable((Set<?>) supported.value).orElse(Collections.emptySet())
-                        .forEach(item -> writeObject(elementType, arrayBuilder, SupportedDataType.byType(item, elementType)));
+                        .forEach(item -> writeObject(elementType, arrayBuilder, DataTypeValue.byType(item, elementType)));
                 blockBuilder.closeEntry();
                 break;
             }
@@ -225,7 +225,7 @@ public class CyodaFilteringPageSource<T>
                 Type elementType = ((ArrayType) type).getElementType();
                 BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
                 Optional.ofNullable((Collection<?>) supported.value).orElse(Collections.emptyList())
-                        .forEach(item -> writeObject(elementType,arrayBuilder,SupportedDataType.byType(item,elementType)));
+                        .forEach(item -> writeObject(elementType,arrayBuilder, DataTypeValue.byType(item,elementType)));
                 blockBuilder.closeEntry();
                 break;
             }
@@ -233,7 +233,7 @@ public class CyodaFilteringPageSource<T>
                 Type elementType = ((ArrayType) type).getElementType();
                 BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
                 Arrays.stream(Optional.ofNullable((Object[]) supported.value).orElse(new Object[0]))
-                        .forEach(item -> writeObject(elementType,arrayBuilder,SupportedDataType.byType(item,elementType)));
+                        .forEach(item -> writeObject(elementType,arrayBuilder, DataTypeValue.byType(item,elementType)));
                 blockBuilder.closeEntry();
                 break;
             }
@@ -246,8 +246,8 @@ public class CyodaFilteringPageSource<T>
                 Type valueType = mapType.getValueType();
                 BlockBuilder mapBlockBuilder = blockBuilder.beginBlockEntry();
                 for (Map.Entry<?, ?> entry : Optional.ofNullable((Map<?, ?>) supported.value).orElse(Collections.emptyMap()).entrySet()) {
-                    writeObject(keyType,mapBlockBuilder, SupportedDataType.byType(entry.getKey(),keyType));
-                    writeObject(valueType,mapBlockBuilder, SupportedDataType.byType(entry.getValue(),valueType));
+                    writeObject(keyType,mapBlockBuilder, DataTypeValue.byType(entry.getKey(),keyType));
+                    writeObject(valueType,mapBlockBuilder, DataTypeValue.byType(entry.getValue(),valueType));
                 }
                 blockBuilder.closeEntry();
                 break;

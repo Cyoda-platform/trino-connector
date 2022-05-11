@@ -15,9 +15,23 @@
  *
  */
 
-package com.cyoda.presto.client.types;
+package com.cyoda.presto.client.types.impl;
 
-public interface SupportedDataType<T> {
-    DataType getDataType();
-    Class<T> getClazz();
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.SupportedDataType;
+
+public class ByteArrayDataType implements SupportedDataType<byte[]> {
+    public static final ByteArrayDataType INSTANCE = new ByteArrayDataType();
+
+    private ByteArrayDataType() {}
+
+    @Override
+    public DataType getDataType() {
+        return DataType.BYTE_ARRAY;
+    }
+
+    @Override
+    public Class<byte[]> getClazz() {
+        return byte[].class;
+    }
 }

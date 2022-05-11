@@ -15,9 +15,30 @@
  *
  */
 
-package com.cyoda.presto.client.types;
+package com.cyoda.presto.client.logic;
 
-public interface SupportedDataType<T> {
-    DataType getDataType();
-    Class<T> getClazz();
+import com.cyoda.presto.client.types.DataType;
+import io.jsonwebtoken.lang.Assert;
+import org.testng.annotations.Test;
+
+import java.util.Arrays;
+
+public class PredicateConversionTopicsTest {
+
+    @Test
+    public void testMaxIntValue() {
+
+    }
+
+    @Test
+    public void testMinIntValue() {
+
+        // There should not be any Exceptions flying.
+        Arrays.stream(DataType.values()).filter(DataType::isIntType)
+                .map(PredicateUtils::minValueOfIntType)
+                .forEach(Assert::notNull);
+
+
+    }
+
 }

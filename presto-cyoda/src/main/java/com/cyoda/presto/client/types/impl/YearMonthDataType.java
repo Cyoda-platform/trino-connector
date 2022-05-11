@@ -15,9 +15,25 @@
  *
  */
 
-package com.cyoda.presto.client.types;
+package com.cyoda.presto.client.types.impl;
 
-public interface SupportedDataType<T> {
-    DataType getDataType();
-    Class<T> getClazz();
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.SupportedDataType;
+
+import java.time.YearMonth;
+
+public class YearMonthDataType implements SupportedDataType<YearMonth> {
+    public static final YearMonthDataType INSTANCE = new YearMonthDataType();
+
+    private YearMonthDataType() {}
+
+    @Override
+    public DataType getDataType() {
+        return DataType.YEAR_MONTH;
+    }
+
+    @Override
+    public Class<YearMonth> getClazz() {
+        return YearMonth.class;
+    }
 }

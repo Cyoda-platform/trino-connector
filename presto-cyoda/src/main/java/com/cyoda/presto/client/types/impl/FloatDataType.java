@@ -15,9 +15,23 @@
  *
  */
 
-package com.cyoda.presto.client.types;
+package com.cyoda.presto.client.types.impl;
 
-public interface SupportedDataType<T> {
-    DataType getDataType();
-    Class<T> getClazz();
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.SupportedDataType;
+
+public class FloatDataType implements SupportedDataType<Float> {
+    public static final FloatDataType INSTANCE = new FloatDataType();
+
+    private FloatDataType() {}
+
+    @Override
+    public DataType getDataType() {
+        return DataType.FLOAT;
+    }
+
+    @Override
+    public Class<Float> getClazz() {
+        return Float.class;
+    }
 }

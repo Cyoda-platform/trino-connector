@@ -34,8 +34,8 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.cyoda.presto.client.logic.LeafPredicateNode.leaf;
-import static com.cyoda.presto.client.logic.Predicate.*;
 import static com.cyoda.presto.client.logic.PredicateBuilderDebugger.debug;
+import static com.cyoda.presto.client.logic.PredicateUtils.*;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.nCopies;
 
@@ -80,7 +80,8 @@ public class PredicateBuilder {
                         sqlConjunctsBuilder.add(columnName + " IS NOT NULL");
                     } else if (domain.isSingleValue()) {
 
-                        Predicate predicate = createDumbEqualsPredicate(columnHandle, domain.getSingleValue());
+                        Object singleValue = domain.getSingleValue();
+                        Predicate predicate = createDumbEqualsPredicate(columnHandle, singleValue);
                         conjunctsBuilder.add(leaf(null,predicate));
                         sqlConjunctsBuilder.add(columnHandle.getColumnName()+" = ?");
                     } else {
@@ -131,7 +132,7 @@ public class PredicateBuilder {
                                         disjunctsBuilder.add(leaf(null, equalsPredicate));
                                         disjunctSql.add(columnName +" = ?");
                                     } else if (singleValues.size() > 1) {
-                                        disjunctsBuilder.add(leaf(null,Predicate.newInListPredicateFromDiscrete(columnHandle, new DiscreteValues() {
+                                        disjunctsBuilder.add(leaf(null,newInListPredicateFromDiscrete(columnHandle, new DiscreteValues() {
                                             @Override
                                             public boolean isWhiteList() {
                                                 return true;
@@ -162,7 +163,7 @@ public class PredicateBuilder {
 
                                 discreteValues -> {
                                     boolean negate = !discreteValues.isWhiteList();
-                                    Predicate predicate = Predicate.newInListPredicateFromDiscrete(columnHandle, discreteValues).negate(negate);
+                                    Predicate predicate = newInListPredicateFromDiscrete(columnHandle, discreteValues).negate(negate);
                                     LeafPredicateNode<?> leaf = leaf(null,predicate);
                                     conjunctsBuilder.add(leaf);
 

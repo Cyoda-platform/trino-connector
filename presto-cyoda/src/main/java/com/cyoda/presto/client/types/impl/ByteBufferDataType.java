@@ -15,9 +15,25 @@
  *
  */
 
-package com.cyoda.presto.client.types;
+package com.cyoda.presto.client.types.impl;
 
-public interface SupportedDataType<T> {
-    DataType getDataType();
-    Class<T> getClazz();
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.SupportedDataType;
+
+import java.nio.ByteBuffer;
+
+public class ByteBufferDataType implements SupportedDataType<ByteBuffer> {
+    public static final ByteBufferDataType INSTANCE = new ByteBufferDataType();
+
+    private ByteBufferDataType() {}
+
+    @Override
+    public DataType getDataType() {
+        return DataType.BYTE_BUFFER;
+    }
+
+    @Override
+    public Class<ByteBuffer> getClazz() {
+        return ByteBuffer.class;
+    }
 }

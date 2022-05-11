@@ -17,16 +17,16 @@
 
 package com.cyoda.presto.client.logic;
 
-import com.cyoda.presto.client.types.SupportedDataType;
+import com.cyoda.presto.client.types.DataTypeValue;
 
 import java.util.Optional;
 
 
 public class RangePredicateInfo<T> {
-    private final SupportedDataType<T> lowerBound;
-    private final SupportedDataType<T> upperBound;
+    private final DataTypeValue<T> lowerBound;
+    private final DataTypeValue<T> upperBound;
 
-    private RangePredicateInfo(SupportedDataType<T> lowerBound, SupportedDataType<T> upperBound) {
+    private RangePredicateInfo(DataTypeValue<T> lowerBound, DataTypeValue<T> upperBound) {
         this.lowerBound = lowerBound;
         this.upperBound = upperBound;
     }
@@ -35,26 +35,26 @@ public class RangePredicateInfo<T> {
         return new Builder<>();
     }
 
-    public Optional<SupportedDataType<T>> getLowerBound() {
+    public Optional<DataTypeValue<T>> getLowerBound() {
         return Optional.of(lowerBound);
     }
 
-    public Optional<SupportedDataType<T>> getUpperBound() {
+    public Optional<DataTypeValue<T>> getUpperBound() {
         return Optional.of(upperBound);
     }
 
     public static final class Builder<T> {
-        private SupportedDataType<T> lowerBound = null;
-        private SupportedDataType<T> upperBound = null;
+        private DataTypeValue<T> lowerBound = null;
+        private DataTypeValue<T> upperBound = null;
 
         private Builder() {
         }
 
-        public void setLowerBound(SupportedDataType<T> lowerBound) {
+        public void setLowerBound(DataTypeValue<T> lowerBound) {
             this.lowerBound = lowerBound;
         }
 
-        public void setUpperBound(SupportedDataType<T> upperBound) {
+        public void setUpperBound(DataTypeValue<T> upperBound) {
             this.upperBound = upperBound;
         }
 

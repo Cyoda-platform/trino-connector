@@ -31,7 +31,7 @@ import com.cyoda.presto.client.logic.PredicateNode;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
-import com.cyoda.presto.client.types.SupportedDataType;
+import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.service.api.beans.GroupHeader;
@@ -129,9 +129,9 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
 
         if (stats.getGroupsCount() == 0 ) return Collections::emptyIterator;
 
-        Slice reportIdSlice = SupportedDataType.of(reportId).asSlice(VarcharType.VARCHAR);
-        Slice groupingVersionSlice = SupportedDataType.of(groupingVersion).asSlice(VarcharType.VARCHAR);
-        Slice reportConfigIdSlice = SupportedDataType.of(reportConfigId).asSlice(VarcharType.VARCHAR);
+        Slice reportIdSlice = DataTypeValue.of(reportId).asSlice(VarcharType.VARCHAR);
+        Slice groupingVersionSlice = DataTypeValue.of(groupingVersion).asSlice(VarcharType.VARCHAR);
+        Slice reportConfigIdSlice = DataTypeValue.of(reportConfigId).asSlice(VarcharType.VARCHAR);
 
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
         builder.addLeaf(PredicateBuilder.createEqualsPredicate(reportIdColumn, reportIdSlice,String.class));

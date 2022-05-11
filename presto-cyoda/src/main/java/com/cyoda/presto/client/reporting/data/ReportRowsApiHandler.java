@@ -35,7 +35,7 @@ import com.cyoda.presto.client.reporting.groups.GroupingHandle;
 import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle;
-import com.cyoda.presto.client.types.SupportedDataType;
+import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.client.types.TypesUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
@@ -217,8 +217,8 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
 
         if ( groupValueJsonBase64 == null ) return Collections::emptyIterator;
 
-        Slice historyIdSlice = SupportedDataType.of(reportId).asSlice(VarcharType.VARCHAR);
-        Slice groupingValueSlice = SupportedDataType.of(groupValueJsonBase64).asSlice(VarcharType.VARCHAR);
+        Slice historyIdSlice = DataTypeValue.of(reportId).asSlice(VarcharType.VARCHAR);
+        Slice groupingValueSlice = DataTypeValue.of(groupValueJsonBase64).asSlice(VarcharType.VARCHAR);
 
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
         builder.addLeaf(PredicateBuilder.createEqualsPredicate(reportIdColumn, historyIdSlice,String.class));
@@ -256,7 +256,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         String reportConfigurationId = getTableMap()
                 .get(new SchemaTableName(tableHandle.getSchemaName(), tableHandle.getTableName()))
                 .getReportConfigurationId();
-        Slice reportConfigIdSlice = SupportedDataType.of(reportConfigurationId).asSlice(VarcharType.VARCHAR);
+        Slice reportConfigIdSlice = DataTypeValue.of(reportConfigurationId).asSlice(VarcharType.VARCHAR);
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
         builder.addMember(predicates);
         builder.addLeaf(PredicateBuilder.createEqualsPredicate(reportConfigIdColumn, reportConfigIdSlice,String.class));

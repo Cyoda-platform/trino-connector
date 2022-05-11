@@ -18,7 +18,8 @@
 package com.cyoda.presto.client;
 
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.SupportedDataType;
+import com.cyoda.presto.client.types.DataTypeValue;
+import com.cyoda.presto.client.types.impl.BooleanDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.type.TinyintType;
 import org.testng.annotations.Test;
@@ -33,13 +34,13 @@ import java.util.Optional;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
 
-public class SupportedDataTypeTest {
+public class DataTypeValueTest {
 
     @Test
     public void testStringifyYear() {
         final int isoYear = 2020;
         Year year = Year.of(isoYear);
-        SupportedDataType<Year> sdt = SupportedDataType.of(year);
+        DataTypeValue<Year> sdt = DataTypeValue.of(year);
         Optional<String> stringify = sdt.stringify();
         assertTrue(stringify.isPresent());
         String str = stringify.get();
@@ -49,7 +50,7 @@ public class SupportedDataTypeTest {
     @Test
     public void testStringifyYearMonth() {
         YearMonth yearMonth = YearMonth.of(2020,11);
-        SupportedDataType<YearMonth> sdt = SupportedDataType.of(yearMonth);
+        DataTypeValue<YearMonth> sdt = DataTypeValue.of(yearMonth);
         Optional<String> stringify = sdt.stringify();
         assertTrue(stringify.isPresent());
         String str = stringify.get();
@@ -60,7 +61,7 @@ public class SupportedDataTypeTest {
     @Test
     public void testStringifyLocalDate() {
         LocalDate ld = LocalDate.of(2020,11,1);
-        SupportedDataType<LocalDate> sdt = SupportedDataType.of(ld);
+        DataTypeValue<LocalDate> sdt = DataTypeValue.of(ld);
         Optional<String> stringify = sdt.stringify();
         assertTrue(stringify.isPresent());
         String str = stringify.get();
@@ -70,7 +71,7 @@ public class SupportedDataTypeTest {
     @Test
     public void testStringifyLocalDateTime() {
         LocalDateTime ldt = LocalDateTime.of(2020,11,1,8,12,34,22023);
-        SupportedDataType<LocalDateTime> sdt = SupportedDataType.of(ldt);
+        DataTypeValue<LocalDateTime> sdt = DataTypeValue.of(ldt);
         Optional<String> stringify = sdt.stringify();
         assertTrue(stringify.isPresent());
         String str = stringify.get();
@@ -80,7 +81,7 @@ public class SupportedDataTypeTest {
     @Test
     public void testStringifyLocalTime() {
         LocalTime lt = LocalTime.of(14,15,16);
-        SupportedDataType<LocalTime> sdt = SupportedDataType.of(lt);
+        DataTypeValue<LocalTime> sdt = DataTypeValue.of(lt);
         Optional<String> stringify = sdt.stringify();
         assertTrue(stringify.isPresent());
         String str = stringify.get();
@@ -90,7 +91,7 @@ public class SupportedDataTypeTest {
     @Test
     public void testStringifyObject() {
         CyodaColumnHandle cch = new CyodaColumnHandle("connector 1", "happy column", TinyintType.TINYINT, DataType.SHORT, 2, "myKey");
-        SupportedDataType<?> sdt = SupportedDataType.ofObject(cch);
+        DataTypeValue<?> sdt = DataTypeValue.ofObject(cch);
         Optional<String> stringify = sdt.stringify();
         assertTrue(stringify.isPresent());
         String str = stringify.get();
@@ -106,4 +107,15 @@ public class SupportedDataTypeTest {
         assertEquals(str, expected);
     }
 
+
+    @Test
+    public void testStringifyBooleanJson() {
+        Boolean bool = Boolean.TRUE;
+        DataTypeValue<?> sdt = DataTypeValue.of(bool, BooleanDataType.INSTANCE);
+        Optional<String> stringify = sdt.stringify();
+        assertTrue(stringify.isPresent());
+        String str = stringify.get();
+        String expected ="true";
+        assertEquals(str, expected);
+    }
 }

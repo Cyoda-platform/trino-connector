@@ -15,9 +15,25 @@
  *
  */
 
-package com.cyoda.presto.client.types;
+package com.cyoda.presto.client.types.impl;
 
-public interface SupportedDataType<T> {
-    DataType getDataType();
-    Class<T> getClazz();
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.SupportedDataType;
+
+import java.time.ZonedDateTime;
+
+public class ZonedDateTimeDataType implements SupportedDataType<ZonedDateTime> {
+    public static final ZonedDateTimeDataType INSTANCE = new ZonedDateTimeDataType();
+
+    private ZonedDateTimeDataType() {}
+
+    @Override
+    public DataType getDataType() {
+        return DataType.ZONED_DATE_TIME;
+    }
+
+    @Override
+    public Class<ZonedDateTime> getClazz() {
+        return ZonedDateTime.class;
+    }
 }
