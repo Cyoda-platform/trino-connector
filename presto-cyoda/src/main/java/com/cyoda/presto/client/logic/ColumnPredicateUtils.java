@@ -749,7 +749,7 @@ public class ColumnPredicateUtils {
     }
 
     @SuppressWarnings("java:S1452")
-    static ColumnPredicate newInListPredicateFromDiscrete(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
+    static ColumnPredicate<?> newInListPredicateFromDiscrete(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
         // TODO: This does not yet cover all cases.
         switch (columnHandle.getDataType()) {
             case LONG:
