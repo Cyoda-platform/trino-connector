@@ -54,6 +54,9 @@ import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ColumnPredicateUtils {
 
+    private ColumnPredicateUtils() {
+        // Utils class
+    }
 
     /**
      * Creates a new {@code CyodaPredicate} on a boolean column.
