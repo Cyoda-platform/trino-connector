@@ -21,7 +21,6 @@ import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.client.types.impl.LocalDateDataType;
-import com.cyoda.presto.client.types.impl.YearDataType;
 import com.cyoda.presto.client.util.DecimalUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.predicate.DiscreteValues;
@@ -129,8 +128,6 @@ public class ColumnPredicateUtils {
                                                         UUID value) {
         checkColumn(column, DataType.UUID_TYPE);
 
-        DataTypeValue<UUID> wrapped = DataTypeValue.of(value);
-
         BigInteger bigIntValue = convertToBigInteger(value);
         return delegateToBigDecimal(column, op, bigIntValue)
                 .cloneTo(column,item->{
@@ -216,8 +213,6 @@ public class ColumnPredicateUtils {
 
     private static final BigInteger B = BigInteger.ONE.shiftLeft(64); // 2^64
     private static final BigInteger L = BigInteger.valueOf(Long.MAX_VALUE);
-    private static final BigInteger MAX_LONG_BIGINT = BigInteger.valueOf(Long.MAX_VALUE);
-    private static final BigInteger MAX_UUID_VALUE = MAX_LONG_BIGINT.add(MAX_LONG_BIGINT.multiply(B));
 
     public static BigInteger convertToBigInteger(UUID id)
     {
@@ -305,7 +300,6 @@ public class ColumnPredicateUtils {
                                                               ColumnPredicate.ComparisonOp op,
                                                               BigInteger value) {
         checkColumn(column, DataType.BIG_INTEGER);
-        DataTypeValue<BigInteger> wrapped = DataTypeValue.of(value);
         return delegateToBigDecimal(column, op, value)
                 .cloneTo(column,item->item.asBigDecimal().toBigIntegerExact());
     }
@@ -342,7 +336,6 @@ public class ColumnPredicateUtils {
                                                         Year value) {
         DataType dataType = DataType.YEAR;
         checkColumn(column, dataType);
-        DataTypeValue<Year> wrapped = DataTypeValue.of(value, YearDataType.INSTANCE);
         return delegateToLong(column, op, value.getValue())
                 .cloneTo(column,item->Year.of(item.parseToLong().intValue()));
     }
