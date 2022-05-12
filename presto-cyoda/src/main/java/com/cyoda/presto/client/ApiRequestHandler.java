@@ -19,7 +19,7 @@ package com.cyoda.presto.client;
 
 import com.cyoda.presto.CyodaTable;
 import com.cyoda.presto.client.logic.Any;
-import com.cyoda.presto.client.logic.PredicateNode;
+import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
@@ -39,5 +39,5 @@ public interface ApiRequestHandler<T> {
     @SuppressWarnings("java:S1452")
     DataTypeValue<?> getValue(@Nullable T entity, CyodaColumnHandle field);
 
-    Iterator<T> getResponseIterator(int pageSize, CyodaTableHandle tableHandle, PredicateNode<Any> predicates);
+    Iterator<T> getResponseIterator(int pageSize, CyodaTableHandle tableHandle, ColumnPredicateNode<Any> predicates);
 }

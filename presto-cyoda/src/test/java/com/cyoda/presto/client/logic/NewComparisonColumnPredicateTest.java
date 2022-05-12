@@ -49,15 +49,15 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-import static com.cyoda.presto.client.logic.Predicate.ComparisonOp.*;
-import static com.cyoda.presto.client.logic.Predicate.PredicateType.EQUALITY;
-import static com.cyoda.presto.client.logic.Predicate.PredicateType.RANGE;
-import static com.cyoda.presto.client.logic.PredicateUtils.*;
+import static com.cyoda.presto.client.logic.ColumnPredicate.ComparisonOp.*;
+import static com.cyoda.presto.client.logic.ColumnPredicate.PredicateType.EQUALITY;
+import static com.cyoda.presto.client.logic.ColumnPredicate.PredicateType.RANGE;
+import static com.cyoda.presto.client.logic.ColumnPredicateUtils.*;
 import static java.lang.Double.doubleToLongBits;
 import static java.lang.Float.floatToRawIntBits;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
-public class NewComparisonPredicateTest {
+public class NewComparisonColumnPredicateTest {
 
     public static final String REQUEST_HANDLER_KEY = "mockRequestHandler";
     public static final String CONNECTOR_ID = "connectorId";
@@ -79,32 +79,32 @@ public class NewComparisonPredicateTest {
     private CyodaColumnHandle localDatetimeCol;
     // TODO: Create tests for others, like Year, YearMonth, ...
 
-    private Predicate<Integer> intRange(Integer lower, Integer upper) {
+    private ColumnPredicate<Integer> intRange(Integer lower, Integer upper) {
         Preconditions.checkArgument(lower < upper);
-        return new Predicate<>(RANGE, intCol, DataTypeValue.of(lower), DataTypeValue.of(upper));
+        return new ColumnPredicate<>(RANGE, intCol, DataTypeValue.of(lower), DataTypeValue.of(upper));
     }
 
-    private Predicate<Long> longRange(long lower, long upper) {
+    private ColumnPredicate<Long> longRange(long lower, long upper) {
         Preconditions.checkArgument(lower < upper);
-        return new Predicate<>(RANGE, intCol, DataTypeValue.of(lower), DataTypeValue.of(upper));
+        return new ColumnPredicate<>(RANGE, intCol, DataTypeValue.of(lower), DataTypeValue.of(upper));
     }
 
-    private Predicate<Integer> intInList(Integer... values) {
+    private ColumnPredicate<Integer> intInList(Integer... values) {
         SortedSet<DataTypeValue<Integer>> valueSet = toDataTypeValue(values);
         return newInListPredicate(intCol, valueSet);
     }
 
-    private Predicate<Long> longInList(Long... values) {
+    private ColumnPredicate<Long> longInList(Long... values) {
         SortedSet<DataTypeValue<Long>> valueSet = toDataTypeValue(values);
         return newInListPredicate(intCol, valueSet);
     }
 
-    private Predicate<Boolean> boolInList(Boolean... values) {
+    private ColumnPredicate<Boolean> boolInList(Boolean... values) {
         SortedSet<DataTypeValue<Boolean>> valueSet = toDataTypeValue(values);
         return newInListPredicate(boolCol, valueSet);
     }
 
-    private Predicate<String> stringInList(String... values) {
+    private ColumnPredicate<String> stringInList(String... values) {
         SortedSet<DataTypeValue<String >> valueSet = toDataTypeValue(values);
         return newInListPredicate(stringCol, valueSet);
     }
@@ -132,9 +132,9 @@ public class NewComparisonPredicateTest {
         dateCol = new CyodaColumnHandle(CONNECTOR_ID,"date", DateType.DATE, DataType.LOCAL_DATE,pos, REQUEST_HANDLER_KEY);
     }
 
-    private <T extends Comparable<T>> void testMerge(Predicate<T> a,
-                           Predicate<T> b,
-                           Predicate<T> expected) {
+    private <T extends Comparable<T>> void testMerge(ColumnPredicate<T> a,
+                                                     ColumnPredicate<T> b,
+                                                     ColumnPredicate<T> expected) {
 
         Assert.assertEquals(expected, a.merge(b));
         Assert.assertEquals(expected, b.merge(a));
@@ -581,7 +581,7 @@ public class NewComparisonPredicateTest {
         // None
         testMerge(none(intCol),
                 none(intCol),
-                PredicateUtils.<Integer>none(intCol));
+                ColumnPredicateUtils.<Integer>none(intCol));
 
         // IS NOT NULL
         //--------------------
@@ -592,7 +592,7 @@ public class NewComparisonPredicateTest {
         // NONE
         testMerge(newIsNotNullPredicate(intCol),
                 none(intCol),
-                PredicateUtils.<Integer>none(intCol));
+                ColumnPredicateUtils.<Integer>none(intCol));
 
         // IS NOT NULL AND
         // IS NULL
@@ -600,13 +600,13 @@ public class NewComparisonPredicateTest {
         // NONE
         testMerge(newIsNotNullPredicate(intCol),
                 newIsNullPredicate(intCol),
-                PredicateUtils.<Integer>none(intCol));
+                ColumnPredicateUtils.<Integer>none(intCol));
 
         // IS NOT NULL AND
         // IS NOT NULL
         // =
         // IS NOT NULL
-        testMerge(PredicateUtils.<Integer>newIsNotNullPredicate(intCol),
+        testMerge(ColumnPredicateUtils.<Integer>newIsNotNullPredicate(intCol),
                 newIsNotNullPredicate(intCol),
                 newIsNotNullPredicate(intCol));
 
@@ -658,7 +658,7 @@ public class NewComparisonPredicateTest {
         // NONE
         // =
         // NONE
-        testMerge(PredicateUtils.<Integer>newIsNullPredicate(intCol),
+        testMerge(ColumnPredicateUtils.<Integer>newIsNullPredicate(intCol),
                 none(intCol),
                 none(intCol));
 
@@ -666,7 +666,7 @@ public class NewComparisonPredicateTest {
         // IS NULL
         // =
         // IS_NULL
-        testMerge(PredicateUtils.<Integer>newIsNullPredicate(intCol),
+        testMerge(ColumnPredicateUtils.<Integer>newIsNullPredicate(intCol),
                 newIsNullPredicate(intCol),
                 newIsNullPredicate(intCol));
 
@@ -674,7 +674,7 @@ public class NewComparisonPredicateTest {
         // IS NOT NULL
         // =
         // NONE
-        testMerge(PredicateUtils.<Integer>newIsNullPredicate(intCol),
+        testMerge(ColumnPredicateUtils.<Integer>newIsNullPredicate(intCol),
                 newIsNotNullPredicate(intCol),
                 none(intCol));
 
@@ -755,7 +755,7 @@ public class NewComparisonPredicateTest {
         //     [--)
         testMerge(newComparisonPredicate(stringCol, GREATER_EQUAL, "a"),
                 newComparisonPredicate(stringCol, LESS, "a\0\0"),
-                new Predicate<>(RANGE, stringCol, DataTypeValue.of("a"), DataTypeValue.of("a\0\0"))
+                new ColumnPredicate<>(RANGE, stringCol, DataTypeValue.of("a"), DataTypeValue.of("a\0\0"))
         );
 
         //     [----->
@@ -834,7 +834,7 @@ public class NewComparisonPredicateTest {
 
         testMerge(newComparisonPredicate(boolCol, GREATER_EQUAL, false),
                 newComparisonPredicate(boolCol, LESS, true),
-                new Predicate<>(EQUALITY, boolCol, DataTypeValue.of(false), null)
+                new ColumnPredicate<>(EQUALITY, boolCol, DataTypeValue.of(false), null)
         );
 
         testMerge(newComparisonPredicate(boolCol, GREATER_EQUAL, false),
@@ -843,7 +843,7 @@ public class NewComparisonPredicateTest {
 
         testMerge(newComparisonPredicate(byteCol, GREATER_EQUAL, 0),
                 newComparisonPredicate(byteCol, LESS, 10),
-                new Predicate<>(RANGE,
+                new ColumnPredicate<>(RANGE,
                         byteCol,
                         DataTypeValue.of(0),
                         DataTypeValue.of(10)
@@ -863,7 +863,7 @@ public class NewComparisonPredicateTest {
 
         testMerge(newComparisonPredicate(shortCol, GREATER_EQUAL, (short)0),
                 newComparisonPredicate(shortCol, LESS, (short)10),
-                new Predicate<>(RANGE,
+                new ColumnPredicate<>(RANGE,
                         shortCol,
                         DataTypeValue.of((short) 0),
                         DataTypeValue.of((short) 10)));
@@ -881,7 +881,7 @@ public class NewComparisonPredicateTest {
 
         testMerge(newComparisonPredicate(longCol, GREATER_EQUAL, 0L),
                 newComparisonPredicate(longCol, LESS, 10L),
-                new Predicate<>(RANGE,
+                new ColumnPredicate<>(RANGE,
                         longCol,
                         DataTypeValue.of(0L),
                         DataTypeValue.of(10L)));
@@ -899,7 +899,7 @@ public class NewComparisonPredicateTest {
 
         testMerge(newComparisonPredicate(floatCol, GREATER_EQUAL, 123.45f),
                 newComparisonPredicate(floatCol, LESS, 678.90f),
-                new Predicate<>(RANGE,
+                new ColumnPredicate<>(RANGE,
                         floatCol,
                         DataTypeValue.of(123.45f),
                         DataTypeValue.of(678.90f)));
@@ -911,7 +911,7 @@ public class NewComparisonPredicateTest {
 
         testMerge(newComparisonPredicate(doubleCol, GREATER_EQUAL, 123.45),
                 newComparisonPredicate(doubleCol, LESS, 678.90),
-                new Predicate<>(RANGE,
+                new ColumnPredicate<>(RANGE,
                         doubleCol,
                         DataTypeValue.of(123.45),
                         DataTypeValue.of(678.90)));
@@ -923,7 +923,7 @@ public class NewComparisonPredicateTest {
 
         testMerge(newComparisonPredicate(bigDecimalCol, GREATER_EQUAL, BigDecimal.valueOf(12345, 2)),
                 newComparisonPredicate(bigDecimalCol, LESS, BigDecimal.valueOf(67890,2)),
-                new Predicate<>(RANGE,
+                new ColumnPredicate<>(RANGE,
                         bigDecimalCol,
                         DataTypeValue.of(BigDecimal.valueOf(12345, 2)),
                         DataTypeValue.of(BigDecimal.valueOf(67890, 2))
@@ -955,7 +955,7 @@ public class NewComparisonPredicateTest {
                         BigDecimal.valueOf(12345678910L, 2)),
                 newComparisonPredicate(bigDecimalCol, LESS,
                         BigDecimal.valueOf(67890101112L,2)),
-                new Predicate(RANGE,
+                new ColumnPredicate(RANGE,
                         bigDecimalCol,
                         DataTypeValue.of(BigDecimal.valueOf(12345678910L, 2)),
                         DataTypeValue.of(BigDecimal.valueOf(67890101112L, 2))
@@ -981,7 +981,7 @@ public class NewComparisonPredicateTest {
                         new BigDecimal("1234567891011121314.15")),
                 newComparisonPredicate(bigDecimalCol, LESS,
                         new BigDecimal("67891011121314151617.18")),
-                new Predicate<>(RANGE,
+                new ColumnPredicate<>(RANGE,
                         bigDecimalCol,
                         DataTypeValue.of(new BigDecimal("1234567891011121314.15")),
                         DataTypeValue.of(new BigDecimal("67891011121314151617.18"))
@@ -991,7 +991,7 @@ public class NewComparisonPredicateTest {
         testMerge(newComparisonPredicate(binaryCol, GREATER_EQUAL,
                         new byte[] { 0, 1, 2, 3, 4, 5, 6 }),
                 newComparisonPredicate(binaryCol, LESS, new byte[] { 10 }),
-                new Predicate<>(RANGE,
+                new ColumnPredicate<>(RANGE,
                         binaryCol,
                         DataTypeValue.of(ByteBuffer.wrap(new byte[] { 0, 1, 2, 3, 4, 5, 6 })),
                         DataTypeValue.of(ByteBuffer.wrap(new byte[] { 10 }))
@@ -1000,7 +1000,7 @@ public class NewComparisonPredicateTest {
 
         testMerge(newComparisonPredicate(stringCol, GREATER_EQUAL, "bar"),
                 newComparisonPredicate(stringCol, LESS, "foo"),
-                new Predicate<>(RANGE,
+                new ColumnPredicate<>(RANGE,
                         stringCol,
                         DataTypeValue.of("bar"),
                         DataTypeValue.of("foo")

@@ -21,8 +21,8 @@ import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.Any;
-import com.cyoda.presto.client.logic.PredicateBuilder;
-import com.cyoda.presto.client.logic.PredicateNode;
+import com.cyoda.presto.client.logic.ColumnPredicateBuilder;
+import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 import com.cyoda.presto.handles.CyodaColumnHandle;
@@ -168,7 +168,7 @@ public class TestCyodaRecordSet {
 
         TupleDomain<CyodaColumnHandle> constraint = TupleDomain.all();
         CyodaTableHandle tableHandle = new CyodaTableHandle(connectorId.toString(), "schema", "table", Optional.empty(), requestHandlerKey);
-        PredicateNode<Any> predicates = PredicateBuilder.setupConstraintPredicates(TupleDomain.all());
+        ColumnPredicateNode<Any> predicates = ColumnPredicateBuilder.setupConstraintPredicates(TupleDomain.all());
         CyodaFilteringPageSource<GridConfigFieldsView> pageSource =
                 new CyodaFilteringPageSource<>(apiHandler, tableHandle, tables.get(0).getColumns(), client, predicates);
 

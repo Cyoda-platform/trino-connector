@@ -39,15 +39,15 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Function;
 
-import static com.cyoda.presto.client.logic.PredicateUtils.buildInList;
-import static com.cyoda.presto.client.logic.PredicateUtils.none;
+import static com.cyoda.presto.client.logic.ColumnPredicateUtils.buildInList;
+import static com.cyoda.presto.client.logic.ColumnPredicateUtils.none;
 
 /**
  * A predicate which can be used to filter rows based on the value of a column.
  * Adopted from org.apache.kudu.client.KuduPredicate of org.apache.kudu:kudu-client
  */
 @SuppressWarnings("unused")
-public class Predicate<T extends Comparable<? super T>> {
+public class ColumnPredicate<T extends Comparable<? super T>> {
 
     private final PredicateType type;
     private final CyodaColumnHandle column;
@@ -75,7 +75,7 @@ public class Predicate<T extends Comparable<? super T>> {
      *               or the equality value if this is an Equality predicate
      * @param upper  the upper bound serialized value if this is an Equality predicate
      */
-    Predicate(PredicateType type, CyodaColumnHandle column, DataTypeValue<T> lower, DataTypeValue<T> upper) {
+    ColumnPredicate(PredicateType type, CyodaColumnHandle column, DataTypeValue<T> lower, DataTypeValue<T> upper) {
         this.type = type;
         this.column = column;
         this.lower = lower;
@@ -89,7 +89,7 @@ public class Predicate<T extends Comparable<? super T>> {
      * @param column       the column to which the predicate applies
      * @param inListValues the encoded IN list values
      */
-    public Predicate(CyodaColumnHandle column, SortedSet<DataTypeValue<T>> inListValues) {
+    public ColumnPredicate(CyodaColumnHandle column, SortedSet<DataTypeValue<T>> inListValues) {
         this.column = column;
         this.type = PredicateType.IN_LIST;
         this.lower = null;
@@ -98,10 +98,10 @@ public class Predicate<T extends Comparable<? super T>> {
     }
 
 
-    public <S extends Comparable<? super S>> Predicate<S> cloneTo(CyodaColumnHandle column, Function<DataTypeValue<T>,S> func ) {
+    public <S extends Comparable<? super S>> ColumnPredicate<S> cloneTo(CyodaColumnHandle column, Function<DataTypeValue<T>,S> func ) {
         Optional<S> lowerCast = Optional.ofNullable(this.getLower()).map(func);
         Optional<S> upperCast = Optional.ofNullable(this.getUpper()).map(func);
-        return new Predicate<>(this.getType(),column,
+        return new ColumnPredicate<>(this.getType(),column,
                 lowerCast.map(DataTypeValue::of).orElse(null),
                 upperCast.map(DataTypeValue::of).orElse(null)
         );
@@ -145,7 +145,7 @@ public class Predicate<T extends Comparable<? super T>> {
      * @return a new predicate that is the logical intersection
      */
     @SuppressWarnings("java:S3776")
-    Predicate<T> merge(Predicate<T> other) {
+    ColumnPredicate<T> merge(ColumnPredicate<T> other) {
         Preconditions.checkArgument(column.equals(other.column),
                 "predicates from different columns may not be merged");
 
@@ -205,9 +205,9 @@ public class Predicate<T extends Comparable<? super T>> {
                         return none(column);
                     } else {
                         if (newLower != null && newUpper != null && areConsecutive(newLower, newUpper)) {
-                            return new Predicate<>(PredicateType.EQUALITY, column, newLower, null);
+                            return new ColumnPredicate<>(PredicateType.EQUALITY, column, newLower, null);
                         } else {
-                            return new Predicate<>(PredicateType.RANGE, column, newLower, newUpper);
+                            return new ColumnPredicate<>(PredicateType.RANGE, column, newLower, newUpper);
                         }
                     }
                 }
@@ -377,31 +377,31 @@ public class Predicate<T extends Comparable<? super T>> {
      * @return a new instance of the Predicate, with the opposite logic.
      * TODO: Haven't tested if this makes any sense!
      */
-    Predicate<T> negate() {
+    ColumnPredicate<T> negate() {
         return this.negate(true);
     }
 
-    Predicate<T> negate(boolean negate) {
+    ColumnPredicate<T> negate(boolean negate) {
         if (!negate) return this;
         switch (type) {
             case NONE:
-                return new Predicate<>(PredicateType.ALL, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.ALL, column, lower, upper);
             case ALL:
-                return new Predicate<>(PredicateType.NONE, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.NONE, column, lower, upper);
             case EQUALITY:
-                return new Predicate<>(PredicateType.INEQUALITY, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.INEQUALITY, column, lower, upper);
             case INEQUALITY:
-                return new Predicate<>(PredicateType.EQUALITY, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.EQUALITY, column, lower, upper);
             case RANGE:
-                return new Predicate<>(PredicateType.NOT_RANGE, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.NOT_RANGE, column, lower, upper);
             case IS_NULL:
-                return new Predicate<>(PredicateType.IS_NOT_NULL, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.IS_NOT_NULL, column, lower, upper);
             case IS_NOT_NULL:
-                return new Predicate<>(PredicateType.IS_NULL, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.IS_NULL, column, lower, upper);
             case IN_LIST:
-                return new Predicate<>(PredicateType.NOT_IN_LIST, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.NOT_IN_LIST, column, lower, upper);
             case NOT_IN_LIST:
-                return new Predicate<>(PredicateType.IN_LIST, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.IN_LIST, column, lower, upper);
             default:
                 throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Type" + type + " cannot be negated");
         }
@@ -470,12 +470,12 @@ public class Predicate<T extends Comparable<? super T>> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Predicate<?> predicate = (Predicate<?>) o;
-        return type == predicate.type &&
-                Objects.equal(column, predicate.column) &&
-                Objects.equal(lower,predicate.lower) &&
-                Objects.equal(upper, predicate.upper) &&
-                Objects.equal(inListValues, predicate.inListValues);
+        ColumnPredicate<?> columnPredicate = (ColumnPredicate<?>) o;
+        return type == columnPredicate.type &&
+                Objects.equal(column, columnPredicate.column) &&
+                Objects.equal(lower, columnPredicate.lower) &&
+                Objects.equal(upper, columnPredicate.upper) &&
+                Objects.equal(inListValues, columnPredicate.inListValues);
     }
 
     @Override

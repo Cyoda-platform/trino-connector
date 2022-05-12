@@ -28,7 +28,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 
-public class CompoundPredicateNode implements PredicateNode<Any> {
+public class CompoundPredicateNode implements ColumnPredicateNode<Any> {
 
     public static CompoundPredicateNode empty(CompoundPredicateNode parent) {
         return new CompoundPredicateNode(parent,Collections.emptyList(), Connective.NONE);
@@ -42,7 +42,7 @@ public class CompoundPredicateNode implements PredicateNode<Any> {
      * The members of the compound predicate.
      * If this collection is not empty, then the predicate member of this node should be null.
      */
-    private final Collection<PredicateNode<?>> members;
+    private final Collection<ColumnPredicateNode<?>> members;
     /**
      * The type of connective for the members, i.e. AND / OR
      */
@@ -51,7 +51,7 @@ public class CompoundPredicateNode implements PredicateNode<Any> {
 
     private CompoundPredicateNode(
             CompoundPredicateNode parent,
-            Collection<PredicateNode<?>> members,
+            Collection<ColumnPredicateNode<?>> members,
             Connective connective) {
 
         this.members = Objects.requireNonNull(members,"members is null");
@@ -64,7 +64,7 @@ public class CompoundPredicateNode implements PredicateNode<Any> {
         return new Builder(this, connective);
     }
 
-    public static CompoundPredicateNode of(CompoundPredicateNode parent,Collection<PredicateNode<?>> members, Connective connective) {
+    public static CompoundPredicateNode of(CompoundPredicateNode parent, Collection<ColumnPredicateNode<?>> members, Connective connective) {
         return new CompoundPredicateNode(parent, members, connective);
     }
 
@@ -75,7 +75,7 @@ public class CompoundPredicateNode implements PredicateNode<Any> {
 
     @Override
     @Nonnull
-    public Optional<Collection<PredicateNode<?>>> getMembers() {
+    public Optional<Collection<ColumnPredicateNode<?>>> getMembers() {
         return Optional.of(members);
     }
 
@@ -104,7 +104,7 @@ public class CompoundPredicateNode implements PredicateNode<Any> {
 
     @Nonnull
     @Override
-    public Optional<Predicate<Any>> getPredicate() {
+    public Optional<ColumnPredicate<Any>> getPredicate() {
         return Optional.empty();
     }
 
@@ -123,7 +123,7 @@ public class CompoundPredicateNode implements PredicateNode<Any> {
 
     @Nonnull
     @Override
-    public PredicateNode<Any> withParent(CompoundPredicateNode parent) {
+    public ColumnPredicateNode<Any> withParent(CompoundPredicateNode parent) {
         return new CompoundPredicateNode(
                 parent,
                 members.stream().map(it -> it.withParent(parent)).collect(Collectors.toList()),
@@ -135,7 +135,7 @@ public class CompoundPredicateNode implements PredicateNode<Any> {
 
         private final Connective connective;
         private final CompoundPredicateNode parent;
-        ImmutableList.Builder<PredicateNode<?>> membersBuilder;
+        ImmutableList.Builder<ColumnPredicateNode<?>> membersBuilder;
 
         private Builder(CompoundPredicateNode parent, Connective connective) {
             this.connective = connective;
@@ -143,13 +143,13 @@ public class CompoundPredicateNode implements PredicateNode<Any> {
             this.membersBuilder = ImmutableList.builder();
         }
 
-        public Builder addMember(PredicateNode<?> node) {
+        public Builder addMember(ColumnPredicateNode<?> node) {
             membersBuilder.add(node.withParent(parent));
             return this;
         }
 
-        public <S extends Comparable<? super S>> Builder addLeaf(Predicate<S> predicate) {
-            membersBuilder.add(LeafPredicateNode.leaf(parent,predicate));
+        public <S extends Comparable<? super S>> Builder addLeaf(ColumnPredicate<S> columnPredicate) {
+            membersBuilder.add(LeafPredicateNode.leaf(parent, columnPredicate));
             return this;
         }
 

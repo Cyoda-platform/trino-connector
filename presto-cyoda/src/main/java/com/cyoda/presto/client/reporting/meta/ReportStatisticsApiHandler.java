@@ -25,7 +25,7 @@ import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.Any;
-import com.cyoda.presto.client.logic.PredicateNode;
+import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
@@ -99,7 +99,7 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
             int page,
             int pageSize,
             List<CyodaColumnHandle> projectedColumns,
-            PredicateNode<Any> predicates
+            ColumnPredicateNode<Any> predicates
     ) {
 
         UriTemplate uriTemplate = setupUriTemplate();
@@ -183,7 +183,7 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
     public Iterator<DistributedReportInfoView> getResponseIterator(
             int pageSize,
             CyodaTableHandle tableHandle,
-            PredicateNode<Any> predicates
+            ColumnPredicateNode<Any> predicates
     ) {
         List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
         return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();

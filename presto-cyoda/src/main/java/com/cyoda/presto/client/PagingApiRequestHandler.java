@@ -18,7 +18,7 @@
 package com.cyoda.presto.client;
 
 import com.cyoda.presto.client.logic.Any;
-import com.cyoda.presto.client.logic.PredicateNode;
+import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import org.springframework.hateoas.PagedModel;
 
@@ -30,6 +30,6 @@ public interface PagingApiRequestHandler<T> extends ApiRequestHandler<T> {
     Optional<PagedModel<T>> retrievePage(
             int page,
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns, PredicateNode<Any> predicates);
+            List<CyodaColumnHandle> projectedColumns, ColumnPredicateNode<Any> predicates);
 
 }

@@ -35,25 +35,25 @@ import java.util.List;
 
 import static com.cyoda.presto.client.logic.LeafPredicateNode.leaf;
 import static com.cyoda.presto.client.logic.PredicateBuilderDebugger.debug;
-import static com.cyoda.presto.client.logic.PredicateUtils.*;
+import static com.cyoda.presto.client.logic.ColumnPredicateUtils.*;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.nCopies;
 
 /**
  * Adopted from Presto's PreparedStatementBuilder#toPredicate
  */
-public class PredicateBuilder {
+public class ColumnPredicateBuilder {
 
-    private static final SupplierLogger LOG = SupplierLogger.get(PredicateBuilder.class);
+    private static final SupplierLogger LOG = SupplierLogger.get(ColumnPredicateBuilder.class);
 
-    private PredicateBuilder() {
+    private ColumnPredicateBuilder() {
     }
 
-    public static PredicateNode<Any> setupConstraintPredicates(TupleDomain<CyodaColumnHandle> constraintSummary) {
+    public static ColumnPredicateNode<Any> setupConstraintPredicates(TupleDomain<CyodaColumnHandle> constraintSummary) {
 
         LOG.debug("Taken from PredicateBuilderDebugger: %s",() -> debug(constraintSummary));
 
-        ImmutableList.Builder<PredicateNode<?>> conjunctsBuilder = ImmutableList.builder();
+        ImmutableList.Builder<ColumnPredicateNode<?>> conjunctsBuilder = ImmutableList.builder();
         ImmutableList.Builder<String> sqlConjunctsBuilder = ImmutableList.builder();
 
         if (constraintSummary.isNone()) return CompoundPredicateNode.empty(null);
@@ -81,8 +81,8 @@ public class PredicateBuilder {
                     } else if (domain.isSingleValue()) {
 
                         Object singleValue = domain.getSingleValue();
-                        Predicate predicate = createDumbEqualsPredicate(columnHandle, singleValue);
-                        conjunctsBuilder.add(leaf(null,predicate));
+                        ColumnPredicate columnPredicate = createDumbEqualsPredicate(columnHandle, singleValue);
+                        conjunctsBuilder.add(leaf(null, columnPredicate));
                         sqlConjunctsBuilder.add(columnHandle.getColumnName()+" = ?");
                     } else {
                         int count = domain.getValues().getValuesProcessor().transform(
@@ -90,7 +90,7 @@ public class PredicateBuilder {
                                     // Add disjuncts for ranges --> an IN LIST
                                     List<Object> singleValues = new ArrayList<>();
                                     List<String> disjunctSql = new ArrayList<>();
-                                    ImmutableList.Builder<PredicateNode<?>> disjunctsBuilder = ImmutableList.builder();
+                                    ImmutableList.Builder<ColumnPredicateNode<?>> disjunctsBuilder = ImmutableList.builder();
 
 
                                     int disjuncts = 0;
@@ -100,21 +100,21 @@ public class PredicateBuilder {
                                         if (range.isSingleValue()) {
                                             singleValues.add(range.getSingleValue());
                                         } else {
-                                            List<PredicateNode<?>> rangeConjuncts = new ArrayList<>();
+                                            List<ColumnPredicateNode<?>> rangeConjuncts = new ArrayList<>();
                                             List<String> rangeConjunctsColumnNames = new ArrayList<>();
                                             if (!range.isLowUnbounded()) {
-                                                Predicate.ComparisonOp op = (range.isLowInclusive())
-                                                        ? Predicate.ComparisonOp.GREATER_EQUAL : Predicate.ComparisonOp.GREATER;
-                                                Predicate predicate = newComparisonPredicateFromNative(columnHandle, op, range.getLowBoundedValue());
-                                                LeafPredicateNode<?> leaf = leaf(null, predicate);
+                                                ColumnPredicate.ComparisonOp op = (range.isLowInclusive())
+                                                        ? ColumnPredicate.ComparisonOp.GREATER_EQUAL : ColumnPredicate.ComparisonOp.GREATER;
+                                                ColumnPredicate columnPredicate = newComparisonPredicateFromNative(columnHandle, op, range.getLowBoundedValue());
+                                                LeafPredicateNode<?> leaf = leaf(null, columnPredicate);
                                                 rangeConjuncts.add(leaf);
                                                 rangeConjunctsColumnNames.add(columnName);
                                             }
                                             if (!range.isHighUnbounded()) {
-                                                Predicate.ComparisonOp op = (range.isHighInclusive())
-                                                        ? Predicate.ComparisonOp.LESS_EQUAL : Predicate.ComparisonOp.LESS;
-                                                Predicate predicate = newComparisonPredicateFromNative(columnHandle, op, range.getHighBoundedValue());
-                                                LeafPredicateNode<?> leaf = leaf(null, predicate);
+                                                ColumnPredicate.ComparisonOp op = (range.isHighInclusive())
+                                                        ? ColumnPredicate.ComparisonOp.LESS_EQUAL : ColumnPredicate.ComparisonOp.LESS;
+                                                ColumnPredicate columnPredicate = newComparisonPredicateFromNative(columnHandle, op, range.getHighBoundedValue());
+                                                LeafPredicateNode<?> leaf = leaf(null, columnPredicate);
                                                 rangeConjuncts.add(leaf);
                                                 rangeConjunctsColumnNames.add(columnName);
                                             }
@@ -128,8 +128,8 @@ public class PredicateBuilder {
 
                                     // Add back all of the possible single values either as an equality or an IN predicate
                                     if (singleValues.size() == 1) {
-                                        Predicate equalsPredicate = createDumbEqualsPredicate(columnHandle, singleValues.get(0));
-                                        disjunctsBuilder.add(leaf(null, equalsPredicate));
+                                        ColumnPredicate equalsColumnPredicate = createDumbEqualsPredicate(columnHandle, singleValues.get(0));
+                                        disjunctsBuilder.add(leaf(null, equalsColumnPredicate));
                                         disjunctSql.add(columnName +" = ?");
                                     } else if (singleValues.size() > 1) {
                                         disjunctsBuilder.add(leaf(null,newInListPredicateFromDiscrete(columnHandle, new DiscreteValues() {
@@ -155,7 +155,7 @@ public class PredicateBuilder {
                                     }
 
                                     sqlConjunctsBuilder.add("(" + Joiner.on(" OR ").join(disjunctSql) + ")");
-                                    List<PredicateNode<?>> disjunctions = disjunctsBuilder.build();
+                                    List<ColumnPredicateNode<?>> disjunctions = disjunctsBuilder.build();
                                     CompoundPredicateNode compoundPredicate = CompoundPredicateNode.of(null,disjunctions, Connective.OR);
                                     conjunctsBuilder.add(compoundPredicate);
                                     return disjuncts;
@@ -163,14 +163,14 @@ public class PredicateBuilder {
 
                                 discreteValues -> {
                                     boolean negate = !discreteValues.isWhiteList();
-                                    Predicate predicate = newInListPredicateFromDiscrete(columnHandle, discreteValues).negate(negate);
-                                    LeafPredicateNode<?> leaf = leaf(null,predicate);
+                                    ColumnPredicate columnPredicate = newInListPredicateFromDiscrete(columnHandle, discreteValues).negate(negate);
+                                    LeafPredicateNode<?> leaf = leaf(null, columnPredicate);
                                     conjunctsBuilder.add(leaf);
 
                                     String values = Joiner.on(",").join(nCopies(discreteValues.getValues().size(), "?"));
                                     String predicateString = columnName + (discreteValues.isWhiteList() ? "" : " NOT") + " IN (" + values + ")";
                                     if (domain.isNullAllowed()) {
-                                        predicateString = "(" + predicate + " OR " + columnName + " IS NULL)";
+                                        predicateString = "(" + columnPredicate + " OR " + columnName + " IS NULL)";
                                     }
                                     sqlConjunctsBuilder.add(predicateString);
 
@@ -195,12 +195,12 @@ public class PredicateBuilder {
     }
 
 
-    private static Predicate<?> createDumbEqualsPredicate(CyodaColumnHandle columnHandle, Object nativeValue) {
-        return newComparisonPredicateFromNative(columnHandle, Predicate.ComparisonOp.EQUAL, nativeValue);
+    private static ColumnPredicate<?> createDumbEqualsPredicate(CyodaColumnHandle columnHandle, Object nativeValue) {
+        return newComparisonPredicateFromNative(columnHandle, ColumnPredicate.ComparisonOp.EQUAL, nativeValue);
     }
 
-    public static <S extends Comparable<? super S>> Predicate<S> createEqualsPredicate(CyodaColumnHandle columnHandle, Object nativeValue, Class<S> clazz) {
-        return newComparisonPredicateFromNative(columnHandle, Predicate.ComparisonOp.EQUAL, nativeValue,clazz);
+    public static <S extends Comparable<? super S>> ColumnPredicate<S> createEqualsPredicate(CyodaColumnHandle columnHandle, Object nativeValue, Class<S> clazz) {
+        return newComparisonPredicateFromNative(columnHandle, ColumnPredicate.ComparisonOp.EQUAL, nativeValue,clazz);
     }
 
 }

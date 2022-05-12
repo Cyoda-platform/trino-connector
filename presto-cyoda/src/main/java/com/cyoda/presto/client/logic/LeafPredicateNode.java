@@ -27,22 +27,22 @@ import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
-public class LeafPredicateNode<T extends Comparable<? super T>> implements PredicateNode<T> {
+public class LeafPredicateNode<T extends Comparable<? super T>> implements ColumnPredicateNode<T> {
 
-    private final Predicate<T> predicate;
+    private final ColumnPredicate<T> columnPredicate;
     private final CompoundPredicateNode parent;
 
-    private LeafPredicateNode(@Nullable CompoundPredicateNode parent, @Nonnull Predicate<T> predicate) {
-        this.predicate = requireNonNull(predicate, "predicate is null");
+    private LeafPredicateNode(@Nullable CompoundPredicateNode parent, @Nonnull ColumnPredicate<T> columnPredicate) {
+        this.columnPredicate = requireNonNull(columnPredicate, "predicate is null");
         this.parent = parent;
     }
 
-    public static PredicateNode<Any> all(CompoundPredicateNode parent,CyodaColumnHandle handle) {
-        return new LeafPredicateNode<>(parent,PredicateUtils.all(handle));
+    public static ColumnPredicateNode<Any> all(CompoundPredicateNode parent, CyodaColumnHandle handle) {
+        return new LeafPredicateNode<>(parent, ColumnPredicateUtils.all(handle));
     }
 
-    public static <T extends Comparable<T>> PredicateNode<T> rootNodeWithNothing() {
-        return new LeafPredicateNode<>(null,PredicateUtils.<T>nothing());
+    public static <T extends Comparable<T>> ColumnPredicateNode<T> rootNodeWithNothing() {
+        return new LeafPredicateNode<>(null, ColumnPredicateUtils.<T>nothing());
     }
 
     @Override
@@ -50,31 +50,31 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Predi
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         LeafPredicateNode<?> that = (LeafPredicateNode<?>) o;
-        return Objects.equal(predicate, that.predicate) && Objects.equal(parent, that.parent);
+        return Objects.equal(columnPredicate, that.columnPredicate) && Objects.equal(parent, that.parent);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(predicate, parent);
+        return Objects.hashCode(columnPredicate, parent);
     }
 
-    public static <T extends Comparable<? super T>> LeafPredicateNode<T> leaf(CompoundPredicateNode parent, Predicate<T> predicate) {
-        return new LeafPredicateNode<>(parent,predicate);
+    public static <T extends Comparable<? super T>> LeafPredicateNode<T> leaf(CompoundPredicateNode parent, ColumnPredicate<T> columnPredicate) {
+        return new LeafPredicateNode<>(parent, columnPredicate);
     }
 
     @Override
     public boolean isLeaf() {
-        return predicate != null;
+        return columnPredicate != null;
     }
 
     @Nonnull
     @Override
-    public Optional<Predicate<T>> getPredicate() {
-        return Optional.of(predicate);
+    public Optional<ColumnPredicate<T>> getPredicate() {
+        return Optional.of(columnPredicate);
     }
 
-    public Predicate<T> forceGet() {
-        return predicate;
+    public ColumnPredicate<T> forceGet() {
+        return columnPredicate;
     }
 
     @Override
@@ -90,14 +90,14 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Predi
 
     @Nonnull
     @Override
-    public Optional<Collection<PredicateNode<?>>> getMembers() {
+    public Optional<Collection<ColumnPredicateNode<?>>> getMembers() {
         return Optional.empty();
     }
 
     @Nonnull
     @Override
     public Optional<CyodaColumnHandle> getColumn() {
-        return Optional.ofNullable(predicate.getColumn());
+        return Optional.ofNullable(columnPredicate.getColumn());
     }
 
     @Nonnull
@@ -108,7 +108,7 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Predi
 
     @Nonnull
     @Override
-    public PredicateNode<T> withParent(CompoundPredicateNode parent) {
-        return new LeafPredicateNode<>(parent,predicate);
+    public ColumnPredicateNode<T> withParent(CompoundPredicateNode parent) {
+        return new LeafPredicateNode<>(parent, columnPredicate);
     }
 }

@@ -19,7 +19,7 @@ package com.cyoda.presto;
 
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.logic.Any;
-import com.cyoda.presto.client.logic.PredicateNode;
+import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
@@ -71,7 +71,7 @@ public class CyodaFilteringPageSource<T>
             ApiRequestHandler<T> requestHandler,
             CyodaTableHandle tableHandle,
             List<CyodaColumnHandle> columnHandles,
-            CyodaClient cyodaClient, PredicateNode<Any> predicates
+            CyodaClient cyodaClient, ColumnPredicateNode<Any> predicates
     ) {
         requireNonNull(requestHandler, "requestHandler is null");
         this.columnHandles = ImmutableList.copyOf(requireNonNull(columnHandles, "columnHandles is null"));

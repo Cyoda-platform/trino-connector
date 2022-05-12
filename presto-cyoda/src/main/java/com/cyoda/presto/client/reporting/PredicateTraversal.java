@@ -21,8 +21,8 @@ import com.cyoda.presto.CyodaErrorCode;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
 import com.cyoda.presto.client.logic.LeafPredicateNode;
-import com.cyoda.presto.client.logic.Predicate;
-import com.cyoda.presto.client.logic.PredicateNode;
+import com.cyoda.presto.client.logic.ColumnPredicate;
+import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.base.Preconditions;
 
@@ -43,13 +43,13 @@ public class PredicateTraversal {
 
     private final CompoundPredicateNode conjunctions;
 
-    private PredicateTraversal(@Nonnull Collection<PredicateNode<?>> conjunctions) {
+    private PredicateTraversal(@Nonnull Collection<ColumnPredicateNode<?>> conjunctions) {
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
         conjunctions.forEach(builder::addMember);
         this.conjunctions = builder.build();
     }
 
-    public static @Nonnull PredicateTraversal of(@Nonnull Collection<PredicateNode<?>> conjunctions){
+    public static @Nonnull PredicateTraversal of(@Nonnull Collection<ColumnPredicateNode<?>> conjunctions){
         Preconditions.checkNotNull(conjunctions,"conjunctions is null");
         return new PredicateTraversal(conjunctions);
     }
@@ -78,7 +78,7 @@ public class PredicateTraversal {
 
         while(!compoundQueue.isEmpty()) {
             CompoundPredicateNode node = compoundQueue.pop();
-            Collection<PredicateNode<?>> members = node.getMembers().orElse(Collections.emptyList());
+            Collection<ColumnPredicateNode<?>> members = node.getMembers().orElse(Collections.emptyList());
             members.forEach(member -> {
                 if (member instanceof LeafPredicateNode) {
                     if (member.getColumn().isPresent() && member.getColumn().get().getColumnName().equals(columnName)) {
@@ -120,8 +120,8 @@ public class PredicateTraversal {
 
     }
 
-    private Stream<String> extractFilterValues(Predicate<?> it) {
-        Predicate.PredicateType type = it.getType();
+    private Stream<String> extractFilterValues(ColumnPredicate<?> it) {
+        ColumnPredicate.PredicateType type = it.getType();
         switch (type) {
             case IN_LIST: {
                 return it.getInListValues().stream()

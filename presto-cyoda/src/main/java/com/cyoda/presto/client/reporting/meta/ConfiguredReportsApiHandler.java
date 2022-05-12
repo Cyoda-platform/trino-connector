@@ -23,7 +23,7 @@ import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.Any;
-import com.cyoda.presto.client.logic.PredicateNode;
+import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
@@ -161,12 +161,12 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
     public Optional<PagedModel<GridConfigFieldsView>> retrievePage(
             int page,
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns, PredicateNode<Any> predicates) {
+            List<CyodaColumnHandle> projectedColumns, ColumnPredicateNode<Any> predicates) {
 
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
 
 
-        Collection<PredicateNode<?>> conjunctions = PredicateNode.conjunctions(predicates);
+        Collection<ColumnPredicateNode<?>> conjunctions = ColumnPredicateNode.conjunctions(predicates);
         PredicateTraversal traversal = PredicateTraversal.of(conjunctions);
 
         List<String> columnsWithFilter = Collections.singletonList(REPORT_TYPE_COLUMN);
@@ -254,7 +254,7 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
     public Iterator<GridConfigFieldsView> getResponseIterator(
             int pageSize,
             CyodaTableHandle tableHandle,
-            PredicateNode<Any> predicates
+            ColumnPredicateNode<Any> predicates
     ) {
         List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
         return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();

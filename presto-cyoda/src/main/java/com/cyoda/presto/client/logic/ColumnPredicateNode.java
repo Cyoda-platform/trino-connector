@@ -24,7 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 
-public interface PredicateNode<T extends Comparable<? super T>> {
+public interface ColumnPredicateNode<T extends Comparable<? super T>> {
     /**
      * Start with real things
      *
@@ -32,7 +32,7 @@ public interface PredicateNode<T extends Comparable<? super T>> {
      * @return the members or if the root node is a leaf, the leaf as a singleton collection
      */
     @SuppressWarnings("java:S1452")
-    static Collection<PredicateNode<?>> conjunctions(PredicateNode<Any> predicates) {
+    static Collection<ColumnPredicateNode<?>> conjunctions(ColumnPredicateNode<Any> predicates) {
         return Optional.ofNullable(predicates).orElse(LeafPredicateNode.rootNodeWithNothing()).getMembers()
                 .orElse(Collections.singletonList(LeafPredicateNode.rootNodeWithNothing()));
     }
@@ -41,16 +41,17 @@ public interface PredicateNode<T extends Comparable<? super T>> {
 
     @Nonnull PredicateNodeType getPredicateNodeType();
 
-    @Nonnull Optional<Predicate<T>> getPredicate();
+    @Nonnull Optional<ColumnPredicate<T>> getPredicate();
 
     @Nonnull Connective getConnective();
 
     @SuppressWarnings("java:S1452")
-    @Nonnull Optional<Collection<PredicateNode<?>>> getMembers();
+    @Nonnull Optional<Collection<ColumnPredicateNode<?>>> getMembers();
 
     @Nonnull Optional<CyodaColumnHandle> getColumn();
 
     @Nonnull Optional<CompoundPredicateNode> getParent();
 
-    @Nonnull PredicateNode<T> withParent(CompoundPredicateNode parent);
+    @Nonnull
+    ColumnPredicateNode<T> withParent(CompoundPredicateNode parent);
 }

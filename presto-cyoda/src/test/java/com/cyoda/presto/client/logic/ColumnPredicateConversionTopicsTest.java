@@ -23,7 +23,7 @@ import org.testng.annotations.Test;
 
 import java.util.Arrays;
 
-public class PredicateConversionTopicsTest {
+public class ColumnPredicateConversionTopicsTest {
 
     @Test
     public void testMaxIntValue() {
@@ -35,7 +35,7 @@ public class PredicateConversionTopicsTest {
 
         // There should not be any Exceptions flying.
         Arrays.stream(DataType.values()).filter(DataType::isIntType)
-                .map(PredicateUtils::minValueOfIntType)
+                .map(ColumnPredicateUtils::minValueOfIntType)
                 .forEach(Assert::notNull);
 
 
