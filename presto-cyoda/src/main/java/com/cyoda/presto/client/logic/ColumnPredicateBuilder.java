@@ -34,7 +34,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static com.cyoda.presto.client.logic.LeafPredicateNode.leaf;
-import static com.cyoda.presto.client.logic.LeafPredicateNode.unTypedLeaf;
 import static com.cyoda.presto.client.logic.PredicateBuilderDebugger.debug;
 import static com.cyoda.presto.client.logic.ColumnPredicateUtils.*;
 import static com.google.common.base.Preconditions.checkState;
@@ -201,8 +200,8 @@ public class ColumnPredicateBuilder {
         return newComparisonPredicateFromNative(columnHandle, ColumnPredicate.ComparisonOp.EQUAL, nativeValue);
     }
 
-    public static <S extends Comparable<? super S>> ColumnPredicate<S> createEqualsPredicate(CyodaColumnHandle columnHandle, Object nativeValue, Class<S> clazz) {
-        return newComparisonPredicateFromNative(columnHandle, ColumnPredicate.ComparisonOp.EQUAL, nativeValue,clazz);
+    private static LeafPredicateNode<?> unTypedLeaf(CompoundPredicateNode parent, ColumnPredicate columnPredicate) {
+        return leaf(parent,columnPredicate);
     }
 
 }

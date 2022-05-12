@@ -24,9 +24,9 @@ import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.Any;
+import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
-import com.cyoda.presto.client.logic.ColumnPredicateBuilder;
 import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
@@ -134,9 +134,9 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
         Slice reportConfigIdSlice = DataTypeValue.of(reportConfigId).asSlice(VarcharType.VARCHAR);
 
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
-        builder.addLeaf(ColumnPredicateBuilder.createEqualsPredicate(reportIdColumn, reportIdSlice,String.class));
-        builder.addLeaf(ColumnPredicateBuilder.createEqualsPredicate(groupingVersionColumn, groupingVersionSlice,String.class));
-        builder.addLeaf(ColumnPredicateBuilder.createEqualsPredicate(reportConfigurationIdColumn, reportConfigIdSlice,String.class));
+        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(reportIdColumn, reportIdSlice,String.class));
+        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(groupingVersionColumn, groupingVersionSlice,String.class));
+        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(reportConfigurationIdColumn, reportConfigIdSlice,String.class));
         builder.addMember(predicates);
 
         ColumnPredicateNode<Any> thesePredicates = builder.build();

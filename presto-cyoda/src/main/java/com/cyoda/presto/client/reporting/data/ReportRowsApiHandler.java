@@ -24,9 +24,9 @@ import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.Any;
+import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
-import com.cyoda.presto.client.logic.ColumnPredicateBuilder;
 import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
@@ -221,8 +221,8 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         Slice groupingValueSlice = DataTypeValue.of(groupValueJsonBase64).asSlice(VarcharType.VARCHAR);
 
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
-        builder.addLeaf(ColumnPredicateBuilder.createEqualsPredicate(reportIdColumn, historyIdSlice,String.class));
-        builder.addLeaf(ColumnPredicateBuilder.createEqualsPredicate(groupJsonBase64Column, groupingValueSlice,String.class));
+        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(reportIdColumn, historyIdSlice,String.class));
+        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(groupJsonBase64Column, groupingValueSlice,String.class));
         builder.addMember(withReportPredicate);
         ColumnPredicateNode<Any> predicates = builder.build();
 
@@ -259,7 +259,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         Slice reportConfigIdSlice = DataTypeValue.of(reportConfigurationId).asSlice(VarcharType.VARCHAR);
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
         builder.addMember(predicates);
-        builder.addLeaf(ColumnPredicateBuilder.createEqualsPredicate(reportConfigIdColumn, reportConfigIdSlice,String.class));
+        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(reportConfigIdColumn, reportConfigIdSlice,String.class));
         ColumnPredicateNode<Any> withReportPredicate = builder.build();
 
         Iterable<GroupingHandle> statsIterable = () -> groupsApiHandler

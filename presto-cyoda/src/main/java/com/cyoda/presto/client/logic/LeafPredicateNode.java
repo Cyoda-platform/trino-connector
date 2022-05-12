@@ -62,9 +62,6 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Colum
         return new LeafPredicateNode<>(parent, columnPredicate);
     }
 
-    public static LeafPredicateNode<?> unTypedLeaf(CompoundPredicateNode parent, ColumnPredicate<?> columnPredicate) {
-        return new LeafPredicateNode(parent, columnPredicate);
-    }
     @Override
     public boolean isLeaf() {
         return columnPredicate != null;

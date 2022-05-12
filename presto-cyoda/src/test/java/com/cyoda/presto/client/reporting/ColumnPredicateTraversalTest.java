@@ -17,9 +17,9 @@
 
 package com.cyoda.presto.client.reporting;
 
+import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.ColumnPredicate;
-import com.cyoda.presto.client.logic.ColumnPredicateBuilder;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.type.VarcharType;
@@ -78,7 +78,7 @@ public class ColumnPredicateTraversalTest {
         when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
         when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        ColumnPredicate<String> hello = ColumnPredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(
                 Collections.singletonList(builder(AND).addLeaf(hello).build())
         ).assembleFilterings(mockHandle1.getColumnName());
@@ -97,7 +97,7 @@ public class ColumnPredicateTraversalTest {
         when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
         when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        ColumnPredicate<String> hello = ColumnPredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(
                 Collections.singletonList(builder(AND).addLeaf(hello).build())
         ).assembleFilterings(mockHandle1.getColumnName());
@@ -115,8 +115,8 @@ public class ColumnPredicateTraversalTest {
         when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
         when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        ColumnPredicate<String> hello = ColumnPredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> goodbye = ColumnPredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("goodbye"),String.class);
+        ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> goodbye = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("goodbye"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(hello).build(),
@@ -136,8 +136,8 @@ public class ColumnPredicateTraversalTest {
         when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
         when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        ColumnPredicate<String> hello = ColumnPredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> sameAsHello = ColumnPredicateBuilder.createEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> sameAsHello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(hello).build(),
@@ -164,8 +164,8 @@ public class ColumnPredicateTraversalTest {
         when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
         when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        ColumnPredicate<String> hello = ColumnPredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> sameAsHello = ColumnPredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> sameAsHello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(hello).build(),
@@ -190,11 +190,11 @@ public class ColumnPredicateTraversalTest {
         when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
         when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        ColumnPredicate<String> myHello = ColumnPredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> myGoodbye = ColumnPredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"),String.class);
+        ColumnPredicate<String> myHello = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> myGoodbye = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"),String.class);
 
-        ColumnPredicate<String> notMyHello = ColumnPredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> notMyGoodbye = ColumnPredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
+        ColumnPredicate<String> notMyHello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(notMyHello).build(),
@@ -226,9 +226,9 @@ public class ColumnPredicateTraversalTest {
         when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
         when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        ColumnPredicate<String> myHello = ColumnPredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> myHello = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
 
-        ColumnPredicate<String> notMyGoodbye = ColumnPredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
+        ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(myHello).build(),
@@ -257,10 +257,10 @@ public class ColumnPredicateTraversalTest {
         when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
         when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        ColumnPredicate<String> myHello = ColumnPredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> myGoodbye = ColumnPredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"),String.class);
+        ColumnPredicate<String> myHello = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> myGoodbye = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"),String.class);
 
-        ColumnPredicate<String> notMyGoodbye = ColumnPredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
+        ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(myHello).build(),
@@ -290,9 +290,9 @@ public class ColumnPredicateTraversalTest {
         when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
         when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        ColumnPredicate<String> myHello = ColumnPredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> myHello = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
 
-        ColumnPredicate<String> notMyGoodbye = ColumnPredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
+        ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(myHello).build(),
@@ -323,11 +323,11 @@ public class ColumnPredicateTraversalTest {
         when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
         when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        ColumnPredicate<String> myHello = ColumnPredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> myGoodbye = ColumnPredicateBuilder.createEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"),String.class);
+        ColumnPredicate<String> myHello = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> myGoodbye = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"),String.class);
 
-        ColumnPredicate<String> notMyHello = ColumnPredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> notMyGoodbye = ColumnPredicateBuilder.createEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
+        ColumnPredicate<String> notMyHello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
                         Arrays.asList(
                                 builder(AND).addLeaf(notMyHello).build(),

@@ -49,6 +49,7 @@ import java.util.TreeSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import static com.cyoda.presto.client.logic.ColumnPredicate.ComparisonOp.EQUAL;
 import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class ColumnPredicateUtils {
@@ -746,6 +747,10 @@ public class ColumnPredicateUtils {
                         + columnHandle.getColumnName() + ": " + value.value + "(" + value.supportedDataType + ")");
 
         }
+    }
+
+    public static <S extends Comparable<? super S>> ColumnPredicate<S> newEqualsPredicate(CyodaColumnHandle columnHandle, Object nativeValue, Class<S> clazz) {
+        return newComparisonPredicateFromNative(columnHandle, EQUAL, nativeValue,clazz);
     }
 
     @SuppressWarnings("java:S1452")

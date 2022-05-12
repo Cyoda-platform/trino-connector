@@ -128,7 +128,7 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
     }
 
 
-    @SuppressWarnings({"java:S1452", "java:S3740", "rawtypes"})
+    @SuppressWarnings({"java:S1452", "java:S3740", "rawtypes", "unchecked"}) // No other choice
     public static DataTypeValue<?> byType(Object value, Type type) {
         DataType dataType = fromType(type);
         return new DataTypeValue(value, dataType.getJavaType());
