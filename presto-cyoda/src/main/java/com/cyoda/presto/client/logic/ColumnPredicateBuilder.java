@@ -83,7 +83,7 @@ public class ColumnPredicateBuilder {
 
                         Object singleValue = domain.getSingleValue();
                         ColumnPredicate<?> columnPredicate = createDumbEqualsPredicate(columnHandle, singleValue);
-                        conjunctsBuilder.add(unTypedLeaf(null, columnPredicate));
+                        conjunctsBuilder.add(unTypedOrphanedLeaf(columnPredicate));
                         sqlConjunctsBuilder.add(columnHandle.getColumnName()+" = ?");
                     } else {
                         int count = domain.getValues().getValuesProcessor().transform(
@@ -107,7 +107,7 @@ public class ColumnPredicateBuilder {
                                                 ColumnPredicate.ComparisonOp op = (range.isLowInclusive())
                                                         ? ColumnPredicate.ComparisonOp.GREATER_EQUAL : ColumnPredicate.ComparisonOp.GREATER;
                                                 ColumnPredicate<?> columnPredicate = newComparisonPredicateFromNative(columnHandle, op, range.getLowBoundedValue());
-                                                LeafPredicateNode<?> leaf = unTypedLeaf(null, columnPredicate);
+                                                LeafPredicateNode<?> leaf = unTypedOrphanedLeaf(columnPredicate);
                                                 rangeConjuncts.add(leaf);
                                                 rangeConjunctsColumnNames.add(columnName);
                                             }
@@ -115,7 +115,7 @@ public class ColumnPredicateBuilder {
                                                 ColumnPredicate.ComparisonOp op = (range.isHighInclusive())
                                                         ? ColumnPredicate.ComparisonOp.LESS_EQUAL : ColumnPredicate.ComparisonOp.LESS;
                                                 ColumnPredicate<?> columnPredicate = newComparisonPredicateFromNative(columnHandle, op, range.getHighBoundedValue());
-                                                LeafPredicateNode<?> leaf = unTypedLeaf(null, columnPredicate);
+                                                LeafPredicateNode<?> leaf = unTypedOrphanedLeaf(columnPredicate);
                                                 rangeConjuncts.add(leaf);
                                                 rangeConjunctsColumnNames.add(columnName);
                                             }
@@ -130,10 +130,10 @@ public class ColumnPredicateBuilder {
                                     // Add back all of the possible single values either as an equality or an IN predicate
                                     if (singleValues.size() == 1) {
                                         ColumnPredicate<?> equalsColumnPredicate = createDumbEqualsPredicate(columnHandle, singleValues.get(0));
-                                        disjunctsBuilder.add(unTypedLeaf(null, equalsColumnPredicate));
+                                        disjunctsBuilder.add(unTypedOrphanedLeaf(equalsColumnPredicate));
                                         disjunctSql.add(columnName +" = ?");
                                     } else if (singleValues.size() > 1) {
-                                        disjunctsBuilder.add(unTypedLeaf(null,newInListPredicateFromDiscrete(columnHandle, new DiscreteValues() {
+                                        disjunctsBuilder.add(unTypedOrphanedLeaf(newInListPredicateFromDiscrete(columnHandle, new DiscreteValues() {
                                             @Override
                                             public boolean isWhiteList() {
                                                 return true;
@@ -165,7 +165,7 @@ public class ColumnPredicateBuilder {
                                 discreteValues -> {
                                     boolean negate = !discreteValues.isWhiteList();
                                     ColumnPredicate<?> columnPredicate = newInListPredicateFromDiscrete(columnHandle, discreteValues).negate(negate);
-                                    LeafPredicateNode<?> leaf = unTypedLeaf(null, columnPredicate);
+                                    LeafPredicateNode<?> leaf = unTypedOrphanedLeaf(columnPredicate);
                                     conjunctsBuilder.add(leaf);
 
                                     String values = Joiner.on(",").join(nCopies(discreteValues.getValues().size(), "?"));
@@ -200,8 +200,8 @@ public class ColumnPredicateBuilder {
         return newComparisonPredicateFromNative(columnHandle, ColumnPredicate.ComparisonOp.EQUAL, nativeValue);
     }
 
-    private static LeafPredicateNode<?> unTypedLeaf(CompoundPredicateNode parent, ColumnPredicate columnPredicate) {
-        return leaf(parent,columnPredicate);
+    private static LeafPredicateNode<?> unTypedOrphanedLeaf(ColumnPredicate columnPredicate) {
+        return leaf(null,columnPredicate);
     }
 
 }
