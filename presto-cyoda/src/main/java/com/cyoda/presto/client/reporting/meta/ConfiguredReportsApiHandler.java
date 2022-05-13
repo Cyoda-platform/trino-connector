@@ -83,10 +83,11 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
     enum ColumnDef implements ColumnDefinition {
         ID              (0, REPORT_ID_COLUMN, StandardTypes.VARCHAR,STRING),
         NAME            (1, REPORT_NAME_COLUMN,StandardTypes.VARCHAR, STRING),
-        DESCRIPTION     (1, REPORT_DESCRIPTION_COLUMN,StandardTypes.VARCHAR,STRING),
-        TYPE            (2, REPORT_TYPE_COLUMN,StandardTypes.VARCHAR,STRING),
-        USER_ID         (3, REPORT_USER_ID_COLUMN,StandardTypes.VARCHAR,STRING),
-        CREATION_DATE   (4, REPORT_CREATION_DATE_COLUMN,StandardTypes.TIMESTAMP, LOCAL_DATE_TIME);
+        TABLE_NAME      (2, REPORT_TABLE_NAME_COLUMN,StandardTypes.VARCHAR, STRING),
+        DESCRIPTION     (3, REPORT_DESCRIPTION_COLUMN,StandardTypes.VARCHAR,STRING),
+        TYPE            (4, REPORT_TYPE_COLUMN,StandardTypes.VARCHAR,STRING),
+        USER_ID         (5, REPORT_USER_ID_COLUMN,StandardTypes.VARCHAR,STRING),
+        CREATION_DATE   (6, REPORT_CREATION_DATE_COLUMN,StandardTypes.TIMESTAMP, LOCAL_DATE_TIME);
 
         private final int pos;
         private final String fieldName;
@@ -198,20 +199,22 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
             final PagedModel<GridConfigFieldsView> gridConfigFieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
-            addReportName(gridConfigFieldsViews);
+            addReportAndTableName(gridConfigFieldsViews);
             return Optional.ofNullable(gridConfigFieldsViews);
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);
         }
     }
 
-    private void addReportName(PagedModel<GridConfigFieldsView> gridConfigFieldsViews) {
+    private void addReportAndTableName(PagedModel<GridConfigFieldsView> gridConfigFieldsViews) {
         if ( gridConfigFieldsViews == null ) return;
         Collection<GridConfigFieldsView> content = gridConfigFieldsViews.getContent();
         content.forEach( it -> {
             String id = it.getGridConfigFields().get("id");
             String repName = toReportName(id);
             it.addField(REPORT_NAME_COLUMN,repName);
+            String tableName = reportNameToTableName(repName).toLowerCase();
+            it.addField(REPORT_TABLE_NAME_COLUMN,tableName);
         });
     }
 

@@ -185,7 +185,7 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         return reportName;
     }
 
-    protected static @Nonnull String reportNameToTableName(@Nonnull String reportName) {
+    public static @Nonnull String reportNameToTableName(@Nonnull String reportName) {
         Preconditions.checkNotNull(reportName,"reportName is null");
         Preconditions.checkArgument(!reportName.isEmpty(),"reportName is empty");
         String result = reportName

@@ -54,7 +54,7 @@ public class ColumnPredicateBuilder {
 
         LOG.debug("Taken from PredicateBuilderDebugger: %s",() -> debug(constraintSummary));
 
-        ImmutableList.Builder<ColumnPredicateNode<?>> conjunctsBuilder = ImmutableList.builder();
+        CompoundPredicateNode.Builder conjunctsBuilder = CompoundPredicateNode.builder(Connective.AND);
         ImmutableList.Builder<String> sqlConjunctsBuilder = ImmutableList.builder();
 
         if (constraintSummary.isNone()) return CompoundPredicateNode.empty(null);
@@ -68,22 +68,22 @@ public class ColumnPredicateBuilder {
                 Domain domain = columnDomain.getDomain();
 
                 if (domain.isNone()) { // values.isNone() && !nullAllowed
-                    conjunctsBuilder.add(CompoundPredicateNode.empty(null));
+                    conjunctsBuilder.addMember(CompoundPredicateNode.empty(null));
                     sqlConjunctsBuilder.add("FALSE");
                 } else {
                     if (domain.isOnlyNull()) { // values.isNone() && isNullAllowed
-                        conjunctsBuilder.add(leaf(null,newIsNullPredicateAny(columnHandle)));
+                        conjunctsBuilder.addLeaf(newIsNullPredicateAny(columnHandle));
                         sqlConjunctsBuilder.add(columnName + " IS NULL");
                     } else if (domain.getValues().isAll() && domain.isNullAllowed()) {
                         sqlConjunctsBuilder.add("TRUE");
                     } else if (domain.getValues().isAll() && !domain.isNullAllowed()) {
-                        conjunctsBuilder.add(leaf(null,newIsNotNullPredicateAny(columnHandle)));
+                        conjunctsBuilder.addLeaf(newIsNotNullPredicateAny(columnHandle));
                         sqlConjunctsBuilder.add(columnName + " IS NOT NULL");
                     } else if (domain.isSingleValue()) {
 
                         Object singleValue = domain.getSingleValue();
                         ColumnPredicate<?> columnPredicate = createDumbEqualsPredicate(columnHandle, singleValue);
-                        conjunctsBuilder.add(unTypedOrphanedLeaf(columnPredicate));
+                        conjunctsBuilder.addLeaf(columnPredicate);
                         sqlConjunctsBuilder.add(columnHandle.getColumnName()+" = ?");
                     } else {
                         int count = domain.getValues().getValuesProcessor().transform(
@@ -91,7 +91,7 @@ public class ColumnPredicateBuilder {
                                     // Add disjuncts for ranges --> an IN LIST
                                     List<Object> singleValues = new ArrayList<>();
                                     List<String> disjunctSql = new ArrayList<>();
-                                    ImmutableList.Builder<ColumnPredicateNode<?>> disjunctsBuilder = ImmutableList.builder();
+                                    CompoundPredicateNode.Builder disjunctsBuilder = CompoundPredicateNode.builder(Connective.OR);
 
 
                                     int disjuncts = 0;
@@ -101,27 +101,26 @@ public class ColumnPredicateBuilder {
                                         if (range.isSingleValue()) {
                                             singleValues.add(range.getSingleValue());
                                         } else {
-                                            List<ColumnPredicateNode<?>> rangeConjuncts = new ArrayList<>();
+                                            CompoundPredicateNode.Builder rangeConjuncts = CompoundPredicateNode.builder(Connective.AND);
                                             List<String> rangeConjunctsColumnNames = new ArrayList<>();
                                             if (!range.isLowUnbounded()) {
                                                 ColumnPredicate.ComparisonOp op = (range.isLowInclusive())
                                                         ? ColumnPredicate.ComparisonOp.GREATER_EQUAL : ColumnPredicate.ComparisonOp.GREATER;
                                                 ColumnPredicate<?> columnPredicate = newComparisonPredicateFromNative(columnHandle, op, range.getLowBoundedValue());
-                                                LeafPredicateNode<?> leaf = unTypedOrphanedLeaf(columnPredicate);
-                                                rangeConjuncts.add(leaf);
+                                                rangeConjuncts.addLeaf(columnPredicate);
                                                 rangeConjunctsColumnNames.add(columnName);
                                             }
                                             if (!range.isHighUnbounded()) {
                                                 ColumnPredicate.ComparisonOp op = (range.isHighInclusive())
                                                         ? ColumnPredicate.ComparisonOp.LESS_EQUAL : ColumnPredicate.ComparisonOp.LESS;
                                                 ColumnPredicate<?> columnPredicate = newComparisonPredicateFromNative(columnHandle, op, range.getHighBoundedValue());
-                                                LeafPredicateNode<?> leaf = unTypedOrphanedLeaf(columnPredicate);
-                                                rangeConjuncts.add(leaf);
+                                                rangeConjuncts.addLeaf(columnPredicate);
                                                 rangeConjunctsColumnNames.add(columnName);
                                             }
                                             // If rangeConjuncts is null, then the range was ALL, which should already have been checked for
-                                            checkState(!rangeConjuncts.isEmpty());
-                                            disjunctsBuilder.add(CompoundPredicateNode.of(null,rangeConjuncts, Connective.AND));
+                                            CompoundPredicateNode rangeConjunctsResult = rangeConjuncts.build();
+                                            checkState(!rangeConjunctsResult.isEmpty());
+                                            disjunctsBuilder.addMember(rangeConjunctsResult);
                                             disjunctSql.add("(" + Joiner.on(" AND ").join(rangeConjunctsColumnNames) + ")");
                                             disjuncts++;
                                         }
@@ -130,10 +129,10 @@ public class ColumnPredicateBuilder {
                                     // Add back all of the possible single values either as an equality or an IN predicate
                                     if (singleValues.size() == 1) {
                                         ColumnPredicate<?> equalsColumnPredicate = createDumbEqualsPredicate(columnHandle, singleValues.get(0));
-                                        disjunctsBuilder.add(unTypedOrphanedLeaf(equalsColumnPredicate));
+                                        disjunctsBuilder.addLeaf(equalsColumnPredicate);
                                         disjunctSql.add(columnName +" = ?");
                                     } else if (singleValues.size() > 1) {
-                                        disjunctsBuilder.add(unTypedOrphanedLeaf(newInListPredicateFromDiscrete(columnHandle, new DiscreteValues() {
+                                        disjunctsBuilder.addLeaf(newInListPredicateFromDiscrete(columnHandle, new DiscreteValues() {
                                             @Override
                                             public boolean isWhiteList() {
                                                 return true;
@@ -143,7 +142,7 @@ public class ColumnPredicateBuilder {
                                             public Collection<Object> getValues() {
                                                 return singleValues;
                                             }
-                                        })));
+                                        }));
                                         disjunctSql.add(columnName + " IN (" + Joiner.on(",").join(nCopies(singleValues.size(), "?")) + ")");
                                     }
                                     disjuncts += singleValues.size();
@@ -151,22 +150,19 @@ public class ColumnPredicateBuilder {
                                     checkState(disjuncts > 0, "[Cyoda] Expected that we have some disjuncts");
                                     // Add nullability disjuncts
                                     if (domain.isNullAllowed()) {
-                                        disjunctsBuilder.add(leaf(null,newIsNotNullPredicateAny(columnHandle)));
+                                        disjunctsBuilder.addLeaf(newIsNotNullPredicateAny(columnHandle));
                                         disjunctSql.add(columnName + " IS NULL");
                                     }
 
                                     sqlConjunctsBuilder.add("(" + Joiner.on(" OR ").join(disjunctSql) + ")");
-                                    List<ColumnPredicateNode<?>> disjunctions = disjunctsBuilder.build();
-                                    CompoundPredicateNode compoundPredicate = CompoundPredicateNode.of(null,disjunctions, Connective.OR);
-                                    conjunctsBuilder.add(compoundPredicate);
+                                    conjunctsBuilder.addMember(disjunctsBuilder.build());
                                     return disjuncts;
                                 },
 
                                 discreteValues -> {
                                     boolean negate = !discreteValues.isWhiteList();
                                     ColumnPredicate<?> columnPredicate = newInListPredicateFromDiscrete(columnHandle, discreteValues).negate(negate);
-                                    LeafPredicateNode<?> leaf = unTypedOrphanedLeaf(columnPredicate);
-                                    conjunctsBuilder.add(leaf);
+                                    conjunctsBuilder.addLeaf(columnPredicate);
 
                                     String values = Joiner.on(",").join(nCopies(discreteValues.getValues().size(), "?"));
                                     String predicateString = columnName + (discreteValues.isWhiteList() ? "" : " NOT") + " IN (" + values + ")";
@@ -187,7 +183,7 @@ public class ColumnPredicateBuilder {
             }
             LOG.debug("Equivalent SQL:\n%s",() -> assembleSql(sqlConjunctsBuilder.build()));
         }
-        return CompoundPredicateNode.of(null,conjunctsBuilder.build(), Connective.AND);
+        return conjunctsBuilder.build();
     }
 
     private static String assembleSql(List<String> conjuncts) {
@@ -199,9 +195,4 @@ public class ColumnPredicateBuilder {
     private static ColumnPredicate<?> createDumbEqualsPredicate(CyodaColumnHandle columnHandle, Object nativeValue) {
         return newComparisonPredicateFromNative(columnHandle, ColumnPredicate.ComparisonOp.EQUAL, nativeValue);
     }
-
-    private static LeafPredicateNode<?> unTypedOrphanedLeaf(ColumnPredicate columnPredicate) {
-        return leaf(null,columnPredicate);
-    }
-
 }

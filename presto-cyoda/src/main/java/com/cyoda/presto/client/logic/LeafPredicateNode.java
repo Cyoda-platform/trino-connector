@@ -21,7 +21,6 @@ import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Optional;
 
@@ -32,17 +31,13 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Colum
     private final ColumnPredicate<T> columnPredicate;
     private final CompoundPredicateNode parent;
 
-    private LeafPredicateNode(@Nullable CompoundPredicateNode parent, @Nonnull ColumnPredicate<T> columnPredicate) {
+    private LeafPredicateNode(@Nonnull CompoundPredicateNode parent, @Nonnull ColumnPredicate<T> columnPredicate) {
+        this.parent = requireNonNull(parent, "parent is null");
         this.columnPredicate = requireNonNull(columnPredicate, "predicate is null");
-        this.parent = parent;
     }
 
     public static ColumnPredicateNode<Any> all(CompoundPredicateNode parent, CyodaColumnHandle handle) {
         return new LeafPredicateNode<>(parent, ColumnPredicateUtils.all(handle));
-    }
-
-    public static <T extends Comparable<T>> ColumnPredicateNode<T> rootNodeWithNothing() {
-        return new LeafPredicateNode<>(null, ColumnPredicateUtils.<T>nothing());
     }
 
     @Override
@@ -58,7 +53,7 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Colum
         return Objects.hashCode(columnPredicate, parent);
     }
 
-    public static <T extends Comparable<? super T>> LeafPredicateNode<T> leaf(CompoundPredicateNode parent, ColumnPredicate<T> columnPredicate) {
+    static @Nonnull <T extends Comparable<? super T>> LeafPredicateNode<T> leaf(@Nonnull CompoundPredicateNode parent, ColumnPredicate<T> columnPredicate) {
         return new LeafPredicateNode<>(parent, columnPredicate);
     }
 
@@ -73,7 +68,7 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Colum
         return Optional.of(columnPredicate);
     }
 
-    public ColumnPredicate<T> forceGet() {
+    public @Nonnull ColumnPredicate<T> forceGet() {
         return columnPredicate;
     }
 

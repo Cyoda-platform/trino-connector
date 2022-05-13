@@ -25,16 +25,18 @@ import java.util.Collections;
 import java.util.Optional;
 
 public interface ColumnPredicateNode<T extends Comparable<? super T>> {
+
     /**
      * Start with real things
      *
      * @param predicates the root node
-     * @return the members or if the root node is a leaf, the leaf as a singleton collection
+     * @return the members
      */
     @SuppressWarnings("java:S1452")
     static Collection<ColumnPredicateNode<?>> conjunctions(ColumnPredicateNode<Any> predicates) {
-        return Optional.ofNullable(predicates).orElse(LeafPredicateNode.rootNodeWithNothing()).getMembers()
-                .orElse(Collections.singletonList(LeafPredicateNode.rootNodeWithNothing()));
+        return Optional.ofNullable(predicates).orElse(CompoundPredicateNode.empty())
+                .getMembers()
+                .orElse(Collections.singletonList(CompoundPredicateNode.empty()));
     }
 
     boolean isLeaf();

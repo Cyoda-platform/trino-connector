@@ -21,6 +21,7 @@ import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.google.common.collect.ImmutableList;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Objects;
@@ -29,14 +30,6 @@ import java.util.stream.Collectors;
 
 
 public class CompoundPredicateNode implements ColumnPredicateNode<Any> {
-
-    public static CompoundPredicateNode empty(CompoundPredicateNode parent) {
-        return new CompoundPredicateNode(parent,Collections.emptyList(), Connective.NONE);
-    }
-
-    public static Builder builder(Connective connective) {
-        return new Builder(null, connective);
-    }
 
     /**
      * The members of the compound predicate.
@@ -50,9 +43,9 @@ public class CompoundPredicateNode implements ColumnPredicateNode<Any> {
     private final CompoundPredicateNode parent;
 
     private CompoundPredicateNode(
-            CompoundPredicateNode parent,
-            Collection<ColumnPredicateNode<?>> members,
-            Connective connective) {
+            @Nullable CompoundPredicateNode parent,
+            @Nonnull Collection<ColumnPredicateNode<?>> members,
+            @Nonnull Connective connective) {
 
         this.members = Objects.requireNonNull(members,"members is null");
         this.connective = connective;
@@ -62,10 +55,6 @@ public class CompoundPredicateNode implements ColumnPredicateNode<Any> {
 
     public Builder childBuilder(Connective connective) {
         return new Builder(this, connective);
-    }
-
-    public static CompoundPredicateNode of(CompoundPredicateNode parent, Collection<ColumnPredicateNode<?>> members, Connective connective) {
-        return new CompoundPredicateNode(parent, members, connective);
     }
 
     @Override
@@ -131,15 +120,36 @@ public class CompoundPredicateNode implements ColumnPredicateNode<Any> {
         );
     }
 
+    public boolean isEmpty() {
+        return members.isEmpty();
+    }
+
+    public static CompoundPredicateNode empty(CompoundPredicateNode parent) {
+        return new CompoundPredicateNode(parent,Collections.emptyList(), Connective.NONE);
+    }
+
+    public static Builder builder(Connective connective) {
+        return new Builder(null, connective);
+    }
+
+    public static CompoundPredicateNode of(CompoundPredicateNode parent, Collection<ColumnPredicateNode<?>> members, Connective connective) {
+        return new CompoundPredicateNode(parent, members, connective);
+    }
+
+    public static CompoundPredicateNode empty() {
+        return new CompoundPredicateNode(null,Collections.emptyList(),Connective.NONE);
+    }
+
     public static class Builder {
 
         private final Connective connective;
         private final CompoundPredicateNode parent;
         ImmutableList.Builder<ColumnPredicateNode<?>> membersBuilder;
+        private final CompoundPredicateNode rootHolder = empty();
 
         private Builder(CompoundPredicateNode parent, Connective connective) {
             this.connective = connective;
-            this.parent = parent;
+            this.parent = parent != null ? parent : rootHolder;
             this.membersBuilder = ImmutableList.builder();
         }
 
@@ -148,7 +158,7 @@ public class CompoundPredicateNode implements ColumnPredicateNode<Any> {
             return this;
         }
 
-        public <S extends Comparable<? super S>> Builder addLeaf(ColumnPredicate<S> columnPredicate) {
+        public Builder addLeaf(ColumnPredicate columnPredicate) {
             membersBuilder.add(LeafPredicateNode.leaf(parent, columnPredicate));
             return this;
         }

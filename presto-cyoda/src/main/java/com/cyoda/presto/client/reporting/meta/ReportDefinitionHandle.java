@@ -24,6 +24,7 @@ import java.util.List;
 public class ReportDefinitionHandle {
     public static final String REPORT_ID_COLUMN = "id";
     public static final String REPORT_NAME_COLUMN = "reportName";
+    public static final String REPORT_TABLE_NAME_COLUMN = "tableName";
     public static final String REPORT_TYPE_COLUMN = "type";
     public static final String REPORT_DESCRIPTION_COLUMN = "description";
     public static final String REPORT_USER_ID_COLUMN = "userId";
