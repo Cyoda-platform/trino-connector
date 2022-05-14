@@ -69,6 +69,10 @@ import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.*;
 import static com.cyoda.presto.client.types.DataType.LIST;
 import static com.cyoda.presto.client.types.DataType.STRING;
 
+// TODO: Need to have a plan/solution for report configurations that have changed, and for which existing reports
+// exist (with the old version). Maybe we should have a design (in Cyoda) that assembles possible report configurations
+// from report histories, and generates the reports table from that. Or better yet, have an API endpoint that
+// returns "all" report configurations, existing ones and ones that are stored with a report, in an aggregated fashion
 public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportDefinitionHandle>
         implements PagingApiRequestHandler<ReportDefinitionHandle> {
 
@@ -218,6 +222,11 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
             throw new IllegalArgumentException(INVALID_REPORT_DEFINITION_FOR+reportName+". Structure is not as expected");
         }
 
+        // TODO: Need to cover complex types, such as arrays and maps. Example: if the path ends with a [*], it's array
+        // tenantId.legalEntity.meta.[*] --> a Map
+        // companyId.employeeIds.[*]@org#cyoda#gs#business#model#companydata#SmallCompany$EntityRef.employeeId -> an Array
+        // In such cases, we also need to capture a parametrized type, i.e. an map/array, with elements of a given type.
+        // See also below, when we do a toType(dataType.getTypeString(),null,null)
         ImmutableList.Builder<CyodaColumnHandle> builder = ImmutableList.builder();
         AtomicInteger position = new AtomicInteger();
         columns.forEach(column -> {
