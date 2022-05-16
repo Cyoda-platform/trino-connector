@@ -136,7 +136,7 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
             return Optional.ofNullable(fieldsViews)
                     .map(item->{
                         List<RowHandle> handles = item.getContent().stream()
-                                .map(handle -> new RowHandle(reportId, groupJsonString, handle))
+                                .map(reportRow -> new RowHandle(reportId, groupJsonString, reportRow))
                                 .collect(Collectors.toList());
                         return PagedModel.of(handles,item.getMetadata());
                     });
