@@ -28,8 +28,10 @@ import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
+import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.GroupHeader;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeManager;
@@ -79,7 +81,7 @@ import static com.cyoda.presto.client.types.DataType.UUID_TYPE;
 public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle>
         implements PagingApiRequestHandler<GroupingHandle> {
 
-
+    protected static final SupplierLogger LOG = SupplierLogger.get(InternalReportGroupsApiHandler.class);
 
     public static final String REPORT_GROUPS_TEMPLATE = "/{" + HISTORY_REPORT_ID_COLUMN + "" +
             "}/{" +

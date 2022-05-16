@@ -31,6 +31,7 @@ import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
@@ -65,6 +66,8 @@ import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GR
 
 public class ReportStatisticsApiHandler extends BaseReportsApiHandler<DistributedReportInfoView>
         implements PagingApiRequestHandler<DistributedReportInfoView> {
+
+    protected static final SupplierLogger LOG = SupplierLogger.get(ReportStatisticsApiHandler.class);
 
 
     @SuppressWarnings("java:S1075")
@@ -152,7 +155,7 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
             }
         });
         List<DistributedReportInfoView> result = builder.build();
-        LOG.debug("Got %s report definitions",result.size());
+        LOG.debug("Got %s report statistics",result.size());
         return result;
 
     }

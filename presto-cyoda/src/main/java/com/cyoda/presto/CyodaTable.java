@@ -29,6 +29,7 @@ import com.google.common.collect.Maps;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Strings.isNullOrEmpty;
@@ -39,6 +40,7 @@ public class CyodaTable {
     private final List<CyodaColumnHandle> columns;
     private final List<ColumnMetadata> columnsMetadata;
     private final String reportConfigurationId;
+    private final String description;
 
     //TODO: This might need to be something pulled from Reporting API.
     private final List<URI> sources;
@@ -50,10 +52,13 @@ public class CyodaTable {
             @JsonProperty("name") String name,
             @JsonProperty("columns") List<CyodaColumnHandle> columns,
             @JsonProperty("reportConfigurationId") String reportConfigurationId,
-            @JsonProperty("sources") List<URI> sources) {
+            @JsonProperty("description") String description,
+            @JsonProperty("sources") List<URI> sources
+    ) {
         checkArgument(!isNullOrEmpty(name), "name is null or is empty");
         this.name = requireNonNull(name, "name is null");
         this.reportConfigurationId = reportConfigurationId;
+        this.description = description;
         this.columns = ImmutableList.copyOf(requireNonNull(columns, "columns is null"));
         this.sources = ImmutableList.copyOf(requireNonNull(sources, "sources is null"));
 
@@ -87,11 +92,15 @@ public class CyodaTable {
         return columnsMetadata;
     }
 
+    @JsonProperty
     public String getReportConfigurationId() {
         return reportConfigurationId;
     }
 
     @JsonProperty
+    public Optional<String> getDescription() {
+        return Optional.ofNullable(description);
+    }
 
     @JsonIgnore
     public CyodaColumnHandle getColumn(String columnName) {

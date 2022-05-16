@@ -18,6 +18,7 @@
 package com.cyoda.presto.client.reporting.meta;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.google.common.base.MoreObjects;
 
 import java.util.List;
 
@@ -37,10 +38,12 @@ public class ReportDefinitionHandle {
     final String reportName;
     final List<CyodaColumnHandle> columns;
     final String json;
+    final String description;
 
-    public ReportDefinitionHandle(String reportConfigId, String reportName, List<CyodaColumnHandle> columns, String json) {
+    public ReportDefinitionHandle(String reportConfigId, String reportName, String description, List<CyodaColumnHandle> columns, String json) {
         this.reportConfigId = reportConfigId;
         this.reportName = reportName;
+        this.description = description;
         this.columns = columns;
         this.json = json;
     }
@@ -53,11 +56,24 @@ public class ReportDefinitionHandle {
         return reportName;
     }
 
+    public String getDescription() {
+        return description;
+    }
+
     public List<CyodaColumnHandle> getColumns() {
         return columns;
     }
 
     public String getJson() {
         return json;
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("reportConfigId", reportConfigId)
+                .add("reportName", reportName)
+                .add("description", description)
+                .toString();
     }
 }

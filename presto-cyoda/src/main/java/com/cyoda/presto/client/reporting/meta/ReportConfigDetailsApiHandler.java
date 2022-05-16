@@ -31,6 +31,7 @@ import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.client.types.TypesUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.type.JsonType;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeManager;
@@ -91,6 +92,8 @@ import static java.lang.String.format;
 // returns "all" report configurations, existing ones and ones that are stored with a report, in an aggregated fashion
 public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportDefinitionHandle>
         implements PagingApiRequestHandler<ReportDefinitionHandle> {
+
+    protected static final SupplierLogger LOG = SupplierLogger.get(ReportConfigDetailsApiHandler.class);
 
     public static final String INVALID_REPORT_DEFINITION_FOR = "Invalid Report definition for ";
     private final ConfiguredReportsApiHandler configuredReportsApiHandler;
@@ -178,7 +181,8 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
         UriTemplate uriTemplate = setupUriTemplate();
 
         PagedModel<GridConfigFieldsView> reportDefinitionModel = configuredReportsApiHandler.retrievePage(page, pageSize, projectedColumns, predicates).orElse(PagedModel.empty());
-        Set<String> ids = reportDefinitionModel.getContent().stream().map(it -> it.getGridConfigFields().get(REPORT_ID_COLUMN)).collect(Collectors.toSet());
+        // TODO: There is a bug, where the API returns one more than the page size, so use limit as long as this bug persists
+        Set<String> ids = reportDefinitionModel.getContent().stream().limit(pageSize).map(it -> it.getGridConfigFields().get(REPORT_ID_COLUMN)).collect(Collectors.toSet());
 
         List<ReportDefinitionHandle> reportDefinitionHandles = getReportDefinitionHandles(uriTemplate, ids);
         return Optional.of(PagedModel.of(reportDefinitionHandles, reportDefinitionModel.getMetadata()));
@@ -203,9 +207,9 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
 
                 DocumentContext parse = JsonPath.parse(jsonResult,JSONPATHA_CONFIG);
                 List<CyodaColumnHandle> cols = extractColumns(reportName, parse);
+                String description = parse.read("$.content.description",String.class);
 
-                // TODO: Need to get the "content".
-                builder.add(new ReportDefinitionHandle(reportConfigId, reportName, cols, jsonResult));
+                builder.add(new ReportDefinitionHandle(reportConfigId, reportName, description, cols, jsonResult));
             } catch (HttpClientErrorException e) {
                 throw requestFailedException(this, "retrieveCollection", e, templatedUri);
             }
@@ -291,7 +295,8 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
     }
 
     private ParameterizedType fromColDefs(String reportName, DocumentContext documentContext, String columnName) {
-        String basePath = format("$.content.colDefs[?(@.fullPath =='%1$s')].parts.value[-1:]", columnName);
+        String usableColumnName = columnName.replace("'","\\'").replace("\"","\\\"");
+        String basePath = format("$.content.colDefs[?(@.fullPath =='%1$s')].parts.value[-1:]", usableColumnName);
         return getParameterizedType(
                 documentContext,
                 basePath,

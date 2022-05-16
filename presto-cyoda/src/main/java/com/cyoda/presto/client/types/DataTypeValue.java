@@ -17,7 +17,9 @@
 
 package com.cyoda.presto.client.types;
 
+import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
+import com.cyoda.presto.client.logic.converters.impl.BytePrestoValueConverter;
 import com.cyoda.presto.client.types.impl.DateDataType;
 import com.cyoda.presto.client.types.impl.LocalDateDataType;
 import com.facebook.airlift.json.JsonCodec;
@@ -364,38 +366,14 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
     }
 
     public Long parseToLong() {
-        switch (supportedDataType.getDataType()) {
-            case BYTE:
-                return asByte().longValue();
-            case SHORT:
-                return asShort().longValue();
-            case LONG:
-                return asLong();
-            case FLOAT:
-                return asFloat().longValue();
-            case DOUBLE:
-                return asDouble().longValue();
-            case INTEGER:
-                return asInt().longValue();
-            case BIG_DECIMAL:
-                return asBigDecimal().longValue();
-            case BIG_INTEGER:
-                return asBigInteger().longValue();
-            case BOOLEAN:
-                return Boolean.TRUE.equals(asBoolean()) ? 1L : 0L;
-            case LOCAL_DATE:
-                return asLocalDate().toEpochDay();
-            case LOCAL_DATE_TIME:
-                return asLocalDateTime().toInstant(ZoneOffset.UTC).toEpochMilli();
-            case DATE:
-                return asDate().getTime();
-            case ZONED_DATE_TIME:
-                return asZonedDateTime().toInstant().toEpochMilli();
-            default:
-                throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR,"Cannot retrieve long for " + supportedDataType);
-        }
+        PrestoValueConverter<T> prestoValueConverter = Optional.of(PrestoValueConverterProvider.getPrestoValueConverter(supportedDataType))
+                .orElseThrow(() -> new IllegalArgumentException("Not found for "+supportedDataType));
+        return Optional.ofNullable(this.value)
+                .map(prestoValueConverter::toLong)
+                .orElseThrow(() -> new IllegalArgumentException(this.supportedDataType + " not yet implemented"));
     }
 
+    // TODO: Extend PrestoValueConverter to convert to/from Slice and migrate this stuff to there (similar to parseToLong())
     public Slice asSlice(Type type) {
         if ( isNull() ) return EMPTY_SLICE;
         if (type instanceof VarbinaryType) {

@@ -20,7 +20,10 @@ package com.cyoda.presto;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.ColumnPredicateNode;
+import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
 import com.cyoda.presto.client.types.DataTypeValue;
+import com.cyoda.presto.client.types.SupportedDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.presto.common.Page;
@@ -38,6 +41,7 @@ import io.airlift.slice.Slices;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -178,18 +182,6 @@ public class CyodaFilteringPageSource<T>
             case BOOLEAN:
                 type.writeBoolean(blockBuilder, supported.asBoolean());
                 break;
-            case BYTE:
-                type.writeLong(blockBuilder, supported.asByte().longValue());
-                break;
-            case INTEGER:
-                type.writeLong(blockBuilder, supported.asInt().longValue());
-                break;
-            case SHORT:
-                type.writeLong(blockBuilder, supported.asShort().longValue());
-                break;
-            case LONG:
-                type.writeLong(blockBuilder, supported.asLong());
-                break;
             case BIG_INTEGER:
                 type.writeLong(blockBuilder, supported.asBigInteger().longValue());
                 break;
@@ -199,17 +191,21 @@ public class CyodaFilteringPageSource<T>
             case FLOAT:
                 type.writeLong(blockBuilder, floatToRawIntBits(supported.asFloat()));
                 break;
-            case DATE:
+            case BYTE:
+            case INTEGER:
+            case SHORT:
+            case LONG:
+            case YEAR:
+            case LOCAL_DATE:
             case LOCAL_DATE_TIME:
             case ZONED_DATE_TIME:
-                type.writeLong(blockBuilder, supported.asTimestampMillis());
+            case DATE: {
+                PrestoValueConverter<Object> prestoValueConverter = getPrestoValueConverter(supported);
+                Long value = Optional.ofNullable(supported.value).map(prestoValueConverter::toLong)
+                        .orElseThrow(()->new IllegalArgumentException(supported.supportedDataType + " value is null "));
+                type.writeLong(blockBuilder, value);
                 break;
-            case LOCAL_DATE:
-                type.writeLong(blockBuilder,supported.asLocalDate().toEpochDay());
-                break;
-            case YEAR:
-                type.writeLong(blockBuilder,supported.asYear().getValue());
-                break;
+            }
             case LOCAL_TIME:
                 type.writeLong(blockBuilder,supported.asLocalDate().toEpochDay());
                 break;
@@ -267,6 +263,11 @@ public class CyodaFilteringPageSource<T>
                 type.writeSlice(blockBuilder, supported.asSlice(type));
                 break;
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private <S> PrestoValueConverter<S> getPrestoValueConverter(DataTypeValue<?> supported) {
+        return PrestoValueConverterProvider.getPrestoValueConverter((SupportedDataType<S>) supported.supportedDataType);
     }
 
 

@@ -42,6 +42,7 @@ import com.cyoda.presto.client.types.impl.StringDataType;
 import com.cyoda.presto.client.types.impl.UUIDDataType;
 import com.cyoda.presto.client.types.impl.YearDataType;
 import com.cyoda.presto.client.types.impl.YearMonthDataType;
+import com.cyoda.presto.client.types.impl.ZonedDateTimeDataType;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.collect.ImmutableList;
@@ -137,12 +138,14 @@ public enum DataType {
         return this == BYTE_ARRAY || this == OBJECT ;
     }
 
+    // TODO: Need unit test to assert we have a SupportedDataType for each DataType.
     @SuppressWarnings("unchecked")
     public <S> SupportedDataType<S> asSupported() {
         switch (this) {
             case LOCAL_DATE: return (SupportedDataType<S>) LocalDateDataType.INSTANCE;
             case LOCAL_DATE_TIME: return (SupportedDataType<S>) LocalDateTimeDataType.INSTANCE;
             case LOCAL_TIME: return (SupportedDataType<S>) LocalTimeDataType.INSTANCE;
+            case ZONED_DATE_TIME: return (SupportedDataType<S>) ZonedDateTimeDataType.INSTANCE;
             case DATE: return (SupportedDataType<S>) DateDataType.INSTANCE;
             case STRING: return (SupportedDataType<S>) StringDataType.INSTANCE;
             case OBJECT: return (SupportedDataType<S>) ObjectDataType.INSTANCE;
@@ -166,33 +169,6 @@ public enum DataType {
             case ARRAY: return (SupportedDataType<S>) ArrayDataType.INSTANCE;
             default:
                 throw new UnsupportedOperationException(this+ " Not yet implemented");
-        }
-    }
-
-    public Serializable parseToSerializable(String input) {
-        switch (this) {
-            case STRING:
-                return input;
-            case DOUBLE:
-                return Double.parseDouble(input);
-            case INTEGER:
-                return Integer.parseInt(input);
-            case LOCAL_DATE:
-                return LocalDate.parse(input);
-            case LOCAL_DATE_TIME:
-                return LocalDateTime.parse(input);
-            case ZONED_DATE_TIME:
-                return ZonedDateTime.parse(input);
-            case BOOLEAN:
-                return Boolean.parseBoolean(input);
-            case BIG_DECIMAL:
-                return new BigDecimal(input);
-            case BIG_INTEGER:
-                return new BigInteger(input);
-            case UUID_TYPE:
-                return UUID.fromString(input);
-            default:
-                throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR ,this + " cannot be parsed to a Serializable ");
         }
     }
 

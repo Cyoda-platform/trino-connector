@@ -21,7 +21,7 @@ import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.facebook.airlift.log.Logger;
+import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.spi.PrestoException;
 import org.springframework.hateoas.PagedModel;
 
@@ -33,7 +33,7 @@ import static com.cyoda.presto.CyodaErrorCode.CYODA_API_ERROR;
 
 public class PagedIterator<T> implements Iterable<T> {
 
-    private static final Logger LOG = Logger.get(PagedIterator.class);
+    private static final SupplierLogger LOG = SupplierLogger.get(PagedIterator.class);
     private final Function<Integer, PagingHandle<T>> pagingHandleSupplier;
 
     public PagedIterator(PagingApiRequestHandler<T> requestHandler, int pageSize,
@@ -93,7 +93,7 @@ public class PagedIterator<T> implements Iterable<T> {
                 currentElementOnPage++;
                 T next = iterator.next();
 
-                if ( LOG.isDebugEnabled() ) LOG.debug("got %s",next);
+                LOG.debug("got %s",() -> next);
                 if ( currentPos > maxEntries ) {
                     LOG.error("Reading more than expected!");
                 }

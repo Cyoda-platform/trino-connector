@@ -22,4 +22,5 @@ import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import java.math.BigInteger;
 
 public class BigIntegerPrestoValueConverter implements PrestoValueConverter<BigInteger> {
+
 }

@@ -37,11 +37,13 @@ import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.Date;
@@ -54,9 +56,10 @@ import java.util.stream.Collectors;
 import static com.cyoda.presto.client.types.DataType.*;
 import static java.util.Objects.requireNonNull;
 
+// TODO: The API calls to Cyoda need to have some check on API version. Sasha might be able to say how he did it for UI
 public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder implements ApiRequestHandler<T> {
 
-    protected static final SupplierLogger LOG = SupplierLogger.get(BaseReportsApiHandler.class);
+    protected static final SupplierLogger THIS_LOG = SupplierLogger.get(BaseReportsApiHandler.class);
 
     public static final String REPORT_ENDPOINT = "/api/platform-api/reporting/report";
     public static final String PAGE_REQUEST_PARAMETER = "page";
@@ -83,7 +86,7 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         final URI uri;
         try {
             uri = config.getServerUrl().toURI().resolve(endpoint);
-            LOG.debug("Server URI %s", uri::toASCIIString);
+            THIS_LOG.debug("Server URI %s", uri::toASCIIString);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Bad endpoint: "+endpoint,e);
         }
@@ -91,7 +94,13 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         Map<TableDefinitionHandle,List<CyodaColumnHandle>> cyodaColumnHandles = createCyodaColumnHandles(fieldDefs);
         return cyodaColumnHandles.entrySet().stream().collect(Collectors.toMap(
                 entry-> new SchemaTableName(config.getSchemaName(), entry.getKey().tableName),
-                entry -> new CyodaTable(entry.getKey().tableName, cyodaColumnHandles.get(entry.getKey()), entry.getKey().reportConfigurationId, sources)
+                entry -> new CyodaTable(
+                        entry.getKey().tableName,
+                        cyodaColumnHandles.get(entry.getKey()),
+                        entry.getKey().reportConfigurationId,
+                        entry.getKey().description,
+                        sources
+                )
         ));
     }
 
@@ -140,6 +149,7 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         return DataTypeValue.ofAny(mappedField,columnHandle.getDataType().getJavaType());
     }
 
+    // TODO: These belong in the PrestoValueConverter
     protected @Nonnull Object mapFieldValue(@Nonnull final Object value, CyodaColumnHandle columnHandle) {
         if (columnHandle.getDataType() == UUID_TYPE && value instanceof String) {
             return UUID.fromString((String) value);
@@ -153,7 +163,17 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         if (columnHandle.getDataType() == LOCAL_DATE && value instanceof String) {
             return toLocalDate((String) value);
         }
+        if (columnHandle.getDataType() == ZONED_DATE_TIME && value instanceof String) {
+            return toZonedDateTime((String) value);
+        }
+        if (columnHandle.getDataType() == BIG_DECIMAL && value instanceof Number && !(value instanceof BigDecimal)) {
+            return BigDecimal.valueOf(((Number) value).doubleValue());
+        }
         return value;
+    }
+
+    private ZonedDateTime toZonedDateTime(String str) {
+        return ZonedDateTime.parse(str, DateTimeFormatter.ISO_ZONED_DATE_TIME);
     }
 
     private Date toDate(String str) {
@@ -189,9 +209,9 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         Preconditions.checkNotNull(reportName,"reportName is null");
         Preconditions.checkArgument(!reportName.isEmpty(),"reportName is empty");
         String result = reportName
-                .replace(" ", "")
-                .replaceAll("[$\\-&%§@*#']", "") // Let's not allow complicated things.
-                .replaceAll("([a-z])([A-Z]+)", "$1_$2")
+                //.replace(" ", "")
+                //.replaceAll("[$\\-&%§@*#, ']", "_") // Let's not allow complicated things.
+                //.replaceAll("([a-z])([A-Z]+)", "$1_$2")
                 .toUpperCase(Locale.ROOT);
         Preconditions.checkArgument(!result.isEmpty(),"generated tableName is empty");
         return result;

@@ -18,9 +18,40 @@
 package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.facebook.presto.common.type.DateTimeEncoding;
+import com.facebook.presto.common.type.SqlTimestampWithTimeZone;
+import com.facebook.presto.common.type.TimeZoneKey;
 
+import javax.annotation.Nonnull;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 public class ZonedDateTimePrestoValueConverter implements PrestoValueConverter<ZonedDateTime> {
 
+    @Override
+    public long toLong(@Nonnull ZonedDateTime value) {
+        return DateTimeEncoding.packDateTimeWithZone(
+                value.toInstant().toEpochMilli(),
+                value.getZone().getId()
+        );
+    }
+
+    @Nonnull
+    @Override
+    public ZonedDateTime fromLong(long value) {
+        TimeZoneKey timeZoneKey = DateTimeEncoding.unpackZoneKey(value);
+        long millisUtc = DateTimeEncoding.unpackMillisUtc(value);
+        return ZonedDateTime.ofInstant(Instant.ofEpochMilli(millisUtc), ZoneId.of(timeZoneKey.getId()));
+    }
+
+    @Override
+    public long minValueOfIntType() {
+        return Long.MIN_VALUE;
+    }
+
+    @Override
+    public long maxValueOfIntType() {
+        return Long.MAX_VALUE;
+    }
 }

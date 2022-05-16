@@ -77,7 +77,8 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
     private static final SupplierLogger LOG = SupplierLogger.get(ReportHistoryApiHandler.class);
 
     public static final String REPORT_HISTORY_ENDPOINT = "/api/platform-api/reporting/history";
-    public static final String HISTORY_REPORT_NAME_REQUEST_PARAMETER = "report_names";
+    public static final String HISTORY_REPORT_NAME_REQUEST_PARAMETER = "report_name";
+    public static final String HISTORY_REPORT_NAMES_REQUEST_PARAMETER = "report_names";
     public static final String HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER = "filterByType";
 
     enum ColumnDef implements ColumnDefinition {
@@ -201,7 +202,11 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
         LOG.debug("selecting by report names:",()->reportNames.map(it-> String.join(",", it)).orElse("EMPTY"));
         if (!reportNames.isPresent()) return Optional.empty();
         if (!reportNames.get().isEmpty()) {
-            expansionBuilder.put(HISTORY_REPORT_NAME_REQUEST_PARAMETER, reportNames.get());
+            if (reportNames.get().size() == 1 ) {
+                expansionBuilder.put(HISTORY_REPORT_NAME_REQUEST_PARAMETER, reportNames.get().iterator().next());
+            } else {
+                expansionBuilder.put(HISTORY_REPORT_NAMES_REQUEST_PARAMETER, reportNames.get());
+            }
         }
 
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
@@ -239,6 +244,7 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
                 TemplateVariable.requestParameterContinued(HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER),
                 TemplateVariable.requestParameterContinued("username"),
                 TemplateVariable.requestParameterContinued(HISTORY_REPORT_NAME_REQUEST_PARAMETER),
+                TemplateVariable.requestParameterContinued(HISTORY_REPORT_NAMES_REQUEST_PARAMETER),
                 TemplateVariable.requestParameterContinued("from"),
                 TemplateVariable.requestParameterContinued("to")
         );

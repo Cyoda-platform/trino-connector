@@ -20,6 +20,7 @@ package com.cyoda.presto;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.CyodaTableLayoutHandle;
+import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.predicate.TupleDomain;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
@@ -49,6 +50,8 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaMetadata implements ConnectorMetadata {
+
+    private static final SupplierLogger LOG = SupplierLogger.get(CyodaMetadata.class);
 
     private final String connectorId;
     private final CyodaClient client;
@@ -112,7 +115,7 @@ public class CyodaMetadata implements ConnectorMetadata {
         }
 
         CyodaTable table = client.getTable(tableName);
-        return new ConnectorTableMetadata(tableName, table.getColumnsMetadata());
+        return new ConnectorTableMetadata(tableName, table.getColumnsMetadata(),Collections.emptyMap(),table.getDescription());
     }
 
     @Override
@@ -149,8 +152,13 @@ public class CyodaMetadata implements ConnectorMetadata {
         return ((CyodaColumnHandle) columnHandle).getColumnMetadata();
     }
 
+
     @Override
     public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> filterSchema) {
+        if ( filterSchema.isPresent() && !filterSchema.get().equals(client.getSchemaName()) ) {
+            return Collections.emptyList();
+        }
+        LOG.info("Getting tables for schema %s",()->filterSchema.orElse("ALL"));
         ImmutableList.Builder<SchemaTableName> builder = ImmutableList.builder();
         for (String tableName : client.getTableNames()) {
             builder.add(new SchemaTableName(client.getSchemaName(), tableName));

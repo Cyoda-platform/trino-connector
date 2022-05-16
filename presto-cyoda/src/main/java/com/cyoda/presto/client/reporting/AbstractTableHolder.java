@@ -19,6 +19,7 @@ package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.CyodaTable;
 import com.facebook.presto.spi.SchemaTableName;
+import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 
 import javax.annotation.Nonnull;
@@ -60,23 +61,42 @@ public abstract class AbstractTableHolder {
     public static class TableDefinitionHandle {
         protected final String tableName;
         protected final String reportConfigurationId;
+        protected final String description;
 
-        public TableDefinitionHandle(String tableName) {
-            this.tableName = tableName;
-            this.reportConfigurationId = null;
-        }
-
-        public TableDefinitionHandle(String tableName, String reportConfigurationId) {
+        private TableDefinitionHandle(String tableName, String reportConfigurationId, String description) {
             this.tableName = tableName;
             this.reportConfigurationId = reportConfigurationId;
+            this.description = description;
         }
 
         public static TableDefinitionHandle asTableDefinitionHandle(String tableName) {
-            return new TableDefinitionHandle(tableName);
+            return new TableDefinitionHandle(tableName,null,null);
         }
 
         public static TableDefinitionHandle asTableDefinitionHandle(String tableName,String reportConfigurationId) {
-            return new TableDefinitionHandle(tableName,reportConfigurationId);
+            return new TableDefinitionHandle(tableName,reportConfigurationId,null);
+        }
+
+        public static TableDefinitionHandle asTableDefinitionHandle(String tableName,String reportConfigurationId, String description) {
+            return new TableDefinitionHandle(tableName,reportConfigurationId, description);
+        }
+
+        /**
+         * Only the reportConfigurationId defines uniqueness.
+         * @param o
+         * @return
+         */
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            TableDefinitionHandle that = (TableDefinitionHandle) o;
+            return Objects.equal(reportConfigurationId, that.reportConfigurationId);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(reportConfigurationId);
         }
     }
 }

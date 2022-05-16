@@ -54,6 +54,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -150,11 +151,12 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
 
     @Override
     protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs() {
-        ImmutableMap.Builder<TableDefinitionHandle,List<ColumnDefinition>> builder = ImmutableMap.builder();
+        Map<TableDefinitionHandle,List<ColumnDefinition>> result = new HashMap<>();
         StreamSupport.stream(handleIterable.spliterator(), true)
                 .forEach( item -> {
                     String reportName = item.getReportName();
-                    String tableName = reportNameToTableName(reportName);
+                    String reportConfigId = item.getReportConfigId();
+                    String tableName = reportNameToTableName(reportConfigId);
 
                     List<CyodaColumnHandle> columns = item.getColumns();
                     List<ColumnDefinition> coldefs = columns.stream()
@@ -170,9 +172,10 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
                     colBuilder.add(newColumnDefinition(groupJsonBase64Column));
                     colBuilder.addAll(coldefs);
 
-                    builder.put(asTableDefinitionHandle(tableName, item.getReportConfigId()),colBuilder.build());
+                    // If there are duplicates, last write wins.
+                    result.put(asTableDefinitionHandle(tableName, reportConfigId, item.getDescription()),colBuilder.build());
                 });
-        return builder.build();
+        return ImmutableMap.copyOf(result);
     }
 
     private StandardColumnDefinition newColumnDefinition(CyodaColumnHandle columnHandle) {
