@@ -1,0 +1,520 @@
+{
+  "@bean": "com.cyoda.service.api.beans.ReportDefinition",
+  "description": "A report that has a Map as a column and a List",
+  "requestClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+  "condition": {
+    "@bean": "com.cyoda.core.conditions.GroupCondition",
+    "operator": "AND",
+    "conditions": [
+      {
+        "@bean": "com.cyoda.core.conditions.queryable.Equals",
+        "fieldName": "state",
+        "operation": "EQUALS",
+        "rangeField": "false",
+        "value": {
+          "@type": "String",
+          "value": "CREATED"
+        },
+        "queryable": true
+      },
+      {
+        "@bean": "com.cyoda.core.conditions.queryable.GreaterThan",
+        "fieldName": "birthdate",
+        "operation": "GREATER_THAN",
+        "rangeField": "false",
+        "value": {
+          "@type": "java.time.LocalDate",
+          "value": "1970-01-01"
+        }
+      },
+      {
+        "@bean": "com.cyoda.core.conditions.queryable.Equals",
+        "fieldName": "entityState",
+        "operation": "EQUALS",
+        "rangeField": "false",
+        "value": {
+          "@type": "String",
+          "value": "CREATED"
+        },
+        "queryable": true
+      }
+    ]
+  },
+  "sorting": [
+    {
+      "column": {
+        "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+        "name": "companyCity"
+      },
+      "reverse": false
+    },
+    {
+      "column": {
+        "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+        "name": "entityId"
+      },
+      "reverse": false
+    }
+  ],
+  "grouping": [
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+      "name": "companyCity"
+    }
+  ],
+  "summary": [
+    [
+      {
+        "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+        "name": "entityId"
+      },
+      [
+        "COUNT"
+      ]
+    ]
+  ],
+  "columns": [
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportSimpleColumn",
+      "name": "underlying"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+      "name": "birthdate"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportSimpleColumn",
+      "name": "id"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+      "name": "TenantMeta"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+      "name": "EmployeeIds"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportSimpleColumn",
+      "name": "state"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+      "name": "entityId"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+      "name": "entityState"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+      "name": "companyCity"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+      "name": "companyPostalCode"
+    }
+  ],
+  "pointTime": "2200-01-01T00:00:00.000+01:00",
+  "colDefs": [
+    {
+      "fullPath": "underlying",
+      "parts": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+        "value": [
+          {
+            "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+            "path": "underlying",
+            "type": "org.cyoda.gs.business.model.companydata.Underlying"
+          }
+        ]
+      },
+      "colType": "org.cyoda.gs.business.model.companydata.Underlying"
+    },
+    {
+      "fullPath": "state",
+      "parts": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+        "value": [
+          {
+            "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+            "path": "state",
+            "type": "java.lang.String"
+          }
+        ]
+      },
+      "colType": "java.lang.String"
+    },
+    {
+      "fullPath": "id",
+      "parts": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+        "value": [
+          {
+            "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+            "path": "id",
+            "type": "java.util.UUID"
+          }
+        ]
+      },
+      "colType": "java.util.UUID"
+    }
+  ],
+  "aliasDefs": [
+    {
+      "name": "entityState",
+      "aliasPaths": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportAliasPathDef[]",
+        "value": [
+          {
+            "colDef": {
+              "fullPath": "tenantId.state",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+                    "path": "tenantId",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ApplicationTenant",
+                    "path": "state",
+                    "type": "java.lang.String"
+                  }
+                ]
+              },
+              "colType": "java.lang.String"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          },
+          {
+            "colDef": {
+              "fullPath": "companyId.state",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+                    "path": "companyId",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.SmallCompany",
+                    "path": "state",
+                    "type": "java.lang.String"
+                  }
+                ]
+              },
+              "colType": "java.lang.String"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          }
+        ]
+      },
+      "aliasType": "java.lang.String"
+    },
+    {
+      "name": "entityId",
+      "aliasPaths": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportAliasPathDef[]",
+        "value": [
+          {
+            "colDef": {
+              "fullPath": "tenantId.id",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+                    "path": "tenantId",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ApplicationTenant",
+                    "path": "id",
+                    "type": "java.util.UUID"
+                  }
+                ]
+              },
+              "colType": "java.util.UUID"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          },
+          {
+            "colDef": {
+              "fullPath": "companyId.id",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+                    "path": "companyId",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.SmallCompany",
+                    "path": "id",
+                    "type": "java.util.UUID"
+                  }
+                ]
+              },
+              "colType": "java.util.UUID"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          }
+        ]
+      },
+      "aliasType": "java.util.UUID"
+    },
+    {
+      "name": "companyCity",
+      "aliasPaths": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportAliasPathDef[]",
+        "value": [
+          {
+            "colDef": {
+              "fullPath": "tenantId.legalEntity.meta.['city']",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+                    "path": "tenantId",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ApplicationTenant",
+                    "path": "legalEntity",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ApplicationLegalEntity",
+                    "path": "meta.['city']",
+                    "type": "java.lang.String"
+                  }
+                ]
+              },
+              "colType": "java.lang.String"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          },
+          {
+            "colDef": {
+              "fullPath": "companyId.headquarters@org#cyoda#gs#business#model#companydata#Address.city",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+                    "path": "companyId",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.SmallCompany",
+                    "path": "headquarters@org#cyoda#gs#business#model#companydata#Address.city",
+                    "type": "java.lang.String"
+                  }
+                ]
+              },
+              "colType": "java.lang.String"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          }
+        ]
+      },
+      "aliasType": "java.lang.String"
+    },
+    {
+      "name": "companyPostalCode",
+      "aliasPaths": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportAliasPathDef[]",
+        "value": [
+          {
+            "colDef": {
+              "fullPath": "tenantId.legalEntity.meta.['postalCode']",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+                    "path": "tenantId",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ApplicationTenant",
+                    "path": "legalEntity",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ApplicationLegalEntity",
+                    "path": "meta.['postalCode']",
+                    "type": "java.lang.String"
+                  }
+                ]
+              },
+              "colType": "java.lang.String"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          },
+          {
+            "colDef": {
+              "fullPath": "companyId.headquarters@org#cyoda#gs#business#model#companydata#Address.postalCode",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+                    "path": "companyId",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.SmallCompany",
+                    "path": "headquarters@org#cyoda#gs#business#model#companydata#Address.postalCode",
+                    "type": "java.lang.String"
+                  }
+                ]
+              },
+              "colType": "java.lang.String"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          }
+        ]
+      },
+      "aliasType": "java.lang.String"
+    },
+    {
+      "name": "birthdate",
+      "aliasPaths": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportAliasPathDef[]",
+        "value": [
+          {
+            "colDef": {
+              "fullPath": "tenantId.userIds.['user']@org#cyoda#gs#business#model#companydata#ApplicationTenant$EntityRef.userId.birthdate",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+                    "path": "tenantId",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ApplicationTenant",
+                    "path": "userIds.['user']@org#cyoda#gs#business#model#companydata#ApplicationTenant$EntityRef.userId",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ApplicationUser",
+                    "path": "birthdate",
+                    "type": "java.time.LocalDate"
+                  }
+                ]
+              },
+              "colType": "java.time.LocalDate"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          },
+          {
+            "colDef": {
+              "fullPath": "companyId.employeeIds.['employee']@org#cyoda#gs#business#model#companydata#SmallCompany$EntityRef.employeeId.dateOfBirth",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+                    "path": "companyId",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.SmallCompany",
+                    "path": "employeeIds.['employee']@org#cyoda#gs#business#model#companydata#SmallCompany$EntityRef.employeeId",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.Employee",
+                    "path": "dateOfBirth",
+                    "type": "java.time.LocalDate"
+                  }
+                ]
+              },
+              "colType": "java.time.LocalDate"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          }
+        ]
+      },
+      "aliasType": "java.time.LocalDate"
+    },
+    {
+      "name": "TenantMeta",
+      "aliasPaths": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportAliasPathDef[]",
+        "value": [
+          {
+            "colDef": {
+              "fullPath": "tenantId.legalEntity.meta.[*]",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+                    "path": "tenantId",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ApplicationTenant",
+                    "path": "legalEntity",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ApplicationLegalEntity",
+                    "path": "meta.[*]",
+                    "type": "java.lang.String"
+                  }
+                ]
+              },
+              "colType": "java.lang.String"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          }
+        ]
+      },
+      "aliasType": "java.lang.String"
+    },
+    {
+      "name": "EmployeeIds",
+      "aliasPaths": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportAliasPathDef[]",
+        "value": [
+          {
+            "colDef": {
+              "fullPath": "companyId.employeeIds.[*]@org#cyoda#gs#business#model#companydata#SmallCompany$EntityRef.employeeId",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.ReportingDecorator",
+                    "path": "companyId",
+                    "type": "java.util.UUID"
+                  },
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.companydata.SmallCompany",
+                    "path": "employeeIds.[*]@org#cyoda#gs#business#model#companydata#SmallCompany$EntityRef.employeeId",
+                    "type": "java.util.UUID"
+                  }
+                ]
+              },
+              "colType": "java.util.UUID"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          }
+        ]
+      },
+      "aliasType": "java.util.UUID"
+    }
+  ],
+  "valuationPointTime": "2022-05-13T07:54:09.333+02:00",
+  "hierarhyEnable": false,
+  "reportVersion": 0
+}

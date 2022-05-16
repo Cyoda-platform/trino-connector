@@ -1,0 +1,261 @@
+{
+  "@bean": "com.cyoda.service.api.beans.ReportDefinition",
+  "description": "Normal example",
+  "requestClass": "org.cyoda.gs.business.model.lei.LEIMessage",
+  "condition": {
+    "@bean": "com.cyoda.core.conditions.GroupCondition",
+    "operator": "AND",
+    "conditions": [
+      {
+        "@bean": "com.cyoda.core.conditions.queryable.GreaterThan",
+        "fieldName": "creationDate",
+        "operation": "GREATER_THAN",
+        "rangeField": "false",
+        "value": {
+          "@type": "java.util.Date",
+          "value": "2022-01-01T08:04:09.000+01:00"
+        }
+      }
+    ]
+  },
+  "sorting": [
+    {
+      "column": {
+        "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+        "name": "LegalName"
+      },
+      "reverse": false
+    }
+  ],
+  "grouping": [
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+      "name": "Country"
+    }
+  ],
+  "summary": [
+    [
+      {
+        "@bean": "com.cyoda.core.reports.columns.ReportSimpleColumn",
+        "name": "entityId"
+      },
+      [
+        "COUNT"
+      ]
+    ]
+  ],
+  "columns": [
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportSimpleColumn",
+      "name": "creationDate"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportSimpleColumn",
+      "name": "entityId"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportSimpleColumn",
+      "name": "state"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+      "name": "LEI"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+      "name": "LegalName"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+      "name": "City"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+      "name": "LegalForm"
+    },
+    {
+      "@bean": "com.cyoda.core.reports.columns.ReportAliasColumn",
+      "name": "Country"
+    }
+  ],
+  "pointTime": "2199-12-31T22:00:00.000+01:00",
+  "colDefs": [
+    {
+      "fullPath": "creationDate",
+      "parts": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+        "value": [
+          {
+            "rootClass": "org.cyoda.gs.business.model.lei.LEIMessage",
+            "path": "creationDate",
+            "type": "java.util.Date"
+          }
+        ]
+      },
+      "colType": "java.util.Date"
+    },
+    {
+      "fullPath": "entityId",
+      "parts": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+        "value": [
+          {
+            "rootClass": "org.cyoda.gs.business.model.lei.LEIMessage",
+            "path": "entityId",
+            "type": "java.util.UUID"
+          }
+        ]
+      },
+      "colType": "java.util.UUID"
+    },
+    {
+      "fullPath": "state",
+      "parts": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+        "value": [
+          {
+            "rootClass": "org.cyoda.gs.business.model.lei.LEIMessage",
+            "path": "state",
+            "type": "java.lang.String"
+          }
+        ]
+      },
+      "colType": "java.lang.String"
+    }
+  ],
+  "aliasDefs": [
+    {
+      "name": "LEI",
+      "aliasPaths": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportAliasPathDef[]",
+        "value": [
+          {
+            "colDef": {
+              "fullPath": "messageBody@org#cyoda#gs#business#model#lei#v2016#LEIRecordTypeBody.content@org#gleif#data#schema#leidata#_2016#LEIRecordType.lei",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.lei.LEIMessage",
+                    "path": "messageBody@org#cyoda#gs#business#model#lei#v2016#LEIRecordTypeBody.content@org#gleif#data#schema#leidata#_2016#LEIRecordType.lei",
+                    "type": "java.lang.String"
+                  }
+                ]
+              },
+              "colType": "java.lang.String"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          }
+        ]
+      },
+      "aliasType": "java.lang.String"
+    },
+    {
+      "name": "LegalName",
+      "aliasPaths": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportAliasPathDef[]",
+        "value": [
+          {
+            "colDef": {
+              "fullPath": "messageBody@org#cyoda#gs#business#model#lei#v2016#LEIRecordTypeBody.content@org#gleif#data#schema#leidata#_2016#LEIRecordType.entity@org#gleif#data#schema#leidata#_2016#EntityType.legalName@org#gleif#data#schema#leidata#_2016#NameType.value",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.lei.LEIMessage",
+                    "path": "messageBody@org#cyoda#gs#business#model#lei#v2016#LEIRecordTypeBody.content@org#gleif#data#schema#leidata#_2016#LEIRecordType.entity@org#gleif#data#schema#leidata#_2016#EntityType.legalName@org#gleif#data#schema#leidata#_2016#NameType.value",
+                    "type": "java.lang.String"
+                  }
+                ]
+              },
+              "colType": "java.lang.String"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          }
+        ]
+      },
+      "aliasType": "java.lang.String"
+    },
+    {
+      "name": "City",
+      "aliasPaths": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportAliasPathDef[]",
+        "value": [
+          {
+            "colDef": {
+              "fullPath": "messageBody@org#cyoda#gs#business#model#lei#v2016#LEIRecordTypeBody.content@org#gleif#data#schema#leidata#_2016#LEIRecordType.entity@org#gleif#data#schema#leidata#_2016#EntityType.headquartersAddress@org#gleif#data#schema#leidata#_2016#AddressType.city",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.lei.LEIMessage",
+                    "path": "messageBody@org#cyoda#gs#business#model#lei#v2016#LEIRecordTypeBody.content@org#gleif#data#schema#leidata#_2016#LEIRecordType.entity@org#gleif#data#schema#leidata#_2016#EntityType.headquartersAddress@org#gleif#data#schema#leidata#_2016#AddressType.city",
+                    "type": "java.lang.String"
+                  }
+                ]
+              },
+              "colType": "java.lang.String"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          }
+        ]
+      },
+      "aliasType": "java.lang.String"
+    },
+    {
+      "name": "LegalForm",
+      "aliasPaths": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportAliasPathDef[]",
+        "value": [
+          {
+            "colDef": {
+              "fullPath": "messageBody@org#cyoda#gs#business#model#lei#v2016#LEIRecordTypeBody.content@org#gleif#data#schema#leidata#_2016#LEIRecordType.entity@org#gleif#data#schema#leidata#_2016#EntityType.legalForm@org#gleif#data#schema#leidata#_2016#LegalFormType.entityLegalFormCode",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.lei.LEIMessage",
+                    "path": "messageBody@org#cyoda#gs#business#model#lei#v2016#LEIRecordTypeBody.content@org#gleif#data#schema#leidata#_2016#LEIRecordType.entity@org#gleif#data#schema#leidata#_2016#EntityType.legalForm@org#gleif#data#schema#leidata#_2016#LegalFormType.entityLegalFormCode",
+                    "type": "java.lang.String"
+                  }
+                ]
+              },
+              "colType": "java.lang.String"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          }
+        ]
+      },
+      "aliasType": "java.lang.String"
+    },
+    {
+      "name": "Country",
+      "aliasPaths": {
+        "@meta": "com.cyoda.core.reports.columndefs.ReportAliasPathDef[]",
+        "value": [
+          {
+            "colDef": {
+              "fullPath": "messageBody@org#cyoda#gs#business#model#lei#v2016#LEIRecordTypeBody.content@org#gleif#data#schema#leidata#_2016#LEIRecordType.entity@org#gleif#data#schema#leidata#_2016#EntityType.headquartersAddress@org#gleif#data#schema#leidata#_2016#AddressType.country",
+              "parts": {
+                "@meta": "com.cyoda.core.reports.columndefs.ReportColPartDef[]",
+                "value": [
+                  {
+                    "rootClass": "org.cyoda.gs.business.model.lei.LEIMessage",
+                    "path": "messageBody@org#cyoda#gs#business#model#lei#v2016#LEIRecordTypeBody.content@org#gleif#data#schema#leidata#_2016#LEIRecordType.entity@org#gleif#data#schema#leidata#_2016#EntityType.headquartersAddress@org#gleif#data#schema#leidata#_2016#AddressType.country",
+                    "type": "java.lang.String"
+                  }
+                ]
+              },
+              "colType": "java.lang.String"
+            },
+            "mapperClass": "com.cyoda.core.reports.aliasmappers.BasicMapper"
+          }
+        ]
+      },
+      "aliasType": "java.lang.String"
+    }
+  ],
+  "valuationPointTime": "2020-01-27T12:09:28.778+01:00",
+  "hierarhyEnable": false,
+  "reportVersion": 0
+}
