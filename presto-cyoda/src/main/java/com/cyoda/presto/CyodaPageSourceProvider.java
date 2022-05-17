@@ -18,9 +18,8 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.client.ApiRequestHandler;
-import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.ColumnPredicateBuilder;
-import com.cyoda.presto.client.logic.ColumnPredicateNode;
+import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.presto.common.predicate.TupleDomain;
@@ -64,7 +63,7 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
         requireNonNull(split, "split is null");
         requireNonNull(splitContext, "splitContext is null");
         TupleDomain<CyodaColumnHandle> constraint = ((CyodaSplit) split).getConstraint();
-        ColumnPredicateNode<Any> predicates = ColumnPredicateBuilder.setupConstraintPredicates(constraint);
+        CompoundPredicateNode predicates = ColumnPredicateBuilder.setupConstraintPredicates(constraint);
         String requestHandlerKey = ((CyodaSplit) split).getTableHandle().getRequestHandlerKey();
         ApiRequestHandler<?> requestHandler = Optional.ofNullable(client.getRequestHandlerProvider().getHandler(requestHandlerKey))
                 .orElseThrow(() -> new IllegalArgumentException("Handler " + requestHandlerKey + " not found"));

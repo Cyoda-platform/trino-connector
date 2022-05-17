@@ -24,10 +24,10 @@ import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.Any;
+import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
-import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
@@ -139,7 +139,7 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
         builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(reportConfigurationIdColumn, reportConfigIdSlice,String.class));
         builder.addMember(predicates);
 
-        ColumnPredicateNode<Any> thesePredicates = builder.build();
+        CompoundPredicateNode thesePredicates = builder.build();
 
         return () -> reportGroupsHandler.getResponseIterator(pageSize, tableHandle, thesePredicates);
     }
@@ -173,7 +173,7 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
     public Iterator<GroupingHandle> getResponseIterator(
             int pageSize,
             CyodaTableHandle tableHandle,
-            ColumnPredicateNode<Any> predicates
+            CompoundPredicateNode predicates
     ) {
         Iterable<DistributedReportInfoView> statsIterable = () -> statisticsApiHandler
                 .getResponseIterator(pageSize, tableHandle, predicates);

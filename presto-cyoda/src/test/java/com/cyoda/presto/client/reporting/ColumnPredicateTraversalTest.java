@@ -17,18 +17,15 @@
 
 package com.cyoda.presto.client.reporting;
 
+import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.type.VarcharType;
-import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slices;
 import org.testng.annotations.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
@@ -44,7 +41,7 @@ public class ColumnPredicateTraversalTest {
     @Test
     public void testOf() {
 
-        assertNotNull(PredicateTraversal.of(Collections.emptyList()));
+        assertNotNull(PredicateTraversal.of(CompoundPredicateNode.empty()));
 
         try {
             //noinspection ConstantConditions
@@ -65,7 +62,7 @@ public class ColumnPredicateTraversalTest {
         when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
         when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(Collections.emptyList()).assembleFilterings(mockHandle1.getColumnName());
+        Optional<Set<String>> selectionSet = PredicateTraversal.of(CompoundPredicateNode.empty()).assembleFilterings(mockHandle1.getColumnName());
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),0);
     }
@@ -80,7 +77,7 @@ public class ColumnPredicateTraversalTest {
 
         ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(
-                Collections.singletonList(builder(AND).addLeaf(hello).build())
+                builder(AND).addLeaf(hello).build()
         ).assembleFilterings(mockHandle1.getColumnName());
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
@@ -99,7 +96,7 @@ public class ColumnPredicateTraversalTest {
 
         ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
         Optional<Set<String>> selectionSet = PredicateTraversal.of(
-                Collections.singletonList(builder(AND).addLeaf(hello).build())
+                builder(AND).addLeaf(hello).build()
         ).assembleFilterings(mockHandle1.getColumnName());
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
@@ -117,12 +114,10 @@ public class ColumnPredicateTraversalTest {
 
         ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
         ColumnPredicate<String> goodbye = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("goodbye"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
-                        Arrays.asList(
-                                builder(AND).addLeaf(hello).build(),
-                                builder(AND).addLeaf(goodbye).build()
-                        )
-                )
+        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
+                        .addMember(builder(AND).addLeaf(hello).build())
+                        .addMember(builder(AND).addLeaf(goodbye).build())
+                        .build()
         ).assembleFilterings(mockHandle1.getColumnName());
         // Cannot select something that is "hello" AND "goodbye"
         assertFalse(selectionSet.isPresent());
@@ -138,12 +133,10 @@ public class ColumnPredicateTraversalTest {
 
         ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
         ColumnPredicate<String> sameAsHello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
-                        Arrays.asList(
-                                builder(AND).addLeaf(hello).build(),
-                                builder(AND).addLeaf(sameAsHello).build()
-                        )
-                )
+        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
+                        .addMember(builder(AND).addLeaf(hello).build())
+                        .addMember(builder(AND).addLeaf(sameAsHello).build())
+                        .build()
         ).assembleFilterings(mockHandle1.getColumnName());
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
@@ -166,12 +159,10 @@ public class ColumnPredicateTraversalTest {
 
         ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
         ColumnPredicate<String> sameAsHello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
-                        Arrays.asList(
-                                builder(AND).addLeaf(hello).build(),
-                                builder(AND).addLeaf(sameAsHello).build()
-                        )
-                )
+        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
+                .addMember(builder(AND).addLeaf(hello).build())
+                .addMember(builder(AND).addLeaf(sameAsHello).build())
+                .build()
         ).assembleFilterings(myMockHandle.getColumnName());
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),0);
@@ -195,19 +186,17 @@ public class ColumnPredicateTraversalTest {
 
         ColumnPredicate<String> notMyHello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
         ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
-                        Arrays.asList(
-                                builder(AND).addLeaf(notMyHello).build(),
-                                builder(AND).addLeaf(notMyGoodbye).build(),
-                                builder(AND)
+        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
+                        .addMember(builder(AND).addLeaf(notMyHello).build())
+                                .addMember(builder(AND).addLeaf(notMyGoodbye).build())
+                                .addMember(builder(AND)
                                         .addMember(CompoundPredicateNode.empty(null))
                                         .addMember(builder(OR)
                                                         .addLeaf(myHello)
                                                         .addLeaf(myGoodbye)
                                                         .build())
                                         .build()
-                        )
-                )
+                        ).build()
         ).assembleFilterings(myMockHandle.getColumnName());
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),2);
@@ -229,16 +218,14 @@ public class ColumnPredicateTraversalTest {
         ColumnPredicate<String> myHello = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
 
         ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
-                        Arrays.asList(
-                                builder(AND).addLeaf(myHello).build(),
-                                builder(AND).addLeaf(notMyGoodbye).build(),
-                                builder(AND)
+        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
+                        .addMember(builder(AND).addLeaf(myHello).build())
+                                .addMember(builder(AND).addLeaf(notMyGoodbye).build())
+                                .addMember(builder(AND)
                                         .addMember(CompoundPredicateNode.empty(null))
                                         .addMember(builder(AND).addLeaf(myHello).build())
                                         .build()
-                        )
-                )
+                        ).build()
         ).assembleFilterings(myMockHandle.getColumnName());
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
@@ -261,18 +248,16 @@ public class ColumnPredicateTraversalTest {
         ColumnPredicate<String> myGoodbye = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"),String.class);
 
         ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
-                        Arrays.asList(
-                                builder(AND).addLeaf(myHello).build(),
-                                builder(AND).addLeaf(notMyGoodbye).build(),
-                                builder(AND)
+        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
+                        .addMember(builder(AND).addLeaf(myHello).build())
+                        .addMember(builder(AND).addLeaf(notMyGoodbye).build())
+                        .addMember(builder(AND)
                                         .addMember(CompoundPredicateNode.empty(null))
                                         .addMember(builder(AND)
                                                 .addLeaf(myGoodbye)
                                                 .build())
                                         .build()
-                        )
-                )
+                        ).build()
         ).assembleFilterings(myMockHandle.getColumnName());
         assertFalse(selectionSet.isPresent());
     }
@@ -293,18 +278,16 @@ public class ColumnPredicateTraversalTest {
         ColumnPredicate<String> myHello = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
 
         ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
-                        Arrays.asList(
-                                builder(AND).addLeaf(myHello).build(),
-                                builder(AND).addLeaf(notMyGoodbye).build(),
-                                builder(OR)
+        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
+                        .addMember(builder(AND).addLeaf(myHello).build())
+                        .addMember(builder(AND).addLeaf(notMyGoodbye).build())
+                        .addMember(builder(OR)
                                         .addMember(CompoundPredicateNode.empty(null))
                                         .addMember(builder(OR)
                                                 .addLeaf(myHello)
                                                 .build())
                                         .build()
-                        )
-                )
+                        ).build()
         ).assembleFilterings(myMockHandle.getColumnName());
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
@@ -328,19 +311,17 @@ public class ColumnPredicateTraversalTest {
 
         ColumnPredicate<String> notMyHello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
         ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(ImmutableList.copyOf(
-                        Arrays.asList(
-                                builder(AND).addLeaf(notMyHello).build(),
-                                builder(AND).addLeaf(notMyGoodbye).build(),
-                                builder(OR)
+        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
+                        .addMember(builder(AND).addLeaf(notMyHello).build())
+                        .addMember(builder(AND).addLeaf(notMyGoodbye).build())
+                        .addMember(builder(OR)
                                         .addMember(CompoundPredicateNode.empty(null))
                                         .addMember(builder(OR)
                                                 .addLeaf(myHello)
                                                 .addLeaf(myGoodbye)
                                                 .build())
                                         .build()
-                        )
-                )
+                        ).build()
         ).assembleFilterings(myMockHandle.getColumnName());
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),2);

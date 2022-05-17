@@ -18,8 +18,7 @@
 package com.cyoda.presto.client.paging;
 
 import com.cyoda.presto.client.PagingApiRequestHandler;
-import com.cyoda.presto.client.logic.Any;
-import com.cyoda.presto.client.logic.ColumnPredicateNode;
+import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.spi.PrestoException;
@@ -37,11 +36,12 @@ public class PagedIterator<T> implements Iterable<T> {
     private final Function<Integer, PagingHandle<T>> pagingHandleSupplier;
 
     public PagedIterator(PagingApiRequestHandler<T> requestHandler, int pageSize,
-                         List<CyodaColumnHandle> projectedColumns, ColumnPredicateNode<Any> predicates) {
+                         List<CyodaColumnHandle> projectedColumns, CompoundPredicateNode predicates) {
         pagingHandleSupplier = page -> new PagingHandle<T>(requestHandler, page, pageSize, projectedColumns, predicates);
 
     }
 
+     // TODO: This will only work if you call hasNext() at each step.
     @Override
     public Iterator<T> iterator() {
         return new Iterator<T>() {

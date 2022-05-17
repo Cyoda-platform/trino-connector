@@ -15,8 +15,4 @@
  *
  */
 
-package com.cyoda.core.reports.columndefs;
-
-// TODO: implement when understand how valuations work!
-public class ReportValuationColDef /*implements ImmutableBean */{
-}
+select * from reports where type = 'ReportingDecorator';

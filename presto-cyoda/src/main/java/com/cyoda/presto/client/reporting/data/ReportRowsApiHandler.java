@@ -24,10 +24,10 @@ import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.Any;
+import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
-import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
@@ -227,7 +227,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(reportIdColumn, historyIdSlice,String.class));
         builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(groupJsonBase64Column, groupingValueSlice,String.class));
         builder.addMember(withReportPredicate);
-        ColumnPredicateNode<Any> predicates = builder.build();
+        CompoundPredicateNode predicates = builder.build();
 
         return () -> internalReportRowsApiHandler.getResponseIterator(pageSize, tableHandle, predicates);
     }
@@ -253,7 +253,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
     public Iterator<RowHandle> getResponseIterator(
             int pageSize,
             CyodaTableHandle tableHandle,
-            ColumnPredicateNode<Any> predicates
+            CompoundPredicateNode predicates
     ) {
 
         String reportConfigurationId = lookupTableMap()
@@ -263,7 +263,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
         builder.addMember(predicates);
         builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(reportConfigIdColumn, reportConfigIdSlice,String.class));
-        ColumnPredicateNode<Any> withReportPredicate = builder.build();
+        CompoundPredicateNode withReportPredicate = builder.build();
 
         Iterable<GroupingHandle> statsIterable = () -> groupsApiHandler
                 .getResponseIterator(pageSize, tableHandle, withReportPredicate);

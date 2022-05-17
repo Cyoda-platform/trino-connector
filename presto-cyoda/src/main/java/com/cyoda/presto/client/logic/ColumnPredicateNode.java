@@ -32,11 +32,10 @@ public interface ColumnPredicateNode<T extends Comparable<? super T>> {
      * @param predicates the root node
      * @return the members
      */
-    @SuppressWarnings("java:S1452")
-    static Collection<ColumnPredicateNode<?>> conjunctions(ColumnPredicateNode<Any> predicates) {
-        return Optional.ofNullable(predicates).orElse(CompoundPredicateNode.empty())
-                .getMembers()
-                .orElse(Collections.singletonList(CompoundPredicateNode.empty()));
+    static Collection<ColumnPredicateNode<?>> members(CompoundPredicateNode predicates) {
+        return Optional.ofNullable(predicates)
+                .map(it->it.getMembers().orElse(Collections.emptyList()))
+                .orElse(Collections.emptyList());
     }
 
     boolean isLeaf();

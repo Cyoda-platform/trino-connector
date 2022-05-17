@@ -22,8 +22,7 @@ import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.logic.Any;
-import com.cyoda.presto.client.logic.ColumnPredicateNode;
+import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
@@ -56,7 +55,6 @@ import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -171,13 +169,12 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
             int page,
             int pageSize,
             List<CyodaColumnHandle> projectedColumns,
-            ColumnPredicateNode<Any> predicates
+            CompoundPredicateNode predicates
     ) {
 
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
 
-        Collection<ColumnPredicateNode<?>> conjunctions = ColumnPredicateNode.conjunctions(predicates);
-        PredicateTraversal traversal = PredicateTraversal.of(conjunctions);
+        PredicateTraversal traversal = PredicateTraversal.of(predicates);
 
         UriTemplate uriTemplate = setupUriTemplate();
 
@@ -269,7 +266,7 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
     public Iterator<ReportHistoryFieldsView> getResponseIterator(
             int pageSize,
             CyodaTableHandle tableHandle,
-            ColumnPredicateNode<Any> predicates
+            CompoundPredicateNode predicates
     ) {
         List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
         return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();

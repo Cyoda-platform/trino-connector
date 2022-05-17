@@ -33,9 +33,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static com.cyoda.presto.client.logic.LeafPredicateNode.leaf;
-import static com.cyoda.presto.client.logic.PredicateBuilderDebugger.debug;
 import static com.cyoda.presto.client.logic.ColumnPredicateUtils.*;
+import static com.cyoda.presto.client.logic.PredicateBuilderDebugger.debug;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.nCopies;
 
@@ -50,7 +49,7 @@ public class ColumnPredicateBuilder {
     }
 
     @SuppressWarnings("java:S3252") // Silly warning
-    public static ColumnPredicateNode<Any> setupConstraintPredicates(TupleDomain<CyodaColumnHandle> constraintSummary) {
+    public static CompoundPredicateNode setupConstraintPredicates(TupleDomain<CyodaColumnHandle> constraintSummary) {
 
         LOG.debug("Taken from PredicateBuilderDebugger: %s",() -> debug(constraintSummary));
 

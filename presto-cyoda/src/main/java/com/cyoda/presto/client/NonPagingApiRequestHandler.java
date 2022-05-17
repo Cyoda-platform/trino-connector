@@ -17,8 +17,7 @@
 
 package com.cyoda.presto.client;
 
-import com.cyoda.presto.client.logic.Any;
-import com.cyoda.presto.client.logic.ColumnPredicateNode;
+import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import org.springframework.hateoas.EntityModel;
 
@@ -30,6 +29,6 @@ public interface NonPagingApiRequestHandler<T> extends ApiRequestHandler<T> {
     Optional<EntityModel<T>> retrievePage(
             int page,
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns, ColumnPredicateNode<Any> predicates);
+            List<CyodaColumnHandle> projectedColumns, CompoundPredicateNode predicates);
 
 }

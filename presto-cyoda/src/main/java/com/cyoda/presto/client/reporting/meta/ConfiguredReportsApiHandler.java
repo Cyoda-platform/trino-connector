@@ -22,8 +22,7 @@ import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.logic.Any;
-import com.cyoda.presto.client.logic.ColumnPredicateNode;
+import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
@@ -162,13 +161,14 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
     public Optional<PagedModel<GridConfigFieldsView>> retrievePage(
             int page,
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns, ColumnPredicateNode<Any> predicates) {
+            List<CyodaColumnHandle> projectedColumns,
+            CompoundPredicateNode predicates
+    ) {
 
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
 
 
-        Collection<ColumnPredicateNode<?>> conjunctions = ColumnPredicateNode.conjunctions(predicates);
-        PredicateTraversal traversal = PredicateTraversal.of(conjunctions);
+        PredicateTraversal traversal = PredicateTraversal.of(predicates);
 
         List<String> columnsWithFilter = Collections.singletonList(REPORT_TYPE_COLUMN);
         LOG.debug("Columns with Filter: %s",() -> Joiner.on(", ").join(columnsWithFilter));
@@ -257,7 +257,7 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
     public Iterator<GridConfigFieldsView> getResponseIterator(
             int pageSize,
             CyodaTableHandle tableHandle,
-            ColumnPredicateNode<Any> predicates
+            CompoundPredicateNode predicates
     ) {
         List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
         return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();

@@ -18,11 +18,11 @@
 package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.CyodaErrorCode;
+import com.cyoda.presto.client.logic.ColumnPredicate;
+import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
 import com.cyoda.presto.client.logic.LeafPredicateNode;
-import com.cyoda.presto.client.logic.ColumnPredicate;
-import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.base.Preconditions;
 
@@ -43,15 +43,15 @@ public class PredicateTraversal {
 
     private final CompoundPredicateNode conjunctions;
 
-    private PredicateTraversal(@Nonnull Collection<ColumnPredicateNode<?>> conjunctions) {
+    private PredicateTraversal(@Nonnull CompoundPredicateNode predicateNodes) {
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
-        conjunctions.forEach(builder::addMember);
+        ColumnPredicateNode.members(predicateNodes).forEach(builder::addMember);
         this.conjunctions = builder.build();
     }
 
-    public static @Nonnull PredicateTraversal of(@Nonnull Collection<ColumnPredicateNode<?>> conjunctions){
-        Preconditions.checkNotNull(conjunctions,"conjunctions is null");
-        return new PredicateTraversal(conjunctions);
+    public static @Nonnull PredicateTraversal of(@Nonnull CompoundPredicateNode predicateNodes){
+        Preconditions.checkNotNull(predicateNodes,"conjunctions is null");
+        return new PredicateTraversal(predicateNodes);
     }
 
     private static class Predicated<T> {

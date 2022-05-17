@@ -22,13 +22,11 @@ import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
-import com.cyoda.presto.client.logic.Any;
-import com.cyoda.presto.client.logic.ColumnPredicateNode;
+import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
-import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -55,7 +53,6 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -107,13 +104,12 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
             int page,
             int pageSize,
             List<CyodaColumnHandle> projectedColumns,
-            ColumnPredicateNode<Any> predicates
+            CompoundPredicateNode predicates
     ) {
 
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
 
-        Collection<ColumnPredicateNode<?>> conjunctions = ColumnPredicateNode.conjunctions(predicates);
-        PredicateTraversal traversal = PredicateTraversal.of(conjunctions);
+        PredicateTraversal traversal = PredicateTraversal.of(predicates);
 
         UriTemplate uriTemplate = setupUriTemplate();
 
@@ -203,7 +199,7 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
     public Iterator<RowHandle> getResponseIterator(
             int pageSize,
             CyodaTableHandle tableHandle,
-            ColumnPredicateNode<Any> predicates
+            CompoundPredicateNode predicates
     ) {
         List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
         return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();
