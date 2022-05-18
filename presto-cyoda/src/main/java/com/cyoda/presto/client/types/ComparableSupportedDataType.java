@@ -15,15 +15,7 @@
  *
  */
 
-package com.cyoda.presto.client.logic.converters.impl;
+package com.cyoda.presto.client.types;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
-
-import java.util.Map;
-
-public class MapPrestoValueConverter implements PrestoValueConverter<Map<?,?>> {
-    @Override
-    public Map<?, ?> toObject(Object nativeValue) {
-        throw new UnsupportedOperationException("no can do");
-    }
+public interface ComparableSupportedDataType<T extends Comparable<? super T>> extends SupportedDataType<T> {
 }

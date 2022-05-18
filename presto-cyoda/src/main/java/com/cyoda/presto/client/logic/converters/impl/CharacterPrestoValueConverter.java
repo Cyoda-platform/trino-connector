@@ -17,7 +17,38 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.facebook.presto.common.type.Type;
+import com.facebook.presto.common.type.VarcharType;
+import io.airlift.slice.Slice;
+import io.airlift.slice.Slices;
 
-public class CharacterPrestoValueConverter implements PrestoValueConverter<Character> {
+import javax.annotation.Nonnull;
+import java.nio.charset.StandardCharsets;
+
+public class CharacterPrestoValueConverter implements ComparablePrestoValueConverter<Character> {
+
+
+    @Override
+    public Class<Character> getClazz() {
+        return Character.class;
+    }
+
+    @Override
+    public Slice toSlice(@Nonnull Type type, @Nonnull Character value) {
+        return Slices.wrappedBuffer(value.toString().getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Nonnull
+    @Override
+    public Character fromSlice(@Nonnull Type type, Slice value) {
+        return new String(value.getBytes(),StandardCharsets.UTF_8).charAt(0);
+    }
+
+    @Override
+    public Character toObject(Object nativeValue) {
+        return fromSlice(VarcharType.VARCHAR,(Slice) nativeValue);
+    }
+
+
 }

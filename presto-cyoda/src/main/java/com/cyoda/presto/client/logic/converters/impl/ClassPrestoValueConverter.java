@@ -17,8 +17,18 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.facebook.presto.common.type.VarcharType;
+import io.airlift.slice.Slice;
 
 @SuppressWarnings({"ALL","java:S3740"})
-public class ClassPrestoValueConverter implements PrestoValueConverter<Class> {
+public class ClassPrestoValueConverter extends SliceValueConverter<Class> {
+    @Override
+    Class<Class> getClazz() {
+        return Class.class;
+    }
+
+    @Override
+    public Class toObject(Object nativeValue) {
+        return fromSlice(VarcharType.VARCHAR,(Slice) nativeValue);
+    }
 }

@@ -17,10 +17,10 @@
 
 package com.cyoda.presto.client.types.impl;
 
+import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.SupportedDataType;
 
-public class FloatDataType implements SupportedDataType<Float> {
+public class FloatDataType implements ComparableSupportedDataType<Float> {
     public static final FloatDataType INSTANCE = new FloatDataType();
 
     private FloatDataType() {}

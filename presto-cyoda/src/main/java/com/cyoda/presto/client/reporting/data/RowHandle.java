@@ -18,6 +18,7 @@
 package com.cyoda.presto.client.reporting.data;
 
 import com.cyoda.service.api.beans.ReportRow;
+import com.google.common.base.MoreObjects;
 
 public class RowHandle {
 
@@ -31,4 +32,12 @@ public class RowHandle {
         this.reportRow = reportRow;
     }
 
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("reportId", reportId)
+                .add("groupJsonBase64", groupJsonBase64)
+                .add("reportRow", reportRow)
+                .toString();
+    }
 }

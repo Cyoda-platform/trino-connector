@@ -17,12 +17,16 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
 
 import javax.annotation.Nonnull;
 import java.time.Year;
 
-public class YearPrestoValueConverter implements PrestoValueConverter<Year> {
+public class YearPrestoValueConverter implements ComparablePrestoValueConverter<Year> {
+    @Override
+    public Class<Year> getClazz() {
+        return Year.class;
+    }
 
     @Override
     public long toLong(@Nonnull Year value) {
@@ -43,6 +47,11 @@ public class YearPrestoValueConverter implements PrestoValueConverter<Year> {
     @Override
     public long maxValueOfIntType() {
         return Year.MAX_VALUE;
+    }
+
+    @Override
+    public Year toObject(Object nativeValue) {
+        return fromLong((Long) nativeValue);
     }
 
 }

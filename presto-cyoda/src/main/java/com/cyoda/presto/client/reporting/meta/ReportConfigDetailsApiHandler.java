@@ -289,12 +289,12 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
         // TODO: Just a hack right now. Check actual logic on Cyoda side.
         // Currently Maps are never returned in reports, only their values. See MapAllElementAccessorCmp
         // We can multiple [*] references in a CyodaColumnPath. See for example TestTrade.
-        if (path.endsWith("[*]")) {
-            return Types.newParameterizedType(List.class, clazz);
-        }
-        if (path.contains("[*]")) {
-            return Types.newParameterizedType(List.class, clazz);
-        }
+//        if (path.endsWith("[*]")) {
+//            return Types.newParameterizedType(List.class, clazz);
+//        }
+//        if (path.contains("[*]")) {
+//            return Types.newParameterizedType(List.class, clazz);
+//        }
         return Types.newParameterizedType(clazz);
     }
 
@@ -303,25 +303,27 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
         String basePath = format("$.content.colDefs[?(@.fullPath =='%1$s')].parts.value[-1:]", usableColumnName);
         return getParameterizedType(
                 documentContext,
-                basePath,
+                basePath + ".type",
+                basePath + ".path",
                 () -> INVALID_REPORT_DEFINITION_FOR + reportName + ". " + COLUMN + " " + columnName +
                         " not defined. Returning Object type."
         );
     }
 
     private ParameterizedType fromAliasDefs(String reportName, DocumentContext documentContext, String aliasName) {
-        String basePath = format("$.content.aliasDefs[?(@.name =='%1$s')].aliasPaths.value[0].colDef.parts.value[-1:]", aliasName);
+        String basePath = format("$.content.aliasDefs[?(@.name =='%1$s')]", aliasName);
         return getParameterizedType(
                 documentContext,
-                basePath,
+                basePath+".aliasType",
+                basePath+".aliasPaths.value[0].colDef.parts.value[-1:].path",
                 () -> INVALID_REPORT_DEFINITION_FOR + reportName + ". " + ALIAS + " " + aliasName +
                         " not defined. Returning Object type."
         );
     }
 
-    private ParameterizedType getParameterizedType(DocumentContext documentContext, String basePath, Supplier<String> warnMessageSupplier) {
-        String className = getSingleValue(documentContext, basePath + ".type");
-        String columnPath = getSingleValue(documentContext, basePath + ".path");
+    private ParameterizedType getParameterizedType(DocumentContext documentContext, String pathToClassName, String pathToColumnPath, Supplier<String> warnMessageSupplier) {
+        String className = getSingleValue(documentContext, pathToClassName);
+        String columnPath = getSingleValue(documentContext, pathToColumnPath);
         if (className == null || columnPath == null) {
             LOG.warn(warnMessageSupplier.get());
             return toParametrizedType(Object.class.getName(), "");

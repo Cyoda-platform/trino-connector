@@ -22,4 +22,8 @@ import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import java.util.List;
 
 public class ListPrestoValueConverter implements PrestoValueConverter<List<?>> {
+    @Override
+    public List<?> toObject(Object nativeValue) {
+        throw new UnsupportedOperationException("no can do");
+    }
 }

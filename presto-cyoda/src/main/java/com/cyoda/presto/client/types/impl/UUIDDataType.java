@@ -17,12 +17,12 @@
 
 package com.cyoda.presto.client.types.impl;
 
+import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.SupportedDataType;
 
 import java.util.UUID;
 
-public class UUIDDataType implements SupportedDataType<UUID> {
+public class UUIDDataType implements ComparableSupportedDataType<UUID> {
     public static final UUIDDataType INSTANCE = new UUIDDataType();
 
     private UUIDDataType() {}

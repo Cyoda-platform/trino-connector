@@ -17,12 +17,12 @@
 
 package com.cyoda.presto.client.types.impl;
 
+import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.SupportedDataType;
 
 import java.time.LocalDate;
 
-public class LocalDateDataType implements SupportedDataType<LocalDate> {
+public class LocalDateDataType implements ComparableSupportedDataType<LocalDate> {
     public static final LocalDateDataType INSTANCE = new LocalDateDataType();
 
     private LocalDateDataType() {}

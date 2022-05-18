@@ -17,7 +17,7 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
 
 import javax.annotation.Nonnull;
 import java.time.Instant;
@@ -25,9 +25,14 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
-public class LocalDateTimePrestoValueConverter implements PrestoValueConverter<LocalDateTime> {
+public class LocalDateTimePrestoValueConverter implements ComparablePrestoValueConverter<LocalDateTime> {
 
     public static final ZoneId UTC = ZoneId.of("UTC");
+
+    @Override
+    public Class<LocalDateTime> getClazz() {
+        return LocalDateTime.class;
+    }
 
     @Override
     public long toLong(@Nonnull LocalDateTime value) {
@@ -49,4 +54,10 @@ public class LocalDateTimePrestoValueConverter implements PrestoValueConverter<L
     public long maxValueOfIntType() {
         return Long.MAX_VALUE;
     }
+
+    @Override
+    public LocalDateTime toObject(Object nativeValue) {
+        return fromLong((Long) nativeValue);
+    }
+
 }

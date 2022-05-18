@@ -20,4 +20,8 @@ package com.cyoda.presto.client.logic.converters.impl;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 
 public class ArrayPrestoValueConverter implements PrestoValueConverter<Object[]> {
+    @Override
+    public Object[] toObject(Object nativeValue) {
+        throw new UnsupportedOperationException("no can do");
+    }
 }

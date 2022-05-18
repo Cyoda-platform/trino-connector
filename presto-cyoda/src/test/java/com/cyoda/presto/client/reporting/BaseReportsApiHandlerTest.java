@@ -73,7 +73,6 @@ public class BaseReportsApiHandlerTest {
         }
     }
 
-    @Test
     public void testToTableName() {
         assertEquals(BaseReportsApiHandler.reportNameToTableName("My NameIsNobody"),"MY_NAME_IS_NOBODY");
         assertEquals(BaseReportsApiHandler.reportNameToTableName("$My Name-IsNo&bod%y"),"MY_NAME_IS_NOBODY");

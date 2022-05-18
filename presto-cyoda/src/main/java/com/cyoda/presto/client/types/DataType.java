@@ -18,6 +18,7 @@
 package com.cyoda.presto.client.types;
 
 import com.cyoda.presto.client.logic.Any;
+import com.cyoda.presto.client.logic.converters.impl.UUIDPrestoValueConverter;
 import com.cyoda.presto.client.types.impl.ArrayDataType;
 import com.cyoda.presto.client.types.impl.BigDecimalDataType;
 import com.cyoda.presto.client.types.impl.BigIntegerDataType;
@@ -43,8 +44,11 @@ import com.cyoda.presto.client.types.impl.UUIDDataType;
 import com.cyoda.presto.client.types.impl.YearDataType;
 import com.cyoda.presto.client.types.impl.YearMonthDataType;
 import com.cyoda.presto.client.types.impl.ZonedDateTimeDataType;
+import com.facebook.presto.common.type.IntegerType;
+import com.facebook.presto.common.type.JsonType;
 import com.facebook.presto.common.type.StandardTypes;
-import com.facebook.presto.spi.PrestoException;
+import com.facebook.presto.common.type.Type;
+import com.facebook.presto.common.type.VarcharType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -70,8 +74,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.cyoda.presto.CyodaErrorCode.CYODA_INCORRECT_TYPE_ERROR;
-
 /**
  * This might help to figure out what the correct presto type is: com.facebook.presto.client.FixJsonDataUtils
  */
@@ -80,7 +82,7 @@ public enum DataType {
     BYTE(Byte.class, StandardTypes.TINYINT),
     DOUBLE(Double.class, StandardTypes.DOUBLE),
     INTEGER(Integer.class, StandardTypes.INTEGER),
-    BIG_DECIMAL(BigDecimal.class, StandardTypes.DECIMAL),
+    BIG_DECIMAL(BigDecimal.class, BigDecimalType.BIG_DECIMAL),
     BIG_INTEGER(BigInteger.class, StandardTypes.BIGINT),
     BOOLEAN(Boolean.class,StandardTypes.BOOLEAN),
     LOCAL_DATE(LocalDate.class,StandardTypes.DATE),
@@ -94,7 +96,7 @@ public enum DataType {
     YEAR(Year.class,StandardTypes.INTEGER),
     YEAR_MONTH(YearMonth.class,StandardTypes.VARCHAR),
     LOCAL_TIME(LocalTime.class,StandardTypes.TIME), // Unsure
-    UUID_TYPE(UUID.class,StandardTypes.VARCHAR),  // StandardType.UUID does not work. Presto wants a String. Trino supports UUID.
+    UUID_TYPE(UUID.class, UUIDPrestoValueConverter.TYPE_STRING),
     BYTE_ARRAY(byte[].class,StandardTypes.VARBINARY),
     BYTE_BUFFER(ByteBuffer.class,StandardTypes.VARBINARY),
     CLASS(Class.class,StandardTypes.VARCHAR),
@@ -172,6 +174,33 @@ public enum DataType {
         }
     }
 
+    @SuppressWarnings("unchecked")
+    public <S extends Comparable<? super S>> ComparableSupportedDataType<S> asComparableSupported() {
+        switch (this) {
+            case LOCAL_DATE: return (ComparableSupportedDataType<S>) LocalDateDataType.INSTANCE;
+            case LOCAL_DATE_TIME: return (ComparableSupportedDataType<S>) LocalDateTimeDataType.INSTANCE;
+            case LOCAL_TIME: return (ComparableSupportedDataType<S>) LocalTimeDataType.INSTANCE;
+            case ZONED_DATE_TIME: return (ComparableSupportedDataType<S>) ZonedDateTimeDataType.INSTANCE;
+            case DATE: return (ComparableSupportedDataType<S>) DateDataType.INSTANCE;
+            case STRING: return (ComparableSupportedDataType<S>) StringDataType.INSTANCE;
+            case YEAR: return (ComparableSupportedDataType<S>) YearDataType.INSTANCE;
+            case YEAR_MONTH: return (ComparableSupportedDataType<S>) YearMonthDataType.INSTANCE;
+            case BOOLEAN: return (ComparableSupportedDataType<S>) BooleanDataType.INSTANCE;
+            case LONG: return (ComparableSupportedDataType<S>) LongDataType.INSTANCE;
+            case INTEGER: return (ComparableSupportedDataType<S>) IntegerDataType.INSTANCE;
+            case SHORT: return (ComparableSupportedDataType<S>) ShortDataType.INSTANCE;
+            case FLOAT: return (ComparableSupportedDataType<S>) FloatDataType.INSTANCE;
+            case DOUBLE: return (ComparableSupportedDataType<S>) DoubleDataType.INSTANCE;
+            case BYTE: return (ComparableSupportedDataType<S>) ByteDataType.INSTANCE;
+            case BYTE_BUFFER: return (ComparableSupportedDataType<S>) ByteBufferDataType.INSTANCE;
+            case BIG_DECIMAL: return (ComparableSupportedDataType<S>) BigDecimalDataType.INSTANCE;
+            case BIG_INTEGER: return (ComparableSupportedDataType<S>) BigIntegerDataType.INSTANCE;
+            case UUID_TYPE: return (ComparableSupportedDataType<S>) UUIDDataType.INSTANCE;
+            default:
+                throw new UnsupportedOperationException(this+ " Not yet implemented");
+        }
+    }
+
     public static final Map<Class<?>, DataType> objectClassToDataType = ImmutableMap.copyOf(
             Arrays.stream(DataType.values()).filter(it -> it.javaType != null).collect(Collectors.toMap(it -> it.javaType, it -> it))
     );
@@ -205,6 +234,24 @@ public enum DataType {
     public static Optional<DataType> fromClass(Class<?> clazz) {
        return Optional.ofNullable(classToDataType.get(clazz));
     }
+
+
+    public static DataType fromType(Type type) {
+        if ( type.getTypeSignature().getBase().equals(VarcharType.VARCHAR.getTypeSignature().getBase())) {
+            return STRING;
+        }
+        if ( type.getTypeSignature().getBase().equals(IntegerType.INTEGER.getTypeSignature().getBase())) {
+            return INTEGER;
+        }
+        if ( type.getTypeSignature().getBase().equals(JsonType.JSON.getTypeSignature().getBase())) {
+            return OBJECT;
+        }
+        if ( type.getTypeSignature().getBase().equals(BigDecimalType.BIG_DECIMAL_TYPE.getTypeSignature().getBase())) {
+            return BIG_DECIMAL;
+        }
+        throw new UnsupportedOperationException("Mapping of "+type+" to DataType not yet implemented");
+    }
+
 
     public static final Set<String> supportedPrestoTypes = ImmutableSet.copyOf(
             Arrays.stream(DataType.values())

@@ -22,4 +22,8 @@ import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import java.util.Set;
 
 public class SetPrestoValueConverter implements PrestoValueConverter<Set<?>> {
+    @Override
+    public Set<?> toObject(Object nativeValue) {
+        throw new UnsupportedOperationException("no can do");
+    }
 }

@@ -17,20 +17,31 @@
 
 package com.cyoda.presto.client.logic.converters;
 
+import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.SupportedDataType;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class PrestoValueConverters {
 
     private final Map<SupportedDataType<?>, PrestoValueConverter<?>> converters;
+    private final Map<SupportedDataType<? extends Comparable<?>>, ComparablePrestoValueConverter<?>> comparableConverters;
 
     public PrestoValueConverters(Map<SupportedDataType<?>, PrestoValueConverter<?>> converters) {
         this.converters = converters;
+        this.comparableConverters = converters.entrySet().stream()
+                .filter(it->Comparable.class.isAssignableFrom(it.getKey().getDataType().getJavaType()))
+                .collect(Collectors.toMap(e->(ComparableSupportedDataType<? extends Comparable<?>>) e.getKey(), e->(ComparablePrestoValueConverter<?>)e.getValue()
+                ));
     }
 
     public <S> PrestoValueConverter<S> getPrestoValueConverter(SupportedDataType<S> supportedDataType) {
         //noinspection unchecked
         return (PrestoValueConverter<S>) converters.get(supportedDataType);
+    }
+
+    public ComparablePrestoValueConverter<?> getComparablePrestoValueConverter(ComparableSupportedDataType<?> supportedDataType) {
+        return comparableConverters.get(supportedDataType);
     }
 }

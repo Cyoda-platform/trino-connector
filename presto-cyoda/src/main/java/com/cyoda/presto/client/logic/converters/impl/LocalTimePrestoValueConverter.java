@@ -17,9 +17,41 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
 
+import javax.annotation.Nonnull;
 import java.time.LocalTime;
 
-public class LocalTimePrestoValueConverter implements PrestoValueConverter<LocalTime> {
+public class LocalTimePrestoValueConverter implements ComparablePrestoValueConverter<LocalTime> {
+    @Override
+    public Class<LocalTime> getClazz() {
+        return LocalTime.class;
+    }
+
+    @Override
+    public long toLong(@Nonnull LocalTime value) {
+        return value.toNanoOfDay();
+    }
+
+    @Nonnull
+    @Override
+    public LocalTime fromLong(long value) {
+        return LocalTime.ofNanoOfDay(value);
+    }
+
+    @Override
+    public long minValueOfIntType() {
+        return LocalTime.MIN.toNanoOfDay();
+    }
+
+    @Override
+    public long maxValueOfIntType() {
+        return LocalTime.MAX.toNanoOfDay();
+    }
+
+    @Override
+    public LocalTime toObject(Object nativeValue) {
+        return fromLong((Long) nativeValue);
+    }
+
 }

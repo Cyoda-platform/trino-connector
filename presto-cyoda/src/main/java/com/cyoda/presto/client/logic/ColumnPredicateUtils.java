@@ -17,10 +17,19 @@
 
 package com.cyoda.presto.client.logic;
 
+import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
+import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.client.types.DataTypeValue;
+import com.cyoda.presto.client.types.impl.DateDataType;
 import com.cyoda.presto.client.types.impl.LocalDateDataType;
+import com.cyoda.presto.client.types.impl.LocalDateTimeDataType;
+import com.cyoda.presto.client.types.impl.LocalTimeDataType;
+import com.cyoda.presto.client.types.impl.YearDataType;
+import com.cyoda.presto.client.types.impl.YearMonthDataType;
+import com.cyoda.presto.client.types.impl.ZonedDateTimeDataType;
 import com.cyoda.presto.client.util.DecimalUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.predicate.DiscreteValues;
@@ -311,9 +320,10 @@ public class ColumnPredicateUtils {
 
         DataType dataType = DataType.LOCAL_DATE;
         checkColumn(column, dataType);
-        long par = PrestoValueConverterProvider.getPrestoValueConverter(LocalDateDataType.INSTANCE).toLong(value);
+        PrestoValueConverter<LocalDate> converter = PrestoValueConverterProvider.getPrestoValueConverter(LocalDateDataType.INSTANCE);
+        long par = converter.toLong(value);
         return delegateToLong(column, op, par)
-                .cloneTo(column,item-> LocalDate.ofEpochDay(item.parseToLong()));
+                .cloneTo(column,item-> converter.fromLong(item.parseToLong()));
     }
 
     static ColumnPredicate<LocalDateTime> newComparisonPredicate(CyodaColumnHandle column,
@@ -321,40 +331,59 @@ public class ColumnPredicateUtils {
                                                                  LocalDateTime value) {
         DataType dataType = DataType.LOCAL_DATE_TIME;
         checkColumn(column, dataType);
-        return delegateToLong(column, op, value.toInstant(ZoneOffset.UTC).toEpochMilli())
-                .cloneTo(column,item->LocalDateTime.ofInstant(Instant.ofEpochMilli(item.parseToLong()), ZoneId.of("UTC")));
+        PrestoValueConverter<LocalDateTime> converter = PrestoValueConverterProvider.getPrestoValueConverter(LocalDateTimeDataType.INSTANCE);
+        long par = converter.toLong(value);
+        return delegateToLong(column, op, par)
+                .cloneTo(column,item-> converter.fromLong(item.parseToLong()));
     }
     static ColumnPredicate<ZonedDateTime> newComparisonPredicate(CyodaColumnHandle column,
                                                                  ColumnPredicate.ComparisonOp op,
                                                                  ZonedDateTime value) {
         DataType dataType = DataType.ZONED_DATE_TIME;
         checkColumn(column, dataType);
-        return delegateToLong(column, op, value.toInstant().toEpochMilli())
-                .cloneTo(column,item->ZonedDateTime.ofInstant(Instant.ofEpochMilli(item.parseToLong()),value.getZone()));
+        PrestoValueConverter<ZonedDateTime> converter = PrestoValueConverterProvider.getPrestoValueConverter(ZonedDateTimeDataType.INSTANCE);
+        long par = converter.toLong(value);
+        return delegateToLong(column, op, par)
+                .cloneTo(column,item-> converter.fromLong(item.parseToLong()));
     }
     static ColumnPredicate<Year> newComparisonPredicate(CyodaColumnHandle column,
                                                         ColumnPredicate.ComparisonOp op,
                                                         Year value) {
         DataType dataType = DataType.YEAR;
         checkColumn(column, dataType);
-        return delegateToLong(column, op, value.getValue())
-                .cloneTo(column,item->Year.of(item.parseToLong().intValue()));
+        PrestoValueConverter<Year> converter = PrestoValueConverterProvider.getPrestoValueConverter(YearDataType.INSTANCE);
+        long par = converter.toLong(value);
+        return delegateToLong(column, op, par)
+                .cloneTo(column,item-> converter.fromLong(item.parseToLong()));
     }
     static ColumnPredicate<YearMonth> newComparisonPredicate(CyodaColumnHandle column,
                                                              ColumnPredicate.ComparisonOp op,
                                                              YearMonth value) {
         DataType dataType = DataType.YEAR_MONTH;
         checkColumn(column, dataType);
-        return delegateToLong(column, op, value.atEndOfMonth().toEpochDay())
-                .cloneTo(column,item->YearMonth.from(LocalDate.ofEpochDay(item.parseToLong())));
+        PrestoValueConverter<YearMonth> converter = PrestoValueConverterProvider.getPrestoValueConverter(YearMonthDataType.INSTANCE);
+        long par = converter.toLong(value);
+        return delegateToLong(column, op, par)
+                .cloneTo(column,item-> converter.fromLong(item.parseToLong()));
     }
     static ColumnPredicate<LocalTime> newComparisonPredicate(CyodaColumnHandle column,
                                                              ColumnPredicate.ComparisonOp op,
                                                              LocalTime value) {
         DataType dataType = DataType.LOCAL_TIME;
         checkColumn(column, dataType);
-        return delegateToLong(column, op, value.toNanoOfDay())
-                .cloneTo(column,item->LocalTime.ofNanoOfDay(item.parseToLong()));
+        PrestoValueConverter<LocalTime> converter = PrestoValueConverterProvider.getPrestoValueConverter(LocalTimeDataType.INSTANCE);
+        long par = converter.toLong(value);
+        return delegateToLong(column, op, par)
+                .cloneTo(column,item-> converter.fromLong(item.parseToLong()));
+    }
+    static ColumnPredicate<Date> newComparisonPredicate(CyodaColumnHandle column,
+                                                        ColumnPredicate.ComparisonOp op,
+                                                        Date value) {
+        checkColumn(column, DataType.DATE);
+        PrestoValueConverter<Date> converter = PrestoValueConverterProvider.getPrestoValueConverter(DateDataType.INSTANCE);
+        long par = converter.toLong(value);
+        return delegateToLong(column, op, par)
+                .cloneTo(column,item-> converter.fromLong(item.parseToLong()));
     }
 
 
@@ -419,21 +448,6 @@ public class ColumnPredicateUtils {
     }
 
 
-    /**
-     * Creates a new comparison predicate on a date column.
-     *
-     * @param column the column schema
-     * @param op     the comparison operation
-     * @param value  the value to compare against
-     */
-    static ColumnPredicate<Date> newComparisonPredicate(CyodaColumnHandle column,
-                                                        ColumnPredicate.ComparisonOp op,
-                                                        Date value) {
-        checkColumn(column, DataType.DATE);
-        long days = value.toInstant().toEpochMilli();
-        return delegateToLong(column, op, days)
-                .cloneTo(column,item->Date.from(Instant.ofEpochMilli(item.parseToLong())));
-    }
 
     /**
      * Creates a new comparison predicate on a float column.
@@ -691,7 +705,7 @@ public class ColumnPredicateUtils {
             ColumnPredicate.ComparisonOp op,
             Object nativeValue,
             Class<T> javaType) {
-        DataTypeValue<T> thing = DataTypeValue.ofPrestoNativeValue(columnHandle.getColumnType(), nativeValue, javaType);
+        DataTypeValue<T> thing = DataTypeValue.ofPrestoNativeValue(columnHandle.getDataType().asSupported(), nativeValue, javaType);
         return newComparisonPredicate(columnHandle, op, thing);
     }
 
@@ -755,36 +769,19 @@ public class ColumnPredicateUtils {
 
     @SuppressWarnings("java:S1452")
     static ColumnPredicate<?> newInListPredicateFromDiscrete(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
-        // TODO: This does not yet cover all cases.
-        switch (columnHandle.getDataType()) {
-            case LONG:
-                return newInListPredicate(columnHandle, discreteValues, Long.class);
-            case INTEGER:
-                return newInListPredicate(columnHandle, discreteValues, Integer.class);
-            case SHORT:
-                return newInListPredicate(columnHandle, discreteValues, Short.class);
-            case BYTE:
-                return newInListPredicate(columnHandle, discreteValues, Byte.class);
-            case STRING:
-                return newInListPredicate(columnHandle, discreteValues, String.class);
-            case DOUBLE:
-                return newInListPredicate(columnHandle, discreteValues, Double.class);
-            case FLOAT:
-                return newInListPredicate(columnHandle, discreteValues, Float.class);
-            case BOOLEAN:
-                return newInListPredicate(columnHandle, discreteValues, Boolean.class);
-            default:
-                throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "DataType  " + columnHandle.getDataType() + " not yet supported");
-        }
+        ComparableSupportedDataType<?> sSupportedDataType = columnHandle.getDataType().asComparableSupported();
+        ComparablePrestoValueConverter<?> prestoValueConverter = PrestoValueConverterProvider
+                .getComparablePrestoValueConverterU(sSupportedDataType);
+        return prestoValueConverter.newInListPredicate(columnHandle,discreteValues);
     }
 
-    static <T extends Comparable<T>> ColumnPredicate<T> newInListPredicate(
+    public static <T extends Comparable<? super T>> ColumnPredicate<T> newInListPredicate(
             final CyodaColumnHandle columnHandle,
             final DiscreteValues discreteValues,
-            final Class<T> javaType) {
-        Type type = columnHandle.getColumnType();
+            final Class<T> javaType
+    ) {
         SortedSet<DataTypeValue<T>> javaValues = discreteValues.getValues().stream()
-                .map(nativeValue -> DataTypeValue.ofPrestoNativeValue(type, nativeValue, javaType))
+                .map(nativeValue -> DataTypeValue.ofPrestoNativeValue(columnHandle.getDataType().asSupported(), nativeValue, javaType))
                 .sorted()
                 .collect(Collectors.toCollection(TreeSet::new));
         return newInListPredicate(columnHandle, javaValues);
@@ -800,7 +797,7 @@ public class ColumnPredicateUtils {
      *               the type of values, must match the type of the column
      * @return an IN list predicate
      */
-    static <T extends Comparable<T>> ColumnPredicate<T> newInListPredicate(
+    public static <T extends Comparable<? super T>> ColumnPredicate<T> newInListPredicate(
             final CyodaColumnHandle column,
             final SortedSet<DataTypeValue<T>> values
     ) {

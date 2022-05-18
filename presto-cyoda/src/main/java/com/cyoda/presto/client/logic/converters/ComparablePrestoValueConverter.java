@@ -15,28 +15,19 @@
  *
  */
 
-package com.cyoda.presto.client.logic.converters.impl;
+package com.cyoda.presto.client.logic.converters;
 
 import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.logic.ColumnPredicateUtils;
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.predicate.DiscreteValues;
 
-public class BooleanPrestoValueConverter implements ComparablePrestoValueConverter<Boolean> {
-    @Override
-    public Class<Boolean> getClazz() {
-        return Boolean.class;
-    }
+public interface ComparablePrestoValueConverter<T extends Comparable<? super T>> extends PrestoValueConverter<T> {
 
-    @Override
-    public ColumnPredicate<Boolean> newInListPredicate(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
-        return ColumnPredicateUtils.newInListPredicate(columnHandle, discreteValues, Boolean.class);
-    }
+    Class<T> getClazz();
 
-
-    @Override
-    public Boolean toObject(Object nativeValue) {
-        return (Boolean) nativeValue;
+    /****** predicate building *******/
+    default ColumnPredicate<T> newInListPredicate(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
+        return ColumnPredicateUtils.newInListPredicate(columnHandle, discreteValues, getClazz());
     }
 }

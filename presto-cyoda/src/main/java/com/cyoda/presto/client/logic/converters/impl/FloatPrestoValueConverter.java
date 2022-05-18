@@ -17,7 +17,47 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
 
-public class FloatPrestoValueConverter implements PrestoValueConverter<Float> {
+import javax.annotation.Nonnull;
+
+import static java.lang.Float.floatToRawIntBits;
+import static java.lang.Float.intBitsToFloat;
+
+public class FloatPrestoValueConverter implements ComparablePrestoValueConverter<Float> {
+
+    public static final long MIN_LONG = Float.valueOf(Float.MIN_VALUE).longValue();
+    public static final long MAX_LONG = Float.valueOf(Float.MAX_VALUE).longValue();
+
+    @Override
+    public Class<Float> getClazz() {
+        return Float.class;
+    }
+
+    @Override
+    public long toLong(@Nonnull Float value) {
+        return floatToRawIntBits(value);
+    }
+
+    @Nonnull
+    @Override
+    public Float fromLong(long value) {
+        return intBitsToFloat((int)value);
+    }
+
+    @Override
+    public long minValueOfIntType() {
+        return MIN_LONG;
+    }
+
+    @Override
+    public long maxValueOfIntType() {
+        return MAX_LONG;
+    }
+
+    @Override
+    public Float toObject(Object nativeValue) {
+        return fromLong((Long) nativeValue);
+    }
+
 }

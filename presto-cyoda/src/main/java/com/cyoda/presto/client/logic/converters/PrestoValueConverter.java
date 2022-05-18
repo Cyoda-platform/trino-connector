@@ -17,11 +17,15 @@
 
 package com.cyoda.presto.client.logic.converters;
 
+import com.facebook.presto.common.type.Type;
+import io.airlift.slice.Slice;
+
 import javax.annotation.Nonnull;
 
 public interface PrestoValueConverter<T> {
+    /****** conversion to/from long *******/
     default long toLong(@Nonnull T value) {
-        throw new UnsupportedOperationException("not implemented or supported");
+        throw new UnsupportedOperationException("not implemented or supported for "+value.getClass().getName());
     }
 
     default @Nonnull T fromLong(long value) {
@@ -35,4 +39,15 @@ public interface PrestoValueConverter<T> {
     default long maxValueOfIntType() {
         throw new UnsupportedOperationException("not implemented or supported");
     }
+
+    /****** conversion to/from Slice *******/
+    default Slice toSlice(@Nonnull Type type, @Nonnull T value) {
+        throw new UnsupportedOperationException("not implemented or supported");
+    }
+
+    default @Nonnull T fromSlice(@Nonnull Type type, Slice value) {
+        throw new UnsupportedOperationException("not implemented or supported");
+    }
+
+    T toObject(Object nativeValue);
 }

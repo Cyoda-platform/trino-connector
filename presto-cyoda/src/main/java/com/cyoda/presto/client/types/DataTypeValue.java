@@ -19,7 +19,6 @@ package com.cyoda.presto.client.types;
 
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
-import com.cyoda.presto.client.logic.converters.impl.BytePrestoValueConverter;
 import com.cyoda.presto.client.types.impl.DateDataType;
 import com.cyoda.presto.client.types.impl.LocalDateDataType;
 import com.facebook.airlift.json.JsonCodec;
@@ -28,7 +27,6 @@ import com.facebook.presto.common.type.BigintType;
 import com.facebook.presto.common.type.BooleanType;
 import com.facebook.presto.common.type.DateType;
 import com.facebook.presto.common.type.DecimalType;
-import com.facebook.presto.common.type.Decimals;
 import com.facebook.presto.common.type.DoubleType;
 import com.facebook.presto.common.type.IntegerType;
 import com.facebook.presto.common.type.JsonType;
@@ -43,7 +41,6 @@ import com.facebook.presto.common.type.VarbinaryType;
 import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
-import com.facebook.presto.type.UuidType;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -52,19 +49,17 @@ import com.google.common.primitives.UnsignedBytes;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Year;
 import java.time.YearMonth;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.Base64;
 import java.util.Comparator;
@@ -82,8 +77,6 @@ import java.util.function.Supplier;
 import static com.cyoda.presto.CyodaErrorCode.CYODA_INCORRECT_TYPE_ERROR;
 import static com.cyoda.presto.client.types.DataType.*;
 import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT;
-import static io.airlift.slice.Slices.EMPTY_SLICE;
-import static io.airlift.slice.Slices.wrappedBuffer;
 import static java.lang.Double.longBitsToDouble;
 import static java.lang.Float.intBitsToFloat;
 import static java.lang.String.format;
@@ -136,22 +129,8 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
         return new DataTypeValue(value, dataType.getJavaType());
     }
 
-    private static DataType fromType(Type type) {
-        if ( type.getTypeSignature().getBase().equals(VarcharType.VARCHAR.getTypeSignature().getBase())) {
-            return STRING;
-        }
-        if ( type.getTypeSignature().getBase().equals(IntegerType.INTEGER.getTypeSignature().getBase())) {
-            return INTEGER;
-        }
-        if ( type.getTypeSignature().getBase().equals(JsonType.JSON.getTypeSignature().getBase())) {
-            return OBJECT;
-        }
-        throw new UnsupportedOperationException("Mapping of "+type+" to DataType not yet implemented");
-    }
-
-
-    public static <S> DataTypeValue<S> ofPrestoNativeValue(Type type, Object nativeValue, Class<S> targetClass) {
-        Object obj = getJavaValue(type, nativeValue,targetClass);
+    public static <S> DataTypeValue<S> ofPrestoNativeValue(SupportedDataType<?> dataType, Object nativeValue, Class<S> targetClass) {
+        Object obj = getJavaValue(dataType, nativeValue);
         Preconditions.checkArgument(targetClass.isAssignableFrom(obj.getClass()),"%s is not assignable from %s",targetClass,obj.getClass());
         //noinspection unchecked
         return of((S) obj, targetClass);
@@ -197,7 +176,7 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
         return Objects.hash(value, javaType, supportedDataType);
     }
 
-    private static final Supplier<ObjectMapper> OBJECT_MAPPER_SUPPLIER = Suppliers.memoize(
+    public static final Supplier<ObjectMapper> OBJECT_MAPPER_SUPPLIER = Suppliers.memoize(
             () -> new JsonObjectMapperProvider().get().enable(INDENT_OUTPUT))::get;
 
     public Optional<String> stringify() {
@@ -267,7 +246,7 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
 
     }
 
-    private String cleanUpJson(String json) {
+    public static String cleanUpJson(@Nonnull String json) {
         String result;
         // We get additional quotes from jackson, if the field is an Optional
         if ( isSingleElementJson(json) || json.startsWith("\"")) {
@@ -287,19 +266,6 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
                 return false;
             }
         } else return false;
-    }
-
-    public Optional<ByteBuffer> encode() {
-        if ( this.supportedDataType.getDataType() == BYTE_ARRAY) return Optional.ofNullable(this.value).map(it->ByteBuffer.wrap((byte[]) it));
-        if ( this.supportedDataType.getDataType() == BYTE_BUFFER) return Optional.ofNullable((ByteBuffer) this.value);
-        if ( this.supportedDataType.getDataType() == STRING) return Optional.of(
-                ByteBuffer.wrap(Base64.getEncoder().encode(
-                        Optional.ofNullable(this.value).map(it->it.toString().getBytes(StandardCharsets.UTF_8))
-                                .orElse(new byte[0])
-                        )
-                )
-        );
-        throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR, "[Cyoda] "+this.supportedDataType + " not supported for encoding");
     }
 
 
@@ -325,44 +291,48 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
     // TODO: Refactor logic to into PrestoValueConverterProvider.
     // It will be used here, in parseToLong and asSlice, and also in Predicate newComparisonPredicate(...) for each type.
     // Taken from Kudu TypeHelper
-    public static Object getJavaValue(Type type, Object nativeValue, Class<?> javaType) {
-        // It  needs to mirror the logic in asSlice / parseToLong
-        if (type instanceof VarcharType) {
-            return ((Slice) nativeValue).toStringUtf8();
-        } else if (type == TimestampType.TIMESTAMP) {
-            if ( LocalDateTime.class.isAssignableFrom(javaType)) {
-                return PrestoValueConverterProvider.getPrestoValueConverter(LocalDateDataType.INSTANCE).fromLong((Long)nativeValue);
-            } else if ( Date.class.isAssignableFrom(javaType)) {
-                return PrestoValueConverterProvider.getPrestoValueConverter(DateDataType.INSTANCE).fromLong((Long)nativeValue);
-            } else {
-                throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Timestamp Back conversion not implemented for " + javaType);
-            }
-        } else if (type == BigintType.BIGINT) {
-            return nativeValue;
-        } else if (type == IntegerType.INTEGER) {
-            return ((Long) nativeValue).intValue();
-        } else if (type == SmallintType.SMALLINT) {
-            return ((Long) nativeValue).shortValue();
-        } else if (type == TinyintType.TINYINT) {
-            return ((Long) nativeValue).byteValue();
-        } else if ( type == DateType.DATE) {
-            return PrestoValueConverterProvider.getPrestoValueConverter(LocalDateDataType.INSTANCE).fromLong((Long)nativeValue);
-        } else if (type == DoubleType.DOUBLE) {
-            return longBitsToDouble(((Long) nativeValue));
-        } else if (type == RealType.REAL) {
-            // conversion can result in precision lost
-            return intBitsToFloat(((Long) nativeValue).intValue());
-        } else if (type == BooleanType.BOOLEAN) {
-            return nativeValue;
-        } else if (type instanceof VarbinaryType) {
-            return ((Slice) nativeValue).toByteBuffer();
-        } else if (type instanceof DecimalType) {
-            return nativeValue;
-        } else if (type.getTypeSignature().getBase().equals(StandardTypes.UUID)) {
-            return UUID.fromString(((Slice) nativeValue).toStringUtf8());
-        } else {
-            throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Back conversion not implemented for " + type);
-        }
+    public static Object getJavaValue(SupportedDataType<?> dataType, Object nativeValue) {
+
+        PrestoValueConverter<?> converter = PrestoValueConverterProvider.getPrestoValueConverter(dataType);
+        return converter.toObject(nativeValue);
+
+//        // It  needs to mirror the logic in asSlice / parseToLong
+//        if (type instanceof VarcharType) {
+//            return ((Slice) nativeValue).toStringUtf8();
+//        } else if (type == TimestampType.TIMESTAMP) {
+//            if ( LocalDateTime.class.isAssignableFrom(javaType)) {
+//                return PrestoValueConverterProvider.getPrestoValueConverter(LocalDateDataType.INSTANCE).fromLong((Long)nativeValue);
+//            } else if ( Date.class.isAssignableFrom(javaType)) {
+//                return PrestoValueConverterProvider.getPrestoValueConverter(DateDataType.INSTANCE).fromLong((Long)nativeValue);
+//            } else {
+//                throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Timestamp Back conversion not implemented for " + javaType);
+//            }
+//        } else if (type == BigintType.BIGINT) {
+//            return nativeValue;
+//        } else if (type == IntegerType.INTEGER) {
+//            return ((Long) nativeValue).intValue();
+//        } else if (type == SmallintType.SMALLINT) {
+//            return ((Long) nativeValue).shortValue();
+//        } else if (type == TinyintType.TINYINT) {
+//            return ((Long) nativeValue).byteValue();
+//        } else if ( type == DateType.DATE) {
+//            return PrestoValueConverterProvider.getPrestoValueConverter(LocalDateDataType.INSTANCE).fromLong((Long)nativeValue);
+//        } else if (type == DoubleType.DOUBLE) {
+//            return longBitsToDouble(((Long) nativeValue));
+//        } else if (type == RealType.REAL) {
+//            // conversion can result in precision lost
+//            return intBitsToFloat(((Long) nativeValue).intValue());
+//        } else if (type == BooleanType.BOOLEAN) {
+//            return nativeValue;
+//        } else if (type instanceof VarbinaryType) {
+//            return ((Slice) nativeValue).toByteBuffer();
+//        } else if (type instanceof DecimalType) {
+//            return nativeValue;
+//        } else if (type.getTypeSignature().getBase().equals(StandardTypes.UUID)) {
+//            return UUID.fromString(((Slice) nativeValue).toStringUtf8());
+//        } else {
+//            throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Back conversion not implemented for " + type);
+//        }
     }
 
     public Long parseToLong() {
@@ -373,51 +343,6 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
                 .orElseThrow(() -> new IllegalArgumentException(this.supportedDataType + " not yet implemented"));
     }
 
-    // TODO: Extend PrestoValueConverter to convert to/from Slice and migrate this stuff to there (similar to parseToLong())
-    public Slice asSlice(Type type) {
-        if ( isNull() ) return EMPTY_SLICE;
-        if (type instanceof VarbinaryType) {
-            return wrappedBuffer(encode().orElse(ByteBuffer.wrap(new byte[0])));
-        }
-        else if (type instanceof DecimalType) {
-            return Decimals.encodeScaledValue(asBigDecimal());
-        }
-        else if (type instanceof VarcharType) {
-            return stringify().map(Slices::utf8Slice).orElse(EMPTY_SLICE);
-        }
-        else if (type instanceof JsonType) {
-            return stringify().map(Slices::utf8Slice).orElse(EMPTY_SLICE);
-        }
-        else if (type.getTypeSignature().getBase().equals(UuidType.UUID.getTypeSignature().getBase())) {
-            return wrappedBuffer(uuidToBytes(asUUID()));
-        }
-        else {
-            throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR, "Creating Slices not supported for type " + type);
-        }
-
-    }
-
-    // Only useful for Trino. Presto wants a String!
-    public static byte[] uuidToBytes(UUID uuid)
-    {
-        return ByteBuffer.allocate(16)
-                .putLong(uuid.getMostSignificantBits())
-                .putLong(uuid.getLeastSignificantBits())
-                .array();
-    }
-
-    public Long asTimestampMillis() {
-        switch (supportedDataType.getDataType()) {
-            case LOCAL_DATE_TIME:
-                return ((LocalDateTime) value).toInstant(ZoneOffset.UTC).toEpochMilli();
-            case DATE:
-                return ((Date) value).getTime();
-            case ZONED_DATE_TIME:
-                return ((ZonedDateTime) value).toInstant().toEpochMilli();
-            default:
-                throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR, supportedDataType + " is not a TimeStamp type");
-        }
-    }
 
     public String asString() {
         return getCast();
@@ -580,5 +505,11 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
             throw new IllegalArgumentException("value is not a "+clazz.getName());
         }
         return new DataTypeValue<>(convert.apply(this.value),clazz);
+    }
+
+    public Slice asSlice(Type type) {
+        return Optional.ofNullable(this.value)
+                .map(val->PrestoValueConverterProvider.getPrestoValueConverter(supportedDataType).toSlice(type,val))
+                .orElse(Slices.EMPTY_SLICE);
     }
 }

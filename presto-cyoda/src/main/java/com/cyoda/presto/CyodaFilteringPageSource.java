@@ -50,7 +50,6 @@ import java.util.function.Supplier;
 import static com.cyoda.presto.CyodaErrorCode.CYODA_PAGING_ERROR;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static io.airlift.slice.Slices.EMPTY_SLICE;
-import static java.lang.Float.floatToRawIntBits;
 import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -177,19 +176,14 @@ public class CyodaFilteringPageSource<T>
 
     private void writeObject(Type type, BlockBuilder blockBuilder, DataTypeValue<?> supported) {
         switch (supported.supportedDataType.getDataType()) {
-            case BOOLEAN:
-                type.writeBoolean(blockBuilder, supported.asBoolean());
-                break;
-            case BIG_INTEGER:
-                type.writeLong(blockBuilder, supported.asBigInteger().longValue());
-                break;
             case DOUBLE:
                 type.writeDouble(blockBuilder, supported.asDouble());
                 break;
-            case FLOAT:
-                type.writeLong(blockBuilder, floatToRawIntBits(supported.asFloat()));
+            case BOOLEAN:
+                type.writeBoolean(blockBuilder, supported.asBoolean());
                 break;
             case BYTE:
+            case FLOAT:
             case INTEGER:
             case SHORT:
             case LONG:
@@ -197,6 +191,7 @@ public class CyodaFilteringPageSource<T>
             case LOCAL_DATE:
             case LOCAL_DATE_TIME:
             case ZONED_DATE_TIME:
+            case LOCAL_TIME:
             case DATE: {
                 PrestoValueConverter<Object> prestoValueConverter = getPrestoValueConverter(supported);
                 Long value = Optional.ofNullable(supported.value).map(prestoValueConverter::toLong)
@@ -204,9 +199,6 @@ public class CyodaFilteringPageSource<T>
                 type.writeLong(blockBuilder, value);
                 break;
             }
-            case LOCAL_TIME:
-                type.writeLong(blockBuilder,supported.asLocalDate().toEpochDay());
-                break;
             case SET: {
                 Type elementType = ((ArrayType) type).getElementType();
                 BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
@@ -233,8 +225,6 @@ public class CyodaFilteringPageSource<T>
             }
             case MAP: {
 
-                // WARNING: This is not going to work. ofObject() is not going to give us much here.
-                // This is just an idea...
                 MapType mapType = (MapType) type;
                 Type keyType = mapType.getKeyType();
                 Type valueType = mapType.getValueType();
@@ -250,6 +240,7 @@ public class CyodaFilteringPageSource<T>
                 Slice slice = supported.stringify().map(Slices::utf8Slice).orElse(EMPTY_SLICE);
                 type.writeSlice(blockBuilder, slice);
                 break;
+            case BIG_INTEGER:
             case BIG_DECIMAL:
             case CLASS:
             case LOCALE:
@@ -257,9 +248,13 @@ public class CyodaFilteringPageSource<T>
             case YEAR_MONTH:
             case STRING:
             case UUID_TYPE:
-            default:
-                type.writeSlice(blockBuilder, supported.asSlice(type));
+            default: {
+                PrestoValueConverter<Object> prestoValueConverter = getPrestoValueConverter(supported);
+                Slice value = Optional.ofNullable(supported.value).map(it->prestoValueConverter.toSlice(type,supported.value))
+                        .orElseThrow(() -> new IllegalArgumentException(supported.supportedDataType + " value is null "));
+                type.writeSlice(blockBuilder, value);
                 break;
+            }
         }
     }
 

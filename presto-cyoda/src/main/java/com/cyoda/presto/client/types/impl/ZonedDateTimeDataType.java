@@ -17,12 +17,12 @@
 
 package com.cyoda.presto.client.types.impl;
 
+import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.SupportedDataType;
 
 import java.time.ZonedDateTime;
 
-public class ZonedDateTimeDataType implements SupportedDataType<ZonedDateTime> {
+public class ZonedDateTimeDataType implements ComparableSupportedDataType<ZonedDateTime> {
     public static final ZonedDateTimeDataType INSTANCE = new ZonedDateTimeDataType();
 
     private ZonedDateTimeDataType() {}

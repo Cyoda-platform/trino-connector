@@ -17,12 +17,12 @@
 
 package com.cyoda.presto.client.types.impl;
 
+import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.SupportedDataType;
 
 import java.math.BigDecimal;
 
-public class BigDecimalDataType implements SupportedDataType<BigDecimal> {
+public class BigDecimalDataType implements ComparableSupportedDataType<BigDecimal> {
     public static final BigDecimalDataType INSTANCE = new BigDecimalDataType();
 
     private BigDecimalDataType() {}

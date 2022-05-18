@@ -17,12 +17,12 @@
 
 package com.cyoda.presto.client.types.impl;
 
+import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.SupportedDataType;
 
 import java.nio.ByteBuffer;
 
-public class ByteBufferDataType implements SupportedDataType<ByteBuffer> {
+public class ByteBufferDataType implements ComparableSupportedDataType<ByteBuffer> {
     public static final ByteBufferDataType INSTANCE = new ByteBufferDataType();
 
     private ByteBufferDataType() {}

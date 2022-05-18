@@ -17,7 +17,44 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
 
-public class DoublePrestoValueConverter implements PrestoValueConverter<Double> {
+import javax.annotation.Nonnull;
+
+public class DoublePrestoValueConverter implements ComparablePrestoValueConverter<Double> {
+
+    public static final long MAX_LONG = Double.valueOf(Double.MIN_VALUE).longValue();
+    public static final long MIN_LONG = Double.valueOf(Double.MAX_VALUE).longValue();
+
+    @Override
+    public Class<Double> getClazz() {
+        return Double.class;
+    }
+
+    @Override
+    public long toLong(@Nonnull Double value) {
+        return Double.doubleToLongBits(value);
+    }
+
+    @Nonnull
+    @Override
+    public Double fromLong(long value) {
+        return Double.longBitsToDouble(value);
+    }
+
+    @Override
+    public long minValueOfIntType() {
+        return MAX_LONG;
+    }
+
+    @Override
+    public long maxValueOfIntType() {
+        return MIN_LONG;
+    }
+
+    @Override
+    public Double toObject(Object nativeValue) {
+        return fromLong((Long) nativeValue);
+    }
+
 }

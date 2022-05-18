@@ -375,7 +375,6 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
      * This is not meant for general use, but only locally in this package
      *
      * @return a new instance of the Predicate, with the opposite logic.
-     * TODO: Haven't tested if this makes any sense!
      */
     ColumnPredicate<T> negate() {
         return this.negate(true);

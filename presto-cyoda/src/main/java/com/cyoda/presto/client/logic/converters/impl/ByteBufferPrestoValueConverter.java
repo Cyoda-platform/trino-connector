@@ -17,9 +17,43 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.logic.ColumnPredicate;
+import com.cyoda.presto.client.logic.ColumnPredicateUtils;
+import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.facebook.presto.common.predicate.DiscreteValues;
+import com.facebook.presto.common.type.Type;
+import com.facebook.presto.common.type.VarbinaryType;
+import io.airlift.slice.Slice;
+import io.airlift.slice.Slices;
 
+import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
 
-public class ByteBufferPrestoValueConverter implements PrestoValueConverter<ByteBuffer> {
+public class ByteBufferPrestoValueConverter implements ComparablePrestoValueConverter<ByteBuffer> {
+    @Override
+    public Class<ByteBuffer> getClazz() {
+        return ByteBuffer.class;
+    }
+
+    @Override
+    public ColumnPredicate<ByteBuffer> newInListPredicate(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
+        return ColumnPredicateUtils.newInListPredicate(columnHandle, discreteValues, ByteBuffer.class);
+    }
+
+    @Override
+    public Slice toSlice(@Nonnull Type type, @Nonnull ByteBuffer value) {
+        return Slices.wrappedBuffer(value);
+    }
+
+    @Nonnull
+    @Override
+    public ByteBuffer fromSlice(@Nonnull Type type, Slice value) {
+        return value.toByteBuffer();
+    }
+
+    @Override
+    public ByteBuffer toObject(Object nativeValue) {
+        return fromSlice(VarbinaryType.VARBINARY,(Slice) nativeValue);
+    }
 }

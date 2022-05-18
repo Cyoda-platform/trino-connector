@@ -17,6 +17,7 @@
 
 package com.cyoda.presto.client.logic;
 
+import com.cyoda.presto.client.types.BigDecimalType;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.client.util.DecimalUtil;
@@ -35,6 +36,7 @@ import com.facebook.presto.common.type.VarbinaryType;
 import com.facebook.presto.common.type.VarcharType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
+import io.airlift.slice.Slices;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
@@ -43,7 +45,6 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.time.LocalDate;
 import java.time.chrono.ChronoLocalDate;
-import java.util.Base64;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -123,9 +124,9 @@ public class NewComparisonColumnPredicateTest {
         floatCol = new CyodaColumnHandle(CONNECTOR_ID,"float", RealType.REAL, DataType.FLOAT,pos++, REQUEST_HANDLER_KEY,false);
         doubleCol = new CyodaColumnHandle(CONNECTOR_ID,"double", DoubleType.DOUBLE, DataType.DOUBLE,pos++, REQUEST_HANDLER_KEY,false);
         stringCol = new CyodaColumnHandle(CONNECTOR_ID,"string", VarcharType.VARCHAR, DataType.STRING,pos++, REQUEST_HANDLER_KEY);
-        binaryCol = new CyodaColumnHandle(CONNECTOR_ID,"binary", VarbinaryType.VARBINARY, DataType.BYTE_ARRAY,pos++, REQUEST_HANDLER_KEY);
+        binaryCol = new CyodaColumnHandle(CONNECTOR_ID,"binary", VarbinaryType.VARBINARY, DataType.BYTE_BUFFER,pos++, REQUEST_HANDLER_KEY);
 
-        bigDecimalCol = new CyodaColumnHandle(CONNECTOR_ID,"bigDecimal", DecimalType.createDecimalType(), DataType.BIG_DECIMAL,pos++, REQUEST_HANDLER_KEY);
+        bigDecimalCol = new CyodaColumnHandle(CONNECTOR_ID,"bigDecimal", BigDecimalType.BIG_DECIMAL_TYPE, DataType.BIG_DECIMAL,pos++, REQUEST_HANDLER_KEY);
 
         bigIntegerCol = new CyodaColumnHandle(CONNECTOR_ID,"bigInt", BigintType.BIGINT, DataType.BIG_INTEGER,pos++, REQUEST_HANDLER_KEY);
         localDatetimeCol = new CyodaColumnHandle(CONNECTOR_ID, "localDatetime", TimestampType.TIMESTAMP, DataType.LOCAL_DATE_TIME,pos++,REQUEST_HANDLER_KEY);
@@ -1259,9 +1260,8 @@ public class NewComparisonColumnPredicateTest {
                 newComparisonPredicate(doubleCol, EQUAL, 12.345));
         Assert.assertEquals(
                 newComparisonPredicateFromNative(bigDecimalCol, EQUAL,
-                        (Object) BigDecimal.valueOf(12345,2)),
-                newComparisonPredicate(bigDecimalCol, EQUAL,
-                        BigDecimal.valueOf(12345,2))
+                        Slices.utf8Slice(BigDecimal.valueOf(12345,2).toString())),
+                newComparisonPredicate(bigDecimalCol, EQUAL, BigDecimal.valueOf(12345,2))
         );
         Assert.assertEquals(
                 newComparisonPredicateFromNative(stringCol, EQUAL, DataTypeValue.of("a").asSlice(VarcharType.VARCHAR)),
@@ -1271,8 +1271,8 @@ public class NewComparisonColumnPredicateTest {
                 newComparisonPredicateFromNative(binaryCol, EQUAL, DataTypeValue.of(new byte[] { (byte) 10 }).asSlice(VarbinaryType.VARBINARY)),
                 newComparisonPredicate(binaryCol, EQUAL, new byte[] { (byte) 10 })
         );
-        Assert.assertEquals(newComparisonPredicateFromNative(binaryCol, EQUAL, DataTypeValue.of("a").asSlice(VarbinaryType.VARBINARY)),
-                newComparisonPredicate(binaryCol, EQUAL, Base64.getEncoder().encode("a".getBytes(UTF_8)))
+        Assert.assertEquals(newComparisonPredicateFromNative(binaryCol, EQUAL, DataTypeValue.of("a".getBytes(UTF_8)).asSlice(VarbinaryType.VARBINARY)),
+                newComparisonPredicate(binaryCol, EQUAL, "a".getBytes(UTF_8))
         );
         Assert.assertEquals(newComparisonPredicateFromNative(dateCol, EQUAL, DataTypeValue.of(LocalDate.of(2020,6,15)).parseToLong()),
                 newComparisonPredicate(dateCol, EQUAL, LocalDate.of(2020,6,15))

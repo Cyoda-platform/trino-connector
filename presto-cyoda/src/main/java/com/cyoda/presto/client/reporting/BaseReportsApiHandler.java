@@ -22,6 +22,7 @@ import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.CyodaTable;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
+import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.client.types.TypesUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
@@ -45,6 +46,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -52,6 +54,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.cyoda.presto.client.types.DataType.*;
 import static java.util.Objects.requireNonNull;
@@ -151,6 +154,20 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
 
     // TODO: These belong in the PrestoValueConverter
     protected @Nonnull Object mapFieldValue(@Nonnull final Object value, CyodaColumnHandle columnHandle) {
+        if (columnHandle.getDataType() == LIST) {
+            Type elementType = TypesUtil.getElementType(columnHandle.getColumnType());
+            return processList((List<?>) value, columnHandle, elementType);
+        }
+        if (columnHandle.getDataType() == ARRAY) {
+            Type elementType = TypesUtil.getElementType(columnHandle.getColumnType());
+            return processList(Arrays.stream(((Object[])value)).collect(Collectors.toList()), columnHandle, elementType)
+                    .toArray();
+        }
+
+        if ( value instanceof List && columnHandle.getDataType() != LIST && ((List<?>)value).size() == 1) {
+            return mapFieldValue(((List<?>)value).get(0),columnHandle);
+        }
+
         if (columnHandle.getDataType() == UUID_TYPE && value instanceof String) {
             return UUID.fromString((String) value);
         }
@@ -170,6 +187,21 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
             return BigDecimal.valueOf(((Number) value).doubleValue());
         }
         return value;
+    }
+
+    private List<?> processList(List<?> value, CyodaColumnHandle columnHandle, Type elementType) {
+        return value.stream().map(it -> {
+            CyodaColumnHandle thisColumnHandle = new CyodaColumnHandle(
+                    columnHandle.getConnectorId(),
+                    columnHandle.getColumnName(),
+                    elementType,
+                    DataType.fromType(elementType),
+                    columnHandle.getOrdinalPosition(),
+                    columnHandle.getRequestHandlerKey(),
+                    columnHandle.getIsNullable()
+            );
+            return mapFieldValue(it, thisColumnHandle);
+        }).collect(Collectors.toList());
     }
 
     private ZonedDateTime toZonedDateTime(String str) {

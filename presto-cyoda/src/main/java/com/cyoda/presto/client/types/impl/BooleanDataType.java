@@ -17,10 +17,10 @@
 
 package com.cyoda.presto.client.types.impl;
 
+import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.SupportedDataType;
 
-public class BooleanDataType implements SupportedDataType<Boolean> {
+public class BooleanDataType implements ComparableSupportedDataType<Boolean> {
     public static final BooleanDataType INSTANCE = new BooleanDataType();
 
     private BooleanDataType() {}

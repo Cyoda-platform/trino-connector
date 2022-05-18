@@ -17,12 +17,12 @@
 
 package com.cyoda.presto.client.types.impl;
 
+import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.SupportedDataType;
 
 import java.util.Date;
 
-public class DateDataType implements SupportedDataType<Date> {
+public class DateDataType implements ComparableSupportedDataType<Date> {
     public static final DateDataType INSTANCE = new DateDataType();
 
     private DateDataType() {}

@@ -44,6 +44,7 @@ import com.cyoda.presto.client.logic.converters.impl.UUIDPrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.YearMonthPrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.YearPrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.ZonedDateTimePrestoValueConverter;
+import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.SupportedDataType;
 import com.cyoda.presto.client.types.impl.BigDecimalDataType;
 import com.cyoda.presto.client.types.impl.BigIntegerDataType;
@@ -79,8 +80,6 @@ import java.util.function.Supplier;
 
 public class PrestoValueConverterProvider {
 
-    private static final PrestoValueConverters converters = setupConverters();
-
     private PrestoValueConverterProvider() {
     }
 
@@ -90,6 +89,18 @@ public class PrestoValueConverterProvider {
 
     public static <S> PrestoValueConverter<S> getPrestoValueConverter(SupportedDataType<S> supportedDataType) {
         return CONVERTER_PROVIDER_SUPPLIER.get().getPrestoValueConverter(supportedDataType);
+    }
+
+    public static <S extends Comparable<? super S>> ComparablePrestoValueConverter<S> getComparablePrestoValueConverter(
+            ComparableSupportedDataType<S> supportedDataType
+    ) {
+        //noinspection unchecked
+        return (ComparablePrestoValueConverter<S>) CONVERTER_PROVIDER_SUPPLIER.get().getComparablePrestoValueConverter(supportedDataType);
+    }
+    public static ComparablePrestoValueConverter<?> getComparablePrestoValueConverterU(
+            ComparableSupportedDataType<?> supportedDataType
+    ) {
+        return CONVERTER_PROVIDER_SUPPLIER.get().getComparablePrestoValueConverter(supportedDataType);
     }
 
     private static PrestoValueConverters setupConverters() {

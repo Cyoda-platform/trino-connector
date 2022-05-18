@@ -18,6 +18,36 @@
 package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.types.impl.ByteArrayDataType;
+import com.facebook.presto.common.type.Type;
+import com.facebook.presto.common.type.VarbinaryType;
+import io.airlift.slice.Slice;
+import io.airlift.slice.Slices;
+
+import javax.annotation.Nonnull;
+import java.nio.ByteBuffer;
 
 public class ByteArrayPrestoValueConverter implements PrestoValueConverter<byte[]> {
+    @Override
+    public Slice toSlice(@Nonnull Type type, @Nonnull byte[] value) {
+        return Slices.wrappedBuffer(ByteBuffer.wrap(value));
+    }
+
+    @Nonnull
+    @Override
+    public byte[] fromSlice(@Nonnull Type type, Slice value) {
+        ByteBuffer byteBuffer = value.toByteBuffer();
+        byte[] m = new byte[byteBuffer.remaining()];
+        try {
+            byteBuffer.get(m);
+        } finally {
+            byteBuffer.rewind();
+        }
+        return m;
+    }
+
+    @Override
+    public byte[] toObject(Object nativeValue) {
+        return fromSlice(VarbinaryType.VARBINARY, (Slice) nativeValue);
+    }
 }

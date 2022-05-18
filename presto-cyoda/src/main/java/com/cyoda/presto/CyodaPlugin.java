@@ -17,13 +17,40 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.client.types.BigDecimalOperators;
+import com.cyoda.presto.client.types.BigDecimalType;
+import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.Plugin;
 import com.facebook.presto.spi.connector.ConnectorFactory;
+import com.facebook.presto.spi.function.FunctionNamespaceManagerFactory;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+
+import java.util.List;
+import java.util.Set;
 
 public class CyodaPlugin implements Plugin {
     @Override
     public Iterable<ConnectorFactory> getConnectorFactories() {
         return ImmutableList.of(new CyodaConnectorFactory());
     }
+
+    private static final List<Type> OUR_TYPES = ImmutableList.<Type>builder()
+            .add(BigDecimalType.BIG_DECIMAL_TYPE)
+            .build();
+
+    @Override
+    public Iterable<Type> getTypes() {
+        return OUR_TYPES;
+    }
+
+    private static final Set<Class<?>> OUR_FUNCTIONS = ImmutableSet.<Class<?>>builder()
+            .add(BigDecimalOperators.class)
+            .build();
+
+    @Override
+    public Set<Class<?>> getFunctions() {
+        return OUR_FUNCTIONS;
+    }
+
 }

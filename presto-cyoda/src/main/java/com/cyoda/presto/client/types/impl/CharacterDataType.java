@@ -17,10 +17,10 @@
 
 package com.cyoda.presto.client.types.impl;
 
+import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.SupportedDataType;
 
-public class CharacterDataType implements SupportedDataType<Character> {
+public class CharacterDataType implements ComparableSupportedDataType<Character> {
     public static final CharacterDataType INSTANCE = new CharacterDataType();
 
     private CharacterDataType() {}

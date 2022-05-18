@@ -17,10 +17,10 @@
 
 package com.cyoda.presto.client.types.impl;
 
+import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.SupportedDataType;
 
-public class ShortDataType implements SupportedDataType<Short> {
+public class ShortDataType implements ComparableSupportedDataType<Short> {
     public static final ShortDataType INSTANCE = new ShortDataType();
 
     private ShortDataType() {}

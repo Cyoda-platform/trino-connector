@@ -17,10 +17,10 @@
 
 package com.cyoda.presto.client.types.impl;
 
+import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.SupportedDataType;
 
-public class DoubleDataType implements SupportedDataType<Double> {
+public class DoubleDataType implements ComparableSupportedDataType<Double> {
     public static final DoubleDataType INSTANCE = new DoubleDataType();
 
     private DoubleDataType() {}

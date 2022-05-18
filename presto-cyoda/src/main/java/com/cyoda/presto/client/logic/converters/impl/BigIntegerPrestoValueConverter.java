@@ -17,10 +17,38 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.facebook.presto.common.type.BigintType;
+import com.facebook.presto.common.type.Type;
+import io.airlift.slice.Slice;
 
+import javax.annotation.Nonnull;
 import java.math.BigInteger;
 
-public class BigIntegerPrestoValueConverter implements PrestoValueConverter<BigInteger> {
+import static com.facebook.presto.common.type.Decimals.decodeUnscaledValue;
+import static com.facebook.presto.common.type.Decimals.encodeUnscaledValue;
 
+public class BigIntegerPrestoValueConverter implements ComparablePrestoValueConverter<BigInteger> {
+
+    @Override
+    public Slice toSlice(@Nonnull Type type, @Nonnull BigInteger value) {
+        // Taken from com.facebook.presto.hive.functions.type.DecimalUtils
+        return encodeUnscaledValue(value);
+    }
+
+    @Nonnull
+    @Override
+    public BigInteger fromSlice(@Nonnull Type type, Slice value) {
+        return decodeUnscaledValue(value);
+    }
+
+    @Override
+    public BigInteger toObject(Object nativeValue) {
+        return fromSlice(BigintType.BIGINT,(Slice) nativeValue);
+    }
+
+    @Override
+    public Class<BigInteger> getClazz() {
+        return BigInteger.class;
+    }
 }

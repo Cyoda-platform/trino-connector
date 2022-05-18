@@ -17,13 +17,19 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
 
 import javax.annotation.Nonnull;
 import java.time.Instant;
 import java.util.Date;
 
-public class DatePrestoValueConverter implements PrestoValueConverter<Date> {
+public class DatePrestoValueConverter implements ComparablePrestoValueConverter<Date> {
+
+    @Override
+    public Class<Date> getClazz() {
+        return Date.class;
+    }
+
     @Override
     public long toLong(@Nonnull Date value) {
         return value.toInstant().toEpochMilli();
@@ -44,4 +50,10 @@ public class DatePrestoValueConverter implements PrestoValueConverter<Date> {
     public long maxValueOfIntType() {
         return Long.MAX_VALUE;
     }
+
+    @Override
+    public Date toObject(Object nativeValue) {
+        return fromLong((Long) nativeValue);
+    }
+
 }
