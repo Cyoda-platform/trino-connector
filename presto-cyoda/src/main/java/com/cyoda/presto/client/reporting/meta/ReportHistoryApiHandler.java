@@ -77,6 +77,7 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
     public static final String REPORT_HISTORY_ENDPOINT = "/api/platform-api/reporting/history";
     public static final String HISTORY_REPORT_NAME_REQUEST_PARAMETER = "report_name";
     public static final String HISTORY_REPORT_NAMES_REQUEST_PARAMETER = "report_names";
+    public static final String HISTORY_REPORT_IDS_REQUEST_PARAMETER = "reportIds";
     public static final String HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER = "filterByType";
 
     enum ColumnDef implements ColumnDefinition {
@@ -206,6 +207,11 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
             }
         }
 
+        Optional<Set<String>> reportIds = traversal.assembleFilterings(HISTORY_REPORT_ID_COLUMN);
+        LOG.debug("selecting by report ids:",()->reportNames.map(it-> String.join(",", it)).orElse("EMPTY"));
+        if (!reportIds.isPresent()) return Optional.empty();
+        expansionBuilder.put(HISTORY_REPORT_IDS_REQUEST_PARAMETER, reportIds.get());
+
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
 
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
@@ -242,6 +248,7 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
                 TemplateVariable.requestParameterContinued("username"),
                 TemplateVariable.requestParameterContinued(HISTORY_REPORT_NAME_REQUEST_PARAMETER),
                 TemplateVariable.requestParameterContinued(HISTORY_REPORT_NAMES_REQUEST_PARAMETER),
+                TemplateVariable.requestParameterContinued(HISTORY_REPORT_IDS_REQUEST_PARAMETER),
                 TemplateVariable.requestParameterContinued("from"),
                 TemplateVariable.requestParameterContinued("to")
         );

@@ -23,11 +23,13 @@ import com.google.common.base.MoreObjects;
 public class RowHandle {
 
     final String reportId;
+    final String groupingVersion;
     final String groupJsonBase64;
     final ReportRow reportRow;
 
-    public RowHandle(String reportId, String groupJsonBase64, ReportRow reportRow) {
+    public RowHandle(String reportId, String groupingVersion, String groupJsonBase64, ReportRow reportRow) {
         this.reportId = reportId;
+        this.groupingVersion = groupingVersion;
         this.groupJsonBase64 = groupJsonBase64;
         this.reportRow = reportRow;
     }
@@ -36,6 +38,7 @@ public class RowHandle {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("reportId", reportId)
+                .add("groupingVersion", groupingVersion)
                 .add("groupJsonBase64", groupJsonBase64)
                 .add("reportRow", reportRow)
                 .toString();

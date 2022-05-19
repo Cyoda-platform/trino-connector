@@ -59,23 +59,27 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_ID_COLUMN;
 import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
 import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_REPORT_CONFIG_ID_COLUMN;
+import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_VERSION_COLUMN;
 import static com.cyoda.presto.client.types.DataType.STRING;
 
 public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         implements ApiRequestHandler<RowHandle> {
 
     static final String ROW_REPORT_ID_COLUMN = "reportId";
+    static final String ROW_GROUPING_VERSION_COLUMN = "groupingVersion";
     static final String ROW_GROUP_JSON_BASE64_VARIABLE = "groupValuesJsonBase64";
 
     // These are also reserved words for column names coming from reports.
     private static final List<String> RESERVED_COLUMN_NAMES = ImmutableList.<String>builder()
             .add(ROW_REPORT_ID_COLUMN)
+            .add(ROW_GROUPING_VERSION_COLUMN)
             .add(ROW_GROUP_JSON_BASE64_VARIABLE)
             .build();
     public static final String COLUMN_NOT_FOUND = " Column not found!";
@@ -84,6 +88,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
     private final InternalReportRowsApiHandler internalReportRowsApiHandler;
 
     private final CyodaColumnHandle reportIdColumn;
+    private final CyodaColumnHandle groupingVersionColumn;
     private final CyodaColumnHandle groupJsonBase64Column;
     private final CyodaColumnHandle reportConfigIdColumn;
     private final ReportConfigDetailsApiHandler reportConfigDetailsHandler;
@@ -110,9 +115,16 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         CyodaTable groupTable = groupTables.get(0);
 
         this.reportIdColumn = setupReportIdColumn(groupTable);
+        this.groupingVersionColumn = setupGroupingVersionColumn(groupTable);
         this.groupJsonBase64Column = setupGroupJsonBase64Column(groupTable);
         this.reportConfigIdColumn = setupReportConfigIdColumn(groupTable);
     }
+
+    private CyodaColumnHandle setupGroupingVersionColumn(CyodaTable groupTable) {
+        return groupTable.getColumns().stream()
+                .filter(it -> it.getColumnName().equals(GROUPING_VERSION_COLUMN))
+                .findAny()
+                .orElseThrow(() -> new IllegalStateException(GROUPING_VERSION_COLUMN + COLUMN_NOT_FOUND));    }
 
     private CyodaColumnHandle setupReportConfigIdColumn(CyodaTable groupTable) {
         return groupTable.getColumns().stream()
@@ -169,6 +181,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
 
                     ImmutableList.Builder<ColumnDefinition> colBuilder = ImmutableList.builder();
                     colBuilder.add(newColumnDefinition(reportIdColumn));
+                    colBuilder.add(newColumnDefinition(groupingVersionColumn));
                     colBuilder.add(newColumnDefinition(groupJsonBase64Column));
                     colBuilder.addAll(coldefs);
 
@@ -216,15 +229,18 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
             @Nonnull GroupingHandle handle
     ) {
         String reportId = handle.reportId;
+        UUID groupingVersion = handle.groupingVersion;
         String groupValueJsonBase64 = handle.groupHeader.getGroupValuesJsonBase64();
 
         if ( groupValueJsonBase64 == null ) return Collections::emptyIterator;
 
-        Slice historyIdSlice = DataTypeValue.of(reportId).asSlice(VarcharType.VARCHAR);
+        Slice reportIdSlice = DataTypeValue.of(reportId).asSlice(VarcharType.VARCHAR);
+        Slice groupingVersionSlice = DataTypeValue.of(groupingVersion).asSlice(VarcharType.VARCHAR);
         Slice groupingValueSlice = DataTypeValue.of(groupValueJsonBase64).asSlice(VarcharType.VARCHAR);
 
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
-        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(reportIdColumn, historyIdSlice,String.class));
+        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(reportIdColumn, reportIdSlice,String.class));
+        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(groupingVersionColumn, groupingVersionSlice,String.class));
         builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(groupJsonBase64Column, groupingValueSlice,String.class));
         builder.addMember(withReportPredicate);
         CompoundPredicateNode predicates = builder.build();
@@ -237,6 +253,9 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
     protected Object getFieldValueFromEntity(@Nonnull RowHandle field, CyodaColumnHandle columnHandle) {
         if ( ROW_REPORT_ID_COLUMN.equals(columnHandle.getColumnName()) ) {
             return field.reportId;
+        }
+        if ( ROW_GROUPING_VERSION_COLUMN.equals(columnHandle.getColumnName()) ) {
+            return field.groupingVersion;
         }
         if ( ROW_GROUP_JSON_BASE64_VARIABLE.equals(columnHandle.getColumnName()) ) {
             return field.groupJsonBase64;

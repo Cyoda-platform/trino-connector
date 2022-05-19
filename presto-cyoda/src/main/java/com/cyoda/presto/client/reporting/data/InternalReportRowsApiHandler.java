@@ -64,8 +64,7 @@ import java.util.stream.Collectors;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_GROUPS;
-import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_GROUP_JSON_BASE64_VARIABLE;
-import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_REPORT_ID_COLUMN;
+import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.*;
 import static com.cyoda.presto.client.types.DataType.STRING;
 
 public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
@@ -119,6 +118,7 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
 
 
         String reportId = mixinColumn(expansionBuilder,traversal, ROW_REPORT_ID_COLUMN);
+        String groupingVersion = mixinColumn(expansionBuilder,traversal, ROW_GROUPING_VERSION_COLUMN);
         String groupJsonString = mixinColumn(expansionBuilder,traversal, ROW_GROUP_JSON_BASE64_VARIABLE);
 
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
@@ -136,7 +136,7 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
             return Optional.ofNullable(fieldsViews)
                     .map(item->{
                         List<RowHandle> handles = item.getContent().stream()
-                                .map(reportRow -> new RowHandle(reportId, groupJsonString, reportRow))
+                                .map(reportRow -> new RowHandle(reportId, groupingVersion, groupJsonString, reportRow))
                                 .collect(Collectors.toList());
                         return PagedModel.of(handles,item.getMetadata());
                     });
@@ -188,6 +188,9 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
     protected Object getFieldValueFromEntity(@Nonnull RowHandle field, CyodaColumnHandle columnHandle) {
         if ( ROW_REPORT_ID_COLUMN.equals(columnHandle.getColumnName()) ) {
             return field.reportId;
+        }
+        if ( ROW_GROUPING_VERSION_COLUMN.equals(columnHandle.getColumnName()) ) {
+            return field.groupingVersion;
         }
         if ( ROW_GROUP_JSON_BASE64_VARIABLE.equals(columnHandle.getColumnName()) ) {
             return field.groupJsonBase64;

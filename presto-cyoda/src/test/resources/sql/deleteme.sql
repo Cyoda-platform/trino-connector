@@ -15,4 +15,11 @@
  *
  */
 
-select * from reports where type = 'ReportingDecorator';
+
+select * from cyoda.reporting."cyoda-leimessage-all lei messages"
+where reportId = '000186c8-0000-1000-8080-808080808080-LEIMessage-a6aabec0-d476-11ec-9492-926df8204c70'
+  and groupingversion = '00000000-0000-1000-0000-000000000000';
+
+-- select * from cyoda.reporting."play-interfacemessage-patrick-trade-extract-fix"
+-- where reportId = '000186be-0000-1000-8080-808080808080-InterfaceMessage-8a461ee0-d6a2-11ec-b0b1-901b0ebd9b67'
+-- and groupingversion = '00000000-0000-1000-0000-000000000000';

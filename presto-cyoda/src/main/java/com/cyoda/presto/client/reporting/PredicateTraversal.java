@@ -36,9 +36,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-/**
- * TODO: Check if Predicate#merge can do this
- */
 public class PredicateTraversal {
 
     private final CompoundPredicateNode conjunctions;
@@ -63,10 +60,21 @@ public class PredicateTraversal {
             this.connective = connective;
         }
     }
+
     /**
+     * Analyse the predicates to extract the list of values for a column that should be filtered on.
      *
-     * @param columnName to search filterings for
-     * @return empty if nothing is to be selected, i.e. an empty result should be passed up the stack.
+     * @param columnName to search for filterings
+     * @return
+     * <pre>
+     * <ul>
+     *     <li>{@code Optional.empty()} if <em>nothing</em> is to be <em>selected</em>, i.e. an empty result should be passed up the stack.</li>
+     *     <li>an empty {@link Set} if <em>nothing</em> is to be <em>filtered</em>, i.e. take everything.</li>
+     *     <li>the list of values to filter, i.e. semantically {@code WHERE columnName IN (....)}</li>
+     * </ul>
+     * </pre>
+     *
+     *
      *
      */
     public Optional<Set<String>> assembleFilterings(String columnName) {

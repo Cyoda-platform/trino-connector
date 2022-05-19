@@ -28,6 +28,7 @@ import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
+import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -50,14 +51,16 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
-import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_ID_COLUMN;
+import static com.cyoda.core.model.reports.ReportHistoryFieldsView.*;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_STATS;
@@ -117,6 +120,45 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
         return Optional.of(PagedModel.of(reportStatisticsView,reportHistoryModel.getMetadata()));
     }
 
+    // IF the API has no request parameter to select the report ID, we have to do this crap here.
+    private boolean matches(ReportHistoryFieldsView view, Set<String> byGroupingVersion) {
+        if (byGroupingVersion == null ) return true;
+        String groupingVersion = (String) view.getReportHistoryFields().get(HISTORY_GROUPING_VERSION_COLUMN);
+        return byGroupingVersion.contains(groupingVersion);
+    }
+
+    @SuppressWarnings("unused")
+    private Optional<PagedModel<DistributedReportInfoView>> deleteme() {
+        int page = 0;
+        int pageSize = 0;
+        List<CyodaColumnHandle> projectedColumns = Collections.emptyList();
+        CompoundPredicateNode predicates = CompoundPredicateNode.empty();
+        UriTemplate uriTemplate = setupUriTemplate();
+
+        PredicateTraversal traversal = PredicateTraversal.of(predicates);
+        Set<String> byGroupingVersion = traversal.assembleFilterings(HISTORY_GROUPING_VERSION_COLUMN).orElse(null);
+
+
+        List<DistributedReportInfoView> fillToPage = new ArrayList<>();
+        int thisPage = page;
+        do {
+            PagedModel<ReportHistoryFieldsView> reportHistoryModel = reportHistoryApiHandler
+                    .retrievePage(
+                            thisPage,
+                            pageSize,
+                            projectedColumns,
+                            predicates
+                    ).orElse(PagedModel.empty());
+            if (reportHistoryModel.getContent().isEmpty() ) break;
+            reportHistoryModel.getContent().stream().filter(it->matches(it,byGroupingVersion)).map( it->
+                    getReportStatisticsView(uriTemplate, Collections.singletonList(it))
+            ).forEach(it->fillToPage.add(it.get(0)));
+            thisPage++;
+        } while ( fillToPage.size() <= pageSize );
+        PagedModel.PageMetadata meta = new PagedModel.PageMetadata(fillToPage.size(),0,Long.MAX_VALUE,Long.MAX_VALUE/pageSize);
+        return Optional.of(PagedModel.of(fillToPage,meta));
+
+    }
     private List<DistributedReportInfoView> getReportStatisticsView(
             UriTemplate uriTemplate,
             @Nonnull Collection<ReportHistoryFieldsView> history

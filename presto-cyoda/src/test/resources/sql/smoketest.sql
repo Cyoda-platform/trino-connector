@@ -15,27 +15,16 @@
  *
  */
 
-
-
 use cyoda.reporting;
 select * from reports;
 select * from report_details;
 select * from report_histories;
 select * from report_groups;
 select * from report_stats;
-select * from company_data;
-select * from all_leimessages;
-select * from complex_fields_report;
 
 select r.reportname, s.id,s.createtime,s.groupscount,s.totalrowscount from report_stats s, reports r
 where s.configname = r.id
   and s.totalrowscount > 0;
-
-select d.* from company_data d, report_stats s, reports r where
-    d.reportid = s.id
-    and s.configname = r.id
-    and r.tablename = 'company_data'
-    and s.totalrowscount > 0;
 
 
 
