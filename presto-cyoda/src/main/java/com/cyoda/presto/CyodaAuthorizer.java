@@ -15,22 +15,25 @@
  *
  */
 
-package com.cyoda.presto.client;
+package com.cyoda.presto;
 
-import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.handles.CyodaColumnHandle;
-import org.springframework.hateoas.PagedModel;
+import com.facebook.airlift.http.server.AuthorizationResult;
+import com.facebook.airlift.http.server.Authorizer;
 
-import java.util.List;
-import java.util.Optional;
+import javax.inject.Inject;
+import java.security.Principal;
+import java.util.Set;
 
-public interface PagingApiRequestHandler<T> extends ApiRequestHandler<T> {
+public class CyodaAuthorizer implements Authorizer {
 
-    Optional<PagedModel<T>> retrievePage(
-            AuthContext authContext,
-            int page,
-            int pageSize,
-            List<CyodaColumnHandle> projectedColumns, CompoundPredicateNode predicates);
+    private final CyodaConfig config;
 
+    @Inject
+    CyodaAuthorizer(CyodaConfig config) {
+        this.config = config;
+    }
+    @Override
+    public AuthorizationResult authorize(Principal principal, Set<String> allowedRoles, String requestUrl) {
+        return null;
+    }
 }

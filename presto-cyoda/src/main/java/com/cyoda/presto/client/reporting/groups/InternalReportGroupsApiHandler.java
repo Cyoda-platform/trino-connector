@@ -19,6 +19,7 @@ package com.cyoda.presto.client.reporting.groups;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
+import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
@@ -99,7 +100,7 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
     }
 
     @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs() {
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
         return Collections.singletonMap(asTableDefinitionHandle(REPORT_GROUPS.name()), COLUMN_DEFS);
     }
 
@@ -110,6 +111,7 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
 
     @Override
     public Optional<PagedModel<GroupingHandle>> retrievePage(
+            AuthContext authContext,
             int page,
             int pageSize,
             List<CyodaColumnHandle> projectedColumns,
@@ -137,7 +139,7 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
 
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-        traverson.setRestOperations(restTemplate);
+        traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(authContext));
 
         TypeReferences.PagedModelType<GroupHeader> typeReference =
                 new TypeReferences.PagedModelType<GroupHeader>() {};
@@ -214,12 +216,13 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
 
     @Override
     public Iterator<GroupingHandle> getResponseIterator(
+            AuthContext authContext,
             int pageSize,
             CyodaTableHandle tableHandle,
             CompoundPredicateNode predicates
     ) {
         List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
-        return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();
+        return new PagedIterator<>(authContext,this, pageSize, projectedColumns, predicates).iterator();
     }
 
 

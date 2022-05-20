@@ -17,6 +17,7 @@
 
 package com.cyoda.presto.client.paging;
 
+import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
@@ -35,9 +36,9 @@ public class PagedIterator<T> implements Iterable<T> {
     private static final SupplierLogger LOG = SupplierLogger.get(PagedIterator.class);
     private final Function<Integer, PagingHandle<T>> pagingHandleSupplier;
 
-    public PagedIterator(PagingApiRequestHandler<T> requestHandler, int pageSize,
+    public PagedIterator(AuthContext authContext, PagingApiRequestHandler<T> requestHandler, int pageSize,
                          List<CyodaColumnHandle> projectedColumns, CompoundPredicateNode predicates) {
-        pagingHandleSupplier = page -> new PagingHandle<T>(requestHandler, page, pageSize, projectedColumns, predicates);
+        pagingHandleSupplier = page -> new PagingHandle<T>(authContext, requestHandler, page, pageSize, projectedColumns, predicates);
 
     }
 

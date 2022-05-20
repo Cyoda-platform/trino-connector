@@ -17,6 +17,9 @@
 
 package com.cyoda.presto.handles;
 
+import com.cyoda.presto.CyodaConfig;
+import com.cyoda.presto.auth.AuthContext;
+import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorTableHandle;
 import com.facebook.presto.spi.SchemaTableName;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -35,15 +38,18 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     private final String tableName;
     private final Optional<List<CyodaColumnHandle>> projectedColumns;
     private final String requestHandlerKey;
+    private final AuthContext authContext;
 
     @JsonCreator
     public CyodaTableHandle(
+            @JsonProperty("authPayload") AuthContext authContext,
             @JsonProperty("connectorId") String connectorId,
             @JsonProperty("schemaName") String schemaName,
             @JsonProperty("tableName") String tableName,
             @JsonProperty("projectedColumns") Optional<List<CyodaColumnHandle>> projectedColumns,
             @JsonProperty("requestHandlerKey") String requestHandlerKey
     ) {
+        this.authContext = requireNonNull(authContext,"authPayload is null");
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.schemaName = requireNonNull(schemaName, "schemaName is null");
         this.tableName = requireNonNull(tableName, "tableName is null");
@@ -76,6 +82,11 @@ public class CyodaTableHandle implements ConnectorTableHandle {
         return requestHandlerKey;
     }
 
+    @JsonProperty
+    public AuthContext getAuthPayload() {
+        return authContext;
+    }
+
     public SchemaTableName toSchemaTableName() {
         return new SchemaTableName(schemaName, tableName);
     }
@@ -102,6 +113,17 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     }
 
     public CyodaTableHandle withProjectedColumns(List<CyodaColumnHandle> newProjectedColumns) {
-        return new CyodaTableHandle(connectorId, schemaName, tableName, Optional.of(newProjectedColumns), requestHandlerKey);
+        return new CyodaTableHandle(authContext,connectorId, schemaName, tableName, Optional.of(newProjectedColumns), requestHandlerKey);
+    }
+
+    public CyodaTableHandle withSessionConfig(ConnectorSession session, CyodaConfig config) {
+        return new CyodaTableHandle(
+                AuthContext.fromSession(session,config),
+                this.connectorId,
+                this.getSchemaName(),
+                this.getTableName(),
+                this.getProjectedColumns(),
+                this.requestHandlerKey
+        );
     }
 }

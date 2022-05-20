@@ -59,7 +59,7 @@ public class CyodaSplitManager implements ConnectorSplitManager {
         CyodaTableLayoutHandle layoutHandle = (CyodaTableLayoutHandle) layout;
         CyodaTableHandle tableHandle = layoutHandle.getTable();
         Preconditions.checkArgument(layoutHandle.getTable().getConnectorId().equals(connectorId),"This split manager is meant for connector id "+connectorId);
-        CyodaTable table = cyodaClient.getTable(tableHandle.getSchemaName(), tableHandle.getTableName());
+        CyodaTable table = cyodaClient.getTable(tableHandle);
         // this can happen if table is removed during a query
         checkState(table != null, "Table %s.%s no longer exists", tableHandle.getSchemaName(), tableHandle.getTableName());
 

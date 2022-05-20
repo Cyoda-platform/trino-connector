@@ -32,6 +32,7 @@ import com.facebook.presto.common.type.ArrayType;
 import com.facebook.presto.common.type.MapType;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.ConnectorPageSource;
+import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
@@ -79,6 +80,7 @@ public class CyodaFilteringPageSource<T>
         requireNonNull(cyodaClient, "Cyoda client is null");
         this.requestHandler = requireNonNull(requestHandler, "requestHandler is null");
         this.responseSupplier = () -> requestHandler.getResponseIterator(
+                tableHandle.getAuthPayload(),
                 cyodaClient.getRequestPageSize(),
                 tableHandle,
                 predicates

@@ -20,6 +20,7 @@ package com.cyoda.presto.client.reporting.meta;
 import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
+import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
@@ -147,7 +148,7 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
     }
 
     @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs() {
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
         return Collections.singletonMap(asTableDefinitionHandle(REPORTS.name()),ImmutableList.copyOf(ColumnDef.values()));
     }
 
@@ -159,6 +160,7 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
 
     @Override
     public Optional<PagedModel<GridConfigFieldsView>> retrievePage(
+            AuthContext authContext,
             int page,
             int pageSize,
             List<CyodaColumnHandle> projectedColumns,
@@ -191,7 +193,7 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
 
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-        traverson.setRestOperations(restTemplate);
+        traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(authContext));
 
         TypeReferences.PagedModelType<GridConfigFieldsView> typeReference
                 = new TypeReferences.PagedModelType<GridConfigFieldsView>() {};
@@ -255,12 +257,13 @@ public class ConfiguredReportsApiHandler extends BaseReportsApiHandler<GridConfi
 
     @Override
     public Iterator<GridConfigFieldsView> getResponseIterator(
+            AuthContext authContext,
             int pageSize,
             CyodaTableHandle tableHandle,
             CompoundPredicateNode predicates
     ) {
         List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
-        return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();
+        return new PagedIterator<>(authContext,this, pageSize, projectedColumns, predicates).iterator();
     }
 
 

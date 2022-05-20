@@ -17,7 +17,9 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.spi.SchemaTableName;
 import com.google.common.cache.CacheBuilder;
@@ -30,7 +32,7 @@ import javax.inject.Inject;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
+import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
 
@@ -41,8 +43,8 @@ public class CyodaClient {
     /**
      * TableName -> TableMetadata
      */
-    private final Supplier<Map<String, CyodaTable>> tablesSupplier;
-    private final LoadingCache<CyodaConnectorId,Map<String, CyodaTable>> tableCache;
+    private final Function<AuthContext,Map<String, CyodaTable>> tableFunction;
+    private final LoadingCache<AuthContext,Map<String, CyodaTable>> tableCache;
 
 
     private final CyodaConnectorId connectorId;
@@ -56,46 +58,40 @@ public class CyodaClient {
         this.config = requireNonNull(config, "config is null");
         this.requestHandlerProvider = requireNonNull(requestHandlerProvider, "requestHandlerProvider is null");
 
-        tablesSupplier = this::lookupSchema;
+        tableFunction = tableFunction();
         tableCache = CacheBuilder.newBuilder()
                 .expireAfterAccess(Duration.ofSeconds(10))
-                .build(new CacheLoader<CyodaConnectorId, Map<String, CyodaTable>>() {
+                .build(new CacheLoader<AuthContext, Map<String, CyodaTable>>() {
                     @Override
-                    public Map<String, CyodaTable> load(@Nonnull CyodaConnectorId key) throws Exception {
-                        if (key.equals(id)) {
+                    public Map<String, CyodaTable> load(@Nonnull AuthContext key) throws Exception {
                             LOG.debug("Reloading Tables Cache");
-                            return tablesSupplier.get();
-                        } else {
-                            throw new IllegalArgumentException("Must ask for the tables for connection id " + id);
-                        }
+                            return tableFunction.apply(key);
                     }
                 });
     }
 
-    private Map<String, CyodaTable> lookupSchema() {
+    private Function<AuthContext, Map<String, CyodaTable>> tableFunction() {
+        return this::lookupSchema;
+    }
+
+    private Map<String, CyodaTable> lookupSchema(AuthContext authContext) {
 
         ImmutableMap.Builder<String, CyodaTable> builder = ImmutableMap.builder();
         requestHandlerProvider.getHandlers().stream()
-                .flatMap(r -> r.getTables().stream())
+                .flatMap(r -> r.getTables(authContext).stream())
                 .forEach(v -> builder.put(v.getName(), v));
 
         return builder.build();
     }
 
 
-    // TODO: Determine the correct places where a refresh should be done. Currently, it is being called more than
-    // once when querying the schema via sql. We want to refresh once when the schema is queried.
-    public void refreshTableCache() {
-        tableCache.refresh(connectorId);
+    public Set<String> getTableNames(AuthContext authContext) {
+        return tableCache.getUnchecked(authContext).keySet();
     }
 
-    public Set<String> getTableNames() {
-        return tableCache.getUnchecked(connectorId).keySet();
-    }
-
-    public CyodaTable getTable(SchemaTableName tableName) {
+    public CyodaTable getTable(AuthContext authContext, SchemaTableName tableName) {
         requireNonNull(tableName, "tableName is null");
-        Map<String, CyodaTable> tableMap = tableCache.getUnchecked(connectorId);
+        Map<String, CyodaTable> tableMap = tableCache.getUnchecked(authContext);
         if (tableMap == null) {
             return null;
         }
@@ -107,8 +103,8 @@ public class CyodaClient {
         return config.getSchemaName();
     }
 
-    public CyodaTable getTable(String schemaName, String tableName) {
-        return getTable(new SchemaTableName(schemaName, tableName));
+    public CyodaTable getTable(CyodaTableHandle tableHandle) {
+        return getTable(tableHandle.getAuthPayload(),new SchemaTableName(tableHandle.getSchemaName(), tableHandle.getTableName()));
     }
 
     public CyodaApiRequestHandlerProvider getRequestHandlerProvider() {

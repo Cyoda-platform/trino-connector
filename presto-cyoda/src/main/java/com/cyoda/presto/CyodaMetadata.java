@@ -17,6 +17,7 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.CyodaTableLayoutHandle;
@@ -55,13 +56,16 @@ public class CyodaMetadata implements ConnectorMetadata {
 
     private final String connectorId;
     private final CyodaClient client;
+    private final CyodaConfig config;
 
     @Inject
     public CyodaMetadata(
             CyodaConnectorId connectorId,
-            CyodaClient client) {
+            CyodaClient client,
+            CyodaConfig config) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
         this.client = requireNonNull(client, "client is null");
+        this.config = requireNonNull(config,"confif is null");
     }
 
 
@@ -76,12 +80,13 @@ public class CyodaMetadata implements ConnectorMetadata {
             return null;
         }
 
-        CyodaTable table = client.getTable(tableName.getSchemaName(), tableName.getTableName());
+        CyodaTable table = client.getTable(AuthContext.fromSession(session,config),tableName);
         if (table == null) {
             return null;
         }
-        final String handlerKey = client.getRequestHandlerProvider().getHandler(tableName).getHandlerKey();
-        return new CyodaTableHandle(connectorId, tableName.getSchemaName(), tableName.getTableName(), Optional.empty(), handlerKey);
+        final String handlerKey = client.getRequestHandlerProvider().getHandler(AuthContext.fromSession(session,config), tableName).getHandlerKey();
+        final AuthContext authContext = AuthContext.fromSession(session,config);
+        return new CyodaTableHandle(authContext, connectorId, tableName.getSchemaName(), tableName.getTableName(), Optional.empty(), handlerKey);
     }
 
     @Override
@@ -109,12 +114,12 @@ public class CyodaMetadata implements ConnectorMetadata {
     }
 
 
-    private ConnectorTableMetadata getTableMetadata(SchemaTableName tableName) {
+    private ConnectorTableMetadata getTableMetadata(AuthContext authContext, SchemaTableName tableName) {
         if (!client.getSchemaName().contains(tableName.getSchemaName())) {
             return null;
         }
 
-        CyodaTable table = client.getTable(tableName);
+        CyodaTable table = client.getTable(authContext,tableName);
         return new ConnectorTableMetadata(tableName, table.getColumnsMetadata(),Collections.emptyMap(),table.getDescription());
     }
 
@@ -123,7 +128,7 @@ public class CyodaMetadata implements ConnectorMetadata {
         CyodaTableHandle handle = (CyodaTableHandle) table;
         checkArgument(handle.getConnectorId().equals(connectorId), "table is not for this connector");
         SchemaTableName tableName = new SchemaTableName(handle.getSchemaName(), handle.getTableName());
-        ConnectorTableMetadata metadata = getTableMetadata(tableName);
+        ConnectorTableMetadata metadata = getTableMetadata(AuthContext.fromSession(session,config),tableName);
         if (metadata == null) {
             throw new TableNotFoundException(tableName);
         }
@@ -135,7 +140,7 @@ public class CyodaMetadata implements ConnectorMetadata {
         CyodaTableHandle handle = (CyodaTableHandle) tableHandle;
         checkArgument(handle.getConnectorId().equals(connectorId), "tableHandle is not for this connector");
 
-        CyodaTable table = client.getTable(handle.toSchemaTableName());
+        CyodaTable table = client.getTable(AuthContext.fromSession(session,config),handle.toSchemaTableName());
         if (table == null) {
             throw new TableNotFoundException(handle.toSchemaTableName());
         }
@@ -160,7 +165,7 @@ public class CyodaMetadata implements ConnectorMetadata {
         }
         LOG.info("Getting tables for schema %s",()->filterSchema.orElse("ALL"));
         ImmutableList.Builder<SchemaTableName> builder = ImmutableList.builder();
-        for (String tableName : client.getTableNames()) {
+        for (String tableName : client.getTableNames(AuthContext.fromSession(session,config))) {
             builder.add(new SchemaTableName(client.getSchemaName(), tableName));
         }
         return builder.build();
@@ -187,7 +192,7 @@ public class CyodaMetadata implements ConnectorMetadata {
         requireNonNull(prefix, "prefix is null");
         ImmutableMap.Builder<SchemaTableName, List<ColumnMetadata>> columns = ImmutableMap.builder();
         for (SchemaTableName tableName : listTables(session, prefix)) {
-            ConnectorTableMetadata tableMetadata = getTableMetadata(tableName);
+            ConnectorTableMetadata tableMetadata = getTableMetadata(AuthContext.fromSession(session,config), tableName);
             // table can disappear during listing operation
             if (tableMetadata != null) {
                 columns.put(tableName, tableMetadata.getColumns());

@@ -20,6 +20,7 @@ package com.cyoda.presto.client.reporting.meta;
 import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
+import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
@@ -165,7 +166,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
     }
 
     @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs() {
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
         return Collections.singletonMap(asTableDefinitionHandle(REPORT_DETAILS.name()), ImmutableList.copyOf(ColumnDef.values()));
     }
 
@@ -176,6 +177,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
 
     @Override
     public Optional<PagedModel<ReportDefinitionHandle>> retrievePage(
+            AuthContext authContext,
             int page,
             int pageSize,
             List<CyodaColumnHandle> projectedColumns,
@@ -184,15 +186,16 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
 
         UriTemplate uriTemplate = setupUriTemplate();
 
-        PagedModel<GridConfigFieldsView> reportDefinitionModel = configuredReportsApiHandler.retrievePage(page, pageSize, projectedColumns, predicates).orElse(PagedModel.empty());
+        PagedModel<GridConfigFieldsView> reportDefinitionModel = configuredReportsApiHandler.retrievePage(
+                authContext, page, pageSize, projectedColumns, predicates).orElse(PagedModel.empty());
         // TODO: There is a bug, where the API returns one more than the page size, so use limit as long as this bug persists
         Set<String> ids = reportDefinitionModel.getContent().stream().limit(pageSize).map(it -> it.getGridConfigFields().get(REPORT_ID_COLUMN)).collect(Collectors.toSet());
 
-        List<ReportDefinitionHandle> reportDefinitionHandles = getReportDefinitionHandles(uriTemplate, ids);
+        List<ReportDefinitionHandle> reportDefinitionHandles = getReportDefinitionHandles(authContext, uriTemplate, ids);
         return Optional.of(PagedModel.of(reportDefinitionHandles, reportDefinitionModel.getMetadata()));
     }
 
-    private List<ReportDefinitionHandle> getReportDefinitionHandles(UriTemplate uriTemplate, @Nonnull Set<String> ids) {
+    private List<ReportDefinitionHandle> getReportDefinitionHandles(AuthContext authContext, UriTemplate uriTemplate, @Nonnull Set<String> ids) {
 
         if (ids.isEmpty()) return Collections.emptyList();
         ImmutableList.Builder<ReportDefinitionHandle> builder = ImmutableList.builder();
@@ -200,7 +203,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
             URI templatedUri = uriTemplate.expand(Collections.singletonMap(REPORT_ID_COLUMN, reportConfigId));
 
             Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-            traverson.setRestOperations(restTemplate);
+            traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(authContext));
             String reportName = toReportName(reportConfigId);
 
             try {
@@ -387,12 +390,13 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<ReportD
 
     @Override
     public Iterator<ReportDefinitionHandle> getResponseIterator(
+            AuthContext authContext,
             int pageSize,
             CyodaTableHandle tableHandle,
             CompoundPredicateNode predicates
     ) {
         List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
-        return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();
+        return new PagedIterator<>(authContext, this, pageSize, projectedColumns, predicates).iterator();
     }
 
     private static final List<String> COLTYPE_IDENTIFIERS = Arrays.stream(ReportColumnType.values()).map(ReportColumnType::getColType).collect(Collectors.toList());

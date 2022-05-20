@@ -17,6 +17,7 @@
 
 package com.cyoda.presto.client;
 
+import com.cyoda.presto.auth.AuthContext;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.SchemaTableName;
 
@@ -46,8 +47,8 @@ public class CyodaApiRequestHandlerProvider {
     }
 
     @SuppressWarnings({"squid:S1452"})
-    public ApiRequestHandler<?> getHandler(SchemaTableName tableName) {
-        return handlers.values().stream().filter(h -> h.hasTable(tableName)).findAny().orElseThrow(
+    public ApiRequestHandler<?> getHandler(AuthContext authContext, SchemaTableName tableName) {
+        return handlers.values().stream().filter(h -> h.hasTable(authContext, tableName)).findAny().orElseThrow(
                 () -> new PrestoException(GENERIC_INTERNAL_ERROR, "[Cyoda]:" + this.getClass().getSimpleName() +
                         ":unexpected error trying to get the Handler for table " + tableName)
         );

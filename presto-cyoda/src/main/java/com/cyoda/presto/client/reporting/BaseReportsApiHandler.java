@@ -20,6 +20,7 @@ package com.cyoda.presto.client.reporting;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.CyodaTable;
+import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.types.DataType;
@@ -34,7 +35,6 @@ import com.facebook.presto.spi.SchemaTableName;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -54,7 +54,6 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.cyoda.presto.client.types.DataType.*;
 import static java.util.Objects.requireNonNull;
@@ -73,7 +72,7 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
 
     protected final CyodaConnectorId connectorId;
     protected final CyodaConfig config;
-    protected final RestTemplate restTemplate;
+    protected final RestTemplateCustomizer restTemplateCustomizer;
     protected final TypeManager typeManager;
 
     protected BaseReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager, String endpoint, RestTemplateCustomizer restTemplateCustomizer) {
@@ -81,8 +80,7 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.config = requireNonNull(config, "config is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
-        // TODO: This means that the authentication parameters are fixed at startup. Need to make this more flexible, without restarting presto.
-        restTemplate = restTemplateCustomizer.getRestTemplate();
+        this.restTemplateCustomizer = restTemplateCustomizer;
     }
 
     protected Map<SchemaTableName, CyodaTable> setupTableMap(String endpoint, Map<TableDefinitionHandle, List<ColumnDefinition>> fieldDefs) {
@@ -133,13 +131,13 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
     }
 
     @Override
-    public boolean hasTable(SchemaTableName tableName) {
-        return refreshTableMap().containsKey(tableName);
+    public boolean hasTable(AuthContext authContext, SchemaTableName tableName) {
+        return refreshTableMap(authContext).containsKey(tableName);
     }
 
     @Override
-    public List<CyodaTable> getTables() {
-        return ImmutableList.copyOf(refreshTableMap().values());
+    public List<CyodaTable> getTables(AuthContext authContext) {
+        return ImmutableList.copyOf(refreshTableMap(authContext).values());
     }
 
     @Override

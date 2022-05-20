@@ -15,22 +15,31 @@
  *
  */
 
-package com.cyoda.presto.client;
+package com.cyoda.presto.auth;
 
-import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.handles.CyodaColumnHandle;
-import org.springframework.hateoas.PagedModel;
+import javax.security.auth.Subject;
+import java.security.Principal;
 
-import java.util.List;
-import java.util.Optional;
+public class JWTPrinciple implements Principal {
 
-public interface PagingApiRequestHandler<T> extends ApiRequestHandler<T> {
+    private final AuthContext authContext;
 
-    Optional<PagedModel<T>> retrievePage(
-            AuthContext authContext,
-            int page,
-            int pageSize,
-            List<CyodaColumnHandle> projectedColumns, CompoundPredicateNode predicates);
+    public JWTPrinciple(AuthContext authContext) {
+        this.authContext = authContext;
+    }
 
+
+    @Override
+    public String getName() {
+        return authContext.getPayload().getUsername();
+    }
+
+    public AuthContext getAuthPayload() {
+        return authContext;
+    }
+
+    @Override
+    public boolean implies(Subject subject) {
+        return Principal.super.implies(subject);
+    }
 }

@@ -53,6 +53,7 @@
         <mockito-core.version>3.4.6</mockito-core.version>
         <jackson-core.version>2.10.0</jackson-core.version>
         <jjwt.version>0.9.0</jjwt.version>
+        <json-path.version>2.6.0</json-path.version>
 
 
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
@@ -66,6 +67,21 @@
     <dependencyManagement>
 
         <dependencies>
+            <dependency>
+                <groupId>com.jayway.jsonpath</groupId>
+                <artifactId>json-path</artifactId>
+                <version>${json-path.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-api</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.ow2.asm</groupId>
+                        <artifactId>asm</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
@@ -151,7 +167,6 @@
                 <groupId>org.joda</groupId>
                 <artifactId>joda-beans</artifactId>
                 <version>${joda-beans.version}</version>
-                <classifier>classic</classifier>
             </dependency>
             <dependency>
                 <groupId>io.jsonwebtoken</groupId>

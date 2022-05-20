@@ -17,12 +17,13 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.auth.CyodaAuthenticatorFactory;
 import com.cyoda.presto.client.types.BigDecimalOperators;
 import com.cyoda.presto.client.types.BigDecimalType;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.Plugin;
 import com.facebook.presto.spi.connector.ConnectorFactory;
-import com.facebook.presto.spi.function.FunctionNamespaceManagerFactory;
+import com.facebook.presto.spi.security.PasswordAuthenticatorFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -52,5 +53,13 @@ public class CyodaPlugin implements Plugin {
     public Set<Class<?>> getFunctions() {
         return OUR_FUNCTIONS;
     }
+
+    @Override
+    public Iterable<PasswordAuthenticatorFactory> getPasswordAuthenticatorFactories() {
+        return ImmutableList.<PasswordAuthenticatorFactory>builder()
+                .add(new CyodaAuthenticatorFactory())
+                .build();
+    }
+
 
 }

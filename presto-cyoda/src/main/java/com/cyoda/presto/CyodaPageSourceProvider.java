@@ -44,11 +44,13 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
 
     private final String connectorId;
     private final CyodaClient client;
+    private final CyodaConfig config;
 
     @Inject
-    public CyodaPageSourceProvider(CyodaConnectorId connectorId, CyodaClient client) {
+    public CyodaPageSourceProvider(CyodaConnectorId connectorId, CyodaClient client, CyodaConfig config) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
         this.client = requireNonNull(client, "client is null");
+        this.config = requireNonNull(config,"config is null");
     }
 
     @Override
@@ -67,7 +69,7 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
         String requestHandlerKey = ((CyodaSplit) split).getTableHandle().getRequestHandlerKey();
         ApiRequestHandler<?> requestHandler = Optional.ofNullable(client.getRequestHandlerProvider().getHandler(requestHandlerKey))
                 .orElseThrow(() -> new IllegalArgumentException("Handler " + requestHandlerKey + " not found"));
-        CyodaTableHandle tableHandle = ((CyodaSplit) split).getTableHandle();
+        CyodaTableHandle tableHandle = ((CyodaSplit) split).getTableHandle().withSessionConfig(session,config);
         Preconditions.checkArgument(connectorId.equals(tableHandle.getConnectorId()),"tableHandle not for this connectorId");
         List<CyodaColumnHandle> cyodaColumns = columns.stream().map(CyodaColumnHandle.class::cast).collect(Collectors.toList());
         return new CyodaFilteringPageSource<>(requestHandler, tableHandle, cyodaColumns, client, predicates);

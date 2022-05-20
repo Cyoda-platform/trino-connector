@@ -36,6 +36,7 @@ public class CyodaConfig {
     private static final boolean DEFAULT_HTTPS_OVERRIDE = false;
     private static final String DEFAULT_SCHEMA_NAME = "reporting";
     private static final int DEFAULT_REQUEST_PAGE_SIZE = 10;
+    private static final String DEFAULT_LOGIN_ENDPOINT = "/auth/login";
 
     private URL serverUrl;
     private CyodaAuthenticationType cyodaAuthenticationType = CyodaAuthenticationType.NONE;
@@ -51,6 +52,13 @@ public class CyodaConfig {
     private boolean httpsOverride;
     private String schemaName;
     private int requestPageSize;
+    private String userLoginEndpoint;
+
+    private boolean anonymousLogin;
+    private String anonymousUserId;
+    private String anonymousToken;
+    private String anonymousRefreshToken;
+    private String anonymousUserName;
 
     public CyodaConfig() {
         setDefaults();
@@ -64,6 +72,14 @@ public class CyodaConfig {
         httpsOverride = DEFAULT_HTTPS_OVERRIDE;
         schemaName = DEFAULT_SCHEMA_NAME;
         requestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
+        userLoginEndpoint = DEFAULT_LOGIN_ENDPOINT;
+
+        anonymousLogin = false;
+        anonymousUserId = null;
+        anonymousToken = null;
+        anonymousRefreshToken = null;
+        anonymousUserName = null;
+
     }
 
     @NotNull
@@ -149,16 +165,6 @@ public class CyodaConfig {
         return this;
     }
 
-    public String getAccessToken() {
-        return accessToken;
-    }
-
-    @Config("cyoda.presto.access-token")
-    public CyodaConfig setAccessToken(String accessToken) {
-        this.accessToken = accessToken;
-        return this;
-    }
-
     public int getMaxHttpIdle() {
         return maxHttpIdle;
     }
@@ -232,5 +238,54 @@ public class CyodaConfig {
     }
     public int getRequestPageSize() {
         return requestPageSize;
+    }
+
+    @Config("cyoda.presto.user-login-endpoint")
+    public CyodaConfig setUserLoginEndpoint(String userLoginEndpoint) {
+        this.userLoginEndpoint = userLoginEndpoint;
+        return this;
+    }
+    public String getUserLoginEndpoint() {
+        return userLoginEndpoint;
+    }
+
+    @Config("cyoda.presto.allow-anonymous-login")
+    public void setAnonymousLogin(boolean anonymousLogin) {
+        this.anonymousLogin = anonymousLogin;
+    }
+    public boolean isAnonymousLogin() {
+        return anonymousLogin;
+    }
+
+    @Config("cyoda.presto.anonymous-user-id")
+    public void setAnonymousUserId(String anonymousUserId) {
+        this.anonymousUserId = anonymousUserId;
+    }
+    public String getAnonymousUserId() {
+        return anonymousUserId;
+    }
+
+    @Config("cyoda.presto.anonymous-token")
+    public void setAnonymousToken(String anonymousToken) {
+        this.anonymousToken = anonymousToken;
+    }
+    public String getAnonymousToken() {
+        return anonymousToken;
+    }
+
+    @Config("cyoda.presto.anonymous-refresh-token")
+    public void setAnonymousRefreshToken(String anonymousRefreshToken) {
+        this.anonymousRefreshToken = anonymousRefreshToken;
+    }
+    public String getAnonymousRefreshToken() {
+        return anonymousRefreshToken;
+    }
+
+    @Config("cyoda.presto.anonymous-username")
+    public void setAnonymousUserName(String anonymousUserName) {
+        this.anonymousUserName = anonymousUserName;
+    }
+    public String getAnonymousUserName() {
+        return anonymousUserName;
     }
 }

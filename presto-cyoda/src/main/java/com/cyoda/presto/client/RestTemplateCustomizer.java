@@ -17,9 +17,15 @@
 
 package com.cyoda.presto.client;
 
+import com.cyoda.presto.CyodaClient;
 import com.cyoda.presto.CyodaConfig;
+import com.cyoda.presto.auth.AuthContext;
+import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.base.CharMatcher;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.net.HostAndPort;
 import okhttp3.ConnectionPool;
 import okhttp3.Credentials;
@@ -31,9 +37,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.web.client.RestTemplate;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
@@ -47,20 +55,39 @@ import static java.util.Objects.requireNonNull;
 @SuppressWarnings("UnstableApiUsage")
 public class RestTemplateCustomizer {
 
+    private static final SupplierLogger LOG = SupplierLogger.get(CyodaClient.class);
+
     private final CyodaConfig config;
-    private final RestTemplate restTemplate;
+    private final LoadingCache<AuthContext,RestTemplate> restTemplateCache;
+    private final RestTemplate unauthorizedRestTemplate;
+
+    // TODO: Need a mechanism to remove the user's authcontext from the cache when a session is over.
 
     @Inject
     public RestTemplateCustomizer(CyodaConfig config) {
         this.config = config;
-        this.restTemplate = newRestTemplate(MediaTypes.HAL_JSON);
+        restTemplateCache = CacheBuilder.newBuilder()
+                .maximumSize(100)
+                .expireAfterAccess(Duration.ofSeconds(120)) // TODO: This is adhoc and should be controlled.
+                .build(new CacheLoader<AuthContext, RestTemplate>() {
+                    @Override
+                    public RestTemplate load(@Nonnull AuthContext key) throws Exception {
+                        LOG.debug(()->"creating RestTemplate for "+key.getPayload().getUsername());
+                        return newRestTemplate(key,MediaTypes.HAL_JSON);
+                    }
+                });
+        this.unauthorizedRestTemplate = newRestTemplate(null,MediaTypes.HAL_JSON);
     }
 
-    public RestTemplate getRestTemplate() {
-        return restTemplate;
+    public RestTemplate getRestTemplate(AuthContext authContext) {
+        return restTemplateCache.getUnchecked(authContext);
     }
 
-    private RestTemplate newRestTemplate(MediaType... mediaTypes) {
+    public RestTemplate getUnauthorizedRestTemplate() {
+        return unauthorizedRestTemplate;
+    }
+
+    private RestTemplate newRestTemplate(AuthContext authContext, MediaType... mediaTypes) {
         RestTemplate template = new RestTemplate();
         template.setMessageConverters(Traverson.getDefaultMessageConverters(mediaTypes));
 
@@ -73,7 +100,9 @@ public class RestTemplateCustomizer {
 
         setupSocksProxy(builder, config);
         setupHttpProxy(builder, config);
-        setupAuthentication(builder, config);
+        if ( authContext != null ) {
+            setupAuthentication(authContext, builder, config);
+        }
 
         template.setRequestFactory(new OkHttp3ClientHttpRequestFactory(builder.build()));
 
@@ -81,15 +110,15 @@ public class RestTemplateCustomizer {
     }
 
     private static void setupAuthentication(
+            AuthContext authContext,
             OkHttpClient.Builder clientBuilder,
             CyodaConfig config) {
         switch (config.getCyodaAuthenticationType()) {
             case BASIC: {
-                setupBasicAuth(clientBuilder, config);
-                break;
+                throw new UnsupportedOperationException("Cyoda APIs don't support basic authentication");
             }
             case JWT: {
-                setupTokenAuth(clientBuilder, config);
+                setupTokenAuth(authContext,clientBuilder, config);
                 break;
             }
             default:
@@ -98,6 +127,8 @@ public class RestTemplateCustomizer {
 
     }
 
+    // We don't actually support basic auth or plan to support basic auth
+    @SuppressWarnings("unused")
     private static void setupBasicAuth(OkHttpClient.Builder clientBuilder, CyodaConfig config) {
         final String username = config.getBasicAuthenticationUsername();
         final String password = config.getBasicAuthenticationPassword();
@@ -111,16 +142,16 @@ public class RestTemplateCustomizer {
     }
 
     private static void setupTokenAuth(
+            AuthContext authContext,
             OkHttpClient.Builder clientBuilder,
             CyodaConfig config) {
 
-        final String accessToken = config.getAccessToken();
-        if (accessToken != null) {
+        if (authContext.getPayload().getToken() != null) {
             if (!config.getHttpsOverride()) {
                 checkArgument(config.getServerUrl().getProtocol().equalsIgnoreCase("https"),
                         "Authentication using an access token requires HTTPS to be enabled");
             }
-            clientBuilder.addInterceptor(tokenAuth(accessToken));
+            clientBuilder.addInterceptor(tokenAuth(authContext.getPayload().getToken()));
         }
     }
 

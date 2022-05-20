@@ -21,6 +21,7 @@ import com.cyoda.core.model.reports.DistributedReportInfoView;
 import com.cyoda.core.model.reports.ReportHistoryFieldsView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
+import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
@@ -28,7 +29,6 @@ import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.paging.PagedIterator;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
-import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -51,16 +51,14 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
-import static com.cyoda.core.model.reports.ReportHistoryFieldsView.*;
+import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_ID_COLUMN;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_STATS;
@@ -90,7 +88,7 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
     }
 
     @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs() {
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
         return Collections.singletonMap(asTableDefinitionHandle(REPORT_STATS.name()),COLUMN_DEFS);
     }
 
@@ -101,6 +99,7 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
 
     @Override
     public Optional<PagedModel<DistributedReportInfoView>> retrievePage(
+            AuthContext authContext,
             int page,
             int pageSize,
             List<CyodaColumnHandle> projectedColumns,
@@ -110,56 +109,19 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
         UriTemplate uriTemplate = setupUriTemplate();
         PagedModel<ReportHistoryFieldsView> reportHistoryModel = reportHistoryApiHandler
                 .retrievePage(
+                        authContext,
                         page,
                         pageSize,
                         projectedColumns,
                         predicates
                 ).orElse(PagedModel.empty());
-        List<DistributedReportInfoView> reportStatisticsView = getReportStatisticsView(uriTemplate, reportHistoryModel.getContent());
+        List<DistributedReportInfoView> reportStatisticsView = getReportStatisticsView(authContext,uriTemplate, reportHistoryModel.getContent());
 
         return Optional.of(PagedModel.of(reportStatisticsView,reportHistoryModel.getMetadata()));
     }
 
-    // IF the API has no request parameter to select the report ID, we have to do this crap here.
-    private boolean matches(ReportHistoryFieldsView view, Set<String> byGroupingVersion) {
-        if (byGroupingVersion == null ) return true;
-        String groupingVersion = (String) view.getReportHistoryFields().get(HISTORY_GROUPING_VERSION_COLUMN);
-        return byGroupingVersion.contains(groupingVersion);
-    }
-
-    @SuppressWarnings("unused")
-    private Optional<PagedModel<DistributedReportInfoView>> deleteme() {
-        int page = 0;
-        int pageSize = 0;
-        List<CyodaColumnHandle> projectedColumns = Collections.emptyList();
-        CompoundPredicateNode predicates = CompoundPredicateNode.empty();
-        UriTemplate uriTemplate = setupUriTemplate();
-
-        PredicateTraversal traversal = PredicateTraversal.of(predicates);
-        Set<String> byGroupingVersion = traversal.assembleFilterings(HISTORY_GROUPING_VERSION_COLUMN).orElse(null);
-
-
-        List<DistributedReportInfoView> fillToPage = new ArrayList<>();
-        int thisPage = page;
-        do {
-            PagedModel<ReportHistoryFieldsView> reportHistoryModel = reportHistoryApiHandler
-                    .retrievePage(
-                            thisPage,
-                            pageSize,
-                            projectedColumns,
-                            predicates
-                    ).orElse(PagedModel.empty());
-            if (reportHistoryModel.getContent().isEmpty() ) break;
-            reportHistoryModel.getContent().stream().filter(it->matches(it,byGroupingVersion)).map( it->
-                    getReportStatisticsView(uriTemplate, Collections.singletonList(it))
-            ).forEach(it->fillToPage.add(it.get(0)));
-            thisPage++;
-        } while ( fillToPage.size() <= pageSize );
-        PagedModel.PageMetadata meta = new PagedModel.PageMetadata(fillToPage.size(),0,Long.MAX_VALUE,Long.MAX_VALUE/pageSize);
-        return Optional.of(PagedModel.of(fillToPage,meta));
-
-    }
     private List<DistributedReportInfoView> getReportStatisticsView(
+            AuthContext authContext,
             UriTemplate uriTemplate,
             @Nonnull Collection<ReportHistoryFieldsView> history
     ) {
@@ -179,7 +141,7 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
             );
 
             Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-            traverson.setRestOperations(restTemplate);
+            traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(authContext));
 
             TypeReferences.EntityModelType<DistributedReportInfoView> typeReference
                     = new TypeReferences.EntityModelType<DistributedReportInfoView>(){};
@@ -225,12 +187,13 @@ public class ReportStatisticsApiHandler extends BaseReportsApiHandler<Distribute
 
     @Override
     public Iterator<DistributedReportInfoView> getResponseIterator(
+            AuthContext authContext,
             int pageSize,
             CyodaTableHandle tableHandle,
             CompoundPredicateNode predicates
     ) {
         List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
-        return new PagedIterator<>(this, pageSize, projectedColumns, predicates).iterator();
+        return new PagedIterator<>(authContext,this, pageSize, projectedColumns, predicates).iterator();
     }
 
 }

@@ -20,6 +20,7 @@ package com.cyoda.presto.client.reporting.groups;
 import com.cyoda.core.model.reports.DistributedReportInfoView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
+import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
@@ -48,6 +49,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_ID_COLUMN;
@@ -63,6 +65,8 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
     public static final String COLUMN_NOT_FOUND = " Column not found!";
     private final ReportStatisticsApiHandler statisticsApiHandler;
     private final InternalReportGroupsApiHandler reportGroupsHandler;
+    private final Function<AuthContext, ColumnsHolder> columnsHolderFunction;
+
 
     public static final String GROUPING_VERSION_COLUMN = "groupingVersion";
     public static final String GROUPING_PARENT_COLUMN = "group_json";
@@ -75,9 +79,6 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
             .add(GroupHeader.meta())
             .build();
 
-    private final CyodaColumnHandle reportIdColumn;
-    private final CyodaColumnHandle groupingVersionColumn;
-    private final CyodaColumnHandle reportConfigurationIdColumn;
 
     @Inject
     public ReportGroupsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
@@ -85,30 +86,17 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
         super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer);
         this.statisticsApiHandler = new ReportStatisticsApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
         this.reportGroupsHandler = new InternalReportGroupsApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
-        this.reportIdColumn = reportGroupsHandler.getTables().get(0).getColumns().stream()
-                .filter(it -> it.getColumnName().equals(HISTORY_REPORT_ID_COLUMN))
-                .findAny()
-                .orElseThrow(() -> new IllegalStateException(HISTORY_REPORT_ID_COLUMN + COLUMN_NOT_FOUND));
-        this.groupingVersionColumn = reportGroupsHandler.getTables().get(0).getColumns().stream()
-                .filter(it -> it.getColumnName().equals(GROUPING_VERSION_COLUMN))
-                .map(it->new CyodaColumnHandle(
-                        it.getConnectorId(),
-                        it.getColumnName(),
-                        VarcharType.VARCHAR, // This is because Presto cannot deal with UUID, even if there is a UuidType.
-                        STRING,
-                        it.getOrdinalPosition(),
-                        it.getRequestHandlerKey(),
-                        it.getIsNullable())
-                ).findAny()
-                .orElseThrow(() -> new IllegalStateException(GROUPING_VERSION_COLUMN + COLUMN_NOT_FOUND));
-        this.reportConfigurationIdColumn = statisticsApiHandler.getTables().get(0).getColumns().stream()
-                .filter(it -> it.getColumnName().equals(HISTORY_REPORT_NAME_VARIABLE))
-                .findAny()
-                .orElseThrow(() -> new IllegalStateException(HISTORY_REPORT_NAME_VARIABLE + COLUMN_NOT_FOUND));
+
+        columnsHolderFunction = columnsHolderFunction(reportGroupsHandler,statisticsApiHandler);
+    }
+
+    private Function<AuthContext, ColumnsHolder> columnsHolderFunction(InternalReportGroupsApiHandler reportGroupsHandler,
+                                                                       ReportStatisticsApiHandler statisticsApiHandler) {
+        return authPayload -> new ColumnsHolder(authPayload,reportGroupsHandler,statisticsApiHandler);
     }
 
     @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs() {
+    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
         return Collections.singletonMap(asTableDefinitionHandle(REPORT_GROUPS.name()), COLUMN_DEFS);
     }
 
@@ -118,6 +106,7 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
     }
 
     protected Iterable<GroupingHandle> groupsIterator(
+            AuthContext authContext,
             int pageSize,
             CyodaTableHandle tableHandle,
             ColumnPredicateNode<Any> predicates,
@@ -133,15 +122,16 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
         Slice groupingVersionSlice = DataTypeValue.of(groupingVersion).asSlice(VarcharType.VARCHAR);
         Slice reportConfigIdSlice = DataTypeValue.of(reportConfigId).asSlice(VarcharType.VARCHAR);
 
+        ColumnsHolder columnsHolder = columnsHolderFunction.apply(tableHandle.getAuthPayload());
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
-        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(reportIdColumn, reportIdSlice,String.class));
-        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(groupingVersionColumn, groupingVersionSlice,String.class));
-        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(reportConfigurationIdColumn, reportConfigIdSlice,String.class));
+        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.reportIdColumn, reportIdSlice,String.class));
+        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.groupingVersionColumn, groupingVersionSlice,String.class));
+        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.reportConfigurationIdColumn, reportConfigIdSlice,String.class));
         builder.addMember(predicates);
 
         CompoundPredicateNode thesePredicates = builder.build();
 
-        return () -> reportGroupsHandler.getResponseIterator(pageSize, tableHandle, thesePredicates);
+        return () -> reportGroupsHandler.getResponseIterator(authContext,pageSize, tableHandle, thesePredicates);
     }
 
     @Nullable
@@ -171,18 +161,59 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
 
     @Override
     public Iterator<GroupingHandle> getResponseIterator(
+            AuthContext authContext,
             int pageSize,
             CyodaTableHandle tableHandle,
             CompoundPredicateNode predicates
     ) {
         Iterable<DistributedReportInfoView> statsIterable = () -> statisticsApiHandler
-                .getResponseIterator(pageSize, tableHandle, predicates);
+                .getResponseIterator(authContext,pageSize, tableHandle, predicates);
 
         return StreamSupport.stream(statsIterable.spliterator(),true)
                 .flatMap(it->
-                        StreamSupport.stream(groupsIterator(pageSize,tableHandle,predicates,it).spliterator(), true)
+                        StreamSupport.stream(groupsIterator(authContext,pageSize,tableHandle,predicates,it).spliterator(), true)
                 ).iterator();
     }
 
+    static class ColumnsHolder {
+        private final CyodaColumnHandle reportIdColumn;
+        private final CyodaColumnHandle groupingVersionColumn;
+        private final CyodaColumnHandle reportConfigurationIdColumn;
+
+        ColumnsHolder(AuthContext authContext, InternalReportGroupsApiHandler reportGroupsHandler, ReportStatisticsApiHandler statisticsApiHandler) {
+            this.reportIdColumn = setupReportIdColumn(authContext, reportGroupsHandler);
+            this.groupingVersionColumn = setupGroupingVersionColumn(authContext, reportGroupsHandler);
+            this.reportConfigurationIdColumn = setupReportConfigIdColumn(authContext, statisticsApiHandler);
+        }
+
+        private CyodaColumnHandle setupReportConfigIdColumn(AuthContext authContext, ReportStatisticsApiHandler statisticsApiHandler) {
+            return statisticsApiHandler.getTables(authContext).get(0).getColumns().stream()
+                    .filter(it -> it.getColumnName().equals(HISTORY_REPORT_NAME_VARIABLE))
+                    .findAny()
+                    .orElseThrow(() -> new IllegalStateException(HISTORY_REPORT_NAME_VARIABLE + COLUMN_NOT_FOUND));
+        }
+
+        private CyodaColumnHandle setupGroupingVersionColumn(AuthContext authContext, InternalReportGroupsApiHandler reportGroupsHandler) {
+            return reportGroupsHandler.getTables(authContext).get(0).getColumns().stream()
+                    .filter(it -> it.getColumnName().equals(GROUPING_VERSION_COLUMN))
+                    .map(it -> new CyodaColumnHandle(
+                            it.getConnectorId(),
+                            it.getColumnName(),
+                            VarcharType.VARCHAR, // This is because Presto cannot deal with UUID, even if there is a UuidType.
+                            STRING,
+                            it.getOrdinalPosition(),
+                            it.getRequestHandlerKey(),
+                            it.getIsNullable())
+                    ).findAny()
+                    .orElseThrow(() -> new IllegalStateException(GROUPING_VERSION_COLUMN + COLUMN_NOT_FOUND));
+        }
+
+        private CyodaColumnHandle setupReportIdColumn(AuthContext authContext, InternalReportGroupsApiHandler reportGroupsHandler) {
+            return reportGroupsHandler.getTables(authContext).get(0).getColumns().stream()
+                    .filter(it -> it.getColumnName().equals(HISTORY_REPORT_ID_COLUMN))
+                    .findAny()
+                    .orElseThrow(() -> new IllegalStateException(HISTORY_REPORT_ID_COLUMN + COLUMN_NOT_FOUND));
+        }
+    }
 
 }

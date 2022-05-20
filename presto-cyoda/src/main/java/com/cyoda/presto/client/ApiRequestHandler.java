@@ -18,6 +18,7 @@
 package com.cyoda.presto.client;
 
 import com.cyoda.presto.CyodaTable;
+import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
@@ -31,12 +32,12 @@ import java.util.List;
 public interface ApiRequestHandler<T> {
     String getHandlerKey();
 
-    boolean hasTable(SchemaTableName tableName);
+    boolean hasTable(AuthContext authContext, SchemaTableName tableName);
 
-    List<CyodaTable> getTables();
+    List<CyodaTable> getTables(AuthContext authContext);
 
     @SuppressWarnings("java:S1452")
     DataTypeValue<?> getValue(@Nullable T entity, CyodaColumnHandle field);
 
-    Iterator<T> getResponseIterator(int pageSize, CyodaTableHandle tableHandle, CompoundPredicateNode predicates);
+    Iterator<T> getResponseIterator(AuthContext authContext, int pageSize, CyodaTableHandle tableHandle, CompoundPredicateNode predicates);
 }

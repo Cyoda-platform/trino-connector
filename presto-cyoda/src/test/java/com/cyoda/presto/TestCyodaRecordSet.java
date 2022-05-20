@@ -17,6 +17,7 @@
 package com.cyoda.presto;
 
 import com.cyoda.api.view.GridConfigFieldsView;
+import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
 import com.cyoda.presto.client.RestTemplateCustomizer;
@@ -75,7 +76,8 @@ public class TestCyodaRecordSet {
         CyodaClient client = new CyodaClient(connectorId, testCyodaConfig, handlerProvider);
 
         ApiRequestHandler<?> apiHandler = handlerProvider.getHandler(requestHandlerKey);
-        List<CyodaTable> tables = apiHandler.getTables();
+        AuthContext authContext = mock(AuthContext.class);
+        List<CyodaTable> tables = apiHandler.getTables(authContext);
         assertTrue(apiHandler instanceof ConfiguredReportsApiHandler);
         assertEquals(tables.size(), 1); // There is only one table for that.
 
@@ -84,7 +86,8 @@ public class TestCyodaRecordSet {
         URI dataUri = ourHttpServer.getBaseUri().resolve(ConfiguredReportsApiHandler.REPORT_DEFS_ENDPOINT);
 
         TupleDomain<ColumnHandle> constraint = TupleDomain.all();
-        CyodaTableHandle tableHandle = new CyodaTableHandle(connectorId.toString(), "schema", "table", Optional.empty(), requestHandlerKey);
+
+        CyodaTableHandle tableHandle = new CyodaTableHandle(authContext,connectorId.toString(), "schema", "table", Optional.empty(), requestHandlerKey);
 //        RecordSet recordSet = new CyodaRecordSet<PagedModel<GridConfigFieldsView>,GridConfigFieldsView>(
 //                client,
 //                new CyodaSplit(tableHandle, dataUri, constraint),
@@ -159,14 +162,15 @@ public class TestCyodaRecordSet {
 
         ApiRequestHandler<GridConfigFieldsView> apiHandler =
                 (ApiRequestHandler<GridConfigFieldsView>) handlerProvider.getHandler(requestHandlerKey);
-        List<CyodaTable> tables = apiHandler.getTables();
+        AuthContext authContext = mock(AuthContext.class);
+        List<CyodaTable> tables = apiHandler.getTables(authContext);
         assertTrue(apiHandler instanceof ConfiguredReportsApiHandler);
         assertEquals(tables.size(), 1); // There is only one table for that.
 
         setupReponseMapper();
 
         TupleDomain<CyodaColumnHandle> constraint = TupleDomain.all();
-        CyodaTableHandle tableHandle = new CyodaTableHandle(connectorId.toString(), "schema", "table", Optional.empty(), requestHandlerKey);
+        CyodaTableHandle tableHandle = new CyodaTableHandle(authContext,connectorId.toString(), "schema", "table", Optional.empty(), requestHandlerKey);
         CompoundPredicateNode predicates = ColumnPredicateBuilder.setupConstraintPredicates(TupleDomain.all());
         CyodaFilteringPageSource<GridConfigFieldsView> pageSource =
                 new CyodaFilteringPageSource<>(apiHandler, tableHandle, tables.get(0).getColumns(), client, predicates);
@@ -202,8 +206,10 @@ public class TestCyodaRecordSet {
 
         URI dataUri = ourHttpServer.getBaseUri().resolve(ConfiguredReportsApiHandler.REPORT_DEFS_ENDPOINT);
 
+        AuthContext authContext = mock(AuthContext.class);
+
         RecordSet recordSet;
-        CyodaTableHandle tableHandle = new CyodaTableHandle(connectorId.toString(), "schema", "table", Optional.empty(), requestHandlerKey);
+        CyodaTableHandle tableHandle = new CyodaTableHandle(authContext,connectorId.toString(), "schema", "table", Optional.empty(), requestHandlerKey);
 
 //        recordSet = new CyodaRecordSet<>(client, new CyodaSplit(tableHandle, dataUri, TupleDomain.all()), ImmutableList.of(
 //                new CyodaColumnHandle("test", "value", BIGINT, DataType.BIG_INTEGER, 1, requestHandlerKey),

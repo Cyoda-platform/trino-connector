@@ -18,6 +18,7 @@
 package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.CyodaTable;
+import com.cyoda.presto.auth.AuthContext;
 import com.facebook.presto.spi.SchemaTableName;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
@@ -38,24 +39,24 @@ public abstract class AbstractTableHolder {
         this.endpoint = Preconditions.checkNotNull(endpoint,"endpoint is null");
     }
 
-    private Map<SchemaTableName, CyodaTable> initTableMap(boolean refresh) {
-        fieldDefs = refresh ? refreshFieldDefs() : lookupFieldDefs();
+    private Map<SchemaTableName, CyodaTable> initTableMap(boolean refresh, AuthContext authContext) {
+        fieldDefs = refresh ? refreshFieldDefs(authContext) : lookupFieldDefs(authContext);
         tableMap = setupTableMap(endpoint,fieldDefs);
         return tableMap;
     }
 
-    private Map<TableDefinitionHandle,List<ColumnDefinition>> lookupFieldDefs() {
-        return Optional.ofNullable(fieldDefs).orElse(refreshFieldDefs());
+    private Map<TableDefinitionHandle,List<ColumnDefinition>> lookupFieldDefs(AuthContext authContext) {
+        return Optional.ofNullable(fieldDefs).orElse(refreshFieldDefs(authContext));
     }
 
-    protected final Map<SchemaTableName, CyodaTable> lookupTableMap() {
-        return Optional.ofNullable(tableMap).orElse(initTableMap(false));
+    protected final Map<SchemaTableName, CyodaTable> lookupTableMap(AuthContext authContext) {
+        return Optional.ofNullable(tableMap).orElse(initTableMap(false, authContext));
     }
-    protected final Map<SchemaTableName, CyodaTable> refreshTableMap() {
-        return initTableMap(true);
+    protected final Map<SchemaTableName, CyodaTable> refreshTableMap(AuthContext authContext) {
+        return initTableMap(true, authContext);
     }
 
-    protected abstract Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs();
+    protected abstract Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext);
     abstract Map<SchemaTableName, CyodaTable> setupTableMap(String endpoint, Map<TableDefinitionHandle, List<ColumnDefinition>> fieldDefs);
 
     public static class TableDefinitionHandle {
