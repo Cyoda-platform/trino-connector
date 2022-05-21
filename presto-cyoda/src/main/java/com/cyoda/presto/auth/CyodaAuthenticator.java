@@ -44,14 +44,12 @@ public class CyodaAuthenticator implements PasswordAuthenticator {
     private static final SupplierLogger LOG = SupplierLogger.get(CyodaAuthenticator.class);
     private static final HttpHeaders HEADERS = standardHeader();
 
-    private final CyodaConfig config;
     private final RestTemplateCustomizer restTemplateCustomizer;
     private final URI loginUri;
 
     @Inject
-    public CyodaAuthenticator(CyodaConfig config, RestTemplateCustomizer restTemplateCustomizer, RestTemplateCustomizer restTemplateCustomizer1) {
-        this.config = config;
-        this.restTemplateCustomizer = restTemplateCustomizer1;
+    public CyodaAuthenticator(CyodaConfig config, RestTemplateCustomizer restTemplateCustomizer) {
+        this.restTemplateCustomizer = restTemplateCustomizer;
         try {
             this.loginUri = config.getServerUrl().toURI().resolve(config.getUserLoginEndpoint());
         } catch (URISyntaxException e) {

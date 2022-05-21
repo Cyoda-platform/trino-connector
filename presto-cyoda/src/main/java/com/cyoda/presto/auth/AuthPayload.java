@@ -17,24 +17,27 @@
 
 package com.cyoda.presto.auth;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.time.ZonedDateTime;
 import java.util.List;
 
 public class AuthPayload {
-    private final String refreshTokenExpiry;
-    private final String idleTimeMs;
+    private final ZonedDateTime refreshTokenExpiry;
+    private final Long idleTimeMs;
     private final List<String> roles;
-    private final String tokenExpiry;
+    private final ZonedDateTime tokenExpiry;
     private final String token;
     private final String refreshToken;
     private final String username;
 
-    AuthPayload(
-            @JsonProperty("refreshTokenExpiry") String refreshTokenExpiry,
-            @JsonProperty("idleTimeMs") String idleTimeMs,
+    @JsonCreator
+    public AuthPayload(
+            @JsonProperty("refreshTokenExpiry") ZonedDateTime refreshTokenExpiry,
+            @JsonProperty("idleTimeMs") Long idleTimeMs,
             @JsonProperty("roles") List<String> roles,
-            @JsonProperty("tokenExpiry") String tokenExpiry,
+            @JsonProperty("tokenExpiry") ZonedDateTime tokenExpiry,
             @JsonProperty("token") String token,
             @JsonProperty("refreshToken") String refreshToken,
             @JsonProperty("username") String username
@@ -49,12 +52,12 @@ public class AuthPayload {
     }
 
     @JsonProperty
-    public String getRefreshTokenExpiry() {
+    public ZonedDateTime getRefreshTokenExpiry() {
         return refreshTokenExpiry;
     }
 
     @JsonProperty
-    public String getIdleTimeMs() {
+    public Long getIdleTimeMs() {
         return idleTimeMs;
     }
 
@@ -64,7 +67,7 @@ public class AuthPayload {
     }
 
     @JsonProperty
-    public String getTokenExpiry() {
+    public ZonedDateTime getTokenExpiry() {
         return tokenExpiry;
     }
 

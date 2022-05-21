@@ -20,9 +20,11 @@ package com.cyoda.presto.client;
 import com.cyoda.presto.CyodaClient;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.auth.AuthContext;
+import com.cyoda.presto.auth.AuthPayload;
+import com.cyoda.presto.auth.RefreshContext;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.spi.PrestoException;
-import com.google.common.base.CharMatcher;
+import com.facebook.presto.spi.security.AccessDeniedException;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -33,19 +35,28 @@ import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.client.Traverson;
-import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
+import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_AUTHENTICATION_ERROR;
+import static com.cyoda.presto.CyodaErrorCode.CYODA_BOOTSTRAPPING_FAILURE;
+import static com.cyoda.presto.client.RestTemplateCustomizer.TemplateType.ACCESS;
+import static com.cyoda.presto.client.RestTemplateCustomizer.TemplateType.REFRESH;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.net.HttpHeaders.AUTHORIZATION;
 import static java.net.Proxy.Type.HTTP;
@@ -56,40 +67,69 @@ import static java.util.Objects.requireNonNull;
 public class RestTemplateCustomizer {
 
     private static final SupplierLogger LOG = SupplierLogger.get(CyodaClient.class);
+    public static final Duration TOKEN_EXPIRY_OFFSET = Duration.ofSeconds(10);
 
     private final CyodaConfig config;
     private final LoadingCache<AuthContext,RestTemplate> restTemplateCache;
+    private final LoadingCache<AuthContext,RestTemplate> refreshRestTemplateCache;
     private final RestTemplate unauthorizedRestTemplate;
+    private final URI refreshUri;
 
-    // TODO: Need a mechanism to remove the user's authcontext from the cache when a session is over.
-
+    private static final List<HttpMessageConverter<?>> HAL_CONVERTERS = Traverson.getDefaultMessageConverters(MediaTypes.HAL_JSON);
     @Inject
     public RestTemplateCustomizer(CyodaConfig config) {
         this.config = config;
         restTemplateCache = CacheBuilder.newBuilder()
                 .maximumSize(100)
-                .expireAfterAccess(Duration.ofSeconds(120)) // TODO: This is adhoc and should be controlled.
                 .build(new CacheLoader<AuthContext, RestTemplate>() {
                     @Override
-                    public RestTemplate load(@Nonnull AuthContext key) throws Exception {
+                    public RestTemplate load(@Nonnull AuthContext key) {
                         LOG.debug(()->"creating RestTemplate for "+key.getPayload().getUsername());
-                        return newRestTemplate(key,MediaTypes.HAL_JSON);
+
+                        return newRestTemplate(ACCESS,key,HAL_CONVERTERS);
                     }
                 });
-        this.unauthorizedRestTemplate = newRestTemplate(null,MediaTypes.HAL_JSON);
+
+        refreshRestTemplateCache = CacheBuilder.newBuilder()
+                .maximumSize(100)
+                .build(new CacheLoader<AuthContext, RestTemplate>() {
+                    @Override
+                    public RestTemplate load(@Nonnull AuthContext key) {
+                        LOG.debug(()->"creating refresh RestTemplate for "+key.getPayload().getUsername());
+                        return newRestTemplate(REFRESH,key,null);
+                    }
+                });
+
+        this.unauthorizedRestTemplate = newRestTemplate(ACCESS,null,null);
+
+        try {
+            this.refreshUri = config.getServerUrl().toURI().resolve(config.getRefreshTokenEndpoint());
+        } catch (URISyntaxException e) {
+            throw new PrestoException(CYODA_BOOTSTRAPPING_FAILURE,"Cannot resolve URI",e);
+        }
+
+    }
+
+    enum TemplateType {
+        ACCESS,
+        REFRESH
     }
 
     public RestTemplate getRestTemplate(AuthContext authContext) {
-        return restTemplateCache.getUnchecked(authContext);
+            return restTemplateCache.getUnchecked(authContext);
     }
 
     public RestTemplate getUnauthorizedRestTemplate() {
         return unauthorizedRestTemplate;
     }
 
-    private RestTemplate newRestTemplate(AuthContext authContext, MediaType... mediaTypes) {
+    private RestTemplate newRestTemplate(TemplateType templateType, AuthContext authContext,
+                                         List<HttpMessageConverter<?>> messageConverters) {
+
         RestTemplate template = new RestTemplate();
-        template.setMessageConverters(Traverson.getDefaultMessageConverters(mediaTypes));
+        if ( messageConverters != null ) {
+            template.setMessageConverters(messageConverters);
+        }
 
         OkHttpClient.Builder builder = new OkHttpClient.Builder();
         ConnectionPool okHttpConnectionPool = new ConnectionPool(config.getMaxHttpIdle(), config.getMaxHttpKeepalive(),
@@ -101,7 +141,7 @@ public class RestTemplateCustomizer {
         setupSocksProxy(builder, config);
         setupHttpProxy(builder, config);
         if ( authContext != null ) {
-            setupAuthentication(authContext, builder, config);
+            setupAuthentication(templateType, authContext, builder, config);
         }
 
         template.setRequestFactory(new OkHttp3ClientHttpRequestFactory(builder.build()));
@@ -109,16 +149,18 @@ public class RestTemplateCustomizer {
         return template;
     }
 
-    private static void setupAuthentication(
+    private void setupAuthentication(
+            TemplateType templateType,
             AuthContext authContext,
             OkHttpClient.Builder clientBuilder,
             CyodaConfig config) {
         switch (config.getCyodaAuthenticationType()) {
             case BASIC: {
-                throw new UnsupportedOperationException("Cyoda APIs don't support basic authentication");
+                setupBasicAuth(clientBuilder, config);
+                break;
             }
             case JWT: {
-                setupTokenAuth(authContext,clientBuilder, config);
+                setupTokenAuth(templateType, authContext,clientBuilder, config);
                 break;
             }
             default:
@@ -128,7 +170,6 @@ public class RestTemplateCustomizer {
     }
 
     // We don't actually support basic auth or plan to support basic auth
-    @SuppressWarnings("unused")
     private static void setupBasicAuth(OkHttpClient.Builder clientBuilder, CyodaConfig config) {
         final String username = config.getBasicAuthenticationUsername();
         final String password = config.getBasicAuthenticationPassword();
@@ -141,17 +182,18 @@ public class RestTemplateCustomizer {
         }
     }
 
-    private static void setupTokenAuth(
+    private void setupTokenAuth(
+            TemplateType templateType,
             AuthContext authContext,
             OkHttpClient.Builder clientBuilder,
             CyodaConfig config) {
 
-        if (authContext.getPayload().getToken() != null) {
+        if (authContext.getPayload().getRefreshToken() != null) {
             if (!config.getHttpsOverride()) {
                 checkArgument(config.getServerUrl().getProtocol().equalsIgnoreCase("https"),
                         "Authentication using an access token requires HTTPS to be enabled");
             }
-            clientBuilder.addInterceptor(tokenAuth(authContext.getPayload().getToken()));
+            clientBuilder.addInterceptor(tokenAuth(templateType,authContext));
         }
     }
 
@@ -168,13 +210,78 @@ public class RestTemplateCustomizer {
                 .build());
     }
 
-    public static Interceptor tokenAuth(String accessToken) {
-        requireNonNull(accessToken, "accessToken is null");
-        checkArgument(CharMatcher.inRange((char) 33, (char) 126).matchesAllOf(accessToken));
+    public Interceptor tokenAuth(TemplateType templateType, AuthContext authContext) {
+        requireNonNull(authContext, "accessToken is null");
 
-        return chain -> chain.proceed(chain.request().newBuilder()
-                .addHeader(AUTHORIZATION, "Bearer " + accessToken)
-                .build());
+        switch(templateType) {
+            case ACCESS: {
+                return chain -> chain.proceed(chain.request().newBuilder()
+                        .addHeader(AUTHORIZATION, "Bearer " + getAccessToken(authContext))
+                        .build());
+            }
+            case REFRESH: {
+                return chain -> chain.proceed(chain.request().newBuilder()
+                        .addHeader(AUTHORIZATION, "Bearer " + getRefreshToken(authContext))
+                        .build());
+            }
+            default:
+                throw new IllegalStateException("Should not get here");
+        }
+    }
+
+    private String getRefreshToken(AuthContext authContext) {
+        ZonedDateTime refreshTokenExpiry = authContext.getPayload().getRefreshTokenExpiry();
+        if (isTokenExpired(authContext.getPayload().getUsername(),refreshTokenExpiry)) {
+            String message =
+                    Optional.ofNullable(refreshTokenExpiry)
+                            .map(it ->
+                                    "Refresh token has expired on " +
+                                            it.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME) +
+                                            " for user " +
+                                            authContext.getPayload().getUsername() +
+                                            ". Need to login again."
+                            ).orElseThrow(()->new IllegalStateException("Should not happen"));
+            throw new IllegalArgumentException(message);
+        } else if ( authContext.getPayload().getRefreshToken() == null ) {
+            throw new IllegalArgumentException("No refresh token for user " + authContext.getPayload().getUsername());
+        } else {
+            return authContext.getPayload().getRefreshToken();
+        }
+    }
+
+    private String getAccessToken(AuthContext authContext) {
+        if (needANewToken(authContext)) {
+            RestTemplate restTemplate = refreshRestTemplateCache.getUnchecked(authContext);
+            ResponseEntity<RefreshContext> response  = restTemplate.getForEntity(refreshUri, RefreshContext.class);
+            if ( response.getStatusCode().is2xxSuccessful() ) {
+                RefreshContext refreshContext = Optional.ofNullable(
+                        response.getBody()
+                ).orElseThrow(()->new IllegalStateException(
+                        "No body returned from refresh token endpoint"+config.getRefreshTokenEndpoint())
+                );
+                AuthContext newAuthContext = authContext.withContext(refreshContext);
+                restTemplateCache.refresh(newAuthContext);
+                return refreshContext.getToken();
+            } else {
+                LOG.warn("access denied to "+authContext.getPayload().getUsername()+" with reason: "+response);
+                throw new AccessDeniedException("Unauthorized");
+            }
+        } else {
+            return authContext.getPayload().getToken();
+        }
+    }
+
+    private boolean needANewToken(AuthContext authContext) {
+        AuthPayload payload = authContext.getPayload();
+        return payload.getToken() == null || isTokenExpired(payload.getUsername(), payload.getTokenExpiry());
+    }
+
+    private boolean isTokenExpired(String username, ZonedDateTime tokenExpiry) {
+        if ( tokenExpiry == null ) {
+            LOG.info("Perpetual token is circulating for "+username);
+            return false;  // Perpetual
+        }
+        return tokenExpiry.isBefore(ZonedDateTime.now().minus(TOKEN_EXPIRY_OFFSET));
     }
 
     public static void setupSocksProxy(OkHttpClient.Builder clientBuilder, CyodaConfig config) {

@@ -19,6 +19,8 @@ package com.cyoda.presto.auth;
 
 import com.cyoda.presto.CyodaConfig;
 import com.facebook.presto.spi.ConnectorSession;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
@@ -29,12 +31,12 @@ import java.security.Principal;
 public class AuthContext {
     // This is the key, and determines equality.
     private final String userId;
-
     private final AuthPayload payload;
 
-    AuthContext(
+    @JsonCreator
+    public AuthContext(
             @JsonProperty("userId") String userId,
-            @JsonProperty("authPayload") AuthPayload payload
+            @JsonProperty("payload") AuthPayload payload
     ) {
         this.userId = userId;
         this.payload = payload;
@@ -84,5 +86,21 @@ public class AuthContext {
     @Override
     public int hashCode() {
         return Objects.hashCode(userId);
+    }
+
+    @JsonIgnore
+    public AuthContext withContext(RefreshContext refreshContext) {
+        return new AuthContext(
+                this.userId,
+                new AuthPayload(
+                        this.payload.getRefreshTokenExpiry(),
+                        this.payload.getIdleTimeMs(),
+                        this.payload.getRoles(),
+                        refreshContext.getTokenExpiry(),
+                        refreshContext.getToken(),
+                        this.payload.getRefreshToken(),
+                        this.payload.getUsername()
+                )
+        );
     }
 }

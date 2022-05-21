@@ -36,7 +36,8 @@ public class CyodaConfig {
     private static final boolean DEFAULT_HTTPS_OVERRIDE = false;
     private static final String DEFAULT_SCHEMA_NAME = "reporting";
     private static final int DEFAULT_REQUEST_PAGE_SIZE = 10;
-    private static final String DEFAULT_LOGIN_ENDPOINT = "/auth/login";
+    private static final String DEFAULT_LOGIN_ENDPOINT = "/api/auth/login";
+    private static final String DEFAULT_REFERSH_ENDPOINT = "/api/auth/token";
 
     private URL serverUrl;
     private CyodaAuthenticationType cyodaAuthenticationType = CyodaAuthenticationType.NONE;
@@ -44,7 +45,6 @@ public class CyodaConfig {
     private String basicAuthenticationPassword;
     private HostAndPort socksHostAndPort;
     private HostAndPort httpHostAndPort;
-    private String accessToken;
     private long httpConnectionTimeout;
     private TimeUnit timeUnit;
     private int maxHttpIdle;
@@ -53,6 +53,7 @@ public class CyodaConfig {
     private String schemaName;
     private int requestPageSize;
     private String userLoginEndpoint;
+    private String refreshTokenEndpoint;
 
     private boolean anonymousLogin;
     private String anonymousUserId;
@@ -73,6 +74,7 @@ public class CyodaConfig {
         schemaName = DEFAULT_SCHEMA_NAME;
         requestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
         userLoginEndpoint = DEFAULT_LOGIN_ENDPOINT;
+        refreshTokenEndpoint = DEFAULT_REFERSH_ENDPOINT;
 
         anonymousLogin = false;
         anonymousUserId = null;
@@ -248,6 +250,16 @@ public class CyodaConfig {
     public String getUserLoginEndpoint() {
         return userLoginEndpoint;
     }
+
+    @Config("cyoda.presto.refresh-token-endpoint")
+    public CyodaConfig setRefreshTokenEndpoint(String refreshTokenEndpoint) {
+        this.refreshTokenEndpoint = refreshTokenEndpoint;
+        return this;
+    }
+    public String getRefreshTokenEndpoint() {
+        return refreshTokenEndpoint;
+    }
+
 
     @Config("cyoda.presto.allow-anonymous-login")
     public void setAnonymousLogin(boolean anonymousLogin) {
