@@ -58,6 +58,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -65,7 +66,8 @@ import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_GROUPS;
 import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.*;
-import static com.cyoda.presto.client.types.DataType.*;
+import static com.cyoda.presto.client.types.DataType.LONG;
+import static com.cyoda.presto.client.types.DataType.STRING;
 
 public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<RowHandle>
         implements PagingApiRequestHandler<RowHandle> {
@@ -123,7 +125,7 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
 
 
         String reportId = mixinColumn(expansionBuilder,traversal, ROW_REPORT_ID_COLUMN);
-        String groupingVersion = mixinColumn(expansionBuilder,traversal, ROW_GROUPING_VERSION_COLUMN);
+        UUID groupingVersion = mixinColumn(expansionBuilder,traversal, ROW_GROUPING_VERSION_COLUMN);
         String groupJsonString = mixinColumn(expansionBuilder,traversal, ROW_GROUP_JSON_BASE64_VARIABLE);
 
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
@@ -152,20 +154,20 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
         }
     }
 
-    private String mixinColumn(ImmutableMap.Builder<String, Object> expansionBuilder,
+    private <T extends Comparable<? super T>> T mixinColumn(ImmutableMap.Builder<String, Object> expansionBuilder,
                                PredicateTraversal traversal,String columnName
     ) {
-        Optional<Set<String>> values = traversal.assembleFilterings(columnName);
-        LOG.debug("selecting values for %s : %s",()->columnName, ()->values.map(it-> String.join(",", it)).orElse("EMPTY"));
+        Optional<Set<T>> values = traversal.assembleFilterings(columnName);
+        LOG.debug("selecting values for %s : %s",()->columnName, ()->values.map(it-> String.join(",", it.toString())).orElse("EMPTY"));
 
         Preconditions.checkArgument(values.isPresent());
 
-        Set<String> theValues = values
+        Set<T> theValues = values
                 .orElseThrow(()->new IllegalArgumentException("No consistent result found for column " + columnName + " in predicates"));
 
         if ( theValues.size() > 1 ) throw new IllegalStateException("Predicates should only have one element for " + columnName);
         if (!theValues.isEmpty()) {
-            String result = theValues.iterator().next();
+            T result = theValues.iterator().next();
             expansionBuilder.put(columnName, result);
             return result;
         }

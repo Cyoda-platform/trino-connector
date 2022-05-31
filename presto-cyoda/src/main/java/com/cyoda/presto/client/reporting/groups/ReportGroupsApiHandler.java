@@ -30,10 +30,12 @@ import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
+import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
+import com.cyoda.presto.client.logic.converters.impl.UUIDPrestoValueConverter;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
-import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -52,6 +54,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
@@ -125,18 +128,20 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
 
     private CompoundPredicateNode getCompoundPredicateNode(CyodaTableHandle tableHandle, ColumnPredicateNode<Any> predicates, DistributedReportInfoView stats) {
         String reportId = stats.getId();
-        String groupingVersion = stats.getGroupingVersion().toString();
+        UUID groupingVersion = stats.getGroupingVersion();
         String reportConfigId = stats.getConfigName();
 
+        PrestoValueConverter<UUID> uuidConverter = PrestoValueConverterProvider.getPrestoValueConverter(UUID_TYPE.asSupported());
+        PrestoValueConverter<String> stringConverter = PrestoValueConverterProvider.getPrestoValueConverter(STRING.asSupported());
 
-        Slice reportIdSlice = DataTypeValue.of(reportId).asSlice(VarcharType.VARCHAR);
-        Slice groupingVersionSlice = DataTypeValue.of(groupingVersion).asSlice(VarcharType.VARCHAR);
-        Slice reportConfigIdSlice = DataTypeValue.of(reportConfigId).asSlice(VarcharType.VARCHAR);
+        Slice reportIdSlice = stringConverter.toSlice(VarcharType.VARCHAR,reportId);
+        Slice groupingVersionSlice = uuidConverter.toSlice(UUIDPrestoValueConverter.TYPE,groupingVersion);
+        Slice reportConfigIdSlice = stringConverter.toSlice(VarcharType.VARCHAR,reportConfigId);
 
         ColumnsHolder columnsHolder = columnsHolderFunction.apply(tableHandle.getAuthPayload());
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
         builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.reportIdColumn, reportIdSlice,String.class));
-        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.groupingVersionColumn, groupingVersionSlice,String.class));
+        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.groupingVersionColumn, groupingVersionSlice,UUID.class));
         builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.reportConfigurationIdColumn, reportConfigIdSlice,String.class));
         builder.addMember(predicates);
 
@@ -231,8 +236,8 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
                     .map(it -> new CyodaColumnHandle(
                             it.getConnectorId(),
                             it.getColumnName(),
-                            VarcharType.VARCHAR, // This is because Presto cannot deal with UUID, even if there is a UuidType.
-                            STRING,
+                            VarcharType.VARCHAR,
+                            UUID_TYPE,
                             it.getOrdinalPosition(),
                             it.getRequestHandlerKey(),
                             it.getIsNullable())

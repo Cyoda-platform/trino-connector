@@ -77,10 +77,10 @@ public class PredicateTraversal {
      *
      *
      */
-    public Optional<Set<String>> assembleFilterings(String columnName) {
+    public <T extends Comparable<? super T>> Optional<Set<T>> assembleFilterings(String columnName) {
 
         Deque<CompoundPredicateNode> compoundQueue = new ArrayDeque<>();
-        Deque<Predicated<LeafPredicateNode<?>>> leafQueue = new ArrayDeque<>();
+        Deque<Predicated<LeafPredicateNode<T>>> leafQueue = new ArrayDeque<>();
 
         compoundQueue.add(conjunctions);
 
@@ -90,7 +90,7 @@ public class PredicateTraversal {
             members.forEach(member -> {
                 if (member instanceof LeafPredicateNode) {
                     if (member.getColumn().isPresent() && member.getColumn().get().getColumnName().equals(columnName)) {
-                        leafQueue.add(new Predicated<>((LeafPredicateNode<?>)member, node.getConnective()));
+                        leafQueue.add(new Predicated<>((LeafPredicateNode<T>)member, node.getConnective()));
                     }
                 } else {
                     compoundQueue.add((CompoundPredicateNode) member);
@@ -98,17 +98,18 @@ public class PredicateTraversal {
             });
         }
 
-        Deque<Predicated<String>> resultBuilder = new ArrayDeque<>();
+        Deque<Predicated<T>> resultBuilder = new ArrayDeque<>();
         if ( !leafQueue.isEmpty() ) {
-            Predicated<LeafPredicateNode<?>> predicated = leafQueue.pop();
-            extractFilterValues(predicated.element.forceGet())
+            Predicated<LeafPredicateNode<T>> predicated = leafQueue.pop();
+            ColumnPredicate<T> columnPredicate = predicated.element.forceGet();
+            extractFilterValues(columnPredicate)
                     .map(it->new Predicated<>(it,predicated.connective))
                     .forEach(resultBuilder::add);
         }
         while (!leafQueue.isEmpty()) {
-            Predicated<LeafPredicateNode<?>> predicated = leafQueue.pop();
+            Predicated<LeafPredicateNode<T>> predicated = leafQueue.pop();
             if ( predicated.element.forceGet().getColumn().getColumnName().equals(columnName) ) {
-                Predicated<String> last = resultBuilder.peekLast();
+                Predicated<T> last = resultBuilder.peekLast();
                 if (last == null) throw new IllegalStateException("This should not happen");
                 Connective previousConnective = last.connective;
                 if (previousConnective == Connective.OR) {
@@ -117,7 +118,7 @@ public class PredicateTraversal {
                             .forEach(resultBuilder::add);
 
                 } else {
-                    Set<String> values = extractFilterValues(predicated.element.forceGet()).collect(Collectors.toSet());
+                    Set<T> values = extractFilterValues(predicated.element.forceGet()).collect(Collectors.toSet());
                     if (!values.contains(last.element) ) {
                         return Optional.empty();
                     }
@@ -128,27 +129,19 @@ public class PredicateTraversal {
 
     }
 
-    private Stream<String> extractFilterValues(ColumnPredicate<?> it) {
+    private <T extends Comparable<? super T>> Stream<T> extractFilterValues(ColumnPredicate<T> it) {
         ColumnPredicate.PredicateType type = it.getType();
         switch (type) {
             case IN_LIST: {
-                return it.getInListValues().stream()
-                        .map(item -> Optional.ofNullable(item.value)
-                                .map(Object::toString)
-                                .orElse(null)
-                        );
+                return it.getInListValues().stream().map(item -> item.value);
             }
             case EQUALITY: {
-                return Stream.of(
-                        Optional.ofNullable(it.getLower().value)
-                                .map(Object::toString)
-                                .orElse(null)
-                );
+                return Stream.of(it.getLower().value);
             }
             case RANGE: {
                 return Stream.of(
-                        Optional.ofNullable(it.getLower()).map(Object::toString).orElse(null),
-                        Optional.ofNullable(it.getUpper()).map(Object::toString).orElse(null)
+                        it.getLower().value,
+                        it.getUpper().value
                 );
             }
             default:

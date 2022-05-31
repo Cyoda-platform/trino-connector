@@ -30,6 +30,7 @@ import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
+import com.cyoda.presto.client.logic.converters.impl.UUIDPrestoValueConverter;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
@@ -234,11 +235,11 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
 
     private CompoundPredicateNode getCompoundPredicateNodeForInternal(CyodaTableHandle tableHandle, ColumnPredicateNode<Any> predicates, GroupingHandle handle) {
         String reportId = handle.reportId;
-        UUID groupingVersion = handle.groupingVersion;
+        String groupingVersion = handle.groupingVersion.toString(); // TODO: If Presto supports UUID, don't do a toString()
         String groupValueJsonBase64 = handle.groupHeader.getGroupValuesJsonBase64();
 
         Slice reportIdSlice = DataTypeValue.of(reportId).asSlice(VarcharType.VARCHAR);
-        Slice groupingVersionSlice = DataTypeValue.of(groupingVersion).asSlice(VarcharType.VARCHAR);
+        Slice groupingVersionSlice = DataTypeValue.of(groupingVersion).asSlice(UUIDPrestoValueConverter.TYPE);
         Slice groupingValueSlice = DataTypeValue.of(groupValueJsonBase64).asSlice(VarcharType.VARCHAR);
 
         ColumnsHolder columnsHolder = columnsHolderFunction.apply(tableHandle.getAuthPayload());

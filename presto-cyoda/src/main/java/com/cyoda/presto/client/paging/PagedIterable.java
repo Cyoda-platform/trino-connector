@@ -33,7 +33,7 @@ public class PagedIterable<T> implements Iterable<T> {
     public PagedIterable(AuthContext authContext, PagingApiRequestHandler<T> requestHandler, int pageSize,
                          List<CyodaColumnHandle> projectedColumns, CompoundPredicateNode predicates,
                          SizeListener listener) {
-        pagingHandleGetter = page -> new PagingHandle<T>(authContext, requestHandler, page, pageSize,
+        pagingHandleGetter = page -> new PagingHandle<>(authContext, requestHandler, page, pageSize,
                 projectedColumns, predicates,listener);
 
     }

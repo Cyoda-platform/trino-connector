@@ -288,51 +288,9 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
         }
     }
 
-    // TODO: Refactor logic to into PrestoValueConverterProvider.
-    // It will be used here, in parseToLong and asSlice, and also in Predicate newComparisonPredicate(...) for each type.
-    // Taken from Kudu TypeHelper
     public static Object getJavaValue(SupportedDataType<?> dataType, Object nativeValue) {
-
         PrestoValueConverter<?> converter = PrestoValueConverterProvider.getPrestoValueConverter(dataType);
         return converter.toObject(nativeValue);
-
-//        // It  needs to mirror the logic in asSlice / parseToLong
-//        if (type instanceof VarcharType) {
-//            return ((Slice) nativeValue).toStringUtf8();
-//        } else if (type == TimestampType.TIMESTAMP) {
-//            if ( LocalDateTime.class.isAssignableFrom(javaType)) {
-//                return PrestoValueConverterProvider.getPrestoValueConverter(LocalDateDataType.INSTANCE).fromLong((Long)nativeValue);
-//            } else if ( Date.class.isAssignableFrom(javaType)) {
-//                return PrestoValueConverterProvider.getPrestoValueConverter(DateDataType.INSTANCE).fromLong((Long)nativeValue);
-//            } else {
-//                throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Timestamp Back conversion not implemented for " + javaType);
-//            }
-//        } else if (type == BigintType.BIGINT) {
-//            return nativeValue;
-//        } else if (type == IntegerType.INTEGER) {
-//            return ((Long) nativeValue).intValue();
-//        } else if (type == SmallintType.SMALLINT) {
-//            return ((Long) nativeValue).shortValue();
-//        } else if (type == TinyintType.TINYINT) {
-//            return ((Long) nativeValue).byteValue();
-//        } else if ( type == DateType.DATE) {
-//            return PrestoValueConverterProvider.getPrestoValueConverter(LocalDateDataType.INSTANCE).fromLong((Long)nativeValue);
-//        } else if (type == DoubleType.DOUBLE) {
-//            return longBitsToDouble(((Long) nativeValue));
-//        } else if (type == RealType.REAL) {
-//            // conversion can result in precision lost
-//            return intBitsToFloat(((Long) nativeValue).intValue());
-//        } else if (type == BooleanType.BOOLEAN) {
-//            return nativeValue;
-//        } else if (type instanceof VarbinaryType) {
-//            return ((Slice) nativeValue).toByteBuffer();
-//        } else if (type instanceof DecimalType) {
-//            return nativeValue;
-//        } else if (type.getTypeSignature().getBase().equals(StandardTypes.UUID)) {
-//            return UUID.fromString(((Slice) nativeValue).toStringUtf8());
-//        } else {
-//            throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Back conversion not implemented for " + type);
-//        }
     }
 
     public Long parseToLong() {

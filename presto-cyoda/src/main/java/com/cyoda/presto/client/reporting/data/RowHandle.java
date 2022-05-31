@@ -20,15 +20,17 @@ package com.cyoda.presto.client.reporting.data;
 import com.cyoda.service.api.beans.ReportRow;
 import com.google.common.base.MoreObjects;
 
+import java.util.UUID;
+
 public class RowHandle {
 
     final String reportId;
-    final String groupingVersion;
+    final UUID groupingVersion;
     final String groupJsonBase64;
     final ReportRow reportRow;
     final long rowNum;
 
-    public RowHandle(String reportId, String groupingVersion, String groupJsonBase64, ReportRow reportRow, long rowNum) {
+    public RowHandle(String reportId, UUID groupingVersion, String groupJsonBase64, ReportRow reportRow, long rowNum) {
         this.reportId = reportId;
         this.groupingVersion = groupingVersion;
         this.groupJsonBase64 = groupJsonBase64;

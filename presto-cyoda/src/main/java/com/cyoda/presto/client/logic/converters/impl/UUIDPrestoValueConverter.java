@@ -21,6 +21,7 @@ import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.VarcharType;
+import com.facebook.presto.type.UuidType;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
@@ -37,6 +38,9 @@ public class UUIDPrestoValueConverter implements ComparablePrestoValueConverter<
 
     public static final String TYPE_STRING = StandardTypes.VARCHAR; // For Presto
     //public static final String TYPE_STRING = StandardTypes.UUID; // For Trino
+
+    public static final Type TYPE = VarcharType.VARCHAR; // For Presto
+    //public static final Type TYPE = UuidType.UUID; // For Trino
 
     @Override
     public Class<UUID> getClazz() {

@@ -25,6 +25,7 @@ import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
+import com.cyoda.presto.client.logic.converters.impl.UUIDPrestoValueConverter;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
@@ -85,7 +86,7 @@ public class InternalReportGroupsApiHandler extends BasePagingReportsApiHandler<
 
     private static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
             .add(new StandardColumnDefinition(0, HISTORY_REPORT_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))
-            .add(new StandardColumnDefinition(0, GROUPING_VERSION_COLUMN, StandardTypes.VARCHAR, UUID_TYPE, null, null))
+            .add(new StandardColumnDefinition(0, GROUPING_VERSION_COLUMN, UUIDPrestoValueConverter.TYPE_STRING, UUID_TYPE, null, null))
             .add(GroupHeader.meta())
             .build();
     public static final String IN_PREDICATES = " in predicates";
@@ -128,12 +129,11 @@ public class InternalReportGroupsApiHandler extends BasePagingReportsApiHandler<
                 .put(SIZE_REQUEST_PARAMETER, size);
 
 
-        String reportId = mixinColumn(expansionBuilder,traversal, HISTORY_REPORT_ID_COLUMN)
+        String reportId = this.<String>mixinColumn(expansionBuilder,traversal, HISTORY_REPORT_ID_COLUMN)
                 .orElseThrow(() -> new IllegalArgumentException(NO_RESULT_FOUND_FOR_COLUMN + HISTORY_REPORT_ID_COLUMN + IN_PREDICATES));
-        String groupingVersionString = mixinColumn(expansionBuilder,traversal, GROUPING_VERSION_COLUMN)
+        UUID groupingVersion = this.<UUID>mixinColumn(expansionBuilder,traversal, GROUPING_VERSION_COLUMN)
                 .orElseThrow(() -> new IllegalArgumentException(NO_RESULT_FOUND_FOR_COLUMN + GROUPING_VERSION_COLUMN + IN_PREDICATES));
-        String reportConfigName = mixinColumn(expansionBuilder,traversal, HISTORY_REPORT_NAME_VARIABLE).orElse(null);
-        UUID groupingVersion = UUID.fromString(groupingVersionString);
+        String reportConfigName = this.<String>mixinColumn(expansionBuilder,traversal, HISTORY_REPORT_NAME_VARIABLE).orElse(null);
 
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
 
@@ -161,20 +161,20 @@ public class InternalReportGroupsApiHandler extends BasePagingReportsApiHandler<
         }
     }
 
-    private Optional<String> mixinColumn(ImmutableMap.Builder<String, Object> expansionBuilder,
+    private <T extends Comparable<? super T>> Optional<T> mixinColumn(ImmutableMap.Builder<String, Object> expansionBuilder,
                                 PredicateTraversal traversal,String columnName
     ) {
-        Optional<Set<String>> values = traversal.assembleFilterings(columnName);
-        LOG.debug("selecting values for %s : %s",()->columnName, ()->values.map(it-> String.join(",", it)).orElse("EMPTY"));
+        Optional<Set<T>> values = traversal.assembleFilterings(columnName);
+        LOG.debug("selecting values for %s : %s",()->columnName, ()->values.map(it-> String.join(",", it.toString())).orElse("EMPTY"));
 
         Preconditions.checkArgument(values.isPresent());
 
-        Set<String> theValues = values
+        Set<T> theValues = values
                 .orElseThrow(()->new IllegalArgumentException("No consistent result found for column " + columnName + IN_PREDICATES));
 
         if ( theValues.size() > 1 ) throw new IllegalStateException("Predicates should only have one element for " + columnName);
         if (!theValues.isEmpty()) {
-            String result = theValues.iterator().next();
+            T result = theValues.iterator().next();
             expansionBuilder.put(columnName, result);
             return Optional.of(result);
         }
