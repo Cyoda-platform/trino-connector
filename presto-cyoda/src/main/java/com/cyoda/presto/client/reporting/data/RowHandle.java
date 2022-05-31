@@ -26,12 +26,14 @@ public class RowHandle {
     final String groupingVersion;
     final String groupJsonBase64;
     final ReportRow reportRow;
+    final long rowNum;
 
-    public RowHandle(String reportId, String groupingVersion, String groupJsonBase64, ReportRow reportRow) {
+    public RowHandle(String reportId, String groupingVersion, String groupJsonBase64, ReportRow reportRow, long rowNum) {
         this.reportId = reportId;
         this.groupingVersion = groupingVersion;
         this.groupJsonBase64 = groupJsonBase64;
         this.reportRow = reportRow;
+        this.rowNum = rowNum;
     }
 
     @Override

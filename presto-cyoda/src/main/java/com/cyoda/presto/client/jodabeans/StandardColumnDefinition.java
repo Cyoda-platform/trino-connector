@@ -119,6 +119,13 @@ public class StandardColumnDefinition implements ColumnDefinition {
             pos += 1;
             return this;
         }
+
+
+        public Builder addAll(List<ColumnDefinition> coldefs) {
+            coldefs.forEach(this::add);
+            return this;
+        }
+
         public List<ColumnDefinition> build() {
             return defsBuilder.build();
         }
@@ -137,38 +144,38 @@ public class StandardColumnDefinition implements ColumnDefinition {
                         if ( genericType instanceof ParameterizedType) {
                             ParameterizedType myType = (ParameterizedType) genericType;
                             if (Map.class.isAssignableFrom((Class<?>)myType.getRawType()) ) {
-                                return handleMap(pos, i, fieldName, myType);
+                                return handleMap(pos+i, fieldName, myType);
                             }
                             if (List.class.isAssignableFrom((Class<?>)myType.getRawType()) ) {
-                                return handleCollection(myType, i, fieldName, DataType.LIST);
+                                return handleCollection(myType, pos+i, fieldName, DataType.LIST);
                             }
                             if (Set.class.isAssignableFrom((Class<?>)myType.getRawType()) ) {
-                                return handleCollection(myType, i, fieldName, DataType.SET);
+                                return handleCollection(myType, pos+i, fieldName, DataType.SET);
                             }
                             throw new IllegalArgumentException("Not yet done");
                         } else {
                             DataType dataType = DataType.fromClass(metaProperty.propertyType()).orElse(DataType.OBJECT);
                             String fieldTypeString = dataType.getTypeString();
-                            return (ColumnDefinition) new StandardColumnDefinition(i,fieldName,fieldTypeString,dataType,null,null);
+                            return (ColumnDefinition) new StandardColumnDefinition(pos+i,fieldName,fieldTypeString,dataType,null,null);
                         }
                     }).collect(Collectors.toList());
         }
 
-        private static StandardColumnDefinition handleCollection(ParameterizedType myType, int i, String fieldName, DataType list) {
+        private static StandardColumnDefinition handleCollection(ParameterizedType myType, int pos, String fieldName, DataType list) {
             java.lang.reflect.Type valueType = myType.getActualTypeArguments()[0];
             if (! (valueType instanceof Class) ) throw new UnsupportedOperationException("Not done yet");
             DataType valueDataType = DataType.fromClass((Class<?>) valueType).orElse(DataType.OBJECT);
-            return new StandardColumnDefinition(i, fieldName, StandardTypes.ARRAY, list,
+            return new StandardColumnDefinition(pos, fieldName, StandardTypes.ARRAY, list,
                     DataTypeValue.toPrestoTypeSignature(valueDataType), null);
         }
 
-        private static StandardColumnDefinition handleMap(int pos, int i, String fieldName, ParameterizedType myType) {
+        private static StandardColumnDefinition handleMap(int pos, String fieldName, ParameterizedType myType) {
             java.lang.reflect.Type keyType = myType.getActualTypeArguments()[0];
             java.lang.reflect.Type valueType = myType.getActualTypeArguments()[1];
             DataType keyDataType = DataType.fromClass((Class<?>)keyType).orElse(DataType.OBJECT);
             DataType valueDataType = DataType.fromClass((Class<?>)valueType).orElse(DataType.OBJECT);
             return new StandardColumnDefinition(
-                    i + pos,
+                    pos,
                     fieldName,
                     StandardTypes.MAP,
                     DataType.MAP,

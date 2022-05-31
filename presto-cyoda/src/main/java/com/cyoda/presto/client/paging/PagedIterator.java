@@ -17,91 +17,97 @@
 
 package com.cyoda.presto.client.paging;
 
-import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.PagingApiRequestHandler;
-import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.spi.PrestoException;
 import org.springframework.hateoas.PagedModel;
 
 import java.util.Iterator;
-import java.util.List;
 import java.util.function.Function;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_API_ERROR;
 
-public class PagedIterator<T> implements Iterable<T> {
-
+public class PagedIterator<T> implements Iterator<T> {
     private static final SupplierLogger LOG = SupplierLogger.get(PagedIterator.class);
-    private final Function<Integer, PagingHandle<T>> pagingHandleSupplier;
+    private final Function<Integer, PagingHandle<T>> pagingHandleGetter;
+            
+    private int currentPage;
+    // Do the API call to load the first page.
+    private PagingHandle<T> pagingHandle;
 
-    public PagedIterator(AuthContext authContext, PagingApiRequestHandler<T> requestHandler, int pageSize,
-                         List<CyodaColumnHandle> projectedColumns, CompoundPredicateNode predicates) {
-        pagingHandleSupplier = page -> new PagingHandle<T>(authContext, requestHandler, page, pageSize, projectedColumns, predicates);
+    private PagedModel<T> pagedModel;
+
+    Iterator<T> iterator;
+    long currentPos = 0;
+    long currentElementOnPage = 0;
+    final long maxPages;
+    final long maxEntries;
+    final long pageSize;
+    
+    public PagedIterator(Function<Integer, PagingHandle<T>> pagingHandleGetter) {
+        currentPage = 0;
+        this.pagingHandleGetter = pagingHandleGetter;
+        // Do the API call to load the first page.
+        pagingHandle = pagingHandleGetter.apply(currentPage++);
+        pagedModel = pagingHandle.getPagedModel().orElse(PagedModel.empty());
+        iterator = pagedModel.iterator();
+
+        // We fix the meta which tells us about how many pages / elements on the first call
+        // We assume that this is effectively a committed read, which is true if we are
+        // reading from Cyoda at a fixed pointInTime.
+        // If reading against data that may be deleted/added during calls (i.e. StaticEntities)
+        // then it's better to use a huge page size and slurp this in all at once without paging.
+        PagedModel.PageMetadata pageMeta = pagingHandle.getPageMeta()
+                .orElseThrow(() -> new PrestoException(CYODA_API_ERROR, "No paging data attached to HATEOAS response. Cannot iterate"));
+        maxPages = pageMeta.getTotalPages();
+        maxEntries = pageMeta.getTotalElements();
+        pageSize = pageMeta.getSize();
 
     }
 
-     // TODO: This will only work if you call hasNext() at each step.
     @Override
-    public Iterator<T> iterator() {
-        return new Iterator<T>() {
-            int currentPage = 0;
-            // Do the API call to load the first page.
-            PagingHandle<T> pagingHandle = pagingHandleSupplier.apply(currentPage++);
+    public boolean hasNext() {
+        boolean hasNext = iterator.hasNext();
 
-            PagedModel<T> pagedModel = pagingHandle.getPagedModel().orElse(PagedModel.empty());
+        if ( !hasNext && currentPage >= maxPages)
+            return false;
 
-            // We fix the meta which tells us about how many pages / elements on the first call
-            // We assume that this is effectively a committed read, which is true if we are
-            // reading from Cyoda at a fixed pointInTime.
-            // If reading against data that may be deleted/added during calls (i.e. StaticEntities)
-            // then it's better to use a huge page size and slurp this in all at once without paging.
-            final PagedModel.PageMetadata pageMeta = pagingHandle.getPageMeta()
-                    .orElseThrow(() -> new PrestoException(CYODA_API_ERROR,"No paging data attached to HATEOAS response. Cannot iterate"));
-            Iterator<T> iterator = pagedModel.iterator();
-
-            long currentPos = 0;
-            long currentElementOnPage = 0;
-            final long maxPages = pageMeta.getTotalPages();
-            final long maxEntries = pageMeta.getTotalElements();
-            final long pageSize = pageMeta.getSize();
-
-            @Override
-            public boolean hasNext() {
-                boolean hasNext = iterator.hasNext();
-
-                if ( !hasNext && currentPage >= maxPages)
-                    return false;
-
-                // We might get more elements that what the page size stipulates.
-                // Because of buggy HATEOAS endpoints.
-                // So limit the calls strictly to the page size.
-                if ( !hasNext || currentElementOnPage > pageSize-1 ) {
-                    // Do the API call to load the next page.
-                    pagingHandle = pagingHandleSupplier.apply(currentPage++);
-                    currentElementOnPage = 0;
-                    pagedModel = pagingHandle.getPagedModel().orElse(PagedModel.empty());
-                    iterator = pagedModel.iterator();
-                    return iterator.hasNext();
-                }
-                return hasNext;
-            }
-
-            @Override
-            public T next() {
-                currentPos++;
-                currentElementOnPage++;
-                T next = iterator.next();
-
-                LOG.debug("got %s",() -> next);
-                if ( currentPos > maxEntries ) {
-                    LOG.error("Reading more than expected!");
-                }
-
-                return next;
-            }
-        };
+        // We might get more elements that what the page size stipulates.
+        // Because of buggy HATEOAS endpoints.
+        // So limit the calls strictly to the page size.
+        if ( !hasNext || currentElementOnPage > pageSize-1 ) {
+            // Do the API call to load the next page.
+            pagingHandle = pagingHandleGetter.apply(currentPage++);
+            currentElementOnPage = 0;
+            pagedModel = pagingHandle.getPagedModel().orElse(PagedModel.empty());
+            iterator = pagedModel.iterator();
+            return iterator.hasNext();
+        }
+        return hasNext;
     }
 
+    @Override
+    public T next() {
+        currentPos++;
+        currentElementOnPage++;
+        T next = iterator.next();
+
+        LOG.debug("got element %d / %d (Total) with %s",()->currentElementOnPage, ()->currentPos, () -> next);
+        if ( currentPos > maxEntries ) {
+            LOG.error("Reading more than expected!");
+        }
+
+        return next;
+    }
+
+    public long getMaxPages() {
+        return maxPages;
+    }
+
+    public long getMaxEntries() {
+        return maxEntries;
+    }
+
+    public long getPageSize() {
+        return pageSize;
+    }
 }

@@ -18,6 +18,7 @@
 package com.cyoda.presto.client.logic;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.google.common.base.MoreObjects;
 import com.google.common.base.Objects;
 
 import javax.annotation.Nonnull;
@@ -105,5 +106,13 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Colum
     @Override
     public ColumnPredicateNode<T> withParent(CompoundPredicateNode parent) {
         return new LeafPredicateNode<>(parent, columnPredicate);
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("columnPredicate", columnPredicate)
+                .add("parent", parent)
+                .toString();
     }
 }

@@ -19,17 +19,16 @@ package com.cyoda.presto.client.reporting.groups;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
+import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.client.paging.PagedIterator;
-import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
+import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.GroupHeader;
 import com.facebook.presto.common.type.StandardTypes;
@@ -55,7 +54,6 @@ import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,7 +74,7 @@ import static com.cyoda.presto.client.types.DataType.UUID_TYPE;
 /**
  * This is not intended to be exposed as a table, but used internally to fill the real table.
  */
-public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle>
+public class InternalReportGroupsApiHandler extends BasePagingReportsApiHandler<GroupingHandle>
         implements PagingApiRequestHandler<GroupingHandle> {
 
     protected static final SupplierLogger LOG = SupplierLogger.get(InternalReportGroupsApiHandler.class);
@@ -96,7 +94,7 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
     @Inject
     public InternalReportGroupsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                           RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer);
+        super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer,LOG);
     }
 
     @Override
@@ -115,7 +113,8 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
             int page,
             int pageSize,
             List<CyodaColumnHandle> projectedColumns,
-            CompoundPredicateNode predicates
+            CompoundPredicateNode predicates,
+            SizeListener listener
     ) {
 
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
@@ -148,13 +147,15 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
             final PagedModel<GroupHeader> fieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
-            return Optional.ofNullable(fieldsViews)
-                    .map(item->{
+            Optional<PagedModel<GroupingHandle>> groupingHandles = Optional.ofNullable(fieldsViews)
+                    .map(item -> {
                         List<GroupingHandle> handles = item.getContent().stream()
                                 .map(handle -> new GroupingHandle(reportId, groupingVersion, handle, reportConfigName))
                                 .collect(Collectors.toList());
-                        return PagedModel.of(handles,item.getMetadata());
+                        return PagedModel.of(handles, item.getMetadata());
                     });
+            publishSize(listener,groupingHandles.orElse(PagedModel.empty()));
+            return groupingHandles;
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);
         }
@@ -164,7 +165,7 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
                                 PredicateTraversal traversal,String columnName
     ) {
         Optional<Set<String>> values = traversal.assembleFilterings(columnName);
-        LOG.debug("selecting values:",()->values.map(it-> String.join(",", it)).orElse("EMPTY"));
+        LOG.debug("selecting values for %s : %s",()->columnName, ()->values.map(it-> String.join(",", it)).orElse("EMPTY"));
 
         Preconditions.checkArgument(values.isPresent());
 
@@ -213,18 +214,5 @@ public class InternalReportGroupsApiHandler extends BaseReportsApiHandler<Groupi
         }
         return field.groupHeader.metaBean().metaProperty(columnHandle.getColumnName()).get(field.groupHeader);
     }
-
-    @Override
-    public Iterator<GroupingHandle> getResponseIterator(
-            AuthContext authContext,
-            int pageSize,
-            CyodaTableHandle tableHandle,
-            CompoundPredicateNode predicates
-    ) {
-        List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
-        return new PagedIterator<>(authContext,this, pageSize, projectedColumns, predicates).iterator();
-    }
-
-
 
 }

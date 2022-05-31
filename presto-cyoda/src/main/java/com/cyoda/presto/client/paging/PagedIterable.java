@@ -15,24 +15,31 @@
  *
  */
 
-package com.cyoda.presto.client;
+package com.cyoda.presto.client.paging;
 
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
+import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import org.springframework.hateoas.PagedModel;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.function.Function;
 
-public interface PagingApiRequestHandler<T> extends ApiRequestHandler<T> {
+public class PagedIterable<T> implements Iterable<T> {
 
-    Optional<PagedModel<T>> retrievePage(
-            AuthContext authContext,
-            int page,
-            int pageSize,
-            List<CyodaColumnHandle> projectedColumns, CompoundPredicateNode predicates,
-            SizeListener listener);
+    private final Function<Integer, PagingHandle<T>> pagingHandleGetter;
+
+    public PagedIterable(AuthContext authContext, PagingApiRequestHandler<T> requestHandler, int pageSize,
+                         List<CyodaColumnHandle> projectedColumns, CompoundPredicateNode predicates,
+                         SizeListener listener) {
+        pagingHandleGetter = page -> new PagingHandle<T>(authContext, requestHandler, page, pageSize,
+                projectedColumns, predicates,listener);
+
+    }
+
+    public PagedIterator<T> iterator() {
+        return new PagedIterator<>(pagingHandleGetter);
+    }
 
 }

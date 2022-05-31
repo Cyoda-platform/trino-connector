@@ -20,17 +20,16 @@ package com.cyoda.presto.client.reporting.meta;
 import com.cyoda.core.model.reports.ReportHistoryFieldsView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
+import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.client.paging.PagedIterator;
-import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
+import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeManager;
@@ -57,7 +56,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -70,7 +68,7 @@ import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinit
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_HISTORIES;
 import static com.cyoda.presto.client.types.DataType.*;
 
-public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistoryFieldsView>
+public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportHistoryFieldsView>
         implements PagingApiRequestHandler<ReportHistoryFieldsView> {
 
     private static final SupplierLogger LOG = SupplierLogger.get(ReportHistoryApiHandler.class);
@@ -152,7 +150,7 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
     @Inject
     public ReportHistoryApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                    RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager, REPORT_HISTORY_ENDPOINT,restTemplateCustomizer);
+        super(connectorId, config, typeManager, REPORT_HISTORY_ENDPOINT,restTemplateCustomizer,LOG);
     }
 
     @Override
@@ -172,7 +170,8 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
             int page,
             int pageSize,
             List<CyodaColumnHandle> projectedColumns,
-            CompoundPredicateNode predicates
+            CompoundPredicateNode predicates,
+            SizeListener listener
     ) {
 
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
@@ -227,6 +226,7 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
             final PagedModel<ReportHistoryFieldsView> fieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
+            publishSize(listener,fieldsViews);
             return Optional.ofNullable(fieldsViews);
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);
@@ -269,17 +269,6 @@ public class ReportHistoryApiHandler extends BaseReportsApiHandler<ReportHistory
             columnName = "id";
         }
         return fields.get(columnName);
-    }
-
-    @Override
-    public Iterator<ReportHistoryFieldsView> getResponseIterator(
-            AuthContext authContext,
-            int pageSize,
-            CyodaTableHandle tableHandle,
-            CompoundPredicateNode predicates
-    ) {
-        List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
-        return new PagedIterator<>(authContext,this, pageSize, projectedColumns, predicates).iterator();
     }
 
 }

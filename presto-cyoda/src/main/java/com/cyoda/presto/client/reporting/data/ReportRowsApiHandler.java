@@ -20,6 +20,7 @@ package com.cyoda.presto.client.reporting.data;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.CyodaTable;
+import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
@@ -40,6 +41,8 @@ import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.client.types.TypesUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.logging.SupplierLogger;
+import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.common.type.TypeSignature;
@@ -50,10 +53,12 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.airlift.slice.Slice;
+import reactor.core.publisher.Flux;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -66,14 +71,19 @@ import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_ID_COLUMN;
+import static com.cyoda.presto.SizeListener.NOT_LISTENING;
 import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
 import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_REPORT_CONFIG_ID_COLUMN;
 import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_VERSION_COLUMN;
+import static com.cyoda.presto.client.types.DataType.LONG;
 import static com.cyoda.presto.client.types.DataType.STRING;
 
 public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         implements ApiRequestHandler<RowHandle> {
 
+    private static final SupplierLogger LOG = SupplierLogger.get(ReportRowsApiHandler.class);
+
+    static final String ROW_REPORT_ROW_NUMBER_COLUMN = "rowNum";
     static final String ROW_REPORT_ID_COLUMN = "reportId";
     static final String ROW_GROUPING_VERSION_COLUMN = "groupingVersion";
     static final String ROW_GROUP_JSON_BASE64_VARIABLE = "groupValuesJsonBase64";
@@ -90,28 +100,28 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
     private final InternalReportRowsApiHandler internalReportRowsApiHandler;
 
     private final ReportConfigDetailsApiHandler reportConfigDetailsHandler;
-    private final Function<AuthContext,Iterator<ReportDefinitionHandle>> iteratorFunction;
+    private final Function<AuthContext,Flux<ReportDefinitionHandle>> fluxFunction;
     private final Function<AuthContext,ColumnsHolder> columnsHolderFunction;
 
     @Inject
     public ReportRowsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                   RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer);
+        super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer,LOG);
 
         this.groupsApiHandler = new ReportGroupsApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
         this.internalReportRowsApiHandler = new InternalReportRowsApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
         this.reportConfigDetailsHandler = new ReportConfigDetailsApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
 
-        this.iteratorFunction = handleIterable();
+        this.fluxFunction = handleFlux();
         this.columnsHolderFunction = columnsHolderFunction(groupsApiHandler);
     }
 
     private Function<AuthContext, ColumnsHolder> columnsHolderFunction(ReportGroupsApiHandler groupsApiHandler) {
-        return authPayload -> new ColumnsHolder(authPayload,groupsApiHandler);
+        return authPayload -> new ColumnsHolder(authPayload,groupsApiHandler,this);
     }
 
-    private Function<AuthContext, Iterator<ReportDefinitionHandle>> handleIterable() {
-        return authPayload -> reportConfigDetailsHandler.getResponseIterator(
+    private Function<AuthContext, Flux<ReportDefinitionHandle>> handleFlux() {
+        return authPayload -> reportConfigDetailsHandler.asFlux(
                 authPayload,
                 config.getRequestPageSize(),
                 new CyodaTableHandle(
@@ -122,7 +132,8 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
                         Optional.empty(),
                         reportConfigDetailsHandler.getHandlerKey()
                 ),
-                CompoundPredicateNode.empty(null)
+                CompoundPredicateNode.empty(null),
+                NOT_LISTENING
         );
     }
 
@@ -130,33 +141,33 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
 
     @Override
     protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
-        Map<TableDefinitionHandle,List<ColumnDefinition>> result = new HashMap<>();
-        Iterable<ReportDefinitionHandle> iterable = () -> iteratorFunction.apply(authContext);
-        StreamSupport.stream(iterable.spliterator(), true)
-                .forEach( item -> {
-                    String reportName = item.getReportName();
-                    String reportConfigId = item.getReportConfigId();
-                    String tableName = reportNameToTableName(reportConfigId);
+        Map<TableDefinitionHandle, List<ColumnDefinition>> result = new HashMap<>();
+        Flux<ReportDefinitionHandle> flux = fluxFunction.apply(authContext);
+        flux.doOnNext(item -> {
+            String reportName = item.getReportName();
+            String reportConfigId = item.getReportConfigId();
+            String tableName = reportNameToTableName(reportConfigId);
 
-                    List<CyodaColumnHandle> columns = item.getColumns();
-                    List<ColumnDefinition> coldefs = columns.stream()
-                            .map(it->{
-                                Preconditions.checkArgument(!RESERVED_COLUMN_NAMES.contains(it.getColumnName()),"Report %s is using a reserved column name: %s." +
-                                        " Reserved names are: %s",reportName,it.getColumnName(), Joiner.on(", ").join(RESERVED_COLUMN_NAMES));
-                                return newColumnDefinition(it);
-                            })
-                            .collect(Collectors.toList());
+            List<CyodaColumnHandle> columns = item.getColumns();
+            List<ColumnDefinition> coldefs = columns.stream()
+                    .map(it -> {
+                        Preconditions.checkArgument(!RESERVED_COLUMN_NAMES.contains(it.getColumnName()), "Report %s is using a reserved column name: %s." +
+                                " Reserved names are: %s", reportName, it.getColumnName(), Joiner.on(", ").join(RESERVED_COLUMN_NAMES));
+                        return newColumnDefinition(it);
+                    })
+                    .collect(Collectors.toList());
 
-                    ColumnsHolder columnsHolder = columnsHolderFunction.apply(authContext);
-                    ImmutableList.Builder<ColumnDefinition> colBuilder = ImmutableList.builder();
-                    colBuilder.add(newColumnDefinition(columnsHolder.reportIdColumn));
-                    colBuilder.add(newColumnDefinition(columnsHolder.groupingVersionColumn));
-                    colBuilder.add(newColumnDefinition(columnsHolder.groupJsonBase64Column));
-                    colBuilder.addAll(coldefs);
-
-                    // If there are duplicates, last write wins.
-                    result.put(asTableDefinitionHandle(tableName, reportConfigId, item.getDescription()),colBuilder.build());
-                });
+            ColumnsHolder columnsHolder = columnsHolderFunction.apply(authContext);
+            List<ColumnDefinition> theColDefs = StandardColumnDefinition.builder()
+                    .add(new StandardColumnDefinition(0,ROW_REPORT_ROW_NUMBER_COLUMN, StandardTypes.BIGINT,LONG,null,null))
+                    .add(newColumnDefinition(columnsHolder.reportIdColumn))
+                    .add(newColumnDefinition(columnsHolder.groupingVersionColumn))
+                    .add(newColumnDefinition(columnsHolder.groupJsonBase64Column))
+                    .addAll(coldefs)
+                    .build();
+            result.put(asTableDefinitionHandle(tableName, reportConfigId, item.getDescription()), theColDefs);
+        }).blockLast();
+        // If there are duplicates, last write wins.
         return ImmutableMap.copyOf(result);
     }
 
@@ -196,13 +207,35 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
             int pageSize,
             CyodaTableHandle tableHandle,
             ColumnPredicateNode<Any> withReportPredicate,
-            @Nonnull GroupingHandle handle
+            @Nonnull GroupingHandle handle,
+            SizeListener listener
     ) {
+        String groupValueJsonBase64 = handle.groupHeader.getGroupValuesJsonBase64();
+        if ( groupValueJsonBase64 == null ) return Collections::emptyIterator;
+        CompoundPredicateNode predicates = getCompoundPredicateNodeForInternal(tableHandle, withReportPredicate, handle);
+
+        return () -> internalReportRowsApiHandler.asFlux(authContext,pageSize, tableHandle, predicates,listener).toIterable().iterator();
+    }
+
+    protected Flux<RowHandle> internalFlux(
+            AuthContext authContext,
+            int pageSize,
+            CyodaTableHandle tableHandle,
+            ColumnPredicateNode<Any> withReportPredicate,
+            @Nonnull GroupingHandle handle,
+            SizeListener listener
+    ) {
+        String groupValueJsonBase64 = handle.groupHeader.getGroupValuesJsonBase64();
+        if ( groupValueJsonBase64 == null ) return Flux.empty();
+        CompoundPredicateNode predicates = getCompoundPredicateNodeForInternal(tableHandle, withReportPredicate, handle);
+
+        return internalReportRowsApiHandler.asFlux(authContext,pageSize, tableHandle, predicates,listener);
+    }
+
+    private CompoundPredicateNode getCompoundPredicateNodeForInternal(CyodaTableHandle tableHandle, ColumnPredicateNode<Any> predicates, GroupingHandle handle) {
         String reportId = handle.reportId;
         UUID groupingVersion = handle.groupingVersion;
         String groupValueJsonBase64 = handle.groupHeader.getGroupValuesJsonBase64();
-
-        if ( groupValueJsonBase64 == null ) return Collections::emptyIterator;
 
         Slice reportIdSlice = DataTypeValue.of(reportId).asSlice(VarcharType.VARCHAR);
         Slice groupingVersionSlice = DataTypeValue.of(groupingVersion).asSlice(VarcharType.VARCHAR);
@@ -213,15 +246,16 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.reportIdColumn, reportIdSlice,String.class));
         builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.groupingVersionColumn, groupingVersionSlice,String.class));
         builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.groupJsonBase64Column, groupingValueSlice,String.class));
-        builder.addMember(withReportPredicate);
-        CompoundPredicateNode predicates = builder.build();
-
-        return () -> internalReportRowsApiHandler.getResponseIterator(authContext,pageSize, tableHandle, predicates);
+        builder.addMember(predicates);
+        return builder.build();
     }
 
     @Nullable
     @Override
     protected Object getFieldValueFromEntity(@Nonnull RowHandle field, CyodaColumnHandle columnHandle) {
+        if ( ROW_REPORT_ROW_NUMBER_COLUMN.equals(columnHandle.getColumnName()) ) {
+            return field.rowNum;
+        }
         if ( ROW_REPORT_ID_COLUMN.equals(columnHandle.getColumnName()) ) {
             return field.reportId;
         }
@@ -244,9 +278,38 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
             AuthContext authContext,
             int pageSize,
             CyodaTableHandle tableHandle,
-            CompoundPredicateNode predicates
+            CompoundPredicateNode predicates,
+            SizeListener listener
     ) {
+        logCreation(pageSize, tableHandle, predicates, LOG);
+        CompoundPredicateNode withReportPredicate = getCompoundPredicateNode(tableHandle, predicates);
 
+        Iterable<GroupingHandle> statsIterable = () -> groupsApiHandler
+                .getResponseIterator(authContext,pageSize, tableHandle, withReportPredicate,listener);
+
+        return StreamSupport.stream(statsIterable.spliterator(),true)
+                .flatMap(it-> StreamSupport.stream(groupsIterator(authContext,pageSize,tableHandle,withReportPredicate,it,listener).spliterator(), true))
+                .iterator();
+    }
+
+    @Override
+    public Flux<RowHandle> asFlux(
+            AuthContext authContext,
+            int pageSize,
+            CyodaTableHandle tableHandle,
+            CompoundPredicateNode predicates,
+            SizeListener listener
+    ) {
+        logCreation(pageSize, tableHandle, predicates, LOG);
+        CompoundPredicateNode withReportPredicate = getCompoundPredicateNode(tableHandle, predicates);
+
+        Flux<GroupingHandle> groupsFlux = groupsApiHandler
+                .asFlux(authContext,pageSize, tableHandle, withReportPredicate,listener);
+
+        return groupsFlux.flatMap(it-> internalFlux(authContext,pageSize,tableHandle,withReportPredicate,it,listener));
+    }
+
+    private CompoundPredicateNode getCompoundPredicateNode(CyodaTableHandle tableHandle, CompoundPredicateNode predicates) {
         String reportConfigurationId = lookupTableMap(tableHandle.getAuthPayload())
                 .get(new SchemaTableName(tableHandle.getSchemaName(), tableHandle.getTableName()))
                 .getReportConfigurationId();
@@ -257,14 +320,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         ColumnsHolder columnsHolder = columnsHolderFunction.apply(tableHandle.getAuthPayload());
 
         builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.reportConfigIdColumn, reportConfigIdSlice,String.class));
-        CompoundPredicateNode withReportPredicate = builder.build();
-
-        Iterable<GroupingHandle> statsIterable = () -> groupsApiHandler
-                .getResponseIterator(authContext,pageSize, tableHandle, withReportPredicate);
-
-        return StreamSupport.stream(statsIterable.spliterator(),true)
-                .flatMap(it-> StreamSupport.stream(groupsIterator(authContext,pageSize,tableHandle,withReportPredicate,it).spliterator(), true))
-                .iterator();
+        return builder.build();
     }
 
 
@@ -275,13 +331,14 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         private final CyodaColumnHandle groupJsonBase64Column;
         private final CyodaColumnHandle reportConfigIdColumn;
 
-        ColumnsHolder(AuthContext authContext, ReportGroupsApiHandler groupsApiHandler) {
+        ColumnsHolder(AuthContext authContext, ReportGroupsApiHandler groupsApiHandler,
+                      ReportRowsApiHandler rowsApiHandler) {
 
-            List<CyodaTable> groupTables = groupsApiHandler.getTables(authContext);
+            Collection<CyodaTable> groupTables = groupsApiHandler.getTables(authContext);
             Preconditions.checkArgument(groupTables.size()==1,"Unexpected number of tables from the %s. Expected size is 1, but was %s",
                     ReportGroupsApiHandler.class.getName(),groupTables.size());
 
-            CyodaTable groupTable = groupTables.get(0);
+            CyodaTable groupTable = groupTables.iterator().next();
 
             this.reportIdColumn = setupReportIdColumn(groupTable);
             this.groupingVersionColumn = setupGroupingVersionColumn(groupTable);

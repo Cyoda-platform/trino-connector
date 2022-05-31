@@ -20,6 +20,7 @@ package com.cyoda.presto.client.reporting.groups;
 import com.cyoda.core.model.reports.DistributedReportInfoView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
+import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
@@ -35,12 +36,14 @@ import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.GroupHeader;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.common.type.VarcharType;
 import io.airlift.slice.Slice;
 import org.joda.beans.MetaProperty;
+import reactor.core.publisher.Flux;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -61,6 +64,8 @@ import static com.cyoda.presto.client.types.DataType.UUID_TYPE;
 
 public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle>
         implements ApiRequestHandler<GroupingHandle> {
+
+    private static final SupplierLogger LOG = SupplierLogger.get(ReportGroupsApiHandler.class);
 
     public static final String COLUMN_NOT_FOUND = " Column not found!";
     private final ReportStatisticsApiHandler statisticsApiHandler;
@@ -83,7 +88,7 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
     @Inject
     public ReportGroupsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                   RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer);
+        super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer,LOG);
         this.statisticsApiHandler = new ReportStatisticsApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
         this.reportGroupsHandler = new InternalReportGroupsApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
 
@@ -110,13 +115,19 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
             int pageSize,
             CyodaTableHandle tableHandle,
             ColumnPredicateNode<Any> predicates,
-            @Nonnull DistributedReportInfoView stats
+            @Nonnull DistributedReportInfoView stats,
+            SizeListener listener
     ) {
+        if (stats.getGroupsCount() == 0 ) return Collections::emptyIterator;
+        CompoundPredicateNode thesePredicates = getCompoundPredicateNode(tableHandle, predicates, stats);
+        return () -> reportGroupsHandler.asFlux(authContext,pageSize, tableHandle, thesePredicates,listener).toIterable().iterator();
+    }
+
+    private CompoundPredicateNode getCompoundPredicateNode(CyodaTableHandle tableHandle, ColumnPredicateNode<Any> predicates, DistributedReportInfoView stats) {
         String reportId = stats.getId();
         String groupingVersion = stats.getGroupingVersion().toString();
         String reportConfigId = stats.getConfigName();
 
-        if (stats.getGroupsCount() == 0 ) return Collections::emptyIterator;
 
         Slice reportIdSlice = DataTypeValue.of(reportId).asSlice(VarcharType.VARCHAR);
         Slice groupingVersionSlice = DataTypeValue.of(groupingVersion).asSlice(VarcharType.VARCHAR);
@@ -129,9 +140,20 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
         builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.reportConfigurationIdColumn, reportConfigIdSlice,String.class));
         builder.addMember(predicates);
 
-        CompoundPredicateNode thesePredicates = builder.build();
+        return builder.build();
+    }
 
-        return () -> reportGroupsHandler.getResponseIterator(authContext,pageSize, tableHandle, thesePredicates);
+    private Flux<GroupingHandle> internalFlux(
+            AuthContext authContext,
+            int pageSize,
+            CyodaTableHandle tableHandle,
+            ColumnPredicateNode<Any> predicates,
+            @Nonnull DistributedReportInfoView stats,
+            SizeListener listener
+    ) {
+        if (stats.getGroupsCount() == 0 ) return Flux.empty();
+        CompoundPredicateNode thesePredicates = getCompoundPredicateNode(tableHandle, predicates, stats);
+        return reportGroupsHandler.asFlux(authContext,pageSize, tableHandle, thesePredicates,listener);
     }
 
     @Nullable
@@ -164,15 +186,25 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
             AuthContext authContext,
             int pageSize,
             CyodaTableHandle tableHandle,
-            CompoundPredicateNode predicates
+            CompoundPredicateNode predicates,
+            SizeListener listener
     ) {
+        logCreation(pageSize, tableHandle, predicates, LOG);
         Iterable<DistributedReportInfoView> statsIterable = () -> statisticsApiHandler
-                .getResponseIterator(authContext,pageSize, tableHandle, predicates);
+                .getResponseIterator(authContext,pageSize, tableHandle, predicates,listener);
 
         return StreamSupport.stream(statsIterable.spliterator(),true)
                 .flatMap(it->
-                        StreamSupport.stream(groupsIterator(authContext,pageSize,tableHandle,predicates,it).spliterator(), true)
+                        StreamSupport.stream(groupsIterator(authContext,pageSize,tableHandle,predicates,it,listener).spliterator(), true)
                 ).iterator();
+    }
+
+    @Override
+    public Flux<GroupingHandle> asFlux(AuthContext authContext, int pageSize, CyodaTableHandle tableHandle, CompoundPredicateNode predicates, SizeListener listener) {
+        logCreation(pageSize, tableHandle, predicates, LOG);
+        Flux<DistributedReportInfoView> statsFlux = statisticsApiHandler
+                .asFlux(authContext, pageSize, tableHandle, predicates, listener);
+        return statsFlux.flatMap(stats -> internalFlux(authContext,pageSize,tableHandle,predicates,stats,listener));
     }
 
     static class ColumnsHolder {

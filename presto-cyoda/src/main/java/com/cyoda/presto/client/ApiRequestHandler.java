@@ -18,12 +18,14 @@
 package com.cyoda.presto.client;
 
 import com.cyoda.presto.CyodaTable;
+import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.facebook.presto.spi.SchemaTableName;
+import reactor.core.publisher.Flux;
 
 import javax.annotation.Nullable;
 import java.util.Iterator;
@@ -39,5 +41,11 @@ public interface ApiRequestHandler<T> {
     @SuppressWarnings("java:S1452")
     DataTypeValue<?> getValue(@Nullable T entity, CyodaColumnHandle field);
 
-    Iterator<T> getResponseIterator(AuthContext authContext, int pageSize, CyodaTableHandle tableHandle, CompoundPredicateNode predicates);
+    Iterator<T> getResponseIterator(AuthContext authContext, int pageSize, CyodaTableHandle tableHandle,
+                                    CompoundPredicateNode predicates, SizeListener listener);
+
+    default Flux<T> asFlux(AuthContext authContext, int pageSize, CyodaTableHandle tableHandle,
+                   CompoundPredicateNode predicates, SizeListener listener) {
+        throw new UnsupportedOperationException("not yet implemented");
+    }
 }

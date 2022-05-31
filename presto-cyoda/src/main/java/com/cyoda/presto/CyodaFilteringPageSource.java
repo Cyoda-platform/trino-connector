@@ -17,6 +17,7 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
@@ -25,6 +26,7 @@ import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.client.types.SupportedDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.Page;
 import com.facebook.presto.common.PageBuilder;
 import com.facebook.presto.common.block.BlockBuilder;
@@ -32,12 +34,16 @@ import com.facebook.presto.common.type.ArrayType;
 import com.facebook.presto.common.type.MapType;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.ConnectorPageSource;
-import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
+import org.reactivestreams.Subscription;
+import reactor.core.publisher.BaseSubscriber;
+import reactor.core.publisher.SignalType;
 
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,7 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Supplier;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_PAGING_ERROR;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -57,6 +63,8 @@ import static java.util.Objects.requireNonNull;
 public class CyodaFilteringPageSource<T>
         implements ConnectorPageSource
 {
+    private static final SupplierLogger LOG = SupplierLogger.get(CyodaFilteringPageSource.class);
+
     private final List<CyodaColumnHandle> columnHandles;
     private final ApiRequestHandler<T> requestHandler;
 
@@ -64,11 +72,26 @@ public class CyodaFilteringPageSource<T>
     private long readTimeNanos;
     private long completedBytes;
     private long completedPositions;
-    private final Supplier<Iterator<T>> responseSupplier;
-    private Iterator<T> responseIterator = null;
-    private final PageBuilder pageBuilder;
+    private final Iterable<T> responseIterable;
+    private Iterator<T> responseIterator;
+    private final List<Subscription> subscriptions = new ArrayList<>();
     private final List<Type> columnTypes;
 
+    private final PageBuilder pageBuilder;
+    private final AtomicInteger totalRowNumber;
+
+    private static class Builder<T> {
+        private final PageBuilder pageBuilder;
+        private final T item;
+
+        Builder(T item, PageBuilder pageBuilder) {
+            this.item = item;
+            this.pageBuilder = pageBuilder;
+        }
+        private static <S> Builder<S> of(S item, PageBuilder builder) {
+            return new Builder<>(item,builder);
+        }
+    }
     public CyodaFilteringPageSource(
             ApiRequestHandler<T> requestHandler,
             CyodaTableHandle tableHandle,
@@ -79,19 +102,62 @@ public class CyodaFilteringPageSource<T>
         this.columnHandles = ImmutableList.copyOf(requireNonNull(columnHandles, "columnHandles is null"));
         requireNonNull(cyodaClient, "Cyoda client is null");
         this.requestHandler = requireNonNull(requestHandler, "requestHandler is null");
-        this.responseSupplier = () -> requestHandler.getResponseIterator(
-                tableHandle.getAuthPayload(),
-                cyodaClient.getRequestPageSize(),
-                tableHandle,
-                predicates
-        );
         this.finished = false;
         List<CyodaColumnHandle> handles = columnHandles.stream()
                 .collect(toImmutableList());
         this.columnTypes = handles.stream()
                 .map(CyodaColumnHandle::getColumnType)
                 .collect(toImmutableList());
+        this.totalRowNumber = new AtomicInteger();
+
         this.pageBuilder = new PageBuilder(this.columnTypes);
+
+        this.responseIterable = requestHandler.asFlux(
+                        tableHandle.getAuthPayload(),
+                        cyodaClient.getRequestPageSize(),
+                        tableHandle,
+                        predicates,
+                        SizeListener.NOT_LISTENING)
+                .toIterable();
+    }
+
+    /**
+     * This kind of worked, but due to the multithreading, there was a race-condition when the
+     * page was full. I left it here just for reference.
+     */
+    private Iterable<Page> ignore(AuthContext authContext, int pageSize, CyodaTableHandle tableHandle,
+                        CompoundPredicateNode predicates, SizeListener listener, CyodaClient cyodaClient) {
+
+        PageBuilder pageBuilder = new PageBuilder(this.columnTypes);
+        AtomicInteger rowNumber = new AtomicInteger();
+        return requestHandler.asFlux(
+                tableHandle.getAuthPayload(),
+                cyodaClient.getRequestPageSize(),
+                tableHandle,
+                predicates,
+                SizeListener.NOT_LISTENING
+        ).windowWhile(nextItem-> !pageBuilder.isFull()
+        ).flatMap(window->{
+            pageBuilder.reset();
+            return window.reduce(pageBuilder, (builder, next) -> {
+                int totalRows = totalRowNumber.incrementAndGet();
+                int i = rowNumber.incrementAndGet();
+                LOG.debug("Retrieved row %s / %s (Total) with %s", () -> i, () -> totalRows, () -> next);
+                processNext(next);
+                pageBuilder.declarePosition();
+                return pageBuilder;
+            });
+        }).map(it->{
+            Page page = pageBuilder.build();
+            completedPositions += page.getPositionCount();
+            completedBytes += page.getSizeInBytes();
+            LOG.debug("Page is full with %d completed positions %.2f kB total size with %s",
+                    ()->completedPositions,
+                    ()-> (float)completedBytes/1024,
+                    ()->page
+            );
+            return page;
+        }).toIterable();
     }
 
     @Override
@@ -120,18 +186,23 @@ public class CyodaFilteringPageSource<T>
 
     @Override
     public Page getNextPage() {
+        AtomicInteger rowNumber = new AtomicInteger();
         if (finished) {
             return null;
         }
 
-        if ( responseIterator == null) {
-            responseIterator = responseSupplier.get();
-        }
-
         long start = System.nanoTime();
+        if ( responseIterator == null ) {
+            responseIterator = responseIterable.iterator();
+        }
+        LOG.debug("Getting iterator took %s msec",((double) ((System.nanoTime()-start))) / 1.0E6);
+
         try {
             while (responseIterator.hasNext()) {
                 final T nextItem = responseIterator.next();
+                int totalRows = totalRowNumber.incrementAndGet();
+                int i = rowNumber.incrementAndGet();
+                LOG.debug("Retrieved row %s / %s (Total) with %s",()->i,()->totalRows,()->nextItem);
                 processNext(nextItem);
                 pageBuilder.declarePosition();
                 if (pageBuilder.isFull()) {
@@ -152,22 +223,28 @@ public class CyodaFilteringPageSource<T>
             completedPositions += page.getPositionCount();
             completedBytes += page.getSizeInBytes();
             pageBuilder.reset();
+            LOG.debug("Page is full with %d completed positions %.2f kB total size with %s",
+                    ()->completedPositions,
+                    ()-> (float)completedBytes/1024,
+                    ()->page
+            );
             return page;
         } catch (Exception e) {
             finished = true;
             throw new PrestoException(CYODA_PAGING_ERROR,"Failure getting next page: " + e.getMessage(), e);
         } finally {
             readTimeNanos += System.nanoTime() - start;
+            LOG.debug("Read time %.2f msec",()-> (double) readTimeNanos / 1.0E6);
         }
     }
 
 
-    private void processNext(T nextItem) {
+    private void processNext(T item) {
         for (int i = 0; i < columnHandles.size(); i++) {
             Type type = columnTypes.get(i);
             BlockBuilder blockBuilder = pageBuilder.getBlockBuilder(i);
             CyodaColumnHandle columnHandle = columnHandles.get(i);
-            DataTypeValue<?> supported = requestHandler.getValue(nextItem, columnHandle);
+            DataTypeValue<?> supported = requestHandler.getValue(item, columnHandle);
             if (supported == null || supported.isNull()) {
                 blockBuilder.appendNull();
                 continue;
@@ -275,6 +352,43 @@ public class CyodaFilteringPageSource<T>
     @Override
     public void close()
     {
+        subscriptions.forEach(Subscription::cancel);
         finished = true;
     }
+
+    private final BaseSubscriber<Page> subscriber = new BaseSubscriber<Page>() {
+        final AtomicInteger pageNumber = new AtomicInteger();
+        final long start = System.currentTimeMillis();
+
+        @Override
+        public void hookOnSubscribe(@Nonnull Subscription subscription) {
+            LOG.debug("Flux Subscribe");
+            subscriptions.add(subscription);
+        }
+
+        @Override
+        public void hookOnNext(@Nonnull Page value) {
+            LOG.debug("Completed Page %d Value: %s",pageNumber::incrementAndGet,()->value);
+        }
+
+        @Override
+        public void hookOnComplete() {
+            LOG.debug("Flux Complete");
+            finished = true;
+            readTimeNanos += System.nanoTime() - start;
+            LOG.debug("Read time %.2f msec",()-> (double) readTimeNanos / 1.0E6);
+        }
+
+        @Override
+        public void hookOnError(@Nonnull Throwable e) {
+            LOG.debug("Error: " + e);
+            finished = true;
+            throw new PrestoException(CYODA_PAGING_ERROR,"Failure getting next page: " + e.getMessage(), e);
+        }
+
+        @Override
+        public void hookFinally(@Nonnull SignalType signalType) {
+            LOG.debug("SignalType: " + signalType);
+        }
+    };
 }

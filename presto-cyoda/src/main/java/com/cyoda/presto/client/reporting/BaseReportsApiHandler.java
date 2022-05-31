@@ -20,13 +20,16 @@ package com.cyoda.presto.client.reporting;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.CyodaTable;
+import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
+import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.client.types.TypesUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
@@ -35,6 +38,7 @@ import com.facebook.presto.spi.SchemaTableName;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import org.springframework.hateoas.PagedModel;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -52,6 +56,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -60,8 +65,6 @@ import static java.util.Objects.requireNonNull;
 
 // TODO: The API calls to Cyoda need to have some check on API version. Sasha might be able to say how he did it for UI
 public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder implements ApiRequestHandler<T> {
-
-    protected static final SupplierLogger THIS_LOG = SupplierLogger.get(BaseReportsApiHandler.class);
 
     public static final String REPORT_ENDPOINT = "/api/platform-api/reporting/report";
     public static final String PAGE_REQUEST_PARAMETER = "page";
@@ -74,20 +77,26 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
     protected final CyodaConfig config;
     protected final RestTemplateCustomizer restTemplateCustomizer;
     protected final TypeManager typeManager;
+    protected final SupplierLogger log;
 
-    protected BaseReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager, String endpoint, RestTemplateCustomizer restTemplateCustomizer) {
+    protected BaseReportsApiHandler(CyodaConnectorId connectorId,
+                                    CyodaConfig config,
+                                    TypeManager typeManager,
+                                    String endpoint,
+                                    RestTemplateCustomizer restTemplateCustomizer,
+                                    SupplierLogger log) {
         super(endpoint);
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.config = requireNonNull(config, "config is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.restTemplateCustomizer = restTemplateCustomizer;
+        this.log = log;
     }
 
     protected Map<SchemaTableName, CyodaTable> setupTableMap(String endpoint, Map<TableDefinitionHandle, List<ColumnDefinition>> fieldDefs) {
         final URI uri;
         try {
             uri = config.getServerUrl().toURI().resolve(endpoint);
-            THIS_LOG.debug("Server URI %s", uri::toASCIIString);
         } catch (URISyntaxException e) {
             throw new IllegalArgumentException("Bad endpoint: "+endpoint,e);
         }
@@ -246,4 +255,20 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         Preconditions.checkArgument(!result.isEmpty(),"generated tableName is empty");
         return result;
     }
+
+    protected <S> void  publishSize(SizeListener listener, PagedModel<S> pagedModel) {
+        PagedModel.PageMetadata pageMetadata = Optional.ofNullable(pagedModel)
+                .map(PagedModel::getMetadata)
+                .orElse(PagedModel.empty().getMetadata());
+        listener.sizeKnown(pageMetadata == null ? 0 : pageMetadata.getTotalElements());
+    }
+
+    protected static void logCreation(int pageSize, CyodaTableHandle tableHandle, CompoundPredicateNode predicates, SupplierLogger logger) {
+        logger.debug("building responseIterator for %s with pageSize %s and predicates %s",
+                tableHandle::getTableName,
+                ()-> pageSize,
+                predicates::toString
+        );
+    }
+
 }

@@ -17,6 +17,7 @@
 
 package com.cyoda.presto.client.paging;
 
+import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
@@ -39,8 +40,10 @@ public class PagingHandle<T> {
             int pageNum,
             int pageSize,
             List<CyodaColumnHandle> projectedColumns,
-            CompoundPredicateNode predicates) {
-        this.pagedModel = requestHandler.retrievePage(authContext, pageNum, pageSize, projectedColumns, predicates);
+            CompoundPredicateNode predicates,
+            SizeListener listener
+    ) {
+        this.pagedModel = requestHandler.retrievePage(authContext, pageNum, pageSize, projectedColumns, predicates, listener);
         this.pageMeta = pagedModel.map(PagedModel::getMetadata);
     }
 

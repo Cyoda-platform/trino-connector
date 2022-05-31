@@ -19,17 +19,16 @@ package com.cyoda.presto.client.reporting.data;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
+import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.client.paging.PagedIterator;
-import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
+import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.GroupHeader;
 import com.cyoda.service.api.beans.ReportRow;
@@ -55,20 +54,20 @@ import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_GROUPS;
 import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.*;
-import static com.cyoda.presto.client.types.DataType.STRING;
+import static com.cyoda.presto.client.types.DataType.*;
 
-public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
+public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<RowHandle>
         implements PagingApiRequestHandler<RowHandle> {
 
     protected static final SupplierLogger LOG = SupplierLogger.get(InternalReportRowsApiHandler.class);
@@ -78,6 +77,8 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
             ROW_GROUP_JSON_BASE64_VARIABLE + "}";
 
     private static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
+            // TODO: Needs to be a Long
+            .add(new StandardColumnDefinition(0, ROW_REPORT_ROW_NUMBER_COLUMN, StandardTypes.BIGINT,LONG,null,null))
             .add(new StandardColumnDefinition(0, ROW_REPORT_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))
             .add(new StandardColumnDefinition(0, ROW_GROUP_JSON_BASE64_VARIABLE, StandardTypes.VARCHAR, STRING, null, null))
             .add(GroupHeader.meta())
@@ -86,7 +87,7 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
     @Inject
     public InternalReportRowsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                           RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer);
+        super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer,LOG);
     }
 
     @Override
@@ -105,10 +106,12 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
             int page,
             int pageSize,
             List<CyodaColumnHandle> projectedColumns,
-            CompoundPredicateNode predicates
+            CompoundPredicateNode predicates,
+            SizeListener listener
     ) {
 
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
+        int offset = page*pageSize;
 
         PredicateTraversal traversal = PredicateTraversal.of(predicates);
 
@@ -135,10 +138,12 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
             final PagedModel<ReportRow> fieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
+            publishSize(listener,fieldsViews);
             return Optional.ofNullable(fieldsViews)
                     .map(item->{
+                        AtomicInteger rowNum = new AtomicInteger(offset);
                         List<RowHandle> handles = item.getContent().stream()
-                                .map(reportRow -> new RowHandle(reportId, groupingVersion, groupJsonString, reportRow))
+                                .map(reportRow -> new RowHandle(reportId, groupingVersion, groupJsonString, reportRow,rowNum.incrementAndGet()))
                                 .collect(Collectors.toList());
                         return PagedModel.of(handles,item.getMetadata());
                     });
@@ -151,7 +156,7 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
                                PredicateTraversal traversal,String columnName
     ) {
         Optional<Set<String>> values = traversal.assembleFilterings(columnName);
-        LOG.debug("selecting values:",()->values.map(it-> String.join(",", it)).orElse("EMPTY"));
+        LOG.debug("selecting values for %s : %s",()->columnName, ()->values.map(it-> String.join(",", it)).orElse("EMPTY"));
 
         Preconditions.checkArgument(values.isPresent());
 
@@ -188,6 +193,9 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
     @Nullable
     @Override
     protected Object getFieldValueFromEntity(@Nonnull RowHandle field, CyodaColumnHandle columnHandle) {
+        if ( ROW_REPORT_ROW_NUMBER_COLUMN.equals(columnHandle.getColumnName()) ) {
+            return field.rowNum;
+        }
         if ( ROW_REPORT_ID_COLUMN.equals(columnHandle.getColumnName()) ) {
             return field.reportId;
         }
@@ -198,17 +206,6 @@ public class InternalReportRowsApiHandler extends BaseReportsApiHandler<RowHandl
             return field.groupJsonBase64;
         }
         return field.reportRow.get(columnHandle.getColumnName());
-    }
-
-    @Override
-    public Iterator<RowHandle> getResponseIterator(
-            AuthContext authContext,
-            int pageSize,
-            CyodaTableHandle tableHandle,
-            CompoundPredicateNode predicates
-    ) {
-        List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
-        return new PagedIterator<>(authContext, this, pageSize, projectedColumns, predicates).iterator();
     }
 
 

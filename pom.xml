@@ -40,7 +40,7 @@
         <!--suppress UnresolvedMavenProperty -->
         <air.main.basedir>${project.parent.basedir}</air.main.basedir>
 
-        <spring-hateoas.version>1.4.1</spring-hateoas.version>
+        <spring-hateoas.version>1.5.0</spring-hateoas.version>
 
         <air.check.skip-license>true</air.check.skip-license>
         <air.check.skip-checkstyle>true</air.check.skip-checkstyle>
@@ -62,11 +62,31 @@
         <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
         <sonar-maven-plugin.version>3.7.0.1746</sonar-maven-plugin.version>
         <air.check.skip-jacoco>false</air.check.skip-jacoco>
+        <reactor-core.version>3.4.18</reactor-core.version>
+        <okhttp.version>3.9.0</okhttp.version>
+        <micrometer-core.version>1.9.0</micrometer-core.version>
     </properties>
 
     <dependencyManagement>
 
         <dependencies>
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-core</artifactId>
+                <version>${reactor-core.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.projectreactor</groupId>
+                <artifactId>reactor-test</artifactId>
+                <version>${reactor-core.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.micrometer</groupId>
+                <artifactId>micrometer-core</artifactId>
+                <version>${micrometer-core.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path</artifactId>
@@ -283,6 +303,7 @@
                     <plugin>
                         <groupId>org.jacoco</groupId>
                         <artifactId>jacoco-maven-plugin</artifactId>
+                        <version>${jacoco-maven-plugin.version}</version>
                         <configuration>
                             <propertyName>surefireArgLine</propertyName>
                         </configuration>

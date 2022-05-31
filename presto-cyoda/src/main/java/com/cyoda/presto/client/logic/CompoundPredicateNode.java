@@ -18,6 +18,7 @@
 package com.cyoda.presto.client.logic;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 
 import javax.annotation.Nonnull;
@@ -166,5 +167,14 @@ public class CompoundPredicateNode implements ColumnPredicateNode<Any> {
         public CompoundPredicateNode build() {
             return new CompoundPredicateNode(parent, membersBuilder.build(),connective);
         }
+    }
+
+    @Override
+    public String toString() {
+        return MoreObjects.toStringHelper(this)
+                .add("members", members)
+                .add("connective", connective)
+                .add("parent", parent)
+                .toString();
     }
 }
