@@ -182,7 +182,7 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
 
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
 
-        PredicateTraversal traversal = PredicateTraversal.of(predicates);
+        PredicateTraversal<String> traversal = PredicateTraversal.of(predicates,String.class);
 
         UriTemplate uriTemplate = setupUriTemplate();
 
@@ -193,7 +193,7 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
 
 
         // TODO: Add the other selection possibilities from the report history endpoint.
-        Optional<SortedSet<String>> filterByType = traversal.assembleEqualsPredicateValues(this.typeColumn);
+        Optional<SortedSet<String>> filterByType = traversal.assembleEqualsPredicateValuesFromAnd(this.typeColumn);
         LOG.debug("selecting by types:",()->filterByType.map(it-> String.join(",", it)).orElse("EMPTY"));
 
         // If the optional is empty, it means the predicates are such that everything must be filtered.
@@ -203,7 +203,7 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
             expansionBuilder.put(HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER, filterByType.get());
         }
 
-        Optional<SortedSet<String>> reportNames = traversal.assembleEqualsPredicateValues(this.reportNameColumn);
+        Optional<SortedSet<String>> reportNames = traversal.assembleEqualsPredicateValuesFromAnd(this.reportNameColumn);
         LOG.debug("selecting by report names:",()->reportNames.map(it-> String.join(",", it)).orElse("EMPTY"));
         if (!reportNames.isPresent()) return Optional.empty();
         if (!reportNames.get().isEmpty()) {
@@ -214,7 +214,7 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
             }
         }
 
-        Optional<SortedSet<String>> reportIds = traversal.assembleEqualsPredicateValues(this.reportIdColumn);
+        Optional<SortedSet<String>> reportIds = traversal.assembleEqualsPredicateValuesFromAnd(this.reportIdColumn);
         LOG.debug("selecting by report ids:",()->reportNames.map(it-> String.join(",", it)).orElse("EMPTY"));
         if (!reportIds.isPresent()) return Optional.empty();
         expansionBuilder.put(HISTORY_REPORT_IDS_REQUEST_PARAMETER, reportIds.get());

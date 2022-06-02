@@ -24,6 +24,7 @@ import org.springframework.hateoas.PagedModel;
 import org.testng.annotations.Test;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -42,7 +43,9 @@ public class RowNumHandleTest {
         when(column.getColumnName()).thenReturn("happyColumnName");
         ColumnPredicate<Long> columnPredicate = new ColumnPredicate<>(ColumnPredicate.PredicateType.ALL, column, null, null);
 
-        RowNumHandle rowNumHandle = RowNumHandle.from(columnPredicate,page,size);
+        List<RowNumHandle> from = RowNumHandle.from(columnPredicate, page, size);
+        assertEquals(from.size(), 1);
+        RowNumHandle rowNumHandle = from.get(0);
         assertFalse(rowNumHandle.hasRowNumEquals);
         assertFalse(rowNumHandle.hasRowNumRange);
         assertEquals(rowNumHandle.minRowNum,1);
@@ -78,7 +81,9 @@ public class RowNumHandleTest {
         ColumnPredicate<Long> columnPredicate = new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY,
                 column, DataTypeValue.of(rowNum), null);
 
-        RowNumHandle rowNumHandle = RowNumHandle.from(columnPredicate,page,size);
+        List<RowNumHandle> from = RowNumHandle.from(columnPredicate, page, size);
+        assertEquals(from.size(), 1);
+        RowNumHandle rowNumHandle = from.get(0);
         assertTrue(rowNumHandle.hasRowNumEquals);
         assertFalse(rowNumHandle.hasRowNumRange);
         assertEquals(rowNumHandle.minRowNum,rowNum);
@@ -114,7 +119,9 @@ public class RowNumHandleTest {
         ColumnPredicate<Long> columnPredicate = new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE,
                 column, DataTypeValue.of(lower), DataTypeValue.of(upper));
 
-        RowNumHandle rowNumHandle = RowNumHandle.from(columnPredicate,page,size);
+        List<RowNumHandle> from = RowNumHandle.from(columnPredicate, page, size);
+        assertEquals(from.size(), 1);
+        RowNumHandle rowNumHandle = from.get(0);
         assertFalse(rowNumHandle.hasRowNumEquals);
         assertTrue(rowNumHandle.hasRowNumRange);
         assertEquals(rowNumHandle.minRowNum,lower);
@@ -137,7 +144,7 @@ public class RowNumHandleTest {
         long totalElementsInSearch = 100_100;
         when(apiMeta.getTotalElements()).thenReturn(totalElementsInSearch);
         PagedModel.PageMetadata pageMeta = rowNumHandle.createPageMeta(0, 1000, item, apiMeta);
-        assertEquals(pageMeta.getTotalPages(),1);
+        assertEquals(pageMeta.getTotalPages(),2);
         assertEquals(pageMeta.getTotalElements(),upper-lower); // Since the rowNum is a range predicate, search cannot return more than the window
         assertEquals(pageMeta.getSize(),size);
         assertEquals(pageMeta.getNumber(),0);

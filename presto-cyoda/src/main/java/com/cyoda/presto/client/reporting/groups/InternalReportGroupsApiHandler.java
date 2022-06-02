@@ -134,7 +134,8 @@ public class InternalReportGroupsApiHandler extends BasePagingReportsApiHandler<
 
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
 
-        PredicateTraversal traversal = PredicateTraversal.of(predicates);
+        PredicateTraversal<String> stringPredicateTraversal = PredicateTraversal.of(predicates,String.class);
+        PredicateTraversal<UUID> uuidPredicateTraversal = PredicateTraversal.of(predicates,UUID.class);
 
         UriTemplate uriTemplate = setupUriTemplate();
 
@@ -143,11 +144,11 @@ public class InternalReportGroupsApiHandler extends BasePagingReportsApiHandler<
                 .put(SIZE_REQUEST_PARAMETER, size);
 
 
-        String reportId = this.<String>mixinColumn(expansionBuilder,traversal, this.reportIdColumn)
+        String reportId = this.mixinColumn(expansionBuilder,stringPredicateTraversal, this.reportIdColumn)
                 .orElseThrow(() -> new IllegalArgumentException(NO_RESULT_FOUND_FOR_COLUMN + HISTORY_REPORT_ID_COLUMN + IN_PREDICATES));
-        UUID groupingVersion = this.<UUID>mixinColumn(expansionBuilder,traversal, this.groupingVersionColumn)
+        UUID groupingVersion = this.mixinColumn(expansionBuilder,uuidPredicateTraversal, this.groupingVersionColumn)
                 .orElseThrow(() -> new IllegalArgumentException(NO_RESULT_FOUND_FOR_COLUMN + GROUPING_VERSION_COLUMN + IN_PREDICATES));
-        String reportConfigName = this.<String>mixinColumn(expansionBuilder,traversal, this.reportNameColumn).orElse(null);
+        String reportConfigName = this.<String>mixinColumn(expansionBuilder,stringPredicateTraversal, this.reportNameColumn).orElse(null);
 
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
 
@@ -176,10 +177,10 @@ public class InternalReportGroupsApiHandler extends BasePagingReportsApiHandler<
     }
 
     private <T extends Comparable<? super T>> Optional<T> mixinColumn(ImmutableMap.Builder<String, Object> expansionBuilder,
-                                PredicateTraversal traversal, CyodaColumnHandle columnHandle
+                                PredicateTraversal<T> traversal, CyodaColumnHandle columnHandle
     ) {
         String columnName = columnHandle.getColumnName();
-        Optional<SortedSet<T>> values = traversal.assembleEqualsPredicateValues(columnHandle);
+        Optional<SortedSet<T>> values = traversal.assembleEqualsPredicateValuesFromAnd(columnHandle);
         LOG.debug("selecting values for %s : %s", ()->columnName, ()->values.map(it-> String.join(",", it.toString())).orElse("EMPTY"));
 
         Preconditions.checkArgument(values.isPresent());

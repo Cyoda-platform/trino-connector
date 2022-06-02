@@ -55,7 +55,11 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayDeque;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -136,22 +140,62 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
 
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
 
-        PredicateTraversal traversal = PredicateTraversal.of(predicates);
+        PredicateTraversal<Long> longPredicateTraversal = PredicateTraversal.of(predicates,Long.class);
+        PredicateTraversal<String> stringPredicateTraversal = PredicateTraversal.of(predicates,String.class);
+        PredicateTraversal<UUID> uuidPredicateTraversal = PredicateTraversal.of(predicates,UUID.class);
+
 
         UriTemplate uriTemplate = setupUriTemplate();
 
-        ColumnPredicate<Long> columnPredicate = traversal.parseFor(this.rowNumberColumn);
-        RowNumHandle rowNumHandle = RowNumHandle.from(columnPredicate,page,size);
+        Set<ColumnPredicate<Long>> columnPredicates = longPredicateTraversal.parseFor(this.rowNumberColumn);
 
+        Preconditions.checkArgument(!columnPredicates.isEmpty(),"Bug in Traversal");
 
+        return columnPredicates.stream().flatMap(it->RowNumHandle.from(it,page,size).stream())
+                .map( it-> exchange(
+                        authContext,
+                        page,
+                        pageSize,
+                        listener,
+                        stringPredicateTraversal,
+                        uuidPredicateTraversal,
+                        uriTemplate,
+                        it)
+                ).reduce(Optional.of(PagedModel.empty()),(result,rowHandles) ->
+                        Optional.of(merge(result.get(),rowHandles.orElse(null)))
+                );
+    }
+
+    private @Nonnull PagedModel<RowHandle> merge(@Nonnull PagedModel<RowHandle> result, @Nullable  PagedModel<RowHandle> response) {
+        if ( response == null ) return result;
+        ImmutableList.Builder<RowHandle> builder = ImmutableList.builder();
+        builder.addAll(result.getContent());
+        builder.addAll(response.getContent());
+        Collection<RowHandle> content = builder.build();
+
+        PagedModel.PageMetadata resultMetadata = result.getMetadata();
+        PagedModel.PageMetadata responseMetadata = Optional.ofNullable(response.getMetadata()).orElseThrow(
+                ()->new IllegalArgumentException("No pageMeta attached to response. Cannot continue")
+        );
+
+        long totalElements = Optional.ofNullable(resultMetadata).map(PagedModel.PageMetadata::getTotalElements).orElse(0L)
+                + responseMetadata.getTotalElements();
+        PagedModel.PageMetadata meta = new PagedModel.PageMetadata(
+                Optional.ofNullable(resultMetadata).map(PagedModel.PageMetadata::getSize).orElse(responseMetadata.getSize()),
+                Optional.ofNullable(resultMetadata).map(PagedModel.PageMetadata::getNumber).orElse(responseMetadata.getNumber()),
+                totalElements);
+        return PagedModel.of(content,meta);
+    }
+
+    private Optional<PagedModel<RowHandle>> exchange(AuthContext authContext, int page, int pageSize, SizeListener listener, PredicateTraversal<String> stringPredicateTraversal, PredicateTraversal<UUID> uuidPredicateTraversal, UriTemplate uriTemplate, RowNumHandle rowNumHandle) {
         ImmutableMap.Builder<String, Object> expansionBuilder = ImmutableMap.<String, Object>builder()
                 .put(PAGE_REQUEST_PARAMETER, rowNumHandle.page)
                 .put(SIZE_REQUEST_PARAMETER, rowNumHandle.size);
 
 
-        String reportId = mixinColumn(expansionBuilder,traversal, this.rowIdColumn);
-        UUID groupingVersion = mixinColumn(expansionBuilder,traversal, this.groupingVersionColumn);
-        String groupJsonString = mixinColumn(expansionBuilder,traversal, this.groupJsonBase64Column);
+        String reportId = mixinColumn(expansionBuilder, stringPredicateTraversal, this.rowIdColumn);
+        UUID groupingVersion = mixinColumn(expansionBuilder, uuidPredicateTraversal, this.groupingVersionColumn);
+        String groupJsonString = mixinColumn(expansionBuilder, stringPredicateTraversal, this.groupJsonBase64Column);
 
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
 
@@ -167,13 +211,13 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
                     .toObject(typeReference);
             publishSize(listener,fieldsViews);
             return Optional.ofNullable(fieldsViews)
-                    .map(item->{
+                    .map(item -> {
                         AtomicLong rowNum = new AtomicLong(rowNumHandle.offset);
                         List<RowHandle> handles = item.getContent().stream()
-                                .map(reportRow -> new RowHandle(reportId, groupingVersion, groupJsonString, reportRow,rowNum.incrementAndGet()))
-                                .filter(reportRow->rowNumHandle.isInRowWindow(reportRow.rowNum))
+                                .map(reportRow -> new RowHandle(reportId, groupingVersion, groupJsonString, reportRow, rowNum.incrementAndGet()))
+                                .filter(reportRow -> rowNumHandle.isInRowWindow(reportRow.rowNum))
                                 .collect(Collectors.toList());
-                        PagedModel.PageMetadata apiMeta = Optional.ofNullable(fieldsViews.getMetadata()).orElseThrow(()->new IllegalStateException("No meta attached"));
+                        PagedModel.PageMetadata apiMeta = Optional.ofNullable(fieldsViews.getMetadata()).orElseThrow(() -> new IllegalStateException("No meta attached"));
                         PagedModel.PageMetadata metadata = rowNumHandle.createPageMeta(page, pageSize, item, apiMeta);
                         return PagedModel.of(handles, metadata);
                     });
@@ -184,10 +228,10 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
 
 
     private <T extends Comparable<? super T>> T mixinColumn(ImmutableMap.Builder<String, Object> expansionBuilder,
-                               PredicateTraversal traversal,CyodaColumnHandle columnHandle
+                               PredicateTraversal<T> traversal,CyodaColumnHandle columnHandle
     ) {
         String columnName = columnHandle.getColumnName();
-        Optional<SortedSet<T>> values = traversal.assembleEqualsPredicateValues(columnHandle);
+        Optional<SortedSet<T>> values = traversal.assembleEqualsPredicateValuesFromAnd(columnHandle);
         LOG.debug("selecting values for %s : %s",()->columnName, ()->values.map(it-> String.join(",", it.toString())).orElse("EMPTY"));
 
         Preconditions.checkArgument(values.isPresent());

@@ -26,7 +26,9 @@ import com.facebook.presto.common.type.VarcharType;
 import io.airlift.slice.Slices;
 import org.testng.annotations.Test;
 
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.SortedSet;
 
 import static com.cyoda.presto.client.logic.CompoundPredicateNode.builder;
@@ -41,11 +43,11 @@ public class ColumnPredicateTraversalTest {
     @Test
     public void testOf() {
 
-        assertNotNull(PredicateTraversal.of(CompoundPredicateNode.empty()));
+        assertNotNull(PredicateTraversal.of(CompoundPredicateNode.empty(),null));
 
         try {
             //noinspection ConstantConditions
-            assertNotNull(PredicateTraversal.of(null));
+            assertNotNull(PredicateTraversal.of(null,null));
             fail("should not get here");
         } catch (NullPointerException e) {
             assertNotNull(e.getMessage(),"Need to put a message in the Exception");
@@ -62,7 +64,7 @@ public class ColumnPredicateTraversalTest {
         when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
         when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(CompoundPredicateNode.empty()).assembleEqualsPredicateValues(mockHandle1);
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(CompoundPredicateNode.empty(),String.class).assembleEqualsPredicateValuesFromAnd(mockHandle1);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),0);
     }
@@ -77,8 +79,9 @@ public class ColumnPredicateTraversalTest {
 
         ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
         Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(
-                builder(AND).addLeaf(hello).build()
-        ).assembleEqualsPredicateValues(mockHandle1);
+                builder(AND).addLeaf(hello).build(),
+                String.class
+        ).assembleEqualsPredicateValuesFromAnd(mockHandle1);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
         String value = selectionSet.get().iterator().next();
@@ -96,8 +99,9 @@ public class ColumnPredicateTraversalTest {
 
         ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
         Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(
-                builder(AND).addLeaf(hello).build()
-        ).assembleEqualsPredicateValues(mockHandle1);
+                builder(AND).addLeaf(hello).build(),
+                String.class
+        ).assembleEqualsPredicateValuesFromAnd(mockHandle1);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
         String value = selectionSet.get().iterator().next();
@@ -117,8 +121,9 @@ public class ColumnPredicateTraversalTest {
         Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(builder(AND)
                         .addMember(builder(AND).addLeaf(hello).build())
                         .addMember(builder(AND).addLeaf(goodbye).build())
-                        .build()
-        ).assembleEqualsPredicateValues(mockHandle1);
+                        .build(),
+                String.class
+        ).assembleEqualsPredicateValuesFromAnd(mockHandle1);
         // Cannot select something that is "hello" AND "goodbye"
         assertFalse(selectionSet.isPresent());
     }
@@ -139,8 +144,9 @@ public class ColumnPredicateTraversalTest {
                 .build();
         int nodeCount = node.countNodes();
         assertEquals(nodeCount,2);
-        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node
-        ).assembleEqualsPredicateValues(mockHandle1);
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node,
+                String.class
+        ).assembleEqualsPredicateValuesFromAnd(mockHandle1);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
         String value = selectionSet.get().iterator().next();
@@ -168,8 +174,9 @@ public class ColumnPredicateTraversalTest {
                 .build();
         int nodeCount = node.countNodes();
         assertEquals(nodeCount,2);
-        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node
-        ).assembleEqualsPredicateValues(myMockHandle);
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node,
+                String.class
+        ).assembleEqualsPredicateValuesFromAnd(myMockHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),0);
     }
@@ -205,10 +212,10 @@ public class ColumnPredicateTraversalTest {
                 ).build();
         int nodeCount = node.countNodes();
         assertEquals(nodeCount,4);
-        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node
-        ).assembleEqualsPredicateValues(myMockHandle);
-        assertTrue(selectionSet.isPresent());
-        assertEquals(selectionSet.get().size(),2);
+        assertThrows(IllegalArgumentException.class,()->PredicateTraversal.of(node,String.class).assembleEqualsPredicateValuesFromAnd(myMockHandle));
+        Set<ColumnPredicate<String>> columnPredicates = PredicateTraversal.of(node, String.class).parseFor(myMockHandle);
+        assertFalse(columnPredicates.isEmpty());
+        assertEquals(columnPredicates.size(),2);
     }
 
     @Test
@@ -237,8 +244,8 @@ public class ColumnPredicateTraversalTest {
                 ).build();
         int nodeCount = node.countNodes();
         assertEquals(nodeCount,3);
-        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node
-        ).assembleEqualsPredicateValues(myMockHandle);
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node, String.class)
+                .assembleEqualsPredicateValuesFromAnd(myMockHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
     }
@@ -272,8 +279,8 @@ public class ColumnPredicateTraversalTest {
                 ).build();
         int nodeCount = node.countNodes();
         assertEquals(nodeCount,3);
-        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node
-        ).assembleEqualsPredicateValues(myMockHandle);
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node, String.class)
+                .assembleEqualsPredicateValuesFromAnd(myMockHandle);
         assertFalse(selectionSet.isPresent());
     }
 
@@ -305,8 +312,7 @@ public class ColumnPredicateTraversalTest {
                 ).build();
         int nodeCount = node.countNodes();
         assertEquals(nodeCount,3);
-        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node
-        ).assembleEqualsPredicateValues(myMockHandle);
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node,String.class).assembleEqualsPredicateValuesFromAnd(myMockHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
     }
@@ -342,9 +348,9 @@ public class ColumnPredicateTraversalTest {
                 ).build();
         int nodeCount = node.countNodes();
         assertEquals(nodeCount,4);
-        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node
-        ).assembleEqualsPredicateValues(myMockHandle);
-        assertTrue(selectionSet.isPresent());
-        assertEquals(selectionSet.get().size(),2);
+        assertThrows(IllegalArgumentException.class,()->PredicateTraversal.of(node,String.class).assembleEqualsPredicateValuesFromAnd(myMockHandle));
+        Set<ColumnPredicate<String>> columnPredicates = PredicateTraversal.of(node, String.class).parseFor(myMockHandle);
+        assertFalse(columnPredicates.isEmpty());
+        assertEquals(columnPredicates.size(),2);
     }
 }

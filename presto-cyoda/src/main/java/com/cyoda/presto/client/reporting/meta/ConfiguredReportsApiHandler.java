@@ -172,7 +172,7 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
 
 
-        PredicateTraversal traversal = PredicateTraversal.of(predicates);
+        PredicateTraversal<String> traversal = PredicateTraversal.of(predicates,String.class);
 
         List<String> columnsWithFilter = Collections.singletonList(REPORT_TYPE_COLUMN);
         LOG.debug("Columns with Filter: %s",() -> Joiner.on(", ").join(columnsWithFilter));
@@ -184,7 +184,7 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
                 .put(SIZE_REQUEST_PARAMETER, size)
                 .put(FIELDS_REQUEST_PARAMETER, selectedFields);
 
-        Optional<SortedSet<String>> filterByType = traversal.assembleEqualsPredicateValues(this.typeColumn);
+        Optional<SortedSet<String>> filterByType = traversal.assembleEqualsPredicateValuesFromAnd(this.typeColumn);
 
         if (!filterByType.isPresent()) return Optional.empty();
 

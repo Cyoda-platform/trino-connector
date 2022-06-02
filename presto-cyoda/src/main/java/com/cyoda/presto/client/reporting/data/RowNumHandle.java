@@ -18,14 +18,18 @@
 package com.cyoda.presto.client.reporting.data;
 
 import com.cyoda.presto.client.logic.ColumnPredicate;
+import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.google.common.base.MoreObjects;
 import org.checkerframework.checker.nullness.Opt;
 import org.springframework.hateoas.PagedModel;
 
 import javax.annotation.Nonnull;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class RowNumHandle {
 
@@ -48,10 +52,21 @@ public class RowNumHandle {
     }
 
 
-    public static @Nonnull RowNumHandle from(@Nonnull ColumnPredicate<Long> columnPredicate, long page, long size) {
+    public static @Nonnull List<RowNumHandle> from(@Nonnull ColumnPredicate<Long> columnPredicate, long page, long size) {
         boolean isEqualsPredicate = columnPredicate.getType() == ColumnPredicate.PredicateType.EQUALITY;
         boolean isRangePredicate = columnPredicate.getType() == ColumnPredicate.PredicateType.RANGE;
+        boolean isListPredicate = columnPredicate.getType() == ColumnPredicate.PredicateType.IN_LIST;
+        if (isListPredicate) {
+            return columnPredicate.getInListValues().stream().map(it -> {
+                ColumnPredicate<Long> predicate = new ColumnPredicate<>(
+                        ColumnPredicate.PredicateType.EQUALITY, columnPredicate.getColumn(), it, null);
+                return createRowNumHandle(predicate, page, size, true, false);
+            }).collect(Collectors.toList());
+        }
+        return Collections.singletonList(createRowNumHandle(columnPredicate, page, size, isEqualsPredicate, isRangePredicate));
+    }
 
+    private static RowNumHandle createRowNumHandle(ColumnPredicate<Long> columnPredicate, long page, long size, boolean isEqualsPredicate, boolean isRangePredicate) {
         long minRownum = columnPredicate.getLower() != null ?
                 Optional.ofNullable(columnPredicate.getLower().value)
                         .orElseThrow(()->new IllegalArgumentException("columnPredicate lower value is null")) : 1;
@@ -60,14 +75,14 @@ public class RowNumHandle {
 
         long theSize = isEqualsPredicate ? 1 : Math.min(size,maxRownum-minRownum);
         long thePage;
-        if ( isEqualsPredicate ) {
+        if (isEqualsPredicate) {
             thePage = minRownum-1;
-        } else if ( isRangePredicate ) {
+        } else if (isRangePredicate) {
             thePage = (minRownum-1)/theSize + page;
         } else {
             thePage = (minRownum-1)/theSize + page;
         }
-        long offset = (isEqualsPredicate || isRangePredicate ) ? minRownum-1 : thePage*theSize;
+        long offset = (isEqualsPredicate || isRangePredicate) ? minRownum-1 : thePage*theSize;
         return new RowNumHandle(isEqualsPredicate, isRangePredicate, minRownum, maxRownum, theSize, thePage, offset);
     }
 
@@ -77,8 +92,7 @@ public class RowNumHandle {
             metadata = new PagedModel.PageMetadata(pageSize, page, 1, 1);
         } else if (this.hasRowNumRange) {
             long totalElements = Math.min(this.maxRowNum - this.minRowNum, apiMeta.getTotalElements());
-            long totalPages = Math.max(1,totalElements / this.size);
-            metadata = new PagedModel.PageMetadata(this.size, page, totalElements, totalPages);
+            metadata = new PagedModel.PageMetadata(this.size, page, totalElements);
         } else {
             metadata = Optional.ofNullable(item.getMetadata()).orElseThrow(()->new IllegalArgumentException("apiMeta has no PageMetadata. API is broken"));
         }
