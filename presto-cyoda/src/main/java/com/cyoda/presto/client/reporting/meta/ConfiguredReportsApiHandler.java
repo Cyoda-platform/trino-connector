@@ -60,7 +60,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
@@ -77,6 +77,7 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
     protected static final SupplierLogger LOG = SupplierLogger.get(ConfiguredReportsApiHandler.class);
 
     public static final String REPORT_DEFS_ENDPOINT = "/api/platform-api/reporting/definitions";
+    private final CyodaColumnHandle typeColumn;
 
     enum ColumnDef implements ColumnDefinition {
         ID              (0, REPORT_ID_COLUMN, StandardTypes.VARCHAR,STRING),
@@ -143,6 +144,8 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
     public ConfiguredReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                        RestTemplateCustomizer restTemplateCustomizer) {
         super(connectorId, config, typeManager, REPORT_DEFS_ENDPOINT,restTemplateCustomizer,LOG);
+        this.typeColumn = createColumnHandle(ColumnDef.TYPE);
+
     }
 
     @Override
@@ -181,7 +184,7 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
                 .put(SIZE_REQUEST_PARAMETER, size)
                 .put(FIELDS_REQUEST_PARAMETER, selectedFields);
 
-        Optional<Set<String>> filterByType = traversal.assembleFilterings(REPORT_TYPE_COLUMN);
+        Optional<SortedSet<String>> filterByType = traversal.assembleEqualsPredicateValues(this.typeColumn);
 
         if (!filterByType.isPresent()) return Optional.empty();
 

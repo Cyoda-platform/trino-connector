@@ -80,7 +80,7 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
     public static final String GROUPING_PARENT_COLUMN = "group_json";
     public static final String GROUPING_REPORT_CONFIG_ID_COLUMN = HISTORY_REPORT_NAME_VARIABLE;
 
-    private static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
+    public static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
             .add(new StandardColumnDefinition(0, HISTORY_REPORT_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))
             .add(new StandardColumnDefinition(0, GROUPING_VERSION_COLUMN, StandardTypes.VARCHAR, UUID_TYPE, null, null))
             .add(new StandardColumnDefinition(0, GROUPING_REPORT_CONFIG_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))

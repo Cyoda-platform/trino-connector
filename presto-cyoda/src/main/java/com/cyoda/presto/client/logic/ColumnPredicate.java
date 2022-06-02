@@ -75,7 +75,7 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
      *               or the equality value if this is an Equality predicate
      * @param upper  the upper bound serialized value if this is an Equality predicate
      */
-    ColumnPredicate(PredicateType type, CyodaColumnHandle column, DataTypeValue<T> lower, DataTypeValue<T> upper) {
+    public ColumnPredicate(PredicateType type, CyodaColumnHandle column, DataTypeValue<T> lower, DataTypeValue<T> upper) {
         this.type = type;
         this.column = column;
         this.lower = lower;
@@ -145,9 +145,9 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
      * @return a new predicate that is the logical intersection
      */
     @SuppressWarnings("java:S3776")
-    ColumnPredicate<T> merge(ColumnPredicate<T> other) {
-        Preconditions.checkArgument(column.equals(other.column),
-                "predicates from different columns may not be merged");
+    public ColumnPredicate<T> merge(ColumnPredicate<T> other) {
+        Preconditions.checkArgument(column.getColumnName().equals(other.column.getColumnName()),
+                "predicates from different column names may not be merged");
 
         // First, consider other.type == NONE, IS_NOT_NULL, or IS_NULL
         // NONE predicates dominate.

@@ -38,7 +38,7 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Colum
     }
 
     public static ColumnPredicateNode<Any> all(CompoundPredicateNode parent, CyodaColumnHandle handle) {
-        return new LeafPredicateNode<>(parent, ColumnPredicateUtils.all(handle));
+        return new LeafPredicateNode<>(parent, ColumnPredicateUtils.<Any>all(handle));
     }
 
     @Override
@@ -106,6 +106,12 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Colum
     @Override
     public ColumnPredicateNode<T> withParent(CompoundPredicateNode parent) {
         return new LeafPredicateNode<>(parent, columnPredicate);
+    }
+
+    @Nonnull
+    @Override
+    public ColumnPredicateNode<T> deepCopy() {
+        return this;
     }
 
     @Override

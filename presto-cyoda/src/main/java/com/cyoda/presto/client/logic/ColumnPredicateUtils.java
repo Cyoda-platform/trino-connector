@@ -850,7 +850,7 @@ public class ColumnPredicateUtils {
      * @param column the column to which the predicate applies
      * @return a None predicate
      */
-    static <T extends Comparable<? super T>> ColumnPredicate<T> none(CyodaColumnHandle column) {
+    public static <T extends Comparable<? super T>> ColumnPredicate<T> none(CyodaColumnHandle column) {
         return new ColumnPredicate<>(ColumnPredicate.PredicateType.NONE, column, null, null);
     }
 
@@ -860,7 +860,7 @@ public class ColumnPredicateUtils {
      * @param column the column to which the predicate applies
      * @return a ALL predicate
      */
-    static ColumnPredicate<Any> all(CyodaColumnHandle column) {
+    public static <T extends Comparable<? super T>> ColumnPredicate<T> all(CyodaColumnHandle column) {
         return new ColumnPredicate<>(ColumnPredicate.PredicateType.ALL, column, null, null);
     }
 

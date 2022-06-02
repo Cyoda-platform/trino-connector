@@ -20,30 +20,34 @@ package com.cyoda.presto.client.reporting;
 import com.cyoda.presto.CyodaErrorCode;
 import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.logic.ColumnPredicateNode;
+import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
 import com.cyoda.presto.client.logic.LeafPredicateNode;
+import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class PredicateTraversal {
 
-    private final CompoundPredicateNode conjunctions;
+    private final CompoundPredicateNode rootNode;
 
-    private PredicateTraversal(@Nonnull CompoundPredicateNode predicateNodes) {
-        CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
-        ColumnPredicateNode.members(predicateNodes).forEach(builder::addMember);
-        this.conjunctions = builder.build();
+    private PredicateTraversal(@Nonnull CompoundPredicateNode node) {
+        this.rootNode = node;
     }
 
     public static @Nonnull PredicateTraversal of(@Nonnull CompoundPredicateNode predicateNodes){
@@ -51,98 +55,168 @@ public class PredicateTraversal {
         return new PredicateTraversal(predicateNodes);
     }
 
-    private static class Predicated<T> {
-        private final T element;
-        private final Connective connective;
-
-        private Predicated(T element, Connective connective) {
-            this.element = element;
-            this.connective = connective;
+    /**
+     * Analyse the predicates to extract the list of values for a column that should be filtered on.
+     *
+     * @param columnHandle to parse for
+     * @return
+     * <pre>
+     * <ul>
+     *      <li>{@code Optional.empty()} if <em>nothing</em> is to be <em>selected</em>, i.e. an empty result should be passed up the stack.</li>
+     *      <li>an empty {@link Set} if <em>nothing</em> is to be <em>filtered</em>, i.e. take everything.</li>
+     *      <li>the list of values to filter, i.e. semantically {@code WHERE columnName IN (....)}</li>
+     * </ul>
+     * </pre>
+     * @param <T> the comparable type of the value.
+     */
+    public <T extends Comparable<? super T>> Optional<SortedSet<T>> assembleEqualsPredicateValues(CyodaColumnHandle columnHandle) {
+        ColumnPredicate<T> tColumnPredicate = parseFor(columnHandle);
+        switch (tColumnPredicate.getType()) {
+            case NONE:
+                return Optional.empty();
+            case ALL:
+                return Optional.of(Collections.emptySortedSet());
+            default:
+                Stream<T> tStream = extractFilterValues(tColumnPredicate);
+                return Optional.of(tStream.collect(Collectors.toCollection(TreeSet::new)));
         }
     }
 
     /**
-     * Analyse the predicates to extract the list of values for a column that should be filtered on.
+     * Analyse the predicates to extract the effective predicate on the column that should be filtered on.
      *
-     * @param columnName to search for filterings
+     * @param columnHandle to parse for
      * @return
      * <pre>
      * <ul>
-     *     <li>{@code Optional.empty()} if <em>nothing</em> is to be <em>selected</em>, i.e. an empty result should be passed up the stack.</li>
-     *     <li>an empty {@link Set} if <em>nothing</em> is to be <em>filtered</em>, i.e. take everything.</li>
-     *     <li>the list of values to filter, i.e. semantically {@code WHERE columnName IN (....)}</li>
+     *     <li>a column Predicate with Type {@link  ColumnPredicate.PredicateType#NONE } if <em>nothing</em> is to be <em>selected</em>, i.e. an empty result should be passed up the stack.</li>
+     *     <li>an empty {@link ColumnPredicate.PredicateType#ALL} if <em>nothing</em> is to be <em>filtered</em>, i.e. take everything.</li>
+     *     <li>the effective {@link ColumnPredicate } to filter on</li>
      * </ul>
      * </pre>
-     *
-     *
-     *
      */
-    public <T extends Comparable<? super T>> Optional<Set<T>> assembleFilterings(String columnName) {
+    public <T extends Comparable<? super T>> ColumnPredicate<T> parseFor(CyodaColumnHandle columnHandle) {
+
+        String columnName = columnHandle.getColumnName();
+
+        final Deque<LeafPredicateNode<T>> leafQueue = new ArrayDeque<>();
+        final CompoundPredicateNode root = rootNode.deepCopy();
+
+        // Remove from the conjunctions all leaf nodes that are not for this columnName.
+        final Deque<CompoundPredicateNode> cleanerQueue = new ArrayDeque<>();
+        cleanerQueue.add(root);
+        while(!cleanerQueue.isEmpty()) {
+            CompoundPredicateNode node = cleanerQueue.pop();
+            Collection<ColumnPredicateNode<?>> members = node.getMembers().orElse(Collections.emptyList());
+            ImmutableList.Builder<ColumnPredicateNode<?>> cleanMembers = ImmutableList.builder();
+            members.forEach(member -> {
+                if (member instanceof LeafPredicateNode) {
+                    if (member.getColumn().isPresent() && member.getColumn().get().getColumnName().equals(columnName)) {
+                        cleanMembers.add(member);
+                    }
+                } else {
+                    cleanMembers.add(member);
+                    cleanerQueue.add((CompoundPredicateNode) member);
+                }
+            });
+            node.newMembers(cleanMembers.build());
+        }
 
         Deque<CompoundPredicateNode> compoundQueue = new ArrayDeque<>();
-        Deque<Predicated<LeafPredicateNode<T>>> leafQueue = new ArrayDeque<>();
 
-        compoundQueue.add(conjunctions);
+        // Flatten all OR connectives
+        compoundQueue.add(root);
+        while(!compoundQueue.isEmpty()) {
+            CompoundPredicateNode node = compoundQueue.pop();
+            Collection<ColumnPredicateNode<?>> members = node.getMembers().orElse(Collections.emptyList());
+            ImmutableList.Builder<ColumnPredicateNode<?>> newMembersBuilder = ImmutableList.builder();
+            members.forEach(member -> {
+                if (member instanceof CompoundPredicateNode) {
+                    Connective connective = member.getConnective();
+                    switch (connective) {
+                        case OR:
+                            newMembersBuilder.addAll(member.getMembers().orElse(Collections.emptyList()));
+                            break;
+                        case AND:
+                            newMembersBuilder.add(member);
+                        default: // Ignore
+                    }
+                } else {
+                    newMembersBuilder.add(member);
+                }
+            });
+            ImmutableList<ColumnPredicateNode<?>> newMembers = newMembersBuilder.build();
+            if ( newMembers.size() > members.size() ) {
+                node.newMembers(newMembers);
+                compoundQueue.add(node);
+            }
+        }
 
+        // If there is nothing left, there is nothing to filter.
+        if ( root.getMembers().isPresent() && root.getMembers().get().isEmpty()) {
+            return ColumnPredicateUtils.all(columnHandle);
+        }
+
+        // Now we have a tree with only conjunctions. Merge them into the leaf queue
+        compoundQueue.add(root);
         while(!compoundQueue.isEmpty()) {
             CompoundPredicateNode node = compoundQueue.pop();
             Collection<ColumnPredicateNode<?>> members = node.getMembers().orElse(Collections.emptyList());
             members.forEach(member -> {
                 if (member instanceof LeafPredicateNode) {
-                    if (member.getColumn().isPresent() && member.getColumn().get().getColumnName().equals(columnName)) {
-                        leafQueue.add(new Predicated<>((LeafPredicateNode<T>)member, node.getConnective()));
-                    }
+                    // TODO: To fix, we would need to create a generic CompoundPredicateNode that contains only members of type T.
+                    leafQueue.add((LeafPredicateNode<T>) member);
                 } else {
                     compoundQueue.add((CompoundPredicateNode) member);
                 }
             });
         }
 
-        Deque<Predicated<T>> resultBuilder = new ArrayDeque<>();
-        if ( !leafQueue.isEmpty() ) {
-            Predicated<LeafPredicateNode<T>> predicated = leafQueue.pop();
-            ColumnPredicate<T> columnPredicate = predicated.element.forceGet();
-            extractFilterValues(columnPredicate)
-                    .map(it->new Predicated<>(it,predicated.connective))
-                    .forEach(resultBuilder::add);
+        // If there is nothing left, there is nothing to filter.
+        if ( leafQueue.isEmpty() ) {
+            return ColumnPredicateUtils.all(columnHandle);
         }
-        while (!leafQueue.isEmpty()) {
-            Predicated<LeafPredicateNode<T>> predicated = leafQueue.pop();
-            if ( predicated.element.forceGet().getColumn().getColumnName().equals(columnName) ) {
-                Predicated<T> last = resultBuilder.peekLast();
-                if (last == null) throw new IllegalStateException("This should not happen");
-                Connective previousConnective = last.connective;
-                if (previousConnective == Connective.OR) {
-                    extractFilterValues(predicated.element.forceGet())
-                            .map(it -> new Predicated<>(it, predicated.connective))
-                            .forEach(resultBuilder::add);
+        ColumnPredicate<T> result = leafQueue.pop().forceGet();
 
-                } else {
-                    Set<T> values = extractFilterValues(predicated.element.forceGet()).collect(Collectors.toSet());
-                    if (!values.contains(last.element) ) {
-                        return Optional.empty();
-                    }
-                }
-            }
+        while (!leafQueue.isEmpty()) {
+            LeafPredicateNode<T> predicate = leafQueue.pop();
+            result = result.merge(predicate.forceGet());
         }
-        return Optional.of(resultBuilder.stream().map(it->it.element).collect(Collectors.toSet()));
+        // If there is nothing left, filter everything.
+        if ( result.getType() == ColumnPredicate.PredicateType.NONE ) {
+            return ColumnPredicateUtils.none(columnHandle);
+        }
+
+        return result;
 
     }
 
-    private <T extends Comparable<? super T>> Stream<T> extractFilterValues(ColumnPredicate<T> it) {
-        ColumnPredicate.PredicateType type = it.getType();
+    private CyodaColumnHandle skeletonColumnHandle(String columnName) {
+        return null;
+    }
+
+
+    private @Nonnull <T extends Comparable<? super T>> Stream<T> extractFilterValues(@Nullable ColumnPredicate<T> predicate) {
+        if (predicate == null ) return Stream.empty();
+        ColumnPredicate.PredicateType type = predicate.getType();
         switch (type) {
             case IN_LIST: {
-                return it.getInListValues().stream().map(item -> item.value);
+                return predicate.getInListValues().stream().map(item -> item.value);
             }
             case EQUALITY: {
-                return Stream.of(it.getLower().value);
+                return Stream.of(predicate.getLower().value);
             }
             case RANGE: {
-                return Stream.of(
-                        it.getLower().value,
-                        it.getUpper().value
-                );
+                if ( predicate.getUpper() == null ) {
+                    return Stream.of(predicate.getLower().value);
+                } else if ( predicate.getLower() == null ) {
+                    return Stream.of(predicate.getUpper().value);
+                } else {
+                    return Stream.of(
+                            predicate.getLower().value,
+                            predicate.getUpper().value
+                    );
+                }
             }
             default:
                 throw new PrestoException(

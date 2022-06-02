@@ -59,7 +59,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.SortedSet;
 import java.util.stream.Collectors;
 
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.*;
@@ -78,6 +78,9 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
     public static final String HISTORY_REPORT_NAMES_REQUEST_PARAMETER = "report_names";
     public static final String HISTORY_REPORT_IDS_REQUEST_PARAMETER = "reportIds";
     public static final String HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER = "filterByType";
+    private final CyodaColumnHandle typeColumn;
+    private final CyodaColumnHandle reportNameColumn;
+    private final CyodaColumnHandle reportIdColumn;
 
     enum ColumnDef implements ColumnDefinition {
         ID(0, HISTORY_REPORT_ID_COLUMN, StandardTypes.VARCHAR, STRING, null),
@@ -151,6 +154,9 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
     public ReportHistoryApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                    RestTemplateCustomizer restTemplateCustomizer) {
         super(connectorId, config, typeManager, REPORT_HISTORY_ENDPOINT,restTemplateCustomizer,LOG);
+        this.typeColumn = createColumnHandle(ColumnDef.TYPE);
+        this.reportNameColumn = createColumnHandle(ColumnDef.REPORT_NAME);
+        this.reportIdColumn = createColumnHandle(ColumnDef.ID);
     }
 
     @Override
@@ -187,7 +193,7 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
 
 
         // TODO: Add the other selection possibilities from the report history endpoint.
-        Optional<Set<String>> filterByType = traversal.assembleFilterings(HISTORY_TYPE_COLUMN);
+        Optional<SortedSet<String>> filterByType = traversal.assembleEqualsPredicateValues(this.typeColumn);
         LOG.debug("selecting by types:",()->filterByType.map(it-> String.join(",", it)).orElse("EMPTY"));
 
         // If the optional is empty, it means the predicates are such that everything must be filtered.
@@ -197,7 +203,7 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
             expansionBuilder.put(HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER, filterByType.get());
         }
 
-        Optional<Set<String>> reportNames = traversal.assembleFilterings(HISTORY_REPORT_NAME_VARIABLE);
+        Optional<SortedSet<String>> reportNames = traversal.assembleEqualsPredicateValues(this.reportNameColumn);
         LOG.debug("selecting by report names:",()->reportNames.map(it-> String.join(",", it)).orElse("EMPTY"));
         if (!reportNames.isPresent()) return Optional.empty();
         if (!reportNames.get().isEmpty()) {
@@ -208,7 +214,7 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
             }
         }
 
-        Optional<Set<String>> reportIds = traversal.assembleFilterings(HISTORY_REPORT_ID_COLUMN);
+        Optional<SortedSet<String>> reportIds = traversal.assembleEqualsPredicateValues(this.reportIdColumn);
         LOG.debug("selecting by report ids:",()->reportNames.map(it-> String.join(",", it)).orElse("EMPTY"));
         if (!reportIds.isPresent()) return Optional.empty();
         expansionBuilder.put(HISTORY_REPORT_IDS_REQUEST_PARAMETER, reportIds.get());

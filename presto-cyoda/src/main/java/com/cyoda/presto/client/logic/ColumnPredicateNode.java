@@ -55,4 +55,7 @@ public interface ColumnPredicateNode<T extends Comparable<? super T>> {
 
     @Nonnull
     ColumnPredicateNode<T> withParent(CompoundPredicateNode parent);
+
+    @Nonnull
+    ColumnPredicateNode<T> deepCopy();
 }

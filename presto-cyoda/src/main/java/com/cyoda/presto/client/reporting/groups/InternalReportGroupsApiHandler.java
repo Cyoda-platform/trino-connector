@@ -27,8 +27,10 @@ import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.converters.impl.UUIDPrestoValueConverter;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
+import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
+import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.GroupHeader;
@@ -59,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.SortedSet;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -67,8 +70,7 @@ import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPOR
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_GROUPS;
-import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_PARENT_COLUMN;
-import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_VERSION_COLUMN;
+import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.*;
 import static com.cyoda.presto.client.types.DataType.STRING;
 import static com.cyoda.presto.client.types.DataType.UUID_TYPE;
 
@@ -91,11 +93,23 @@ public class InternalReportGroupsApiHandler extends BasePagingReportsApiHandler<
             .build();
     public static final String IN_PREDICATES = " in predicates";
     public static final String NO_RESULT_FOUND_FOR_COLUMN = "no result found for column ";
+    private final CyodaColumnHandle groupingVersionColumn;
+    private final CyodaColumnHandle reportNameColumn;
+    private final CyodaColumnHandle reportIdColumn;
 
     @Inject
     public InternalReportGroupsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                           RestTemplateCustomizer restTemplateCustomizer) {
         super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer,LOG);
+        this.groupingVersionColumn = getColumnByName(GROUPING_VERSION_COLUMN);
+        this.reportIdColumn = getColumnByName(HISTORY_REPORT_ID_COLUMN);
+        // An External Column
+        this.reportNameColumn = getColumnByName(ReportGroupsApiHandler.COLUMN_DEFS,GROUPING_REPORT_CONFIG_ID_COLUMN);
+
+    }
+
+    private CyodaColumnHandle getColumnByName(String columnName) {
+        return getColumnByName(COLUMN_DEFS,columnName);
     }
 
     @Override
@@ -129,11 +143,11 @@ public class InternalReportGroupsApiHandler extends BasePagingReportsApiHandler<
                 .put(SIZE_REQUEST_PARAMETER, size);
 
 
-        String reportId = this.<String>mixinColumn(expansionBuilder,traversal, HISTORY_REPORT_ID_COLUMN)
+        String reportId = this.<String>mixinColumn(expansionBuilder,traversal, this.reportIdColumn)
                 .orElseThrow(() -> new IllegalArgumentException(NO_RESULT_FOUND_FOR_COLUMN + HISTORY_REPORT_ID_COLUMN + IN_PREDICATES));
-        UUID groupingVersion = this.<UUID>mixinColumn(expansionBuilder,traversal, GROUPING_VERSION_COLUMN)
+        UUID groupingVersion = this.<UUID>mixinColumn(expansionBuilder,traversal, this.groupingVersionColumn)
                 .orElseThrow(() -> new IllegalArgumentException(NO_RESULT_FOUND_FOR_COLUMN + GROUPING_VERSION_COLUMN + IN_PREDICATES));
-        String reportConfigName = this.<String>mixinColumn(expansionBuilder,traversal, HISTORY_REPORT_NAME_VARIABLE).orElse(null);
+        String reportConfigName = this.<String>mixinColumn(expansionBuilder,traversal, this.reportNameColumn).orElse(null);
 
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
 
@@ -162,10 +176,11 @@ public class InternalReportGroupsApiHandler extends BasePagingReportsApiHandler<
     }
 
     private <T extends Comparable<? super T>> Optional<T> mixinColumn(ImmutableMap.Builder<String, Object> expansionBuilder,
-                                PredicateTraversal traversal,String columnName
+                                PredicateTraversal traversal, CyodaColumnHandle columnHandle
     ) {
-        Optional<Set<T>> values = traversal.assembleFilterings(columnName);
-        LOG.debug("selecting values for %s : %s",()->columnName, ()->values.map(it-> String.join(",", it.toString())).orElse("EMPTY"));
+        String columnName = columnHandle.getColumnName();
+        Optional<SortedSet<T>> values = traversal.assembleEqualsPredicateValues(columnHandle);
+        LOG.debug("selecting values for %s : %s", ()->columnName, ()->values.map(it-> String.join(",", it.toString())).orElse("EMPTY"));
 
         Preconditions.checkArgument(values.isPresent());
 

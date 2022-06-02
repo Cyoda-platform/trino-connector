@@ -23,10 +23,13 @@ import com.google.common.collect.ImmutableList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Deque;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 
@@ -36,7 +39,7 @@ public class CompoundPredicateNode implements ColumnPredicateNode<Any> {
      * The members of the compound predicate.
      * If this collection is not empty, then the predicate member of this node should be null.
      */
-    private final Collection<ColumnPredicateNode<?>> members;
+    private Collection<ColumnPredicateNode<?>> members;
     /**
      * The type of connective for the members, i.e. AND / OR
      */
@@ -125,6 +128,27 @@ public class CompoundPredicateNode implements ColumnPredicateNode<Any> {
         return members.isEmpty();
     }
 
+    public int countNodes() {
+        Deque<ColumnPredicateNode<?>> queue = new ArrayDeque<>();
+        queue.add(this);
+        AtomicInteger count = new AtomicInteger(0);
+        while(!queue.isEmpty()) {
+            ColumnPredicateNode<?> node = queue.pop();
+            if ( node instanceof CompoundPredicateNode ) {
+                Collection<ColumnPredicateNode<?>> members = node.getMembers().orElse(Collections.emptyList());
+                members.forEach(member -> {
+                    if ( member instanceof LeafPredicateNode ) {
+                        count.incrementAndGet();
+                    } else {
+                        queue.add(member);
+                    }
+                });
+            } else {
+                count.incrementAndGet();
+            }
+        }
+        return count.get();
+    }
     public static CompoundPredicateNode empty(CompoundPredicateNode parent) {
         return new CompoundPredicateNode(parent,Collections.emptyList(), Connective.NONE);
     }
@@ -139,6 +163,17 @@ public class CompoundPredicateNode implements ColumnPredicateNode<Any> {
 
     public static CompoundPredicateNode empty() {
         return new CompoundPredicateNode(null,Collections.emptyList(),Connective.NONE);
+    }
+
+    public void newMembers(ImmutableList<ColumnPredicateNode<?>> newMembers) {
+        members = newMembers;
+    }
+
+    public CompoundPredicateNode deepCopy() {
+        ImmutableList.Builder<ColumnPredicateNode<?>> builder = ImmutableList.builder();
+        members.forEach(it->builder.add(it.deepCopy()));
+        return new CompoundPredicateNode(this.parent,builder.build(),this.getConnective());
+
     }
 
     public static class Builder {

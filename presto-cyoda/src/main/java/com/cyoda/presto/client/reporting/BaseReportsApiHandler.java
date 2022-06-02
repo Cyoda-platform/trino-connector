@@ -93,6 +93,13 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         this.log = log;
     }
 
+    protected CyodaColumnHandle getColumnByName(List<ColumnDefinition> columnDefinitions, String columnName) {
+        Optional<ColumnDefinition> found = columnDefinitions.stream()
+                .filter(it -> it.getFieldName().equals(columnName))
+                .findAny();
+        return createColumnHandle(found.orElseThrow(() -> new IllegalStateException("Should not happen")));
+    }
+
     protected Map<SchemaTableName, CyodaTable> setupTableMap(String endpoint, Map<TableDefinitionHandle, List<ColumnDefinition>> fieldDefs) {
         final URI uri;
         try {
@@ -119,15 +126,19 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
                 fieldDefs.entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey, it->
                                 it.getValue().stream()
-                                        .map(fieldDef -> new CyodaColumnHandle(
-                                                connectorId.toString(),
-                                                fieldDef.getFieldName(),
-                                                toType(fieldDef),
-                                                fieldDef.getDataType(),
-                                                fieldDef.getPos(),
-                                                getHandlerKey()
-                                        )).collect(Collectors.toList())
+                                        .map(fieldDef -> createColumnHandle(fieldDef)).collect(Collectors.toList())
                         ))
+        );
+    }
+
+    protected CyodaColumnHandle createColumnHandle(ColumnDefinition fieldDef) {
+        return new CyodaColumnHandle(
+                connectorId.toString(),
+                fieldDef.getFieldName(),
+                toType(fieldDef),
+                fieldDef.getDataType(),
+                fieldDef.getPos(),
+                getHandlerKey()
         );
     }
 

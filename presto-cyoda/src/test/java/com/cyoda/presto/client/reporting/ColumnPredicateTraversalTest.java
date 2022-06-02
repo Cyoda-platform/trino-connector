@@ -27,7 +27,7 @@ import io.airlift.slice.Slices;
 import org.testng.annotations.Test;
 
 import java.util.Optional;
-import java.util.Set;
+import java.util.SortedSet;
 
 import static com.cyoda.presto.client.logic.CompoundPredicateNode.builder;
 import static com.cyoda.presto.client.logic.Connective.AND;
@@ -62,7 +62,7 @@ public class ColumnPredicateTraversalTest {
         when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
         when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(CompoundPredicateNode.empty()).assembleFilterings(mockHandle1.getColumnName());
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(CompoundPredicateNode.empty()).assembleEqualsPredicateValues(mockHandle1);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),0);
     }
@@ -76,9 +76,9 @@ public class ColumnPredicateTraversalTest {
         when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
         ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(
                 builder(AND).addLeaf(hello).build()
-        ).assembleFilterings(mockHandle1.getColumnName());
+        ).assembleEqualsPredicateValues(mockHandle1);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
         String value = selectionSet.get().iterator().next();
@@ -95,9 +95,9 @@ public class ColumnPredicateTraversalTest {
         when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
 
         ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(
                 builder(AND).addLeaf(hello).build()
-        ).assembleFilterings(mockHandle1.getColumnName());
+        ).assembleEqualsPredicateValues(mockHandle1);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
         String value = selectionSet.get().iterator().next();
@@ -114,11 +114,11 @@ public class ColumnPredicateTraversalTest {
 
         ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
         ColumnPredicate<String> goodbye = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("goodbye"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(builder(AND)
                         .addMember(builder(AND).addLeaf(hello).build())
                         .addMember(builder(AND).addLeaf(goodbye).build())
                         .build()
-        ).assembleFilterings(mockHandle1.getColumnName());
+        ).assembleEqualsPredicateValues(mockHandle1);
         // Cannot select something that is "hello" AND "goodbye"
         assertFalse(selectionSet.isPresent());
     }
@@ -133,11 +133,14 @@ public class ColumnPredicateTraversalTest {
 
         ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
         ColumnPredicate<String> sameAsHello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
-                        .addMember(builder(AND).addLeaf(hello).build())
-                        .addMember(builder(AND).addLeaf(sameAsHello).build())
-                        .build()
-        ).assembleFilterings(mockHandle1.getColumnName());
+        CompoundPredicateNode node = builder(AND)
+                .addMember(builder(AND).addLeaf(hello).build())
+                .addMember(builder(AND).addLeaf(sameAsHello).build())
+                .build();
+        int nodeCount = node.countNodes();
+        assertEquals(nodeCount,2);
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node
+        ).assembleEqualsPredicateValues(mockHandle1);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
         String value = selectionSet.get().iterator().next();
@@ -159,11 +162,14 @@ public class ColumnPredicateTraversalTest {
 
         ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
         ColumnPredicate<String> sameAsHello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
+        CompoundPredicateNode node = builder(AND)
                 .addMember(builder(AND).addLeaf(hello).build())
                 .addMember(builder(AND).addLeaf(sameAsHello).build())
-                .build()
-        ).assembleFilterings(myMockHandle.getColumnName());
+                .build();
+        int nodeCount = node.countNodes();
+        assertEquals(nodeCount,2);
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node
+        ).assembleEqualsPredicateValues(myMockHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),0);
     }
@@ -186,18 +192,21 @@ public class ColumnPredicateTraversalTest {
 
         ColumnPredicate<String> notMyHello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
         ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
-                        .addMember(builder(AND).addLeaf(notMyHello).build())
-                                .addMember(builder(AND).addLeaf(notMyGoodbye).build())
-                                .addMember(builder(AND)
-                                        .addMember(CompoundPredicateNode.empty(null))
-                                        .addMember(builder(OR)
-                                                        .addLeaf(myHello)
-                                                        .addLeaf(myGoodbye)
-                                                        .build())
-                                        .build()
-                        ).build()
-        ).assembleFilterings(myMockHandle.getColumnName());
+        CompoundPredicateNode node = builder(AND)
+                .addMember(builder(AND).addLeaf(notMyHello).build())
+                .addMember(builder(AND).addLeaf(notMyGoodbye).build())
+                .addMember(builder(AND)
+                        .addMember(CompoundPredicateNode.empty(null))
+                        .addMember(builder(OR)
+                                .addLeaf(myHello)
+                                .addLeaf(myGoodbye)
+                                .build())
+                        .build()
+                ).build();
+        int nodeCount = node.countNodes();
+        assertEquals(nodeCount,4);
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node
+        ).assembleEqualsPredicateValues(myMockHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),2);
     }
@@ -218,15 +227,18 @@ public class ColumnPredicateTraversalTest {
         ColumnPredicate<String> myHello = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
 
         ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
+        CompoundPredicateNode node = builder(AND)
+                .addMember(builder(AND).addLeaf(myHello).build())
+                .addMember(builder(AND).addLeaf(notMyGoodbye).build())
+                .addMember(builder(AND)
+                        .addMember(CompoundPredicateNode.empty(null))
                         .addMember(builder(AND).addLeaf(myHello).build())
-                                .addMember(builder(AND).addLeaf(notMyGoodbye).build())
-                                .addMember(builder(AND)
-                                        .addMember(CompoundPredicateNode.empty(null))
-                                        .addMember(builder(AND).addLeaf(myHello).build())
-                                        .build()
-                        ).build()
-        ).assembleFilterings(myMockHandle.getColumnName());
+                        .build()
+                ).build();
+        int nodeCount = node.countNodes();
+        assertEquals(nodeCount,3);
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node
+        ).assembleEqualsPredicateValues(myMockHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
     }
@@ -248,17 +260,20 @@ public class ColumnPredicateTraversalTest {
         ColumnPredicate<String> myGoodbye = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"),String.class);
 
         ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
-                        .addMember(builder(AND).addLeaf(myHello).build())
-                        .addMember(builder(AND).addLeaf(notMyGoodbye).build())
+        CompoundPredicateNode node = builder(AND)
+                .addMember(builder(AND).addLeaf(myHello).build())
+                .addMember(builder(AND).addLeaf(notMyGoodbye).build())
+                .addMember(builder(AND)
+                        .addMember(CompoundPredicateNode.empty(null))
                         .addMember(builder(AND)
-                                        .addMember(CompoundPredicateNode.empty(null))
-                                        .addMember(builder(AND)
-                                                .addLeaf(myGoodbye)
-                                                .build())
-                                        .build()
-                        ).build()
-        ).assembleFilterings(myMockHandle.getColumnName());
+                                .addLeaf(myGoodbye)
+                                .build())
+                        .build()
+                ).build();
+        int nodeCount = node.countNodes();
+        assertEquals(nodeCount,3);
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node
+        ).assembleEqualsPredicateValues(myMockHandle);
         assertFalse(selectionSet.isPresent());
     }
 
@@ -278,17 +293,20 @@ public class ColumnPredicateTraversalTest {
         ColumnPredicate<String> myHello = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
 
         ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
-                        .addMember(builder(AND).addLeaf(myHello).build())
-                        .addMember(builder(AND).addLeaf(notMyGoodbye).build())
+        CompoundPredicateNode node = builder(AND)
+                .addMember(builder(AND).addLeaf(myHello).build())
+                .addMember(builder(AND).addLeaf(notMyGoodbye).build())
+                .addMember(builder(OR)
+                        .addMember(CompoundPredicateNode.empty(null))
                         .addMember(builder(OR)
-                                        .addMember(CompoundPredicateNode.empty(null))
-                                        .addMember(builder(OR)
-                                                .addLeaf(myHello)
-                                                .build())
-                                        .build()
-                        ).build()
-        ).assembleFilterings(myMockHandle.getColumnName());
+                                .addLeaf(myHello)
+                                .build())
+                        .build()
+                ).build();
+        int nodeCount = node.countNodes();
+        assertEquals(nodeCount,3);
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node
+        ).assembleEqualsPredicateValues(myMockHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
     }
@@ -311,18 +329,21 @@ public class ColumnPredicateTraversalTest {
 
         ColumnPredicate<String> notMyHello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
         ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
-        Optional<Set<String>> selectionSet = PredicateTraversal.of(builder(AND)
-                        .addMember(builder(AND).addLeaf(notMyHello).build())
-                        .addMember(builder(AND).addLeaf(notMyGoodbye).build())
+        CompoundPredicateNode node = builder(AND)
+                .addMember(builder(AND).addLeaf(notMyHello).build())
+                .addMember(builder(AND).addLeaf(notMyGoodbye).build())
+                .addMember(builder(OR)
+                        .addMember(CompoundPredicateNode.empty(null))
                         .addMember(builder(OR)
-                                        .addMember(CompoundPredicateNode.empty(null))
-                                        .addMember(builder(OR)
-                                                .addLeaf(myHello)
-                                                .addLeaf(myGoodbye)
-                                                .build())
-                                        .build()
-                        ).build()
-        ).assembleFilterings(myMockHandle.getColumnName());
+                                .addLeaf(myHello)
+                                .addLeaf(myGoodbye)
+                                .build())
+                        .build()
+                ).build();
+        int nodeCount = node.countNodes();
+        assertEquals(nodeCount,4);
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node
+        ).assembleEqualsPredicateValues(myMockHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),2);
     }
