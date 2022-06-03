@@ -56,4 +56,4 @@ where reportid = '000186c8-0000-1000-8080-808080808080-InterfaceMessage-7298fc00
   and groupingversion = '00000000-0000-1000-0000-000000000000'
  -- and sectype = 'CorporateBond';
 --and rownum between 100 and 1100;
-and rownum = 1000;
+and rownum between 1000 and 2000;

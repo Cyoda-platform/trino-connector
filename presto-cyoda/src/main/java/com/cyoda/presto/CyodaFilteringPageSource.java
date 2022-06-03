@@ -37,6 +37,7 @@ import com.facebook.presto.spi.PrestoException;
 import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -101,6 +102,7 @@ public class CyodaFilteringPageSource<T>
                         tableHandle,
                         predicates,
                         SizeListener.NOT_LISTENING)
+                .subscribeOn(Schedulers.parallel())  // Probably the default.
                 .toIterable();
     }
 
