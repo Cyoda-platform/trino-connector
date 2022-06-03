@@ -204,21 +204,6 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         return CyodaStaticReportTable.REPORT_ROWS.name();
     }
 
-    protected Iterable<RowHandle> groupsIterator(
-            AuthContext authContext,
-            int pageSize,
-            CyodaTableHandle tableHandle,
-            ColumnPredicateNode<Any> withReportPredicate,
-            @Nonnull GroupingHandle handle,
-            SizeListener listener
-    ) {
-        String groupValueJsonBase64 = handle.groupHeader.getGroupValuesJsonBase64();
-        if ( groupValueJsonBase64 == null ) return Collections::emptyIterator;
-        CompoundPredicateNode predicates = getCompoundPredicateNodeForInternal(tableHandle, withReportPredicate, handle);
-
-        return () -> internalReportRowsApiHandler.asFlux(authContext,pageSize, tableHandle, predicates,listener).toIterable().iterator();
-    }
-
     protected Flux<RowHandle> internalFlux(
             AuthContext authContext,
             int pageSize,

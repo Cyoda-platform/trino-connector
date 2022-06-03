@@ -216,6 +216,7 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
                         List<RowHandle> handles = item.getContent().stream()
                                 .map(reportRow -> new RowHandle(reportId, groupingVersion, groupJsonString, reportRow, rowNum.incrementAndGet()))
                                 .filter(reportRow -> rowNumHandle.isInRowWindow(reportRow.rowNum))
+                                .limit(rowNumHandle.size) // This to ringfence buggy API that sends one than the page size.
                                 .collect(Collectors.toList());
                         PagedModel.PageMetadata apiMeta = Optional.ofNullable(fieldsViews.getMetadata()).orElseThrow(() -> new IllegalStateException("No meta attached"));
                         PagedModel.PageMetadata metadata = rowNumHandle.createPageMeta(page, pageSize, item, apiMeta);

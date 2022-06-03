@@ -113,19 +113,6 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
         return REPORT_GROUPS.name();
     }
 
-    protected Iterable<GroupingHandle> groupsIterator(
-            AuthContext authContext,
-            int pageSize,
-            CyodaTableHandle tableHandle,
-            ColumnPredicateNode<Any> predicates,
-            @Nonnull DistributedReportInfoView stats,
-            SizeListener listener
-    ) {
-        if (stats.getGroupsCount() == 0 ) return Collections::emptyIterator;
-        CompoundPredicateNode thesePredicates = getCompoundPredicateNode(tableHandle, predicates, stats);
-        return () -> reportGroupsHandler.asFlux(authContext,pageSize, tableHandle, thesePredicates,listener).toIterable().iterator();
-    }
-
     private CompoundPredicateNode getCompoundPredicateNode(CyodaTableHandle tableHandle, ColumnPredicateNode<Any> predicates, DistributedReportInfoView stats) {
         String reportId = stats.getId();
         UUID groupingVersion = stats.getGroupingVersion();

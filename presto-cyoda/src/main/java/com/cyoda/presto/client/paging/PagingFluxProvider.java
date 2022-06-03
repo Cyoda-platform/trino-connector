@@ -22,6 +22,7 @@ import com.facebook.presto.spi.PrestoException;
 import org.springframework.hateoas.PagedModel;
 import reactor.core.publisher.Flux;
 
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
@@ -37,12 +38,28 @@ public class PagingFluxProvider<T> {
         this.pagingHandleGetter = pagingHandleGetter;
     }
 
-    public Flux<T> create(int startPage) {
+    static class PagingData<T> {
+        private final AtomicLong currentElementOnPage = new AtomicLong();
+        private final long maxPages;
+        private final long maxEntries;
+        private final long metaPageSize;
+        private final long itemLimit;
+        private final Iterator<T> contentIter;
+
+        PagingData(long maxPages, long maxEntries, long metaPageSize, long itemLimit, Iterator<T> contentIter) {
+            this.maxPages = maxPages;
+            this.maxEntries = maxEntries;
+            this.metaPageSize = metaPageSize;
+            this.itemLimit = itemLimit;
+            this.contentIter = contentIter;
+        }
+    }
+
+    public Flux<T> generate(int startPage) {
         AtomicInteger currentPage = new AtomicInteger(startPage);
-        return Flux.create(sink -> {
+        final AtomicLong currentPos = new AtomicLong();
+        return Flux.generate(() -> {
             PagingHandle<T> pagingHandle = pagingHandleGetter.apply(currentPage.getAndIncrement());
-            AtomicLong currentPos = new AtomicLong();
-            AtomicLong currentElementOnPage = new AtomicLong();
             // We fix the meta which tells us about how many pages / elements on the first call
             // We assume that this is effectively a committed read, which is true if we are
             // reading from Cyoda at a fixed pointInTime.
@@ -53,27 +70,49 @@ public class PagingFluxProvider<T> {
             long maxPages = pageMeta.getTotalPages();
             long maxEntries = pageMeta.getTotalElements();
             long metaPageSize = pageMeta.getSize();
-            while(currentPage.get() <= maxPages && currentPos.get() < maxEntries ) {
-                PagedModel<T> pagedModel = pagingHandle.getPagedModel().orElse(PagedModel.empty());
-                long itemLimit = currentPage.get() == maxPages ? maxEntries-currentPos.get() : metaPageSize;
-                pagedModel.getContent().stream().limit(itemLimit).forEach(item -> {
+            PagedModel<T> pagedModel = pagingHandle.getPagedModel().orElse(PagedModel.empty());
+            long itemLimit = currentPage.get() == maxPages ? maxEntries - currentPos.get() : metaPageSize;
+            Iterator<T> contentIter = pagedModel.getContent().iterator();
+            return new PagingData<>(maxPages, maxEntries, metaPageSize, itemLimit, contentIter);
+        }, (pageData, sink) -> {
+            if (currentPos.get() < pageData.maxEntries) { // This is to safeguard against API sending more than wanted
+                if (pageData.contentIter.hasNext() && pageData.currentElementOnPage.get() < pageData.itemLimit) {
+                    T item = pageData.contentIter.next();
                     long theCurrentPos = currentPos.incrementAndGet();
-                    long theCurrentElementOnPage = currentElementOnPage.incrementAndGet();
+                    long theCurrentElementOnPage = pageData.currentElementOnPage.incrementAndGet();
 
-                    LOG.debug("got element %d / %d (Total) with %s",()->theCurrentElementOnPage, ()->theCurrentPos, () -> item);
-                    if ( theCurrentPos > maxEntries ) {
-                        throw new IllegalStateException("Reading more than expected. Actual="+ theCurrentPos+ ", Max="+maxEntries);
+                    LOG.debug("got element %d / %d (Total) with %s", () -> theCurrentElementOnPage, () -> theCurrentPos, () -> item);
+                    if (theCurrentPos > pageData.maxEntries) {
+                        throw new IllegalStateException("Reading more than expected. Actual=" + theCurrentPos + ", Max=" + pageData.maxEntries);
                     }
                     sink.next(item);
-                });
-                if ( currentPage.get() < maxPages ) {
-                    pagingHandle = pagingHandleGetter.apply(currentPage.getAndIncrement());
-                    currentElementOnPage.set(0);
-                } else {
-                    currentPage.getAndIncrement();
+                } else { // Load next page
+                    if (currentPage.get() < pageData.maxPages) {
+                        PagingHandle<T> nextPage = pagingHandleGetter.apply(currentPage.getAndIncrement());
+                        pageData.currentElementOnPage.set(0);
+                        PagedModel<T> pagedModel = nextPage.getPagedModel().orElse(PagedModel.empty());
+                        long itemLimit = currentPage.get() == pageData.maxPages ? pageData.maxEntries - currentPos.get()
+                                : pageData.metaPageSize;
+                        Iterator<T> iterator = pagedModel.getContent().iterator();
+                        pageData = new PagingData<>(
+                                pageData.maxPages,
+                                pageData.maxEntries,
+                                pageData.metaPageSize,
+                                itemLimit,
+                                iterator
+                        );
+                    }
+                    if (pageData.contentIter.hasNext() && pageData.itemLimit>=1) {
+                        sink.next(pageData.contentIter.next());
+                        currentPos.incrementAndGet();
+                    } else {
+                        sink.complete();
+                    }
                 }
+            } else {
+                sink.complete();
             }
-            sink.complete();
+            return pageData;
         });
     }
 }

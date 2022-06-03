@@ -45,13 +45,15 @@ where reportId in (
 and groupingversion = '00000000-0000-1000-0000-000000000000';
 
 -- Demo
--- select * from cyoda.reporting."play-interfacemessage-fix extract report"
---     where reportid = '000186be-0000-1000-8080-808080808080-InterfaceMessage-e19017f0-dd28-11ec-9424-901b0e8e460e'
---     and groupingversion = '00000000-0000-1000-0000-000000000000';
+select * from cyoda.reporting."play-interfacemessage-fix extract report"
+    where reportid = '000186be-0000-1000-8080-808080808080-InterfaceMessage-46d6eb20-dffe-11ec-ae2e-901b0ebd9b67'
+    and groupingversion = '00000000-0000-1000-0000-000000000000'
+    and rownum between 5100 and 5101;
 
 -- Local
 select * from cyoda.reporting."play-interfacemessage-fix extract report"
 where reportid = '000186c8-0000-1000-8080-808080808080-InterfaceMessage-7298fc00-e173-11ec-90e5-967e648b60e9'
   and groupingversion = '00000000-0000-1000-0000-000000000000'
-and rownum between 100 and 1000;
---and rownum between 5100 and 5200;
+ -- and sectype = 'CorporateBond';
+--and rownum between 100 and 1100;
+and rownum = 1000;
