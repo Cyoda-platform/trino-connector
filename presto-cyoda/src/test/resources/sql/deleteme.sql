@@ -53,5 +53,5 @@ and groupingversion = '00000000-0000-1000-0000-000000000000';
 select * from cyoda.reporting."play-interfacemessage-fix extract report"
 where reportid = '000186c8-0000-1000-8080-808080808080-InterfaceMessage-7298fc00-e173-11ec-90e5-967e648b60e9'
   and groupingversion = '00000000-0000-1000-0000-000000000000'
-and rownum between 100 and 110;
+and rownum between 100 and 1000;
 --and rownum between 5100 and 5200;

@@ -22,6 +22,7 @@ import com.facebook.presto.spi.PrestoException;
 import org.springframework.hateoas.PagedModel;
 import reactor.core.publisher.Flux;
 
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
@@ -36,10 +37,10 @@ public class PagingFluxProvider<T> {
         this.pagingHandleGetter = pagingHandleGetter;
     }
 
-    public Flux<T> create() {
+    public Flux<T> create(int startPage) {
+        AtomicInteger currentPage = new AtomicInteger(startPage);
         return Flux.create(sink -> {
-            int currentPage = 0;
-            PagingHandle<T> pagingHandle = pagingHandleGetter.apply(currentPage++);
+            PagingHandle<T> pagingHandle = pagingHandleGetter.apply(currentPage.getAndIncrement());
             AtomicLong currentPos = new AtomicLong();
             AtomicLong currentElementOnPage = new AtomicLong();
             // We fix the meta which tells us about how many pages / elements on the first call
@@ -52,9 +53,10 @@ public class PagingFluxProvider<T> {
             long maxPages = pageMeta.getTotalPages();
             long maxEntries = pageMeta.getTotalElements();
             long metaPageSize = pageMeta.getSize();
-            while(currentPage <= maxPages) {
+            while(currentPage.get() <= maxPages && currentPos.get() < maxEntries ) {
                 PagedModel<T> pagedModel = pagingHandle.getPagedModel().orElse(PagedModel.empty());
-                pagedModel.getContent().stream().limit(metaPageSize).forEach(item -> {
+                long itemLimit = currentPage.get() == maxPages ? maxEntries-currentPos.get() : metaPageSize;
+                pagedModel.getContent().stream().limit(itemLimit).forEach(item -> {
                     long theCurrentPos = currentPos.incrementAndGet();
                     long theCurrentElementOnPage = currentElementOnPage.incrementAndGet();
 
@@ -64,11 +66,11 @@ public class PagingFluxProvider<T> {
                     }
                     sink.next(item);
                 });
-                if ( currentPage < maxPages ) {
-                    pagingHandle = pagingHandleGetter.apply(currentPage++);
+                if ( currentPage.get() < maxPages ) {
+                    pagingHandle = pagingHandleGetter.apply(currentPage.getAndIncrement());
                     currentElementOnPage.set(0);
                 } else {
-                    currentPage++;
+                    currentPage.getAndIncrement();
                 }
             }
             sink.complete();

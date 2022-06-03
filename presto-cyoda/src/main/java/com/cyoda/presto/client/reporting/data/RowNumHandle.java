@@ -78,7 +78,7 @@ public class RowNumHandle {
         } else {
             thePage = (minRownum-1)/theSize + page;
         }
-        long offset = (isEqualsPredicate || isRangePredicate) ? minRownum-1 : thePage*theSize;
+        long offset = thePage*theSize;
         return new RowNumHandle(isEqualsPredicate, isRangePredicate, minRownum, maxRownum, theSize, thePage, offset);
     }
 

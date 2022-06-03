@@ -47,6 +47,6 @@ public abstract class BasePagingReportsApiHandler<T> extends BaseReportsApiHandl
         List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
         Function<Integer, PagingHandle<T>> pagingHandleGetter = page -> new PagingHandle<>(authContext, this, page, pageSize,
                 projectedColumns, predicates,listener);
-        return new PagingFluxProvider<>(pagingHandleGetter).create();
+        return new PagingFluxProvider<>(pagingHandleGetter).create(0);
     };
 }
