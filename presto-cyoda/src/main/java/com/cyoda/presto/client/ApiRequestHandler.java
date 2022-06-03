@@ -41,9 +41,6 @@ public interface ApiRequestHandler<T> {
     @SuppressWarnings("java:S1452")
     DataTypeValue<?> getValue(@Nullable T entity, CyodaColumnHandle field);
 
-    Iterator<T> getResponseIterator(AuthContext authContext, int pageSize, CyodaTableHandle tableHandle,
-                                    CompoundPredicateNode predicates, SizeListener listener);
-
     default Flux<T> asFlux(AuthContext authContext, int pageSize, CyodaTableHandle tableHandle,
                    CompoundPredicateNode predicates, SizeListener listener) {
         throw new UnsupportedOperationException("not yet implemented");

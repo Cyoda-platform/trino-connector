@@ -22,15 +22,15 @@ import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.spi.SchemaTableName;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -59,14 +59,11 @@ public class CyodaClient {
         this.requestHandlerProvider = requireNonNull(requestHandlerProvider, "requestHandlerProvider is null");
 
         tableFunction = tableFunction();
-        tableCache = CacheBuilder.newBuilder()
-                .expireAfterAccess(Duration.ofSeconds(10))
-                .build(new CacheLoader<AuthContext, Map<String, CyodaTable>>() {
-                    @Override
-                    public Map<String, CyodaTable> load(@Nonnull AuthContext key) throws Exception {
-                            LOG.debug("Reloading Tables Cache");
-                            return tableFunction.apply(key);
-                    }
+        tableCache = Caffeine.newBuilder()
+                .expireAfterAccess(Duration.ofMinutes(2))
+                .build(key -> {
+                    LOG.debug("Reloading Tables Cache");
+                    return tableFunction.apply(key);
                 });
     }
 
@@ -86,12 +83,14 @@ public class CyodaClient {
 
 
     public Set<String> getTableNames(AuthContext authContext) {
-        return tableCache.getUnchecked(authContext).keySet();
+        return Optional.ofNullable(tableCache.get(authContext)).map(Map::keySet)
+                .orElseThrow(()->new IllegalArgumentException("Cannot load tables")
+        );
     }
 
     public CyodaTable getTable(AuthContext authContext, SchemaTableName tableName) {
         requireNonNull(tableName, "tableName is null");
-        Map<String, CyodaTable> tableMap = tableCache.getUnchecked(authContext);
+        Map<String, CyodaTable> tableMap = tableCache.get(authContext);
         if (tableMap == null) {
             return null;
         }

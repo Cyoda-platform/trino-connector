@@ -27,6 +27,7 @@
     <version>0.272</version>
 
     <properties>
+        <!--suppress UnresolvedMavenProperty -->
         <air.main.basedir>${project.parent.basedir}</air.main.basedir>
         <main-class>com.facebook.presto.cli.Presto</main-class>
         <sonar.skip>true</sonar.skip>

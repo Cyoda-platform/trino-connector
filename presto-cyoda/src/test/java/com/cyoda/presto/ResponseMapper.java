@@ -18,8 +18,9 @@
 package com.cyoda.presto;
 
 import java.io.IOException;
+import java.util.Optional;
 
 public interface ResponseMapper {
 
-    String resolveResponse() throws IOException;
+    Optional<String> resolveResponse() throws IOException;
 }

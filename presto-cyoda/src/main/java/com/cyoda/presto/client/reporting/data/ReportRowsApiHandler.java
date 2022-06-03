@@ -142,6 +142,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
 
     @Override
     protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
+        LOG.info("Refreshing Field Definitions");
         Map<TableDefinitionHandle, List<ColumnDefinition>> result = new HashMap<>();
         Flux<ReportDefinitionHandle> flux = fluxFunction.apply(authContext);
         flux.doOnNext(item -> {
@@ -272,25 +273,6 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
     @Override
     protected @Nonnull Object mapFieldValue(@Nonnull final Object value, CyodaColumnHandle columnHandle) {
         return super.mapFieldValue(value,columnHandle);
-    }
-
-    @Override
-    public Iterator<RowHandle> getResponseIterator(
-            AuthContext authContext,
-            int pageSize,
-            CyodaTableHandle tableHandle,
-            CompoundPredicateNode predicates,
-            SizeListener listener
-    ) {
-        logCreation(pageSize, tableHandle, predicates, LOG);
-        CompoundPredicateNode withReportPredicate = getCompoundPredicateNode(tableHandle, predicates);
-
-        Iterable<GroupingHandle> statsIterable = () -> groupsApiHandler
-                .getResponseIterator(authContext,pageSize, tableHandle, withReportPredicate,listener);
-
-        return StreamSupport.stream(statsIterable.spliterator(),true)
-                .flatMap(it-> StreamSupport.stream(groupsIterator(authContext,pageSize,tableHandle,withReportPredicate,it,listener).spliterator(), true))
-                .iterator();
     }
 
     @Override

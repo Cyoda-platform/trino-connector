@@ -185,25 +185,6 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
         return super.mapFieldValue(value,columnHandle);
     }
 
-
-    @Override
-    public Iterator<GroupingHandle> getResponseIterator(
-            AuthContext authContext,
-            int pageSize,
-            CyodaTableHandle tableHandle,
-            CompoundPredicateNode predicates,
-            SizeListener listener
-    ) {
-        logCreation(pageSize, tableHandle, predicates, LOG);
-        Iterable<DistributedReportInfoView> statsIterable = () -> statisticsApiHandler
-                .getResponseIterator(authContext,pageSize, tableHandle, predicates,listener);
-
-        return StreamSupport.stream(statsIterable.spliterator(),true)
-                .flatMap(it->
-                        StreamSupport.stream(groupsIterator(authContext,pageSize,tableHandle,predicates,it,listener).spliterator(), true)
-                ).iterator();
-    }
-
     @Override
     public Flux<GroupingHandle> asFlux(AuthContext authContext, int pageSize, CyodaTableHandle tableHandle, CompoundPredicateNode predicates, SizeListener listener) {
         logCreation(pageSize, tableHandle, predicates, LOG);

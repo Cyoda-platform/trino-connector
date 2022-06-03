@@ -26,7 +26,6 @@ import com.facebook.presto.common.type.VarcharType;
 import io.airlift.slice.Slices;
 import org.testng.annotations.Test;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;

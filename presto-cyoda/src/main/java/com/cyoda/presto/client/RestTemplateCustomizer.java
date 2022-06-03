@@ -25,9 +25,8 @@ import com.cyoda.presto.auth.RefreshContext;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.security.AccessDeniedException;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.net.HostAndPort;
 import okhttp3.ConnectionPool;
 import okhttp3.Credentials;
@@ -40,7 +39,6 @@ import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
@@ -79,25 +77,18 @@ public class RestTemplateCustomizer {
     @Inject
     public RestTemplateCustomizer(CyodaConfig config) {
         this.config = config;
-        restTemplateCache = CacheBuilder.newBuilder()
+        restTemplateCache = Caffeine.newBuilder()
                 .maximumSize(100)
-                .build(new CacheLoader<AuthContext, RestTemplate>() {
-                    @Override
-                    public RestTemplate load(@Nonnull AuthContext key) {
-                        LOG.debug(()->"creating RestTemplate for "+key.getPayload().getUsername());
-
-                        return newRestTemplate(ACCESS,key,HAL_CONVERTERS);
-                    }
+                .build(key -> {
+                    LOG.debug(()->"creating RestTemplate for "+key.getPayload().getUsername());
+                    return newRestTemplate(ACCESS,key,HAL_CONVERTERS);
                 });
 
-        refreshRestTemplateCache = CacheBuilder.newBuilder()
+        refreshRestTemplateCache = Caffeine.newBuilder()
                 .maximumSize(100)
-                .build(new CacheLoader<AuthContext, RestTemplate>() {
-                    @Override
-                    public RestTemplate load(@Nonnull AuthContext key) {
-                        LOG.debug(()->"creating refresh RestTemplate for "+key.getPayload().getUsername());
-                        return newRestTemplate(REFRESH,key,null);
-                    }
+                .build(key -> {
+                    LOG.debug(()->"creating refresh RestTemplate for "+key.getPayload().getUsername());
+                    return newRestTemplate(REFRESH,key,null);
                 });
 
         this.unauthorizedRestTemplate = newRestTemplate(ACCESS,null,null);
@@ -116,7 +107,7 @@ public class RestTemplateCustomizer {
     }
 
     public RestTemplate getRestTemplate(AuthContext authContext) {
-            return restTemplateCache.getUnchecked(authContext);
+            return restTemplateCache.get(authContext);
     }
 
     public RestTemplate getUnauthorizedRestTemplate() {
@@ -251,7 +242,8 @@ public class RestTemplateCustomizer {
 
     private String getAccessToken(AuthContext authContext) {
         if (needANewToken(authContext)) {
-            RestTemplate restTemplate = refreshRestTemplateCache.getUnchecked(authContext);
+            RestTemplate restTemplate = Optional.ofNullable(refreshRestTemplateCache.get(authContext))
+                    .orElseThrow(()->new IllegalArgumentException("Cannot get RestTemplate"));
             ResponseEntity<RefreshContext> response  = restTemplate.getForEntity(refreshUri, RefreshContext.class);
             if ( response.getStatusCode().is2xxSuccessful() ) {
                 RefreshContext refreshContext = Optional.ofNullable(

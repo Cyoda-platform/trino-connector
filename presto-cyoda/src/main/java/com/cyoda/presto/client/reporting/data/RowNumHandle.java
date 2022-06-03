@@ -18,17 +18,13 @@
 package com.cyoda.presto.client.reporting.data;
 
 import com.cyoda.presto.client.logic.ColumnPredicate;
-import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.google.common.base.MoreObjects;
-import org.checkerframework.checker.nullness.Opt;
 import org.springframework.hateoas.PagedModel;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class RowNumHandle {

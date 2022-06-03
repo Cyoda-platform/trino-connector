@@ -46,7 +46,7 @@ public class ResponseMapperProvider {
         ResponseMapper mapper = Optional.ofNullable(pathInfoToMapper)
                 .orElseThrow(() -> new IllegalStateException("no mapper for " + request.getRequestURI()))
                 .get(requestURI);
-        String responseStr = mapper.resolveResponse();
+        String responseStr = mapper.resolveResponse().orElse("");
         ByteArrayInputStream ins = new ByteArrayInputStream(responseStr.getBytes(StandardCharsets.UTF_8));
         ByteStreams.copy(ins, response.getOutputStream());
         response.setContentType(MediaTypes.HAL_JSON.toString());

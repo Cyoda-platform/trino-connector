@@ -20,8 +20,12 @@ package com.cyoda.presto.client;
 import com.cyoda.presto.auth.AuthContext;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.SchemaTableName;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import com.google.common.base.Objects;
 
 import javax.inject.Inject;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
@@ -33,6 +37,12 @@ import static java.util.Objects.requireNonNull;
 public class CyodaApiRequestHandlerProvider {
 
     private final Map<String, ApiRequestHandler<?>> handlers;
+
+    LoadingCache<AuthContextSchemaTableName, ApiRequestHandler<?>> handlerCache = Caffeine.newBuilder()
+            .maximumSize(100)
+            .expireAfterWrite(Duration.ofMinutes(5))
+            .refreshAfterWrite(Duration.ofMinutes(1))
+            .build(this::getHandlerForTable);
 
     @SuppressWarnings({"unchecked", "squid:S3740", "rawtypes"})
     @Inject
@@ -48,14 +58,41 @@ public class CyodaApiRequestHandlerProvider {
 
     @SuppressWarnings({"squid:S1452"})
     public ApiRequestHandler<?> getHandler(AuthContext authContext, SchemaTableName tableName) {
-        return handlers.values().stream().filter(h -> h.hasTable(authContext, tableName)).findAny().orElseThrow(
+        return handlerCache.get(new AuthContextSchemaTableName(authContext,tableName));
+    }
+    private ApiRequestHandler<?> getHandlerForTable(AuthContextSchemaTableName value) {
+        return handlers.values().stream().filter(h -> h.hasTable(value.authContext, value.schemaTableName)).findAny().orElseThrow(
                 () -> new PrestoException(GENERIC_INTERNAL_ERROR, "[Cyoda]:" + this.getClass().getSimpleName() +
-                        ":unexpected error trying to get the Handler for table " + tableName)
+                        ":unexpected error trying to get the Handler for table " + value.schemaTableName)
         );
     }
 
     @SuppressWarnings({"squid:S1452"})
     public Collection<ApiRequestHandler<?>> getHandlers() {
         return handlers.values();
+    }
+
+
+    static class AuthContextSchemaTableName {
+        private final AuthContext authContext;
+        private final SchemaTableName schemaTableName;
+
+        AuthContextSchemaTableName(AuthContext authContext, SchemaTableName schemaTableName) {
+            this.authContext = authContext;
+            this.schemaTableName = schemaTableName;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            AuthContextSchemaTableName that = (AuthContextSchemaTableName) o;
+            return Objects.equal(authContext, that.authContext) && Objects.equal(schemaTableName, that.schemaTableName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(authContext, schemaTableName);
+        }
     }
 }
