@@ -17,6 +17,7 @@
 
 package com.cyoda.presto.client.types;
 
+import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
 import com.cyoda.presto.client.logic.converters.impl.BigDecimalPrestoValueConverter;
 import com.facebook.presto.common.block.Block;
 import com.facebook.presto.common.type.AbstractLongType;
@@ -233,6 +234,13 @@ public class BigDecimalOperators {
     public static long castToReal(@SqlType(BigDecimalType.BIG_DECIMAL) Slice value)
     {
         return floatToRawIntBits(((Double) toBigDecimal(value).doubleValue()).floatValue());
+    }
+
+    @ScalarOperator(CAST)
+    @SqlType(StandardTypes.DOUBLE)
+    public static double castToDouble(@SqlType(BigDecimalType.BIG_DECIMAL) Slice value)
+    {
+        return (toBigDecimal(value).doubleValue());
     }
 
     @ScalarOperator(CAST)
