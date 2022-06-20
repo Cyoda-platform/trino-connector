@@ -99,8 +99,8 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
                     format("Incompatible type. %s is not assignable from %s", javaType, value.getClass()));
         }
         this.javaType = javaType;
-        final DataType fromJavaType = DataType.dataTypeFromClass(javaType);
-        requireNonNull(fromJavaType, javaType + " not mapped as a DataType");
+        final DataType fromJavaType = DataType.fromClass(javaType)
+                .orElseThrow(()->new NullPointerException(javaType + " not mapped as a DataType"));
         this.supportedDataType = fromJavaType.asSupported();
     }
 

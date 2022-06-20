@@ -250,12 +250,4 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
         return fields.get(columnHandle.getColumnName());
     }
 
-    @Override
-    protected @Nonnull Object mapFieldValue(@Nonnull Object field, CyodaColumnHandle columnHandle) {
-        if (columnHandle.getDataType() == LOCAL_DATE_TIME) {
-            return toLocalDateTime((String) field);
-        }
-        return field;
-    }
-
 }

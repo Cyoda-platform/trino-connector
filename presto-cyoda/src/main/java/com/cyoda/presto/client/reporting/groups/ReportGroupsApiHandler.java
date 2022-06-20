@@ -168,11 +168,6 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
     }
 
     @Override
-    protected @Nonnull Object mapFieldValue(@Nonnull final Object value, CyodaColumnHandle columnHandle) {
-        return super.mapFieldValue(value,columnHandle);
-    }
-
-    @Override
     public Flux<GroupingHandle> asFlux(AuthContext authContext, int pageSize, CyodaTableHandle tableHandle, CompoundPredicateNode predicates, SizeListener listener) {
         logCreation(pageSize, tableHandle, predicates, LOG);
         Flux<DistributedReportInfoView> statsFlux = statisticsApiHandler

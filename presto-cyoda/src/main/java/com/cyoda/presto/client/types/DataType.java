@@ -78,45 +78,47 @@ import java.util.stream.Collectors;
  * This might help to figure out what the correct presto type is: com.facebook.presto.client.FixJsonDataUtils
  */
 public enum DataType {
-    STRING(String.class, StandardTypes.VARCHAR),
-    BYTE(Byte.class, StandardTypes.TINYINT),
-    DOUBLE(Double.class, StandardTypes.DOUBLE),
-    INTEGER(Integer.class, StandardTypes.INTEGER),
-    BIG_DECIMAL(BigDecimal.class, BigDecimalType.BIG_DECIMAL),
-    BIG_INTEGER(BigInteger.class, StandardTypes.BIGINT),
-    BOOLEAN(Boolean.class,StandardTypes.BOOLEAN),
-    LOCAL_DATE(LocalDate.class,StandardTypes.DATE),
-    LOCAL_DATE_TIME(LocalDateTime.class,StandardTypes.TIMESTAMP),
-    SHORT(Short.class,StandardTypes.SMALLINT),
-    CHARACTER(Character.class,StandardTypes.CHAR),
-    LONG(Long.class,StandardTypes.BIGINT),
-    FLOAT(Float.class, StandardTypes.REAL),
-    DATE(Date.class,StandardTypes.TIMESTAMP),
-    ZONED_DATE_TIME(ZonedDateTime.class,StandardTypes.TIMESTAMP_WITH_TIME_ZONE),
-    YEAR(Year.class,StandardTypes.INTEGER),
-    YEAR_MONTH(YearMonth.class,StandardTypes.VARCHAR),
-    LOCAL_TIME(LocalTime.class,StandardTypes.TIME), // Unsure
-    UUID_TYPE(UUID.class, UUIDPrestoValueConverter.TYPE_STRING),
-    BYTE_ARRAY(byte[].class,StandardTypes.VARBINARY),
-    BYTE_BUFFER(ByteBuffer.class,StandardTypes.VARBINARY),
-    CLASS(Class.class,StandardTypes.VARCHAR),
-    LOCALE(Locale.class,StandardTypes.VARCHAR),
-    NULL(null,null),
-    OBJECT(Object.class,StandardTypes.JSON), //Unsure. We will transform these to Json strings.
-    ARRAY(Object[].class,StandardTypes.ARRAY),
-    LIST(List.class,StandardTypes.ARRAY),
-    MAP(Map.class,StandardTypes.MAP),
-    SET(Set.class,StandardTypes.ARRAY),
-    ANY(Any.class,null); // Placeholder for anything. To differentiate from Object.
-
+    STRING          (String.class,          StandardTypes.VARCHAR,                  false),
+    BYTE            (Byte.class,            StandardTypes.TINYINT,                  true),
+    DOUBLE          (Double.class,          StandardTypes.DOUBLE,                   false),
+    INTEGER         (Integer.class,         StandardTypes.INTEGER,                  true),
+    BIG_DECIMAL     (BigDecimal.class,      BigDecimalType.BIG_DECIMAL,             false),
+    BIG_INTEGER     (BigInteger.class,      StandardTypes.BIGINT,                   false),
+    BOOLEAN         (Boolean.class,         StandardTypes.BOOLEAN,                  false),
+    LOCAL_DATE      (LocalDate.class,       StandardTypes.DATE,                     true),
+    LOCAL_DATE_TIME (LocalDateTime.class,   StandardTypes.TIMESTAMP,                true),
+    SHORT           (Short.class,           StandardTypes.SMALLINT,                 true),
+    CHARACTER       (Character.class,       StandardTypes.CHAR,                     false),
+    LONG            (Long.class,            StandardTypes.BIGINT,                   true),
+    FLOAT           (Float.class,           StandardTypes.REAL,                     false),
+    DATE            (Date.class,            StandardTypes.TIMESTAMP,                true),
+    ZONED_DATE_TIME (ZonedDateTime.class,   StandardTypes.TIMESTAMP_WITH_TIME_ZONE, true),
+    YEAR            (Year.class,            StandardTypes.INTEGER,                  true),
+    YEAR_MONTH      (YearMonth.class,       StandardTypes.VARCHAR,                  false),
+    LOCAL_TIME      (LocalTime.class,       StandardTypes.TIME,                     true), // Unsure
+    UUID_TYPE       (UUID.class,            UUIDPrestoValueConverter.TYPE_STRING,   false),
+    BYTE_ARRAY      (byte[].class,          StandardTypes.VARBINARY,                false),
+    BYTE_BUFFER     (ByteBuffer.class,      StandardTypes.VARBINARY,                false),
+    CLASS           (Class.class,           StandardTypes.VARCHAR,                  false),
+    LOCALE          (Locale.class,          StandardTypes.VARCHAR,                  false),
+    NULL            (null,                  null,                                   false),
+    OBJECT          (Object.class,          StandardTypes.JSON,                     false), //Unsure. We will transform these to Json strings.
+    ARRAY           (Object[].class,        StandardTypes.ARRAY,                    false),
+    LIST            (List.class,            StandardTypes.ARRAY,                    false),
+    MAP             (Map.class,             StandardTypes.MAP,                      false),
+    SET             (Set.class,             StandardTypes.ARRAY,                    false),
+    ANY             (Any.class,             null,                                   false); // Placeholder for anything. To differentiate from Object.
 
     private final Class<?> javaType;
     private final String typeString;
 
+    private final boolean isIntType;
 
-    DataType(Class<?> javaType, String typeString) {
+
+    DataType(Class<?> javaType, String typeString, boolean isIntType) {
         this.javaType = javaType;
         this.typeString = typeString;
+        this.isIntType = isIntType;
     }
 
 
@@ -138,6 +140,14 @@ public enum DataType {
 
     public boolean isBinary() {
         return this == BYTE_ARRAY || this == OBJECT ;
+    }
+
+    /**
+     * Can this DataType be converted to/from a long ?
+     * @return if this DataType can be converted to/from a long
+     */
+    public boolean isIntType() {
+        return isIntType;
     }
 
     // TODO: Need unit test to assert we have a SupportedDataType for each DataType.
@@ -221,16 +231,6 @@ public enum DataType {
             .putAll(primitiveClassToDataType)
             .build();
 
-    public static DataType dataTypeFromClass(Class<?> clazz) {
-        return Optional.ofNullable(classToDataType.get(clazz))
-                .orElse(Arrays.stream(DataType.values())
-                        .filter(it -> it.javaType != null)
-                        .filter(it->it.javaType.isAssignableFrom(clazz))
-                        .findAny()
-                        .orElse(null)
-                );
-    }
-
     public static Optional<DataType> fromClass(Class<?> clazz) {
        return Optional.ofNullable(classToDataType.get(clazz));
     }
@@ -259,29 +259,6 @@ public enum DataType {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet())
     );
-
-    private static List<DataType> integerBasedTypes = ImmutableList.<DataType>builder()
-            .add(BYTE)
-            .add(SHORT)
-            .add(INTEGER)
-            .add(LONG)
-            .add(YEAR)
-            .add(YEAR_MONTH)
-            .add(LOCAL_DATE_TIME)
-            .add(ZONED_DATE_TIME)
-            .add(LOCAL_DATE)
-            .add(DATE)
-            .build();
-
-    // TODO: Theoretically, for performance purposes, we could add this as an attribute of DataType
-    /**
-     * Can this DataType be converted to/from a long ?
-     * @param dataType to check
-     * @return if this DataType can be converted to/from a long
-     */
-    public static boolean isIntType(DataType dataType) {
-        return integerBasedTypes.contains(dataType);
-    }
 
 }
 

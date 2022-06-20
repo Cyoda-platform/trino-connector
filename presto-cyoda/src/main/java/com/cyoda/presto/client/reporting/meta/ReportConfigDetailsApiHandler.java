@@ -255,13 +255,13 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
 
             DataType dataType;
             dataType = mapDataType(
-                    Optional.ofNullable(DataType.dataTypeFromClass((Class<?>) colParType.getRawType())).orElse(DataType.OBJECT)
+                    DataType.fromClass((Class<?>) colParType.getRawType()).orElse(DataType.OBJECT)
             );
             Type[] actualTypeArguments = colParType.getActualTypeArguments();
             TypeSignature firstArg = Optional.ofNullable(actualTypeArguments.length > 0 ? (Class<?>) actualTypeArguments[0] : null)
-                    .map(arg -> TypesUtil.toType(DataType.dataTypeFromClass(arg).getTypeString(), null, null, typeManager).getTypeSignature()).orElse(null);
+                    .map(arg -> TypesUtil.toType(DataType.fromClass(arg).orElse(NULL).getTypeString(), null, null, typeManager).getTypeSignature()).orElse(null);
             TypeSignature secondArg = Optional.ofNullable(actualTypeArguments.length > 1 ? (Class<?>) actualTypeArguments[1] : null)
-                    .map(arg -> TypesUtil.toType(DataType.dataTypeFromClass(arg).getTypeString(), null, null, typeManager).getTypeSignature()).orElse(null);
+                    .map(arg -> TypesUtil.toType(DataType.fromClass(arg).orElse(NULL).getTypeString(), null, null, typeManager).getTypeSignature()).orElse(null);
             CyodaColumnHandle columnHandle = new CyodaColumnHandle(
                     connectorId.toString(),
                     columnName,
@@ -366,12 +366,6 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
 
         TemplateVariables vars = new TemplateVariables(builder.build());
         return UriTemplate.of(uri.toASCIIString()).with(vars);
-    }
-
-    @Nonnull
-    @Override
-    protected Object mapFieldValue(@Nonnull final Object value, CyodaColumnHandle columnHandle) {
-        return super.mapFieldValue(value, columnHandle);
     }
 
     @Nullable

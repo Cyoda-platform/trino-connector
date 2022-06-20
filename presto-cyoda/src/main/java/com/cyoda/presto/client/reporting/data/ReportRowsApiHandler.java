@@ -256,11 +256,6 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
     }
 
     @Override
-    protected @Nonnull Object mapFieldValue(@Nonnull final Object value, CyodaColumnHandle columnHandle) {
-        return super.mapFieldValue(value,columnHandle);
-    }
-
-    @Override
     public Flux<RowHandle> asFlux(
             AuthContext authContext,
             int pageSize,

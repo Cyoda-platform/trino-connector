@@ -173,53 +173,49 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
     // TODO: These belong in the PrestoValueConverter
     protected @Nonnull Object mapFieldValue(@Nonnull final Object value, CyodaColumnHandle columnHandle) {
         if (columnHandle.getDataType() == LIST) {
-            Type elementType = TypesUtil.getElementType(columnHandle.getColumnType());
-            return processList((List<?>) value, columnHandle, elementType);
+            return processList((List<?>) value, columnHandle);
         }
         if (columnHandle.getDataType() == ARRAY) {
-            Type elementType = TypesUtil.getElementType(columnHandle.getColumnType());
-            return processList(Arrays.stream(((Object[])value)).collect(Collectors.toList()), columnHandle, elementType)
+            return processList(Arrays.stream(((Object[])value)).collect(Collectors.toList()), columnHandle)
                     .toArray();
         }
 
+        //TODO when does this happen?
         if ( value instanceof List && columnHandle.getDataType() != LIST && ((List<?>)value).size() == 1) {
-            return mapFieldValue(((List<?>)value).get(0),columnHandle);
+            return mapFieldSingleValue(((List<?>)value).get(0),columnHandle.getDataType());
         }
 
-        if (columnHandle.getDataType() == UUID_TYPE && value instanceof String) {
+        return mapFieldSingleValue(value, columnHandle.getDataType());
+    }
+
+    private Object mapFieldSingleValue(Object value, DataType dataType) {
+        //TODO Converter's input is Slice
+        if (dataType == UUID_TYPE && value instanceof String) {
             return UUID.fromString((String) value);
         }
-        if (columnHandle.getDataType() == DATE && value instanceof String) {
+        //TODO Converter's input is Long here and for all other date types
+        if (dataType == DATE && value instanceof String) {
             return toDate((String) value);
         }
-        if (columnHandle.getDataType() == LOCAL_DATE_TIME && value instanceof String) {
+        if (dataType == LOCAL_DATE_TIME && value instanceof String) {
             return toLocalDateTime((String) value);
         }
-        if (columnHandle.getDataType() == LOCAL_DATE && value instanceof String) {
+        if (dataType == LOCAL_DATE && value instanceof String) {
             return toLocalDate((String) value);
         }
-        if (columnHandle.getDataType() == ZONED_DATE_TIME && value instanceof String) {
+        if (dataType == ZONED_DATE_TIME && value instanceof String) {
             return toZonedDateTime((String) value);
         }
-        if (columnHandle.getDataType() == BIG_DECIMAL && value instanceof Number && !(value instanceof BigDecimal)) {
+        //TODO Converter's input is Slice
+        if (dataType == BIG_DECIMAL && value instanceof Number && !(value instanceof BigDecimal)) {
             return BigDecimal.valueOf(((Number) value).doubleValue());
         }
         return value;
     }
 
-    private List<?> processList(List<?> value, CyodaColumnHandle columnHandle, Type elementType) {
-        return value.stream().map(it -> {
-            CyodaColumnHandle thisColumnHandle = new CyodaColumnHandle(
-                    columnHandle.getConnectorId(),
-                    columnHandle.getColumnName(),
-                    elementType,
-                    DataType.fromType(elementType),
-                    columnHandle.getOrdinalPosition(),
-                    columnHandle.getRequestHandlerKey(),
-                    columnHandle.getIsNullable()
-            );
-            return mapFieldValue(it, thisColumnHandle);
-        }).collect(Collectors.toList());
+    private List<?> processList(List<?> value, CyodaColumnHandle columnHandle) {
+        Type elementType = TypesUtil.getElementType(columnHandle.getColumnType());
+        return value.stream().map(it -> mapFieldSingleValue(it, DataType.fromType(elementType))).collect(Collectors.toList());
     }
 
     private ZonedDateTime toZonedDateTime(String str) {
@@ -232,11 +228,11 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         return Timestamp.valueOf(localDateTime);
     }
 
-    protected LocalDateTime toLocalDateTime(String str) {
+    private LocalDateTime toLocalDateTime(String str) {
         return LocalDateTime.parse(str, DateTimeFormatter.ISO_DATE_TIME);
     }
 
-    protected LocalDate toLocalDate(String str) {
+    private LocalDate toLocalDate(String str) {
         return LocalDate.parse(str, DateTimeFormatter.ISO_DATE);
     }
 
