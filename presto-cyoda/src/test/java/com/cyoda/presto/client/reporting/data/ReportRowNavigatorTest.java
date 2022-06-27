@@ -17,6 +17,7 @@
 
 package com.cyoda.presto.client.reporting.data;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.testng.annotations.Test;
 
@@ -117,6 +118,146 @@ public class ReportRowNavigatorTest {
         String path = "messageBody@org#cyoda#gs#business#model#lei#v2016#LEIRecordTypeBody.content@org#gleif#data#schema#leidata#_2016#LEIRecordType.lei";
         Map<String, Object> map = ImmutableMap.of(
                 "messageBody", "this should be a map"
+        );
+        try {
+            ReportRowNavigator.getValue(path,map);
+            fail("should not get here");
+        } catch (Exception e) {
+            assertTrue(e.getMessage().length()>0);
+        }
+    }
+
+    @Test
+    public void testListWithStarAndOneMember() {
+        String path = "org@net#cyoda#saas#model#dto#Organisation.people.[*]@net#cyoda#saas#model#dto#Person.firstName";
+        String firstPerson = "First Person";
+        Map<String, Object> map = ImmutableMap.of(
+                "org", ImmutableMap.of(
+                        "people", ImmutableList.of(
+                                ImmutableMap.of(
+                                        "firstName", firstPerson,
+                                        "nationality", "Latvian",
+                                        "title", "director"
+                                )
+                        )
+                ),
+                "name", "ZLDS TRANSPORT LTD"
+        );
+        Object value = ReportRowNavigator.getValue(path,map);
+        assertEquals(value,ImmutableList.of(firstPerson));
+    }
+
+    @Test
+    public void testListWithIndexAndOneMember() {
+        String path = "org@net#cyoda#saas#model#dto#Organisation.people.[0]@net#cyoda#saas#model#dto#Person.firstName";
+        String firstPerson = "First Person";
+        Map<String, Object> map = ImmutableMap.of(
+                "org", ImmutableMap.of(
+                        "people", ImmutableList.of(
+                                ImmutableMap.of(
+                                        "firstName", firstPerson,
+                                        "nationality", "Latvian",
+                                        "title", "director"
+                                )
+                        )
+                ),
+                "name", "ZLDS TRANSPORT LTD"
+        );
+        Object value = ReportRowNavigator.getValue(path,map);
+        assertEquals(value,ImmutableList.of(firstPerson));
+    }
+
+    @Test
+    public void testListWithStarAndSeveralMembers() {
+        String path = "org@net#cyoda#saas#model#dto#Organisation.people.[*]@net#cyoda#saas#model#dto#Person.firstName";
+        String firstPerson = "First Person";
+        String secondPerson = "Second Person";
+        String thirdPerson = "Third Person";
+        Map<String, Object> map = ImmutableMap.of(
+                "org", ImmutableMap.of(
+                        "people", ImmutableList.of(
+                                ImmutableMap.of(
+                                        "firstName", firstPerson,
+                                        "nationality", "Latvian",
+                                        "title", "director"
+                                ),
+                                ImmutableMap.of(
+                                        "firstName", secondPerson,
+                                        "nationality", "Latvian",
+                                        "title", "director"
+                                ),
+                                ImmutableMap.of(
+                                        "firstName", thirdPerson,
+                                        "nationality", "Latvian",
+                                        "title", "director"
+                                )
+                        )
+                ),
+                "name", "ZLDS TRANSPORT LTD"
+        );
+        Object value = ReportRowNavigator.getValue(path,map);
+        assertEquals(value,ImmutableList.of(firstPerson,secondPerson,thirdPerson));
+    }
+
+    @Test
+    public void testListWithIndexAndSeveralMembers() {
+        String path = "org@net#cyoda#saas#model#dto#Organisation.people.[1]@net#cyoda#saas#model#dto#Person.firstName";
+        String firstPerson = "First Person";
+        String secondPerson = "Second Person";
+        String thirdPerson = "Third Person";
+        Map<String, Object> map = ImmutableMap.of(
+                "org", ImmutableMap.of(
+                        "people", ImmutableList.of(
+                                ImmutableMap.of(
+                                        "firstName", firstPerson,
+                                        "nationality", "Latvian",
+                                        "title", "director"
+                                ),
+                                ImmutableMap.of(
+                                        "firstName", secondPerson,
+                                        "nationality", "Latvian",
+                                        "title", "director"
+                                ),
+                                ImmutableMap.of(
+                                        "firstName", thirdPerson,
+                                        "nationality", "Latvian",
+                                        "title", "director"
+                                )
+                        )
+                ),
+                "name", "ZLDS TRANSPORT LTD"
+        );
+        Object value = ReportRowNavigator.getValue(path,map);
+        assertEquals(value,ImmutableList.of(secondPerson));
+    }
+
+    @Test
+    public void testListWithIndexOutOfBoundsAndSeveralMembers() {
+        String path = "org@net#cyoda#saas#model#dto#Organisation.people.[67]@net#cyoda#saas#model#dto#Person.firstName";
+        String firstPerson = "First Person";
+        String secondPerson = "Second Person";
+        String thirdPerson = "Third Person";
+        Map<String, Object> map = ImmutableMap.of(
+                "org", ImmutableMap.of(
+                        "people", ImmutableList.of(
+                                ImmutableMap.of(
+                                        "firstName", firstPerson,
+                                        "nationality", "Latvian",
+                                        "title", "director"
+                                ),
+                                ImmutableMap.of(
+                                        "firstName", secondPerson,
+                                        "nationality", "Latvian",
+                                        "title", "director"
+                                ),
+                                ImmutableMap.of(
+                                        "firstName", thirdPerson,
+                                        "nationality", "Latvian",
+                                        "title", "director"
+                                )
+                        )
+                ),
+                "name", "ZLDS TRANSPORT LTD"
         );
         try {
             ReportRowNavigator.getValue(path,map);
