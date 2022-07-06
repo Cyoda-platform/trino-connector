@@ -278,9 +278,17 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
     }
 
     private CompoundPredicateNode getCompoundPredicateNode(CyodaTableHandle tableHandle, CompoundPredicateNode predicates) {
-        String reportConfigurationId = lookupTableMap(tableHandle.getAuthPayload())
-                .get(new SchemaTableName(tableHandle.getSchemaName(), tableHandle.getTableName()))
-                .getReportConfigurationId();
+        SchemaTableName key = new SchemaTableName(tableHandle.getSchemaName(), tableHandle.getTableName());
+        log.debug(() -> "table key is "+key);
+        Map<SchemaTableName, CyodaTable> tableMap = lookupTableMap(tableHandle.getAuthPayload());
+        CyodaTable cyodaTable = tableMap.get(key);
+        log.debug(()-> "Cyoda report table found: "+ (cyodaTable != null ? cyodaTable.getName() : "NULL!!"));
+        if ( cyodaTable == null ) {
+            log.error("Cannot find table for "+key);
+            String keys = tableMap.keySet().stream().map(SchemaTableName::toString).collect(Collectors.joining(", "));
+            log.error("LookupTable has keys "+keys);
+        }
+        String reportConfigurationId = cyodaTable.getReportConfigurationId();
         Slice reportConfigIdSlice = DataTypeValue.of(reportConfigurationId).asSlice(VarcharType.VARCHAR);
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
         builder.addMember(predicates);
