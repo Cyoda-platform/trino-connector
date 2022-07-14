@@ -282,12 +282,17 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         log.debug(() -> "table key is "+key);
         Map<SchemaTableName, CyodaTable> tableMap = lookupTableMap(tableHandle.getAuthPayload());
         CyodaTable cyodaTable = tableMap.get(key);
-        log.debug(()-> "Cyoda report table found: "+ (cyodaTable != null ? cyodaTable.getName() : "NULL!!"));
         if ( cyodaTable == null ) {
-            log.error("Cannot find table for "+key);
-            String keys = tableMap.keySet().stream().map(SchemaTableName::toString).collect(Collectors.joining(", "));
-            log.error("LookupTable has keys "+keys);
+            tableMap = refreshTableMap(tableHandle.getAuthPayload());
+            cyodaTable = tableMap.get(key);
+            if (cyodaTable == null) {
+                log.error("Cannot find table for " + key);
+                String keys = tableMap.keySet().stream().map(SchemaTableName::toString).collect(Collectors.joining(", "));
+                log.error("LookupTable has keys " + keys);
+                return predicates;
+            }
         }
+        log.debug("Cyoda report table found: "+ cyodaTable.getName());
         String reportConfigurationId = cyodaTable.getReportConfigurationId();
         Slice reportConfigIdSlice = DataTypeValue.of(reportConfigurationId).asSlice(VarcharType.VARCHAR);
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
