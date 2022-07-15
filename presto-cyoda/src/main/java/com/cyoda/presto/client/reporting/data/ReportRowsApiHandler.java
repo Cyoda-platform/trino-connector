@@ -292,7 +292,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
                 return predicates;
             }
         }
-        log.debug("Cyoda report table found: "+ cyodaTable.getName());
+        log.debug("Cyoda report table found: %s",cyodaTable.getName());
         String reportConfigurationId = cyodaTable.getReportConfigurationId();
         Slice reportConfigIdSlice = DataTypeValue.of(reportConfigurationId).asSlice(VarcharType.VARCHAR);
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
