@@ -49,6 +49,7 @@ import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.common.type.TypeSignature;
 import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.SchemaTableName;
+import com.facebook.presto.spi.TableNotFoundException;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -286,10 +287,9 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
             tableMap = refreshTableMap(tableHandle.getAuthPayload());
             cyodaTable = tableMap.get(key);
             if (cyodaTable == null) {
-                log.error("Cannot find table for " + key);
                 String keys = tableMap.keySet().stream().map(SchemaTableName::toString).collect(Collectors.joining(", "));
                 log.error("LookupTable has keys " + keys);
-                return predicates;
+                throw new TableNotFoundException(key, "Cannot find table for " + key);
             }
         }
         log.debug("Cyoda report table found: %s",cyodaTable.getName());
