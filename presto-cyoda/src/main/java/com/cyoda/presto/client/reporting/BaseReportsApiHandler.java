@@ -152,7 +152,7 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
 
     @Override
     public boolean hasTable(AuthContext authContext, SchemaTableName tableName) {
-        return refreshTableMap(authContext).containsKey(tableName);
+        return lookupTableMap(authContext).containsKey(tableName) || refreshTableMap(authContext).containsKey(tableName);
     }
 
     @Override

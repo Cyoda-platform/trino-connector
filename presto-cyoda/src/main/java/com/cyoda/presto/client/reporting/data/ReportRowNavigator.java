@@ -17,14 +17,20 @@
 
 package com.cyoda.presto.client.reporting.data;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+
 import java.util.ArrayDeque;
 import java.util.Deque;
+import java.util.List;
 import java.util.Map;
 
 /**
  * Navigates through the CyodaColumnPath notation of a report row to get its value.
  */
 public class ReportRowNavigator {
+
+    public static final String LIST_CONSTITUENTS_REGEX = "^(.+?)\\.\\[([0-9|*]+)]$";
 
     private ReportRowNavigator() {
     }
@@ -57,17 +63,58 @@ public class ReportRowNavigator {
             if ( key.contains("#") || key.contains("@")) {
                 throw new IllegalArgumentException("Corrupted Path "+cyodaColumpath);
             }
-            result = map.get(key);
-            if ( result!= null && end < path.length() ) {
-                String rest = path.substring(end+1);
-                if ( ! (result instanceof Map) ) {
-                    throw new IllegalArgumentException("Unexpected end of traversal on "+cyodaColumpath);
+            if ( isListPath(key) ) {
+                result = handleList(cyodaColumpath, map, path, end, key);
+            } else {
+                result = map.get(key);
+                if (result != null && end < path.length()) {
+                    String rest = path.substring(end + 1);
+                    if (!(result instanceof Map)) {
+                        throw new IllegalArgumentException("Unexpected end of traversal on " + cyodaColumpath);
+                    }
+                    //noinspection unchecked
+                    deque.add(new DequeHandle((Map<String, Object>) result, rest));
                 }
-                //noinspection unchecked
-                deque.add(new DequeHandle((Map<String,Object>) result,rest));
             }
         }
         return result;
+    }
+
+    private static Object handleList(String cyodaColumpath, Map<String, Object> map, String path, int end, String key) {
+        Object result;
+        String theKey = key.replaceFirst(LIST_CONSTITUENTS_REGEX, "$1");
+        String theIndex = key.replaceFirst(LIST_CONSTITUENTS_REGEX,"$2");
+        result = map.get(theKey);
+        List<?> list = (List<?>) result;
+        String rest = path.substring(end +1);
+        ImmutableList.Builder<Object> builder = ImmutableList.builder();
+        if (theIndex.equals("*")) {
+            list.forEach(item -> {
+                addItem(cyodaColumpath, rest, builder, item);
+            });
+        } else {
+            int index = Integer.parseInt(theIndex);
+            Preconditions.checkArgument(list.size()>index,"The List at %s has %s elements, but the requested index is %s",key,list.size(),index);
+            addItem(cyodaColumpath,rest,builder,list.get(index));
+        }
+        return builder.build();
+    }
+
+    private static void addItem(String cyodaColumpath, String rest, ImmutableList.Builder<Object> builder, Object item) {
+        if (!(item instanceof Map)) {
+            throw new IllegalArgumentException("Unexpected end of traversal on " + cyodaColumpath);
+        }
+
+        @SuppressWarnings("unchecked")
+        Object value = getValue(rest, (Map<String, Object>) item);
+
+        if (value != null) {
+            builder.add(value);
+        }
+    }
+
+    private static boolean isListPath(String key) {
+        return key.matches("^.+?\\.\\[[0-9|*]+]$");
     }
 
     private static class DequeHandle {

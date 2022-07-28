@@ -49,6 +49,7 @@ import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.common.type.TypeSignature;
 import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.SchemaTableName;
+import com.facebook.presto.spi.TableNotFoundException;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -273,9 +274,21 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
     }
 
     private CompoundPredicateNode getCompoundPredicateNode(CyodaTableHandle tableHandle, CompoundPredicateNode predicates) {
-        String reportConfigurationId = lookupTableMap(tableHandle.getAuthPayload())
-                .get(new SchemaTableName(tableHandle.getSchemaName(), tableHandle.getTableName()))
-                .getReportConfigurationId();
+        SchemaTableName key = new SchemaTableName(tableHandle.getSchemaName(), tableHandle.getTableName());
+        log.debug(() -> "table key is "+key);
+        Map<SchemaTableName, CyodaTable> tableMap = lookupTableMap(tableHandle.getAuthPayload());
+        CyodaTable cyodaTable = tableMap.get(key);
+        if ( cyodaTable == null ) {
+            tableMap = refreshTableMap(tableHandle.getAuthPayload());
+            cyodaTable = tableMap.get(key);
+            if (cyodaTable == null) {
+                String keys = tableMap.keySet().stream().map(SchemaTableName::toString).collect(Collectors.joining(", "));
+                log.error("LookupTable has keys " + keys);
+                throw new TableNotFoundException(key, "Cannot find table for " + key);
+            }
+        }
+        log.debug("Cyoda report table found: %s",cyodaTable.getName());
+        String reportConfigurationId = cyodaTable.getReportConfigurationId();
         Slice reportConfigIdSlice = DataTypeValue.of(reportConfigurationId).asSlice(VarcharType.VARCHAR);
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
         builder.addMember(predicates);
