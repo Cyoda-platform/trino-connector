@@ -223,7 +223,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
         }
         // If there is nothing left, filter everything.
         if ( fromDeque.getType() == ColumnPredicate.PredicateType.NONE ) {
-            resultBuilder.add(ColumnPredicateUtils.none(columnHandle));
+            resultBuilder.add(ColumnPredicateUtils.none(columnHandle.getColumnName()));
         } else {
             resultBuilder.add(fromDeque);
         }
@@ -242,7 +242,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
             ImmutableList.Builder<ColumnPredicateNode<?>> cleanMembers = ImmutableList.builder();
             members.forEach(member -> {
                 if (member instanceof LeafPredicateNode) {
-                    if (member.getColumn().isPresent() && member.getColumn().get().getColumnName().equals(columnName)) {
+                    if (member.getColumnName().isPresent() && member.getColumnName().get().equals(columnName)) {
                         cleanMembers.add(member);
                     }
                 } else {

@@ -22,7 +22,6 @@ import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
 import com.cyoda.presto.client.types.DataTypeValue;
-import com.cyoda.presto.client.types.SupportedDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -201,13 +200,13 @@ public class CyodaFilteringPageSource<T>
         }
     }
 
-    private void writeObject(Type type, BlockBuilder blockBuilder, DataTypeValue<?> supported) {
-        switch (supported.supportedDataType.getDataType()) {
+    private void writeObject(Type type, BlockBuilder blockBuilder, DataTypeValue<?> dataTypeValue) {
+        switch (dataTypeValue.getDataType()) {
             case DOUBLE:
-                type.writeDouble(blockBuilder, supported.asDouble());
+                type.writeDouble(blockBuilder, dataTypeValue.asDouble());
                 break;
             case BOOLEAN:
-                type.writeBoolean(blockBuilder, supported.asBoolean());
+                type.writeBoolean(blockBuilder, dataTypeValue.asBoolean());
                 break;
             case BYTE:
             case FLOAT:
@@ -220,16 +219,16 @@ public class CyodaFilteringPageSource<T>
             case ZONED_DATE_TIME:
             case LOCAL_TIME:
             case DATE: {
-                PrestoValueConverter<Object> prestoValueConverter = getPrestoValueConverter(supported);
-                Long value = Optional.ofNullable(supported.value).map(prestoValueConverter::toLong)
-                        .orElseThrow(()->new IllegalArgumentException(supported.supportedDataType + " value is null "));
+                PrestoValueConverter<Object> prestoValueConverter = getPrestoValueConverter(dataTypeValue);
+                Long value = Optional.ofNullable(dataTypeValue.value).map(prestoValueConverter::toLong)
+                        .orElseThrow(()->new IllegalArgumentException(dataTypeValue.getDataType() + " value is null "));
                 type.writeLong(blockBuilder, value);
                 break;
             }
             case SET: {
                 Type elementType = ((ArrayType) type).getElementType();
                 BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
-                Optional.ofNullable((Set<?>) supported.value).orElse(Collections.emptySet())
+                Optional.ofNullable((Set<?>) dataTypeValue.value).orElse(Collections.emptySet())
                         .forEach(item -> writeObject(elementType, arrayBuilder, DataTypeValue.byType(item, elementType)));
                 blockBuilder.closeEntry();
                 break;
@@ -237,26 +236,26 @@ public class CyodaFilteringPageSource<T>
             case LIST: {
                 Type elementType = ((ArrayType) type).getElementType();
                 BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
-                Optional.ofNullable((Collection<?>) supported.value).orElse(Collections.emptyList())
+                Optional.ofNullable((Collection<?>) dataTypeValue.value).orElse(Collections.emptyList())
                         .forEach(item -> writeObject(elementType,arrayBuilder, DataTypeValue.byType(item,elementType)));
                 blockBuilder.closeEntry();
                 break;
             }
-            case ARRAY: {
-                Type elementType = ((ArrayType) type).getElementType();
-                BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
-                Arrays.stream(Optional.ofNullable((Object[]) supported.value).orElse(new Object[0]))
-                        .forEach(item -> writeObject(elementType,arrayBuilder, DataTypeValue.byType(item,elementType)));
-                blockBuilder.closeEntry();
-                break;
-            }
+//            case ARRAY: {
+//                Type elementType = ((ArrayType) type).getElementType();
+//                BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
+//                Arrays.stream(Optional.ofNullable((Object[]) dataTypeValue.value).orElse(new Object[0]))
+//                        .forEach(item -> writeObject(elementType,arrayBuilder, DataTypeValue.byType(item,elementType)));
+//                blockBuilder.closeEntry();
+//                break;
+//            }
             case MAP: {
 
                 MapType mapType = (MapType) type;
                 Type keyType = mapType.getKeyType();
                 Type valueType = mapType.getValueType();
                 BlockBuilder mapBlockBuilder = blockBuilder.beginBlockEntry();
-                for (Map.Entry<?, ?> entry : Optional.ofNullable((Map<?, ?>) supported.value).orElse(Collections.emptyMap()).entrySet()) {
+                for (Map.Entry<?, ?> entry : Optional.ofNullable((Map<?, ?>) dataTypeValue.value).orElse(Collections.emptyMap()).entrySet()) {
                     writeObject(keyType,mapBlockBuilder, DataTypeValue.byType(entry.getKey(),keyType));
                     writeObject(valueType,mapBlockBuilder, DataTypeValue.byType(entry.getValue(),valueType));
                 }
@@ -264,7 +263,7 @@ public class CyodaFilteringPageSource<T>
                 break;
             }
             case OBJECT:
-                Slice slice = supported.stringify().map(Slices::utf8Slice).orElse(EMPTY_SLICE);
+                Slice slice = dataTypeValue.stringify().map(Slices::utf8Slice).orElse(EMPTY_SLICE);
                 type.writeSlice(blockBuilder, slice);
                 break;
             case BIG_INTEGER:
@@ -276,9 +275,9 @@ public class CyodaFilteringPageSource<T>
             case STRING:
             case UUID_TYPE:
             default: {
-                PrestoValueConverter<Object> prestoValueConverter = getPrestoValueConverter(supported);
-                Slice value = Optional.ofNullable(supported.value).map(it->prestoValueConverter.toSlice(type,supported.value))
-                        .orElseThrow(() -> new IllegalArgumentException(supported.supportedDataType + " value is null "));
+                PrestoValueConverter<Object> prestoValueConverter = getPrestoValueConverter(dataTypeValue);
+                Slice value = Optional.ofNullable(dataTypeValue.value).map(it->prestoValueConverter.toSlice(dataTypeValue.value))
+                        .orElseThrow(() -> new IllegalArgumentException(dataTypeValue.getDataType() + " value is null "));
                 type.writeSlice(blockBuilder, value);
                 break;
             }
@@ -287,7 +286,7 @@ public class CyodaFilteringPageSource<T>
 
     @SuppressWarnings("unchecked")
     private <S> PrestoValueConverter<S> getPrestoValueConverter(DataTypeValue<?> supported) {
-        return PrestoValueConverterProvider.getPrestoValueConverter((SupportedDataType<S>) supported.supportedDataType);
+        return PrestoValueConverterProvider.getPrestoValueConverter(supported.getDataType());
     }
 
 

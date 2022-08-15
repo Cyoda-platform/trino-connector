@@ -17,15 +17,18 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.BigDecimalTypeValueConverter;
+import com.cyoda.presto.client.types.DataType;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.VarcharType;
-import com.facebook.presto.type.UuidType;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
@@ -34,7 +37,7 @@ import static io.airlift.slice.SizeOf.SIZE_OF_LONG;
 import static io.airlift.slice.Slices.wrappedLongArray;
 import static java.lang.String.format;
 
-public class UUIDPrestoValueConverter implements ComparablePrestoValueConverter<UUID> {
+public class UUIDPrestoValueConverter extends BigDecimalTypeValueConverter<UUID> {
 
     public static final String TYPE_STRING = StandardTypes.VARCHAR; // For Presto
     //public static final String TYPE_STRING = StandardTypes.UUID; // For Trino
@@ -42,42 +45,55 @@ public class UUIDPrestoValueConverter implements ComparablePrestoValueConverter<
     public static final Type TYPE = VarcharType.VARCHAR; // For Presto
     //public static final Type TYPE = UuidType.UUID; // For Trino
 
-    @Override
-    public Class<UUID> getClazz() {
-        return UUID.class;
+    private static final BigInteger B = BigInteger.ONE.shiftLeft(64); // 2^64
+    private static final BigInteger L = BigInteger.valueOf(Long.MAX_VALUE);
+
+    @Inject
+    public UUIDPrestoValueConverter() {
+        super(DataType.UUID_TYPE);
     }
 
-    public Slice toSliceForPresto(@Nonnull Type type, @Nonnull UUID value) {
+    @Override
+    protected BigDecimal toBigDecimal(UUID value) {
+        return new BigDecimal(convertToBigInteger(value));
+    }
+    @Override
+    protected UUID fromBigDecimal(BigDecimal value) {
+        return convertFromBigInteger(value.toBigIntegerExact());
+    }
+
+    public Slice toSliceForPresto(@Nonnull UUID value) {
         return Slices.utf8Slice(value.toString());
     }
-    public Slice toSliceForTrino(@Nonnull Type type, @Nonnull UUID value) {
+    public Slice toSliceForTrino(@Nonnull UUID value) {
         return javaUuidToPrestoUuid(value);
     }
-    @Override
-    public Slice toSlice(@Nonnull Type type, @Nonnull UUID value) {
-        return toSliceForPresto(type, value);
-    }
 
-    public UUID fromSliceForPresto(@Nonnull Type type, Slice value) {
+    @Override
+    public Slice toSlice(@Nonnull UUID value) {
+        return toSliceForPresto(value);
+    }
+    public UUID fromSliceForPresto(Slice value) {
         return UUID.fromString(value.toStringUtf8());
     }
-    public UUID fromSliceForTrino(@Nonnull Type type, Slice value) {
+    public UUID fromSliceForTrino(Slice value) {
         return prestoUuidToJavaUuid(value);
     }
+
     @Nonnull
     @Override
-    public UUID fromSlice(@Nonnull Type type, Slice value) {
-        return fromSliceForPresto(type, value);
+    public UUID fromSlice(Slice value) {
+        return fromSliceForPresto(value);
     }
 
     @Override
     public UUID toObject(Object nativeValue) {
-        return fromSlice(VarcharType.VARCHAR,(Slice) nativeValue);
+        return fromSlice((Slice) nativeValue);
     }
 
 
-
     // This is only useful for Trino. Presto can only handle Strings for UUID
+
     public static byte[] uuidToBytes(UUID uuid)
     {
         return ByteBuffer.allocate(16)
@@ -101,5 +117,36 @@ public class UUIDPrestoValueConverter implements ComparablePrestoValueConverter<
         return new UUID(
                 uuid.getLong(0),
                 uuid.getLong(SIZE_OF_LONG));
+    }
+
+    public static BigInteger convertToBigInteger(UUID id)
+    {
+        BigInteger lo = BigInteger.valueOf(id.getLeastSignificantBits());
+        BigInteger hi = BigInteger.valueOf(id.getMostSignificantBits());
+
+        // If any of lo/hi parts is negative interpret as unsigned
+
+        if (hi.signum() < 0)
+            hi = hi.add(B);
+
+        if (lo.signum() < 0)
+            lo = lo.add(B);
+
+        return lo.add(hi.multiply(B));
+    }
+
+    public static UUID convertFromBigInteger(BigInteger x)
+    {
+        BigInteger[] parts = x.divideAndRemainder(B);
+        BigInteger hi = parts[0];
+        BigInteger lo = parts[1];
+
+        if (L.compareTo(lo) < 0)
+            lo = lo.subtract(B);
+
+        if (L.compareTo(hi) < 0)
+            hi = hi.subtract(B);
+
+        return new UUID(hi.longValueExact(), lo.longValueExact());
     }
 }

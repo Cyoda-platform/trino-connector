@@ -20,20 +20,11 @@ package com.cyoda.presto.client.logic;
 import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
-import com.cyoda.presto.client.types.ComparableSupportedDataType;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.client.types.DataTypeValue;
-import com.cyoda.presto.client.types.impl.DateDataType;
-import com.cyoda.presto.client.types.impl.LocalDateDataType;
-import com.cyoda.presto.client.types.impl.LocalDateTimeDataType;
-import com.cyoda.presto.client.types.impl.LocalTimeDataType;
-import com.cyoda.presto.client.types.impl.YearDataType;
-import com.cyoda.presto.client.types.impl.YearMonthDataType;
-import com.cyoda.presto.client.types.impl.ZonedDateTimeDataType;
 import com.cyoda.presto.client.util.DecimalUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.predicate.DiscreteValues;
-import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
 import com.google.common.base.Preconditions;
@@ -41,14 +32,11 @@ import com.google.common.base.Preconditions;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Year;
 import java.time.YearMonth;
-import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.util.Arrays;
@@ -155,8 +143,7 @@ public class ColumnPredicateUtils {
                 column.getColumnType(),
                 DataType.BIG_DECIMAL,
                 column.getOrdinalPosition(),
-                column.getRequestHandlerKey(),
-                column.getIsNullable()
+                column.getRequestHandlerKey()
         );
         return newComparisonPredicate(bigDecimalColumn, op, new BigDecimal(bigIntValue));
     }
@@ -170,8 +157,7 @@ public class ColumnPredicateUtils {
                 columnIn.getColumnType(),
                 DataType.LONG,
                 columnIn.getOrdinalPosition(),
-                columnIn.getRequestHandlerKey(),
-                columnIn.getIsNullable()
+                columnIn.getRequestHandlerKey()
         );
         long minValue = minValueOfIntType(columnIn.getDataType());
         long maxValue = maxValueOfIntType(columnIn.getDataType());
@@ -320,7 +306,7 @@ public class ColumnPredicateUtils {
 
         DataType dataType = DataType.LOCAL_DATE;
         checkColumn(column, dataType);
-        PrestoValueConverter<LocalDate> converter = PrestoValueConverterProvider.getPrestoValueConverter(LocalDateDataType.INSTANCE);
+        PrestoValueConverter<LocalDate> converter = PrestoValueConverterProvider.getPrestoValueConverter(DataType.LOCAL_DATE);
         long par = converter.toLong(value);
         return delegateToLong(column, op, par)
                 .cloneTo(column,item-> converter.fromLong(item.parseToLong()));
@@ -331,7 +317,7 @@ public class ColumnPredicateUtils {
                                                                  LocalDateTime value) {
         DataType dataType = DataType.LOCAL_DATE_TIME;
         checkColumn(column, dataType);
-        PrestoValueConverter<LocalDateTime> converter = PrestoValueConverterProvider.getPrestoValueConverter(LocalDateTimeDataType.INSTANCE);
+        PrestoValueConverter<LocalDateTime> converter = PrestoValueConverterProvider.getPrestoValueConverter(DataType.LOCAL_DATE_TIME);
         long par = converter.toLong(value);
         return delegateToLong(column, op, par)
                 .cloneTo(column,item-> converter.fromLong(item.parseToLong()));
@@ -341,7 +327,7 @@ public class ColumnPredicateUtils {
                                                                  ZonedDateTime value) {
         DataType dataType = DataType.ZONED_DATE_TIME;
         checkColumn(column, dataType);
-        PrestoValueConverter<ZonedDateTime> converter = PrestoValueConverterProvider.getPrestoValueConverter(ZonedDateTimeDataType.INSTANCE);
+        PrestoValueConverter<ZonedDateTime> converter = PrestoValueConverterProvider.getPrestoValueConverter(DataType.ZONED_DATE_TIME);
         long par = converter.toLong(value);
         return delegateToLong(column, op, par)
                 .cloneTo(column,item-> converter.fromLong(item.parseToLong()));
@@ -351,7 +337,7 @@ public class ColumnPredicateUtils {
                                                         Year value) {
         DataType dataType = DataType.YEAR;
         checkColumn(column, dataType);
-        PrestoValueConverter<Year> converter = PrestoValueConverterProvider.getPrestoValueConverter(YearDataType.INSTANCE);
+        PrestoValueConverter<Year> converter = PrestoValueConverterProvider.getPrestoValueConverter(DataType.YEAR);
         long par = converter.toLong(value);
         return delegateToLong(column, op, par)
                 .cloneTo(column,item-> converter.fromLong(item.parseToLong()));
@@ -361,7 +347,7 @@ public class ColumnPredicateUtils {
                                                              YearMonth value) {
         DataType dataType = DataType.YEAR_MONTH;
         checkColumn(column, dataType);
-        PrestoValueConverter<YearMonth> converter = PrestoValueConverterProvider.getPrestoValueConverter(YearMonthDataType.INSTANCE);
+        PrestoValueConverter<YearMonth> converter = PrestoValueConverterProvider.getPrestoValueConverter(DataType.YEAR_MONTH);
         long par = converter.toLong(value);
         return delegateToLong(column, op, par)
                 .cloneTo(column,item-> converter.fromLong(item.parseToLong()));
@@ -371,7 +357,7 @@ public class ColumnPredicateUtils {
                                                              LocalTime value) {
         DataType dataType = DataType.LOCAL_TIME;
         checkColumn(column, dataType);
-        PrestoValueConverter<LocalTime> converter = PrestoValueConverterProvider.getPrestoValueConverter(LocalTimeDataType.INSTANCE);
+        PrestoValueConverter<LocalTime> converter = PrestoValueConverterProvider.getPrestoValueConverter(DataType.LOCAL_TIME);
         long par = converter.toLong(value);
         return delegateToLong(column, op, par)
                 .cloneTo(column,item-> converter.fromLong(item.parseToLong()));
@@ -380,7 +366,7 @@ public class ColumnPredicateUtils {
                                                         ColumnPredicate.ComparisonOp op,
                                                         Date value) {
         checkColumn(column, DataType.DATE);
-        PrestoValueConverter<Date> converter = PrestoValueConverterProvider.getPrestoValueConverter(DateDataType.INSTANCE);
+        PrestoValueConverter<Date> converter = PrestoValueConverterProvider.getPrestoValueConverter(DataType.DATE);
         long par = converter.toLong(value);
         return delegateToLong(column, op, par)
                 .cloneTo(column,item-> converter.fromLong(item.parseToLong()));
@@ -637,15 +623,6 @@ public class ColumnPredicateUtils {
         }
     }
 
-    public static <S extends Comparable<? super S>> ColumnPredicate<S> newComparisonPredicateFromNative(
-            CyodaColumnHandle columnHandle,
-            ColumnPredicate.ComparisonOp op,
-            Object nativeValue,
-            Class<S> clazz) {
-        ColumnPredicate<?> columnPredicate = newComparisonPredicateFromNative(columnHandle, op, nativeValue);
-        //noinspection unchecked
-        return (ColumnPredicate<S>) columnPredicate;
-    }
 
     @SuppressWarnings("java:S1452") // We need a wildcard here.
     public static ColumnPredicate<?> newComparisonPredicateFromNative(
@@ -705,7 +682,7 @@ public class ColumnPredicateUtils {
             ColumnPredicate.ComparisonOp op,
             Object nativeValue,
             Class<T> javaType) {
-        DataTypeValue<T> thing = DataTypeValue.ofPrestoNativeValue(columnHandle.getDataType().asSupported(), nativeValue, javaType);
+        DataTypeValue<T> thing = DataTypeValue.ofPrestoNativeValue(columnHandle.getDataType(), nativeValue, javaType);
         return newComparisonPredicate(columnHandle, op, thing);
     }
 
@@ -715,63 +692,63 @@ public class ColumnPredicateUtils {
             CyodaColumnHandle columnHandle,
             ColumnPredicate.ComparisonOp op,
             DataTypeValue<T> value) {
-        switch (value.supportedDataType.getDataType()) {
-            case LONG:
+        switch (value.getDataType()) {
+            case LONG://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asLong());
-            case INTEGER:
+            case INTEGER://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asInt());
-            case SHORT:
+            case SHORT://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asShort());
-            case BYTE:
+            case BYTE://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asByte());
-            case STRING:
+            case STRING://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asString());
-            case DOUBLE:
+            case DOUBLE://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asDouble());
-            case FLOAT:
+            case FLOAT://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asFloat());
-            case BOOLEAN:
+            case BOOLEAN://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asBoolean());
-            case UUID_TYPE:
+            case UUID_TYPE://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asUUID());
-            case BIG_DECIMAL:
+            case BIG_DECIMAL://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asBigDecimal());
-            case BIG_INTEGER:
+            case BIG_INTEGER://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asBigInteger());
-            case LOCAL_DATE:
+            case LOCAL_DATE://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asLocalDate());
-            case LOCAL_DATE_TIME:
+            case LOCAL_DATE_TIME://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asLocalDateTime());
-            case CHARACTER:
+            case CHARACTER://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asChar());
-            case DATE:
+            case DATE://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asDate());
-            case ZONED_DATE_TIME:
+            case ZONED_DATE_TIME://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asZonedDateTime());
-            case YEAR:
+            case YEAR://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asYear());
-            case YEAR_MONTH:
+            case YEAR_MONTH://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asYearMonth());
-            case LOCAL_TIME:
+            case LOCAL_TIME://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asLocalTime());
-            case BYTE_BUFFER:
+            case BYTE_BUFFER://ok
                 return (ColumnPredicate<T>) newComparisonPredicate(columnHandle, op, value.asByteBuffer());
             default:
                 throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Unexpected java value for column "
-                        + columnHandle.getColumnName() + ": " + value.value + "(" + value.supportedDataType + ")");
+                        + columnHandle.getColumnName() + ": " + value.value + "(" + value.getDataType() + ")");
 
         }
     }
 
     public static <S extends Comparable<? super S>> ColumnPredicate<S> newEqualsPredicate(CyodaColumnHandle columnHandle, Object nativeValue, Class<S> clazz) {
-        return newComparisonPredicateFromNative(columnHandle, EQUAL, nativeValue,clazz);
+        return (ColumnPredicate<S>) newComparisonPredicateFromNative(columnHandle, EQUAL, nativeValue);
     }
 
     @SuppressWarnings("java:S1452")
     static ColumnPredicate<?> newInListPredicateFromDiscrete(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
-        ComparableSupportedDataType<?> sSupportedDataType = columnHandle.getDataType().asComparableSupported();
+        DataType dataType = columnHandle.getDataType();
         ComparablePrestoValueConverter<?> prestoValueConverter = PrestoValueConverterProvider
-                .getComparablePrestoValueConverterU(sSupportedDataType);
+                .getComparablePrestoValueConverterU(dataType);
         return prestoValueConverter.newInListPredicate(columnHandle,discreteValues);
     }
 
@@ -781,7 +758,7 @@ public class ColumnPredicateUtils {
             final Class<T> javaType
     ) {
         SortedSet<DataTypeValue<T>> javaValues = discreteValues.getValues().stream()
-                .map(nativeValue -> DataTypeValue.ofPrestoNativeValue(columnHandle.getDataType().asSupported(), nativeValue, javaType))
+                .map(nativeValue -> DataTypeValue.ofPrestoNativeValue(columnHandle.getDataType(), nativeValue, javaType))
                 .sorted()
                 .collect(Collectors.toCollection(TreeSet::new));
         return newInListPredicate(columnHandle, javaValues);
@@ -802,9 +779,13 @@ public class ColumnPredicateUtils {
             final SortedSet<DataTypeValue<T>> values
     ) {
         if (values.isEmpty()) {
-            return none(column);
+            return none(column.getColumnName());
         }
-        return buildInList(column, values);
+        // IN (true, false) predicates can be simplified to IS NOT NULL.
+        if (column.getDataType() == DataType.BOOLEAN && values.size() > 1) {
+            return newIsNotNullPredicate(column);
+        }
+        return ColumnPredicate.buildInList(column.getColumnName(), values);
     }
 
 
@@ -815,6 +796,9 @@ public class ColumnPredicateUtils {
      * @return an {@code IS NOT NULL} predicate
      */
     public static <T extends Comparable<? super T>> ColumnPredicate<T> newIsNotNullPredicate(CyodaColumnHandle column) {
+        if (!column.getIsNullable()){
+            return all(column);
+        }
         return new ColumnPredicate<>(ColumnPredicate.PredicateType.IS_NOT_NULL, column, null, null);
     }
 
@@ -854,6 +838,10 @@ public class ColumnPredicateUtils {
         return new ColumnPredicate<>(ColumnPredicate.PredicateType.NONE, column, null, null);
     }
 
+    public static <T extends Comparable<? super T>> ColumnPredicate<T> none(String column) {
+        return new ColumnPredicate<>(ColumnPredicate.PredicateType.NONE, column, null, null);
+    }
+
     /**
      * Factory function for a predicate that filters nothing on the given column
      *
@@ -862,32 +850,6 @@ public class ColumnPredicateUtils {
      */
     public static <T extends Comparable<? super T>> ColumnPredicate<T> all(CyodaColumnHandle column) {
         return new ColumnPredicate<>(ColumnPredicate.PredicateType.ALL, column, null, null);
-    }
-
-    /**
-     * Builds an IN list predicate from a collection of raw values. The collection
-     * must be sorted and deduplicated.
-     *
-     * @param column the column
-     * @param values the IN list values
-     * @return an IN list predicate
-     */
-    public static <T extends Comparable<? super T>> ColumnPredicate<T> buildInList(
-            CyodaColumnHandle column, SortedSet<DataTypeValue<T>> values
-    ) {
-        // IN (true, false) predicates can be simplified to IS NOT NULL.
-        if (column.getDataType() == DataType.BOOLEAN && values.size() > 1) {
-            return newIsNotNullPredicate(column);
-        }
-
-        switch (values.size()) {
-            case 0:
-                return none(column);
-            case 1:
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, values.iterator().next(), null);
-            default:
-                return new ColumnPredicate<>(column, values);
-        }
     }
 
     /**
@@ -969,8 +931,8 @@ public class ColumnPredicateUtils {
                 column.getColumnType().getDisplayName()));
     }
 
-    public static <T extends Comparable<T>> ColumnPredicate<T> nothing() {
-        return new ColumnPredicate<>(null, null, null, null);
-    }
+//    public static <T extends Comparable<T>> ColumnPredicate<T> nothing() {
+//        return new ColumnPredicate<>(null, null, null, null);
+//    }
 
 }

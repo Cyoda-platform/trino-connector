@@ -162,7 +162,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
 
             ColumnsHolder columnsHolder = columnsHolderFunction.apply(authContext);
             List<ColumnDefinition> theColDefs = StandardColumnDefinition.builder()
-                    .add(new StandardColumnDefinition(0,ROW_REPORT_ROW_NUMBER_COLUMN, StandardTypes.BIGINT,LONG,null,null))
+                    .add(new StandardColumnDefinition(0,ROW_REPORT_ROW_NUMBER_COLUMN,LONG))
                     .add(newColumnDefinition(columnsHolder.reportIdColumn))
                     .add(newColumnDefinition(columnsHolder.groupingVersionColumn))
                     .add(newColumnDefinition(columnsHolder.groupJsonBase64Column))
@@ -175,15 +175,11 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
     }
 
     private StandardColumnDefinition newColumnDefinition(CyodaColumnHandle columnHandle) {
-        Type columnType = columnHandle.getColumnType();
         String columnName = columnHandle.getColumnName();
         return new StandardColumnDefinition(
                 columnHandle.getOrdinalPosition(),
                 columnName,
-                columnType.getTypeSignature().getBase(),
-                columnHandle.getDataType(),
-                determineParType(columnType),
-                determinMapValueType(columnType)
+                columnHandle.getDataType()
         );
     }
 
@@ -326,14 +322,15 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
             return groupTable.getColumns().stream()
                     .filter(it -> it.getColumnName().equals(HISTORY_REPORT_ID_COLUMN))
                     .findAny()
-                    .map(it -> new CyodaColumnHandle(  // Need to replace the column name with our local one.
-                            it.getConnectorId(),
-                            ROW_REPORT_ID_COLUMN,
-                            it.getColumnType(),
-                            it.getDataType(),
-                            it.getOrdinalPosition(),
-                            it.getRequestHandlerKey())
-                    ).orElseThrow(() -> new IllegalStateException(HISTORY_REPORT_ID_COLUMN + COLUMN_NOT_FOUND));
+                    //TODO can't see why, since HISTORY_REPORT_ID_COLUMN == ROW_REPORT_ID_COLUMN
+//                    .map(it -> new CyodaColumnHandle(  // Need to replace the column name with our local one.
+//                            it.getConnectorId(),
+//                            ROW_REPORT_ID_COLUMN,
+//                            it.getColumnType(),
+//                            it.getDataType(),
+//                            it.getOrdinalPosition(),
+//                            it.getRequestHandlerKey()))
+                    .orElseThrow(() -> new IllegalStateException(HISTORY_REPORT_ID_COLUMN + COLUMN_NOT_FOUND));
         }
 
         private CyodaColumnHandle setupGroupingVersionColumn(CyodaTable groupTable) {
@@ -351,15 +348,16 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         private CyodaColumnHandle setupGroupJsonBase64Column(CyodaTable groupTable) {
             return groupTable.getColumns().stream()
                     .filter(it -> it.getColumnName().equals(ROW_GROUP_JSON_BASE64_VARIABLE))
-                    .map(it -> new CyodaColumnHandle(
-                            it.getConnectorId(),
-                            it.getColumnName(),
-                            VarcharType.VARCHAR, // This is because Presto cannot deal with UUID, even if there is a UuidType.
-                            STRING,
-                            it.getOrdinalPosition(),
-                            it.getRequestHandlerKey(),
-                            it.getIsNullable())
-                    ).findAny()
+        //TODO should work without it since UUID.TYPE_STRING = StandardTypes.VARCHAR
+//                    .map(it -> new CyodaColumnHandle(
+//                            it.getConnectorId(),
+//                            it.getColumnName(),
+//                            VarcharType.VARCHAR, // This is because Presto cannot deal with UUID, even if there is a UuidType.
+//                            STRING,
+//                            it.getOrdinalPosition(),
+//                            it.getRequestHandlerKey(),
+//                            it.getIsNullable()))
+                    .findAny()
                     .orElseThrow(() -> new IllegalStateException(ROW_GROUP_JSON_BASE64_VARIABLE + COLUMN_NOT_FOUND));
         }
     }

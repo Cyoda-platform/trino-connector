@@ -39,7 +39,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.Function;
 
-import static com.cyoda.presto.client.logic.ColumnPredicateUtils.buildInList;
 import static com.cyoda.presto.client.logic.ColumnPredicateUtils.none;
 
 /**
@@ -50,7 +49,7 @@ import static com.cyoda.presto.client.logic.ColumnPredicateUtils.none;
 public class ColumnPredicate<T extends Comparable<? super T>> {
 
     private final PredicateType type;
-    private final CyodaColumnHandle column;
+    private final String columnName;
 
     /**
      * The inclusive lower bound value if this is a Range predicate, or
@@ -77,7 +76,15 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
      */
     public ColumnPredicate(PredicateType type, CyodaColumnHandle column, DataTypeValue<T> lower, DataTypeValue<T> upper) {
         this.type = type;
-        this.column = column;
+        this.columnName = column.getColumnName();
+        this.lower = lower;
+        this.upper = upper;
+        this.inListValues = null;
+    }
+
+    public ColumnPredicate(PredicateType type, String columnName, DataTypeValue<T> lower, DataTypeValue<T> upper) {
+        this.type = type;
+        this.columnName = columnName;
         this.lower = lower;
         this.upper = upper;
         this.inListValues = null;
@@ -86,15 +93,36 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
     /**
      * Constructor for IN list predicate.
      *
-     * @param column       the column to which the predicate applies
+     * @param columnName       the column to which the predicate applies
      * @param inListValues the encoded IN list values
      */
-    public ColumnPredicate(CyodaColumnHandle column, SortedSet<DataTypeValue<T>> inListValues) {
-        this.column = column;
+    public ColumnPredicate(String columnName, SortedSet<DataTypeValue<T>> inListValues) {
+        this.columnName = columnName;
         this.type = PredicateType.IN_LIST;
         this.lower = null;
         this.upper = null;
         this.inListValues = inListValues;
+    }
+
+    /**
+     * Builds an IN list predicate from a collection of raw values. The collection
+     * must be sorted and deduplicated.
+     *
+     * @param columnName the column
+     * @param values     the IN list values
+     * @return an IN list predicate
+     */
+    public static <T extends Comparable<? super T>> ColumnPredicate<T> buildInList(
+            String columnName, SortedSet<DataTypeValue<T>> values
+    ) {
+        switch (values.size()) {
+            case 0:
+                return none(columnName);
+            case 1:
+                return new ColumnPredicate<>(PredicateType.EQUALITY, columnName, values.iterator().next(), null);
+            default:
+                return new ColumnPredicate<>(columnName, values);
+        }
     }
 
 
@@ -107,8 +135,8 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
         );
     }
 
-    public CyodaColumnHandle getColumn() {
-        return column;
+    public String getColumnName() {
+        return columnName;
     }
 
     public PredicateType getType() {
@@ -146,7 +174,7 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
      */
     @SuppressWarnings("java:S3776")
     public ColumnPredicate<T> merge(ColumnPredicate<T> other) {
-        Preconditions.checkArgument(column.getColumnName().equals(other.column.getColumnName()),
+        Preconditions.checkArgument(columnName.equals(other.getColumnName()),
                 "predicates from different column names may not be merged");
 
         // First, consider other.type == NONE, IS_NOT_NULL, or IS_NULL
@@ -158,12 +186,12 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
         // NOT NULL is dominated by all other predicates,
         // except IS NULL, for which the merge is NONE.
         if (other.type == PredicateType.IS_NOT_NULL) {
-            return type == PredicateType.IS_NULL ? none(column) : this;
+            return type == PredicateType.IS_NULL ? none(columnName) : this;
         }
 
         // NULL merged with any predicate type besides itself is NONE.
         if (other.type == PredicateType.IS_NULL) {
-            return type == PredicateType.IS_NULL ? this : none(column);
+            return type == PredicateType.IS_NULL ? this : none(columnName);
         }
 
         // Now other.type == EQUALITY, RANGE, or IN_LIST.
@@ -173,11 +201,11 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
             case IS_NOT_NULL:
                 return other;
             case IS_NULL:
-                return none(column);
+                return none(columnName);
             case EQUALITY: {
                 if (other.type == PredicateType.EQUALITY) {
                     if (lower != null && other.lower != null && lower.compareTo(other.lower) != 0) {
-                        return none(this.column);
+                        return none(this.columnName);
                     } else {
                         return this;
                     }
@@ -185,7 +213,7 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
                     if (other.rangeContains(lower)) {
                         return this;
                     } else {
-                        return none(this.column);
+                        return none(this.columnName);
                     }
                 } else {
                     Preconditions.checkState(other.type == PredicateType.IN_LIST);
@@ -202,12 +230,12 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
                     DataTypeValue<T> newUpper = other.upper == null ||
                             (upper != null && upper.compareTo(other.upper) <= 0) ? upper : other.upper;
                     if (newLower != null && newUpper != null && newLower.compareTo(newUpper) >= 0) {
-                        return none(column);
+                        return none(columnName);
                     } else {
                         if (newLower != null && newUpper != null && areConsecutive(newLower, newUpper)) {
-                            return new ColumnPredicate<>(PredicateType.EQUALITY, column, newLower, null);
+                            return new ColumnPredicate<>(PredicateType.EQUALITY, columnName, newLower, null);
                         } else {
-                            return new ColumnPredicate<>(PredicateType.RANGE, column, newLower, newUpper);
+                            return new ColumnPredicate<>(PredicateType.RANGE, columnName, newLower, newUpper);
                         }
                     }
                 }
@@ -217,7 +245,7 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
                     if (this.inListContains(other.lower)) {
                         return other;
                     } else {
-                        return none(column);
+                        return none(columnName);
                     }
                 } else if (other.type == PredicateType.RANGE) {
                     TreeSet<DataTypeValue<T>> values = new TreeSet<>();
@@ -226,7 +254,7 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
                             values.add(value);
                         }
                     }
-                    return buildInList(column, values);
+                    return buildInList(columnName, values);
                 } else {
                     Preconditions.checkState(other.type == PredicateType.IN_LIST);
                     TreeSet<DataTypeValue<T>> values = new TreeSet<>();
@@ -235,7 +263,7 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
                             values.add(value);
                         }
                     }
-                    return buildInList(column, values);
+                    return buildInList(columnName, values);
                 }
             }
             default:
@@ -270,7 +298,7 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
      */
     @SuppressWarnings("java:S3776")
     private boolean areConsecutive(DataTypeValue<T> a, DataTypeValue<T> b) {
-        switch (a.supportedDataType.getDataType()) {
+        switch (a.getDataType()) {
             case BOOLEAN:
                 return false;
             case BYTE: {
@@ -367,7 +395,7 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
                 return true;
             }
             default:
-                throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, String.format("unknown column type %s", column.getColumnType()));
+                throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, String.format("Method \"areConsecutive\" unavailable for type %s", a.getDataType()));
         }
     }
 
@@ -384,23 +412,23 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
         if (!negate) return this;
         switch (type) {
             case NONE:
-                return new ColumnPredicate<>(PredicateType.ALL, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.ALL, columnName, lower, upper);
             case ALL:
-                return new ColumnPredicate<>(PredicateType.NONE, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.NONE, columnName, lower, upper);
             case EQUALITY:
-                return new ColumnPredicate<>(PredicateType.INEQUALITY, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.INEQUALITY, columnName, lower, upper);
             case INEQUALITY:
-                return new ColumnPredicate<>(PredicateType.EQUALITY, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.EQUALITY, columnName, lower, upper);
             case RANGE:
-                return new ColumnPredicate<>(PredicateType.NOT_RANGE, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.NOT_RANGE, columnName, lower, upper);
             case IS_NULL:
-                return new ColumnPredicate<>(PredicateType.IS_NOT_NULL, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.IS_NOT_NULL, columnName, lower, upper);
             case IS_NOT_NULL:
-                return new ColumnPredicate<>(PredicateType.IS_NULL, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.IS_NULL, columnName, lower, upper);
             case IN_LIST:
-                return new ColumnPredicate<>(PredicateType.NOT_IN_LIST, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.NOT_IN_LIST, columnName, lower, upper);
             case NOT_IN_LIST:
-                return new ColumnPredicate<>(PredicateType.IN_LIST, column, lower, upper);
+                return new ColumnPredicate<>(PredicateType.IN_LIST, columnName, lower, upper);
             default:
                 throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Type" + type + " cannot be negated");
         }
@@ -410,17 +438,17 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
     public String toString() {
         switch (type) {
             case EQUALITY:
-                return String.format("`%s` = %s", column.getColumnName(),
+                return String.format("`%s` = %s", columnName,
                         valueToString(lower));
             case RANGE: {
                 if (lower == null) {
-                    return String.format("`%s` < %s", column.getColumnName(), valueToString(upper));
+                    return String.format("`%s` < %s", columnName, valueToString(upper));
                 } else if (upper == null) {
-                    return String.format("`%s` >= %s", column.getColumnName(), valueToString(lower));
+                    return String.format("`%s` >= %s", columnName, valueToString(lower));
                 } else {
                     return String.format("`%s` >= %s AND `%s` < %s",
-                            column.getColumnName(), valueToString(lower),
-                            column.getColumnName(), valueToString(upper));
+                            columnName, valueToString(lower),
+                            columnName, valueToString(upper));
                 }
             }
             case IN_LIST: {
@@ -430,14 +458,14 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
                 while (iterator.hasNext()) {
                     builder.add(Optional.ofNullable(valueToString(iterator.next())).orElse("NULL"));
                 }
-                return String.format("`%s` IN (%s)", column.getColumnName(), Joiner.on(", ").join(builder.build()));
+                return String.format("`%s` IN (%s)", columnName, Joiner.on(", ").join(builder.build()));
             }
             case IS_NOT_NULL:
-                return String.format("`%s` IS NOT NULL", column.getColumnName());
+                return String.format("`%s` IS NOT NULL", columnName);
             case IS_NULL:
-                return String.format("`%s` IS NULL", column.getColumnName());
+                return String.format("`%s` IS NULL", columnName);
             case NONE:
-                return String.format("`%s` NONE", column.getColumnName());
+                return String.format("`%s` NONE", columnName);
             default:
                 throw new IllegalArgumentException(String.format("unknown predicate type %s", type));
         }
@@ -471,7 +499,7 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
         if (o == null || getClass() != o.getClass()) return false;
         ColumnPredicate<?> columnPredicate = (ColumnPredicate<?>) o;
         return type == columnPredicate.type &&
-                Objects.equal(column, columnPredicate.column) &&
+                Objects.equal(columnName, columnPredicate.columnName) &&
                 Objects.equal(lower, columnPredicate.lower) &&
                 Objects.equal(upper, columnPredicate.upper) &&
                 Objects.equal(inListValues, columnPredicate.inListValues);
@@ -479,7 +507,7 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(type, column, lower, upper, inListValues);
+        return Objects.hashCode(type, columnName, lower, upper, inListValues);
     }
 
     /**

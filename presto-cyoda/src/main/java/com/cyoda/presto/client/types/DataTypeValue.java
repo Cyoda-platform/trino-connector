@@ -19,28 +19,10 @@ package com.cyoda.presto.client.types;
 
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
-import com.cyoda.presto.client.types.impl.DateDataType;
-import com.cyoda.presto.client.types.impl.LocalDateDataType;
 import com.facebook.airlift.json.JsonCodec;
 import com.facebook.airlift.json.JsonObjectMapperProvider;
-import com.facebook.presto.common.type.BigintType;
-import com.facebook.presto.common.type.BooleanType;
-import com.facebook.presto.common.type.DateType;
-import com.facebook.presto.common.type.DecimalType;
-import com.facebook.presto.common.type.DoubleType;
-import com.facebook.presto.common.type.IntegerType;
-import com.facebook.presto.common.type.JsonType;
-import com.facebook.presto.common.type.RealType;
-import com.facebook.presto.common.type.SmallintType;
-import com.facebook.presto.common.type.StandardTypes;
-import com.facebook.presto.common.type.TimestampType;
-import com.facebook.presto.common.type.TinyintType;
 import com.facebook.presto.common.type.Type;
-import com.facebook.presto.common.type.TypeSignature;
-import com.facebook.presto.common.type.VarbinaryType;
-import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -54,7 +36,6 @@ import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -71,27 +52,19 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_INCORRECT_TYPE_ERROR;
 import static com.cyoda.presto.client.types.DataType.*;
 import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT;
-import static java.lang.Double.longBitsToDouble;
-import static java.lang.Float.intBitsToFloat;
 import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
     @Nullable public final T value;
-    public final Class<T> javaType;
-    public final SupportedDataType<T> supportedDataType;
+    private final Class<T> javaType;
+    private final DataType dataType;
 
-    protected DataTypeValue(T value, SupportedDataType<T> supportedDataType) {
-        this.value = value;
-        this.supportedDataType = supportedDataType;
-        this.javaType = (Class<T>) supportedDataType.getDataType().getJavaType();
-    }
     protected DataTypeValue(T value, Class<T> javaType) {
         this.value = value;
         if (value != null && !javaType.isAssignableFrom(value.getClass())) {
@@ -99,13 +72,7 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
                     format("Incompatible type. %s is not assignable from %s", javaType, value.getClass()));
         }
         this.javaType = javaType;
-        final DataType fromJavaType = DataType.fromClass(javaType)
-                .orElseThrow(()->new NullPointerException(javaType + " not mapped as a DataType"));
-        this.supportedDataType = fromJavaType.asSupported();
-    }
-
-    private static <S> DataTypeValue<S> of(S value, Class<S> javaType) {
-        return new DataTypeValue<>(value, javaType);
+        this.dataType = DataType.fromClassExact(javaType, "unknown");
     }
 
     @SuppressWarnings({"java:S1452", "java:S3740", "rawtypes"})
@@ -118,8 +85,8 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
         return new DataTypeValue<>(value, (Class<T>) value.getClass());
     }
 
-    public static <T> DataTypeValue<T> of(T value, SupportedDataType<T> dataType) {
-        return new DataTypeValue<>(value, dataType);
+    public static <T> DataTypeValue<T> of(T value, Class<T> clazz) {
+        return new DataTypeValue<>(value, clazz);
     }
 
 
@@ -129,11 +96,12 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
         return new DataTypeValue(value, dataType.getJavaType());
     }
 
-    public static <S> DataTypeValue<S> ofPrestoNativeValue(SupportedDataType<?> dataType, Object nativeValue, Class<S> targetClass) {
-        Object obj = getJavaValue(dataType, nativeValue);
+    public static <S> DataTypeValue<S> ofPrestoNativeValue(DataType dataType, Object nativeValue, Class<S> targetClass) {
+        PrestoValueConverter<?> converter = PrestoValueConverterProvider.getPrestoValueConverter(dataType);
+        Object obj = converter.toObject(nativeValue);
         Preconditions.checkArgument(targetClass.isAssignableFrom(obj.getClass()),"%s is not assignable from %s",targetClass,obj.getClass());
         //noinspection unchecked
-        return of((S) obj, targetClass);
+        return new DataTypeValue<>((S) obj, targetClass);
     }
 
     public static DataTypeValue<Object> ofObject(Object value) {
@@ -141,17 +109,14 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
     }
 
 
-    @Nullable
-    public T getValue() {
-        return value;
-    }
+//    @Nullable
+//    public T getValue() {
+//        return value;
+//    }
 
-    public Class<T> getJavaType() {
-        return javaType;
-    }
 
     public DataType getDataType() {
-        return supportedDataType.getDataType();
+        return dataType;
     }
 
     @Override
@@ -159,7 +124,7 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
         return "DataTypeValue{" +
                 "value=" + value +
                 ", javaType=" + javaType +
-                ", dataType=" + supportedDataType +
+                ", dataType=" + dataType +
                 '}';
     }
 
@@ -168,12 +133,12 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         DataTypeValue<?> that = (DataTypeValue<?>) o;
-        return Objects.equals(value, that.value) && javaType.equals(that.javaType) && supportedDataType == that.supportedDataType;
+        return Objects.equals(value, that.value) && javaType.equals(that.javaType) && dataType == that.dataType;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(value, javaType, supportedDataType);
+        return Objects.hash(value, javaType, dataType);
     }
 
     public static final Supplier<ObjectMapper> OBJECT_MAPPER_SUPPLIER = Suppliers.memoize(
@@ -183,7 +148,7 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
         if ( this.value == null ) return Optional.empty();
 
         String result;
-        switch (this.supportedDataType.getDataType()) {
+        switch (this.getDataType()) {
             case STRING:
             case BYTE:
             case INTEGER:
@@ -207,7 +172,7 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
             case ZONED_DATE_TIME:
             case CLASS:
             case LOCALE:
-            case ARRAY:
+//            case ARRAY:
             case LIST:
             case MAP:
             case SET: {// Let Jackson do the work, so that we have consistent formatting
@@ -237,10 +202,10 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
                 }
                 result = Base64.getEncoder().encodeToString(b);
                 break;
-            case NULL:
-                result = null;
-                break;
-            default: throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR, "[Cyoda] "+this.supportedDataType + " not supported for stringifying");
+//            case NULL:
+//                result = null;
+//                break;
+            default: throw new PrestoException(CYODA_INCORRECT_TYPE_ERROR, "[Cyoda] "+this.dataType + " not supported for stringifying");
         }
         return Optional.ofNullable(result);
 
@@ -269,36 +234,12 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
     }
 
 
-    public static TypeSignature toPrestoTypeSignature(DataType dataType) {
-        switch (dataType) {
-            case BOOLEAN: return BooleanType.BOOLEAN.getTypeSignature();
-            case BYTE: return TinyintType.TINYINT.getTypeSignature();
-            case SHORT: return SmallintType.SMALLINT.getTypeSignature();
-            case INTEGER: return IntegerType.INTEGER.getTypeSignature();
-            case LONG: return BigintType.BIGINT.getTypeSignature();
-            case FLOAT: return RealType.REAL.getTypeSignature();
-            case DOUBLE: return DoubleType.DOUBLE.getTypeSignature();
-            case STRING: return VarcharType.VARCHAR.getTypeSignature();
-            case DATE: return DateType.DATE.getTypeSignature();
-            case LOCAL_DATE_TIME: return TimestampType.TIMESTAMP.getTypeSignature();
-            case LOCAL_DATE: return BigintType.BIGINT.getTypeSignature();
-            case YEAR: return VarcharType.VARCHAR.getTypeSignature();
-            case OBJECT: return JsonType.JSON.getTypeSignature();
-            default: throw new UnsupportedOperationException(dataType + " Not yet done");
-        }
-    }
-
-    public static Object getJavaValue(SupportedDataType<?> dataType, Object nativeValue) {
-        PrestoValueConverter<?> converter = PrestoValueConverterProvider.getPrestoValueConverter(dataType);
-        return converter.toObject(nativeValue);
-    }
-
     public Long parseToLong() {
-        PrestoValueConverter<T> prestoValueConverter = Optional.of(PrestoValueConverterProvider.getPrestoValueConverter(supportedDataType))
-                .orElseThrow(() -> new IllegalArgumentException("Not found for "+supportedDataType));
+        PrestoValueConverter<?> prestoValueConverter = Optional.of(PrestoValueConverterProvider.getPrestoValueConverter(dataType))
+                .orElseThrow(() -> new IllegalArgumentException("Not found for "+dataType));
         return Optional.ofNullable(this.value)
                 .map(prestoValueConverter::toLong)
-                .orElseThrow(() -> new IllegalArgumentException(this.supportedDataType + " not yet implemented"));
+                .orElseThrow(() -> new IllegalArgumentException(this.dataType + " not yet implemented"));
     }
 
 
@@ -309,9 +250,9 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
     @SuppressWarnings("unchecked")
     private <S> S getCast() {
         try {
-            return (S) supportedDataType.getClazz().cast(value);
+            return (S) dataType.getJavaType().cast(value);
         } catch (Exception e) {
-            throw wrongDataTypeException(supportedDataType.getDataType());
+            throw wrongDataTypeException(dataType);
         }
     }
 
@@ -427,11 +368,11 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
 
     private PrestoException wrongDataTypeException(DataType required) {
         return new PrestoException(CYODA_INCORRECT_TYPE_ERROR,
-                format("DataType %s is wrong. Need %s", this.supportedDataType, required));
+                format("DataType %s is wrong. Need %s", this.dataType, required));
     }
 
     public boolean isNull() {
-        return value == null || supportedDataType.getDataType() == NULL;
+        return value == null;
     }
 
     private static byte[] getByteArray(ByteBuffer byteBuffer) {
@@ -458,16 +399,16 @@ public class DataTypeValue<T> implements Comparable<DataTypeValue<T>> {
         return ((Comparable<T>) this.value).compareTo(o.value);
     }
 
-    public <S> DataTypeValue<S> as(Class<S> clazz, Function<T,S> convert) {
-        if ( this.value != null && !clazz.isAssignableFrom(this.value.getClass())) {
-            throw new IllegalArgumentException("value is not a "+clazz.getName());
-        }
-        return new DataTypeValue<>(convert.apply(this.value),clazz);
-    }
+//    public <S> DataTypeValue<S> as(Class<S> clazz, Function<T,S> convert) {
+//        if ( this.value != null && !clazz.isAssignableFrom(this.value.getClass())) {
+//            throw new IllegalArgumentException("value is not a "+clazz.getName());
+//        }
+//        return new DataTypeValue<>(convert.apply(this.value),clazz);
+//    }
 
     public Slice asSlice(Type type) {
         return Optional.ofNullable(this.value)
-                .map(val->PrestoValueConverterProvider.getPrestoValueConverter(supportedDataType).toSlice(type,val))
+                .map(val->PrestoValueConverterProvider.getPrestoValueConverter(dataType).toSlice(val))
                 .orElse(Slices.EMPTY_SLICE);
     }
 }

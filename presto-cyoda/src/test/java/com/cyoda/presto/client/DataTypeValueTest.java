@@ -19,7 +19,6 @@ package com.cyoda.presto.client;
 
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.client.types.DataTypeValue;
-import com.cyoda.presto.client.types.impl.BooleanDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.type.TinyintType;
 import org.testng.annotations.Test;
@@ -36,6 +35,15 @@ import static org.testng.Assert.assertTrue;
 
 public class DataTypeValueTest {
 
+    @Test
+    public void testComparables(){
+        for (DataType dataType : DataType.values()){
+            if (dataType.isComparable()){
+                assert dataType.getTypeParametersCount() == 0;
+                assert Comparable.class.isAssignableFrom(dataType.getJavaType());
+            }
+        }
+    }
     @Test
     public void testStringifyYear() {
         final int isoYear = 2020;
@@ -111,7 +119,7 @@ public class DataTypeValueTest {
     @Test
     public void testStringifyBooleanJson() {
         Boolean bool = Boolean.TRUE;
-        DataTypeValue<?> sdt = DataTypeValue.of(bool, BooleanDataType.INSTANCE);
+        DataTypeValue<?> sdt = DataTypeValue.of(bool, Boolean.class);
         Optional<String> stringify = sdt.stringify();
         assertTrue(stringify.isPresent());
         String str = stringify.get();

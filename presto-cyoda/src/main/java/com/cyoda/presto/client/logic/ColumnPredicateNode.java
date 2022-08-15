@@ -17,8 +17,6 @@
 
 package com.cyoda.presto.client.logic;
 
-import com.cyoda.presto.handles.CyodaColumnHandle;
-
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,7 +47,8 @@ public interface ColumnPredicateNode<T extends Comparable<? super T>> {
     @SuppressWarnings("java:S1452")
     @Nonnull Optional<Collection<ColumnPredicateNode<?>>> getMembers();
 
-    @Nonnull Optional<CyodaColumnHandle> getColumn();
+    @Nonnull
+    Optional<String> getColumnName();
 
     @Nonnull Optional<CompoundPredicateNode> getParent();
 

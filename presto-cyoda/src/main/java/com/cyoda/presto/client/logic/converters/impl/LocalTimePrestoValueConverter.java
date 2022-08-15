@@ -17,15 +17,17 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.LongTypeValueConverter;
+import com.cyoda.presto.client.types.DataType;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.time.LocalTime;
 
-public class LocalTimePrestoValueConverter implements ComparablePrestoValueConverter<LocalTime> {
-    @Override
-    public Class<LocalTime> getClazz() {
-        return LocalTime.class;
+public class LocalTimePrestoValueConverter extends LongTypeValueConverter<LocalTime> {
+    @Inject
+    public LocalTimePrestoValueConverter() {
+        super(DataType.LOCAL_TIME);
     }
 
     @Override

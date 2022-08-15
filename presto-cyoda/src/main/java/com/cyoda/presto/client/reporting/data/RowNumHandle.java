@@ -55,7 +55,7 @@ public class RowNumHandle {
         if (isListPredicate) {
             return columnPredicate.getInListValues().stream().map(it -> {
                 ColumnPredicate<Long> predicate = new ColumnPredicate<>(
-                        ColumnPredicate.PredicateType.EQUALITY, columnPredicate.getColumn(), it, null);
+                        ColumnPredicate.PredicateType.EQUALITY, columnPredicate.getColumnName(), it, null);
                 return createRowNumHandle(predicate, page, size, true, false);
             }).collect(Collectors.toList());
         }

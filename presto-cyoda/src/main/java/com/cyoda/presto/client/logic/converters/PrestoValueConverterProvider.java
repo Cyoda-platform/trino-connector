@@ -44,41 +44,14 @@ import com.cyoda.presto.client.logic.converters.impl.UUIDPrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.YearMonthPrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.YearPrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.ZonedDateTimePrestoValueConverter;
-import com.cyoda.presto.client.types.ComparableSupportedDataType;
-import com.cyoda.presto.client.types.SupportedDataType;
-import com.cyoda.presto.client.types.impl.BigDecimalDataType;
-import com.cyoda.presto.client.types.impl.BigIntegerDataType;
-import com.cyoda.presto.client.types.impl.BooleanDataType;
-import com.cyoda.presto.client.types.impl.ByteArrayDataType;
-import com.cyoda.presto.client.types.impl.ByteBufferDataType;
-import com.cyoda.presto.client.types.impl.ByteDataType;
-import com.cyoda.presto.client.types.impl.CharacterDataType;
-import com.cyoda.presto.client.types.impl.ClassDataType;
-import com.cyoda.presto.client.types.impl.DateDataType;
-import com.cyoda.presto.client.types.impl.DoubleDataType;
-import com.cyoda.presto.client.types.impl.FloatDataType;
-import com.cyoda.presto.client.types.impl.IntegerDataType;
-import com.cyoda.presto.client.types.impl.ListDataType;
-import com.cyoda.presto.client.types.impl.LocalDateDataType;
-import com.cyoda.presto.client.types.impl.LocalDateTimeDataType;
-import com.cyoda.presto.client.types.impl.LocalTimeDataType;
-import com.cyoda.presto.client.types.impl.LocaleDataType;
-import com.cyoda.presto.client.types.impl.LongDataType;
-import com.cyoda.presto.client.types.impl.MapDataType;
-import com.cyoda.presto.client.types.impl.ObjectDataType;
-import com.cyoda.presto.client.types.impl.SetDataType;
-import com.cyoda.presto.client.types.impl.ShortDataType;
-import com.cyoda.presto.client.types.impl.StringDataType;
-import com.cyoda.presto.client.types.impl.UUIDDataType;
-import com.cyoda.presto.client.types.impl.YearDataType;
-import com.cyoda.presto.client.types.impl.YearMonthDataType;
-import com.cyoda.presto.client.types.impl.ZonedDateTimeDataType;
+import com.cyoda.presto.client.types.DataType;
 import com.google.common.base.Suppliers;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.function.Supplier;
 
 public class PrestoValueConverterProvider {
+
 
     private PrestoValueConverterProvider() {
     }
@@ -87,51 +60,45 @@ public class PrestoValueConverterProvider {
             PrestoValueConverterProvider::setupConverters)::get;
 
 
-    public static <S> PrestoValueConverter<S> getPrestoValueConverter(SupportedDataType<S> supportedDataType) {
-        return CONVERTER_PROVIDER_SUPPLIER.get().getPrestoValueConverter(supportedDataType);
+    public static <S> PrestoValueConverter<S> getPrestoValueConverter(DataType dataType) {
+        return CONVERTER_PROVIDER_SUPPLIER.get().getPrestoValueConverter(dataType);
     }
 
-    public static <S extends Comparable<? super S>> ComparablePrestoValueConverter<S> getComparablePrestoValueConverter(
-            ComparableSupportedDataType<S> supportedDataType
-    ) {
-        //noinspection unchecked
-        return (ComparablePrestoValueConverter<S>) CONVERTER_PROVIDER_SUPPLIER.get().getComparablePrestoValueConverter(supportedDataType);
-    }
     public static ComparablePrestoValueConverter<?> getComparablePrestoValueConverterU(
-            ComparableSupportedDataType<?> supportedDataType
+            DataType dataType
     ) {
-        return CONVERTER_PROVIDER_SUPPLIER.get().getComparablePrestoValueConverter(supportedDataType);
+        return CONVERTER_PROVIDER_SUPPLIER.get().getComparablePrestoValueConverter(dataType);
     }
 
     private static PrestoValueConverters setupConverters() {
-        ImmutableMap.Builder<SupportedDataType<?>, PrestoValueConverter<?>> builder = ImmutableMap.builder();
-        builder.put(BigDecimalDataType.INSTANCE,new BigDecimalPrestoValueConverter());
-        builder.put(BigIntegerDataType.INSTANCE,new BigIntegerPrestoValueConverter());
-        builder.put(BooleanDataType.INSTANCE,new BooleanPrestoValueConverter());
-        builder.put(ByteArrayDataType.INSTANCE,new ByteArrayPrestoValueConverter());
-        builder.put(ByteBufferDataType.INSTANCE,new ByteBufferPrestoValueConverter());
-        builder.put(ByteDataType.INSTANCE,new BytePrestoValueConverter());
-        builder.put(CharacterDataType.INSTANCE,new CharacterPrestoValueConverter());
-        builder.put(ClassDataType.INSTANCE,new ClassPrestoValueConverter());
-        builder.put(DateDataType.INSTANCE,new DatePrestoValueConverter());
-        builder.put(DoubleDataType.INSTANCE,new DoublePrestoValueConverter());
-        builder.put(FloatDataType.INSTANCE,new FloatPrestoValueConverter());
-        builder.put(IntegerDataType.INSTANCE,new IntegerPrestoValueConverter());
-        builder.put(ListDataType.INSTANCE,new ListPrestoValueConverter());
-        builder.put(LocalDateDataType.INSTANCE,new LocalDatePrestoValueConverter());
-        builder.put(LocalDateTimeDataType.INSTANCE,new LocalDateTimePrestoValueConverter());
-        builder.put(LocaleDataType.INSTANCE,new LocalePrestoValueConverter());
-        builder.put(LocalTimeDataType.INSTANCE,new LocalTimePrestoValueConverter());
-        builder.put(LongDataType.INSTANCE,new LongPrestoValueConverter());
-        builder.put(MapDataType.INSTANCE,new MapPrestoValueConverter());
-        builder.put(ObjectDataType.INSTANCE,new ObjectPrestoValueConverter());
-        builder.put(SetDataType.INSTANCE,new SetPrestoValueConverter());
-        builder.put(ShortDataType.INSTANCE,new ShortPrestoValueConverter());
-        builder.put(StringDataType.INSTANCE,new StringPrestoValueConverter());
-        builder.put(UUIDDataType.INSTANCE,new UUIDPrestoValueConverter());
-        builder.put(YearMonthDataType.INSTANCE,new YearMonthPrestoValueConverter());
-        builder.put(YearDataType.INSTANCE,new YearPrestoValueConverter());
-        builder.put(ZonedDateTimeDataType.INSTANCE,new ZonedDateTimePrestoValueConverter());
+        ImmutableMap.Builder<DataType, PrestoValueConverter<?>> builder = ImmutableMap.builder();
+        builder.put(DataType.BIG_DECIMAL,new BigDecimalPrestoValueConverter());
+        builder.put(DataType.BIG_INTEGER,new BigIntegerPrestoValueConverter());
+        builder.put(DataType.BOOLEAN,new BooleanPrestoValueConverter());
+        builder.put(DataType.BYTE_ARRAY,new ByteArrayPrestoValueConverter());
+        builder.put(DataType.BYTE_BUFFER,new ByteBufferPrestoValueConverter());
+        builder.put(DataType.BYTE,new BytePrestoValueConverter());
+        builder.put(DataType.CHARACTER,new CharacterPrestoValueConverter());
+        builder.put(DataType.CLASS,new ClassPrestoValueConverter());
+        builder.put(DataType.DATE,new DatePrestoValueConverter());
+        builder.put(DataType.DOUBLE,new DoublePrestoValueConverter());
+        builder.put(DataType.FLOAT,new FloatPrestoValueConverter());
+        builder.put(DataType.INTEGER,new IntegerPrestoValueConverter());
+        builder.put(DataType.LIST,new ListPrestoValueConverter());
+        builder.put(DataType.LOCAL_DATE,new LocalDatePrestoValueConverter());
+        builder.put(DataType.LOCAL_DATE_TIME,new LocalDateTimePrestoValueConverter());
+        builder.put(DataType.LOCALE,new LocalePrestoValueConverter());
+        builder.put(DataType.LOCAL_TIME,new LocalTimePrestoValueConverter());
+        builder.put(DataType.LONG,new LongPrestoValueConverter());
+        builder.put(DataType.MAP,new MapPrestoValueConverter());
+        builder.put(DataType.OBJECT,new ObjectPrestoValueConverter());
+        builder.put(DataType.SET,new SetPrestoValueConverter());
+        builder.put(DataType.SHORT,new ShortPrestoValueConverter());
+        builder.put(DataType.STRING,new StringPrestoValueConverter());
+        builder.put(DataType.UUID_TYPE,new UUIDPrestoValueConverter());
+        builder.put(DataType.YEAR_MONTH,new YearMonthPrestoValueConverter());
+        builder.put(DataType.YEAR,new YearPrestoValueConverter());
+        builder.put(DataType.ZONED_DATE_TIME,new ZonedDateTimePrestoValueConverter());
         return new PrestoValueConverters(builder.build());
     }
 }

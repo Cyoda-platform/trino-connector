@@ -114,15 +114,15 @@ public class NewComparisonColumnPredicateTest {
     public void setup() {
 
         int pos = 0;
-        boolCol = new CyodaColumnHandle(CONNECTOR_ID,"bool", BooleanType.BOOLEAN, DataType.BOOLEAN,pos++, REQUEST_HANDLER_KEY,false);
-        byteCol = new CyodaColumnHandle(CONNECTOR_ID,"byte", TinyintType.TINYINT,DataType.BYTE,pos++, REQUEST_HANDLER_KEY,false);
-        shortCol = new CyodaColumnHandle(CONNECTOR_ID,"short", SmallintType.SMALLINT,DataType.SHORT, pos++, REQUEST_HANDLER_KEY,false);
-        intCol = new CyodaColumnHandle(CONNECTOR_ID,"int", IntegerType.INTEGER, DataType.INTEGER, pos++, REQUEST_HANDLER_KEY,false);
+        boolCol = new CyodaColumnHandle(CONNECTOR_ID,"bool", BooleanType.BOOLEAN, DataType.BOOLEAN,pos++, REQUEST_HANDLER_KEY);
+        byteCol = new CyodaColumnHandle(CONNECTOR_ID,"byte", TinyintType.TINYINT,DataType.BYTE,pos++, REQUEST_HANDLER_KEY);
+        shortCol = new CyodaColumnHandle(CONNECTOR_ID,"short", SmallintType.SMALLINT,DataType.SHORT, pos++, REQUEST_HANDLER_KEY);
+        intCol = new CyodaColumnHandle(CONNECTOR_ID,"int", IntegerType.INTEGER, DataType.INTEGER, pos++, REQUEST_HANDLER_KEY);
 
-        longCol = new CyodaColumnHandle(CONNECTOR_ID,"long", DecimalType.createDecimalType(), DataType.LONG, pos++, REQUEST_HANDLER_KEY,false);
+        longCol = new CyodaColumnHandle(CONNECTOR_ID,"long", DecimalType.createDecimalType(), DataType.LONG, pos++, REQUEST_HANDLER_KEY);
 
-        floatCol = new CyodaColumnHandle(CONNECTOR_ID,"float", RealType.REAL, DataType.FLOAT,pos++, REQUEST_HANDLER_KEY,false);
-        doubleCol = new CyodaColumnHandle(CONNECTOR_ID,"double", DoubleType.DOUBLE, DataType.DOUBLE,pos++, REQUEST_HANDLER_KEY,false);
+        floatCol = new CyodaColumnHandle(CONNECTOR_ID,"float", RealType.REAL, DataType.FLOAT,pos++, REQUEST_HANDLER_KEY);
+        doubleCol = new CyodaColumnHandle(CONNECTOR_ID,"double", DoubleType.DOUBLE, DataType.DOUBLE,pos++, REQUEST_HANDLER_KEY);
         stringCol = new CyodaColumnHandle(CONNECTOR_ID,"string", VarcharType.VARCHAR, DataType.STRING,pos++, REQUEST_HANDLER_KEY);
         binaryCol = new CyodaColumnHandle(CONNECTOR_ID,"binary", VarbinaryType.VARBINARY, DataType.BYTE_BUFFER,pos++, REQUEST_HANDLER_KEY);
 

@@ -18,42 +18,85 @@
 package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.ColumnPredicate;
-import com.cyoda.presto.client.logic.ColumnPredicateUtils;
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.SliceComparableValueConverter;
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.facebook.presto.common.predicate.DiscreteValues;
-import com.facebook.presto.common.type.Type;
-import com.facebook.presto.common.type.VarbinaryType;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Base64;
 
-public class ByteBufferPrestoValueConverter implements ComparablePrestoValueConverter<ByteBuffer> {
-    @Override
-    public Class<ByteBuffer> getClazz() {
-        return ByteBuffer.class;
+public class ByteBufferPrestoValueConverter extends SliceComparableValueConverter<ByteBuffer> {
+    @Inject
+    public ByteBufferPrestoValueConverter() {
+        super(DataType.BYTE_BUFFER);
     }
 
     @Override
-    public ColumnPredicate<ByteBuffer> newInListPredicate(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
-        return ColumnPredicateUtils.newInListPredicate(columnHandle, discreteValues, ByteBuffer.class);
+    protected ColumnPredicate<ByteBuffer> newComparisonPredicate(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, ByteBuffer value) {
+        byte[] arrayValue = new byte[value.remaining()];
+        try {
+            value.get(arrayValue);
+        } finally {
+            value.rewind();
+        }
+        if (op == ColumnPredicate.ComparisonOp.LESS_EQUAL) {
+            arrayValue = Arrays.copyOf(arrayValue, arrayValue.length + 1);
+            op = ColumnPredicate.ComparisonOp.LESS;
+        } else if (op == ColumnPredicate.ComparisonOp.GREATER) {
+            arrayValue = Arrays.copyOf(arrayValue, arrayValue.length + 1);
+            op = ColumnPredicate.ComparisonOp.GREATER_EQUAL;
+        }
+
+        DataTypeValue<ByteBuffer> wrapped = DataTypeValue.of(ByteBuffer.wrap(arrayValue));
+
+        switch (op) {
+            case GREATER_EQUAL:
+                if (arrayValue.length == 0) {
+                    return notNullPredicate(column);
+                }
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, wrapped, null);
+            case EQUAL:
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, wrapped, null);
+            case LESS:
+                if (arrayValue.length == 0) {
+                    return nonePredicate(column);
+                }
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, null, wrapped);
+            default:
+                throw unsupportedComparison(column, op);
+        }
     }
 
     @Override
-    public Slice toSlice(@Nonnull Type type, @Nonnull ByteBuffer value) {
+    public String stringify(ByteBuffer value) {
+        byte[] b = new byte[value.remaining()];
+        try {
+            value.get(b);
+        } finally {
+            value.rewind();
+        }
+        return Base64.getEncoder().encodeToString(b);
+    }
+
+    @Override
+    public Slice toSlice(@Nonnull ByteBuffer value) {
         return Slices.wrappedBuffer(value);
     }
 
     @Nonnull
     @Override
-    public ByteBuffer fromSlice(@Nonnull Type type, Slice value) {
+    public ByteBuffer fromSlice(Slice value) {
         return value.toByteBuffer();
     }
 
     @Override
     public ByteBuffer toObject(Object nativeValue) {
-        return fromSlice(VarbinaryType.VARBINARY,(Slice) nativeValue);
+        return fromSlice((Slice) nativeValue);
     }
 }

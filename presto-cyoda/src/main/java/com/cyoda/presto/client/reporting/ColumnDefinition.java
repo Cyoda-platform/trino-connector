@@ -17,19 +17,12 @@
 
 package com.cyoda.presto.client.reporting;
 
+import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
 import com.facebook.presto.common.type.TypeSignature;
 
 public interface ColumnDefinition {
     int getPos();
     String getFieldName();
-    String getFieldTypeString();
-    DataType getDataType();
-    default TypeSignature getParType() {
-        return null;
-    }
-    default TypeSignature getMapValuetype() {
-        return null;
-    }
-
+    CompoundDataType getDataType();
 }

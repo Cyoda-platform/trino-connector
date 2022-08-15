@@ -17,36 +17,45 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
-import com.cyoda.presto.client.types.BigDecimalType;
-import com.facebook.presto.common.type.Type;
+import com.cyoda.presto.client.logic.converters.structure.BigDecimalTypeValueConverter;
+import com.cyoda.presto.client.types.DataType;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.math.BigDecimal;
 
-public class BigDecimalPrestoValueConverter implements ComparablePrestoValueConverter<BigDecimal> {
+public class BigDecimalPrestoValueConverter extends BigDecimalTypeValueConverter<BigDecimal> {
 
-    @Override
-    public Class<BigDecimal> getClazz() {
-        return BigDecimal.class;
+    @Inject
+    public BigDecimalPrestoValueConverter() {
+        super(DataType.BIG_DECIMAL);
     }
 
     @Override
-    public Slice toSlice(@Nonnull Type type, @Nonnull BigDecimal value) {
+    protected BigDecimal toBigDecimal(BigDecimal value) {
+        return value;
+    }
+
+    @Override
+    protected BigDecimal fromBigDecimal(BigDecimal value) {
+        return value;
+    }
+
+    @Override
+    public Slice toSlice(@Nonnull BigDecimal value) {
         return Slices.utf8Slice(value.toString());
     }
 
     @Nonnull
     @Override
-    public BigDecimal fromSlice(Type type, Slice value) {
+    public BigDecimal fromSlice(Slice value) {
         return new BigDecimal(value.toStringUtf8());
     }
 
     @Override
     public BigDecimal toObject(Object nativeValue) {
-        return fromSlice(BigDecimalType.BIG_DECIMAL_TYPE,(Slice) nativeValue);
+        return fromSlice((Slice) nativeValue);
     }
-
 }

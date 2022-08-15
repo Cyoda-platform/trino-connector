@@ -17,8 +17,7 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.types.SupportedDataType;
-import com.cyoda.presto.client.types.impl.BigIntegerDataType;
+import com.cyoda.presto.client.types.DataType;
 import org.testng.annotations.Test;
 
 import java.math.BigInteger;
@@ -40,7 +39,7 @@ public class BigIntegerPrestoValueConverterTest implements SliceCheck<BigInteger
     }
 
     @Override
-    public SupportedDataType<BigInteger> getDataType() {
-        return BigIntegerDataType.INSTANCE;
+    public DataType getDataType() {
+        return DataType.BIG_INTEGER;
     }
 }

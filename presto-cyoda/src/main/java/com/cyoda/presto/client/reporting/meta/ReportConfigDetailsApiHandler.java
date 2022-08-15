@@ -27,8 +27,8 @@ import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
+import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.TypesUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.type.JsonType;
@@ -61,7 +61,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
@@ -99,34 +98,28 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
     public static final String REPORT_DETAILS_ENDPOINT = REPORT_DEFS_ENDPOINT + "/";
 
     enum ColumnDef implements ColumnDefinition {
-        ID(0, REPORT_ID_COLUMN, StandardTypes.VARCHAR, STRING, null),
-        REPORT_NAME(1, REPORT_NAME_COLUMN, StandardTypes.VARCHAR, STRING, null),
-        REPORT_COLUMNS(2, REPORT_COLUMNS_COLUMN, StandardTypes.ARRAY, LIST, JsonType.JSON.getTypeSignature()),
-        REPORT_JSON(3, REPORT_JSON_COLUMN, StandardTypes.JSON, STRING, null);
+        ID(0, REPORT_ID_COLUMN, STRING),
+        REPORT_NAME(1, REPORT_NAME_COLUMN, STRING),
+        REPORT_COLUMNS(2, REPORT_COLUMNS_COLUMN, LIST, OBJECT),
+        REPORT_JSON(3, REPORT_JSON_COLUMN, STRING);
 
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
                     .add("pos", pos)
                     .add("fieldName", fieldName)
-                    .add("fieldTypeString", fieldTypeString)
                     .add("dataType", dataType)
-                    .add("partType", parType)
                     .toString();
         }
 
         private final int pos;
         private final String fieldName;
-        private final String fieldTypeString;
-        private final DataType dataType;
-        private final TypeSignature parType;
+        private final CompoundDataType dataType;
 
-        ColumnDef(int pos, String fieldName, String fieldTypeString, DataType dateType, TypeSignature parType) {
+        ColumnDef(int pos, String fieldName, DataType dateType, DataType... parType) {
             this.pos = pos;
             this.fieldName = fieldName;
-            this.fieldTypeString = fieldTypeString;
-            this.dataType = dateType;
-            this.parType = parType;
+            this.dataType = new CompoundDataType(fieldName, dateType, parType);
         }
 
         @Override
@@ -140,19 +133,10 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
         }
 
         @Override
-        public String getFieldTypeString() {
-            return fieldTypeString;
-        }
-
-        @Override
-        public DataType getDataType() {
+        public CompoundDataType getDataType() {
             return dataType;
         }
 
-        @Override
-        public TypeSignature getParType() {
-            return parType;
-        }
     }
 
     @Inject
@@ -253,22 +237,15 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
                     throw new IllegalArgumentException("Unsupported Cyoda report column type " + reportColumnType);
             }
 
-            DataType dataType;
-            dataType = mapDataType(
-                    DataType.fromClass((Class<?>) colParType.getRawType()).orElse(DataType.OBJECT)
-            );
-            Type[] actualTypeArguments = colParType.getActualTypeArguments();
-            TypeSignature firstArg = Optional.ofNullable(actualTypeArguments.length > 0 ? (Class<?>) actualTypeArguments[0] : null)
-                    .map(arg -> TypesUtil.toType(DataType.fromClass(arg).orElse(NULL).getTypeString(), null, null, typeManager).getTypeSignature()).orElse(null);
-            TypeSignature secondArg = Optional.ofNullable(actualTypeArguments.length > 1 ? (Class<?>) actualTypeArguments[1] : null)
-                    .map(arg -> TypesUtil.toType(DataType.fromClass(arg).orElse(NULL).getTypeString(), null, null, typeManager).getTypeSignature()).orElse(null);
+            CompoundDataType dataType = CompoundDataType.of(colParType, columnName);
             CyodaColumnHandle columnHandle = new CyodaColumnHandle(
                     connectorId.toString(),
                     columnName,
-                    toType(dataType.getTypeString(), firstArg, secondArg),
+                    dataType.toPrestoType(typeManager),
                     dataType,
                     position.getAndIncrement(),
-                    getHandlerKey()
+                    getHandlerKey(),
+                    true
             );
             builder.add(columnHandle);
         });
@@ -345,12 +322,6 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
         return read.isEmpty() ? null : read.get(0);
     }
 
-
-    private DataType mapDataType(DataType dataType) {
-        // TODO: Check if we ever have arrays as columns.
-        if ( dataType == ARRAY ) throw new UnsupportedOperationException("Not yet clear if we have this use case");
-        return dataType;
-    }
 
     private UriTemplate setupUriTemplate() {
 

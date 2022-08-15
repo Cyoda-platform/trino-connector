@@ -17,15 +17,17 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.LongTypeValueConverter;
+import com.cyoda.presto.client.types.DataType;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 
-public class LongPrestoValueConverter implements ComparablePrestoValueConverter<Long> {
+public class LongPrestoValueConverter extends LongTypeValueConverter<Long> {
 
-    @Override
-    public Class<Long> getClazz() {
-        return Long.class;
+    @Inject
+    public LongPrestoValueConverter() {
+        super(DataType.LONG);
     }
 
     @Override
@@ -47,6 +49,11 @@ public class LongPrestoValueConverter implements ComparablePrestoValueConverter<
     @Override
     public long maxValueOfIntType() {
         return Long.MAX_VALUE;
+    }
+
+    @Override
+    public String stringify(Long value) {
+        return value.toString();
     }
 
     @Override

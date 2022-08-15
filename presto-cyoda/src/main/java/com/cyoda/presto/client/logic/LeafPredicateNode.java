@@ -92,8 +92,8 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Colum
 
     @Nonnull
     @Override
-    public Optional<CyodaColumnHandle> getColumn() {
-        return Optional.ofNullable(columnPredicate.getColumn());
+    public Optional<String> getColumnName() {
+        return Optional.ofNullable(columnPredicate.getColumnName());
     }
 
     @Nonnull

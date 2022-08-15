@@ -17,8 +17,7 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.types.SupportedDataType;
-import com.cyoda.presto.client.types.impl.BigDecimalDataType;
+import com.cyoda.presto.client.types.DataType;
 import com.facebook.presto.common.type.DecimalType;
 import com.facebook.presto.common.type.Type;
 import org.testng.annotations.Test;
@@ -50,7 +49,7 @@ public class BigDecimalPrestoValueConverterTest implements SliceCheck<BigDecimal
     }
 
     @Override
-    public SupportedDataType<BigDecimal> getDataType() {
-        return BigDecimalDataType.INSTANCE;
+    public DataType getDataType() {
+        return DataType.BIG_DECIMAL;
     }
 }

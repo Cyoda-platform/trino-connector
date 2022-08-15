@@ -17,21 +17,23 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.LongTypeValueConverter;
+import com.cyoda.presto.client.types.DataType;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
-public class LocalDateTimePrestoValueConverter implements ComparablePrestoValueConverter<LocalDateTime> {
+public class LocalDateTimePrestoValueConverter extends LongTypeValueConverter<LocalDateTime> {
 
     public static final ZoneId UTC = ZoneId.of("UTC");
 
-    @Override
-    public Class<LocalDateTime> getClazz() {
-        return LocalDateTime.class;
+    @Inject
+    public LocalDateTimePrestoValueConverter() {
+        super(DataType.LOCAL_DATE_TIME);
     }
 
     @Override

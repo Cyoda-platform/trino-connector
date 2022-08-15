@@ -17,15 +17,17 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.LongTypeValueConverter;
+import com.cyoda.presto.client.types.DataType;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.time.Year;
 
-public class YearPrestoValueConverter implements ComparablePrestoValueConverter<Year> {
-    @Override
-    public Class<Year> getClazz() {
-        return Year.class;
+public class YearPrestoValueConverter extends LongTypeValueConverter<Year> {
+    @Inject
+    public YearPrestoValueConverter() {
+        super(DataType.YEAR);
     }
 
     @Override

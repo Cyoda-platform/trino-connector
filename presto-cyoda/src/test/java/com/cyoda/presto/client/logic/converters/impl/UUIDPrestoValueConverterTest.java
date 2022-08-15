@@ -19,8 +19,7 @@ package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
-import com.cyoda.presto.client.types.SupportedDataType;
-import com.cyoda.presto.client.types.impl.UUIDDataType;
+import com.cyoda.presto.client.types.DataType;
 import org.testng.annotations.Test;
 
 import java.util.UUID;
@@ -31,14 +30,14 @@ public class UUIDPrestoValueConverterTest implements SliceCheck<UUID> {
 
     @Test
     public void testToFromSlice() {
-        PrestoValueConverter<UUID> converter = PrestoValueConverterProvider.getPrestoValueConverter(UUIDDataType.INSTANCE);
+        PrestoValueConverter<UUID> converter = PrestoValueConverterProvider.getPrestoValueConverter(DataType.UUID_TYPE);
         assertEquals(converter.getClass(),UUIDPrestoValueConverter.class);
         UUID expected = UUID.randomUUID();
         doSliceTest(expected);
     }
 
     @Override
-    public SupportedDataType<UUID> getDataType() {
-        return UUIDDataType.INSTANCE;
+    public DataType getDataType() {
+        return DataType.UUID_TYPE;
     }
 }

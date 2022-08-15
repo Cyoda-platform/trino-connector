@@ -17,18 +17,22 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.cyoda.presto.client.logic.ColumnPredicate;
+import com.cyoda.presto.client.logic.converters.structure.ComparableValueConverter;
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.types.DataTypeValue;
+import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.facebook.presto.common.block.BlockBuilder;
+import com.facebook.presto.common.type.Type;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 
-public class DoublePrestoValueConverter implements ComparablePrestoValueConverter<Double> {
+public class DoublePrestoValueConverter extends ComparableValueConverter<Double> {
 
-    public static final long MAX_LONG = Double.valueOf(Double.MIN_VALUE).longValue();
-    public static final long MIN_LONG = Double.valueOf(Double.MAX_VALUE).longValue();
-
-    @Override
-    public Class<Double> getClazz() {
-        return Double.class;
+    @Inject
+    public DoublePrestoValueConverter() {
+        super(DataType.DOUBLE);
     }
 
     @Override
@@ -43,13 +47,46 @@ public class DoublePrestoValueConverter implements ComparablePrestoValueConverte
     }
 
     @Override
-    public long minValueOfIntType() {
-        return MAX_LONG;
+    protected void writeValueInternal(Type type, BlockBuilder builder, @Nonnull Double value) {
+        type.writeDouble(builder, value);
     }
 
     @Override
-    public long maxValueOfIntType() {
-        return MIN_LONG;
+    protected ColumnPredicate<Double> newComparisonPredicate(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, Double value) {
+        if (op == ColumnPredicate.ComparisonOp.LESS_EQUAL) {
+            if (value == Double.POSITIVE_INFINITY) {
+                return notNullPredicate(column);
+            }
+            value = Math.nextAfter(value, Double.POSITIVE_INFINITY);
+            op = ColumnPredicate.ComparisonOp.LESS;
+        } else if (op == ColumnPredicate.ComparisonOp.GREATER) {
+            if (value == Double.POSITIVE_INFINITY) {
+                return nonePredicate(column);
+            }
+            value = Math.nextAfter(value, Double.POSITIVE_INFINITY);
+            op = ColumnPredicate.ComparisonOp.GREATER_EQUAL;
+        }
+
+        DataTypeValue<Double> wrapped = DataTypeValue.of(value);
+
+        switch (op) {
+            case GREATER_EQUAL:
+                if (value == Double.NEGATIVE_INFINITY) {
+                    return notNullPredicate(column);
+                } else if (value == Double.POSITIVE_INFINITY) {
+                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, wrapped, null);
+                }
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, wrapped, null);
+            case EQUAL:
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, wrapped, null);
+            case LESS:
+                if (value == Double.NEGATIVE_INFINITY) {
+                    return nonePredicate(column);
+                }
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, null, wrapped);
+            default:
+                throw unsupportedComparison(column, op);
+        }
     }
 
     @Override

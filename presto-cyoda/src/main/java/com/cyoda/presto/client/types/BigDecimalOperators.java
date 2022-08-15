@@ -17,7 +17,6 @@
 
 package com.cyoda.presto.client.types;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
 import com.cyoda.presto.client.logic.converters.impl.BigDecimalPrestoValueConverter;
 import com.facebook.presto.common.block.Block;
 import com.facebook.presto.common.type.AbstractLongType;
@@ -71,7 +70,7 @@ public class BigDecimalOperators {
     }
 
     private static BigDecimal toBigDecimal(Slice left) {
-        return converter.fromSlice(BIG_DECIMAL_TYPE, left);
+        return converter.fromSlice(left);
     }
 
     @ScalarOperator(SUBTRACT)

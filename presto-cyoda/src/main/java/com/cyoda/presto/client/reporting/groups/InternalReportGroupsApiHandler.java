@@ -87,8 +87,8 @@ public class InternalReportGroupsApiHandler extends BasePagingReportsApiHandler<
             GROUPING_VERSION_COLUMN + "}/groups/" + "{" + GROUPING_PARENT_COLUMN + "}";
 
     private static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
-            .add(new StandardColumnDefinition(0, HISTORY_REPORT_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))
-            .add(new StandardColumnDefinition(0, GROUPING_VERSION_COLUMN, UUIDPrestoValueConverter.TYPE_STRING, UUID_TYPE, null, null))
+            .add(new StandardColumnDefinition(0, HISTORY_REPORT_ID_COLUMN, STRING))
+            .add(new StandardColumnDefinition(0, GROUPING_VERSION_COLUMN, UUID_TYPE))
             .add(GroupHeader.meta())
             .build();
     public static final String IN_PREDICATES = " in predicates";

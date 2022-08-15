@@ -17,16 +17,18 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.LongTypeValueConverter;
+import com.cyoda.presto.client.types.DataType;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.time.LocalDate;
 
-public class LocalDatePrestoValueConverter implements ComparablePrestoValueConverter<LocalDate> {
+public class LocalDatePrestoValueConverter extends LongTypeValueConverter<LocalDate> {
 
-    @Override
-    public Class<LocalDate> getClazz() {
-        return LocalDate.class;
+    @Inject
+    public LocalDatePrestoValueConverter() {
+        super(DataType.LOCAL_DATE);
     }
 
     @Override

@@ -19,7 +19,7 @@ package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
-import com.cyoda.presto.client.types.SupportedDataType;
+import com.cyoda.presto.client.types.DataType;
 import com.facebook.presto.common.type.Type;
 import io.airlift.slice.Slice;
 
@@ -33,8 +33,8 @@ public interface SliceCheck<T> {
     }
      default void doSliceTest(T expected) {
          PrestoValueConverter<T> converter = getConverter();
-         Slice slice = converter.toSlice(getType(), expected);
-        T actual = converter.fromSlice(getType(),slice);
+         Slice slice = converter.toSlice(expected);
+        T actual = converter.fromSlice(slice);
         assertEquals(expected,actual);
     }
 
@@ -42,5 +42,5 @@ public interface SliceCheck<T> {
         return PrestoValueConverterProvider.getPrestoValueConverter(getDataType());
     }
 
-    SupportedDataType<T> getDataType();
+    DataType getDataType();
 }

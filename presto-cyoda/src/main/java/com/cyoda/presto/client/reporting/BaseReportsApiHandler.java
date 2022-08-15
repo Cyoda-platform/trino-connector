@@ -50,7 +50,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -135,10 +134,11 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         return new CyodaColumnHandle(
                 connectorId.toString(),
                 fieldDef.getFieldName(),
-                toType(fieldDef),
+                fieldDef.getDataType().toPrestoType(typeManager),
                 fieldDef.getDataType(),
                 fieldDef.getPos(),
-                getHandlerKey()
+                getHandlerKey(),
+                true
         );
     }
 
@@ -173,12 +173,13 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
     // TODO: These belong in the PrestoValueConverter
     protected @Nonnull Object mapFieldValue(@Nonnull final Object value, CyodaColumnHandle columnHandle) {
         if (columnHandle.getDataType() == LIST) {
-            return processList((List<?>) value, columnHandle);
+            Type elementType = TypesUtil.getElementType(columnHandle.getColumnType());
+            return ((List<?>) value).stream().map(it -> mapFieldSingleValue(it, DataType.fromType(elementType))).collect(Collectors.toList());
         }
-        if (columnHandle.getDataType() == ARRAY) {
-            return processList(Arrays.stream(((Object[])value)).collect(Collectors.toList()), columnHandle)
-                    .toArray();
-        }
+//        if (columnHandle.getDataType() == ARRAY) {
+//            return processList(Arrays.stream(((Object[])value)).collect(Collectors.toList()), columnHandle)
+//                    .toArray();
+//        }
 
         //TODO when does this happen?
         if ( value instanceof List && columnHandle.getDataType() != LIST && ((List<?>)value).size() == 1) {
@@ -211,11 +212,6 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
             return BigDecimal.valueOf(((Number) value).doubleValue());
         }
         return value;
-    }
-
-    private List<?> processList(List<?> value, CyodaColumnHandle columnHandle) {
-        Type elementType = TypesUtil.getElementType(columnHandle.getColumnType());
-        return value.stream().map(it -> mapFieldSingleValue(it, DataType.fromType(elementType))).collect(Collectors.toList());
     }
 
     private ZonedDateTime toZonedDateTime(String str) {

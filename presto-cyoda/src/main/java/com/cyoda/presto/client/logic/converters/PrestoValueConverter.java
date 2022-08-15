@@ -17,37 +17,43 @@
 
 package com.cyoda.presto.client.logic.converters;
 
-import com.facebook.presto.common.type.Type;
+import com.cyoda.presto.client.logic.ColumnPredicate;
+import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.facebook.presto.common.predicate.DiscreteValues;
 import io.airlift.slice.Slice;
 
 import javax.annotation.Nonnull;
 
 public interface PrestoValueConverter<T> {
+
+    String stringify(T value);
+
+
     /****** conversion to/from long *******/
     default long toLong(@Nonnull T value) {
-        throw new UnsupportedOperationException("not implemented or supported for "+value.getClass().getName());
+        throw new UnsupportedOperationException("Current method is not supported for " + this.getClass().getSimpleName());
     }
 
     default @Nonnull T fromLong(long value) {
-        throw new UnsupportedOperationException("not implemented or supported");
-    }
-
-    default long minValueOfIntType() {
-        throw new UnsupportedOperationException("not implemented or supported");
-    }
-
-    default long maxValueOfIntType() {
-        throw new UnsupportedOperationException("not implemented or supported");
+        throw new UnsupportedOperationException("Current method is not supported for " + this.getClass().getSimpleName());
     }
 
     /****** conversion to/from Slice *******/
-    default Slice toSlice(@Nonnull Type type, @Nonnull T value) {
-        throw new UnsupportedOperationException("not implemented or supported");
+    default Slice toSlice(@Nonnull T value) {
+        throw new UnsupportedOperationException("Current method is not supported for " + this.getClass().getSimpleName());
     }
 
-    default @Nonnull T fromSlice(@Nonnull Type type, Slice value) {
-        throw new UnsupportedOperationException("not implemented or supported");
+    default @Nonnull T fromSlice(Slice value) {
+        throw new UnsupportedOperationException("Current method is not supported for " + this.getClass().getSimpleName());
     }
 
     T toObject(Object nativeValue);
+
+    default ColumnPredicate<?> newInListPredicate(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
+        throw new UnsupportedOperationException("Current method is not supported for " + this.getClass().getSimpleName());
+    }
+
+    default T fromStr(String value){
+        throw new UnsupportedOperationException("Current method is not supported for " + this.getClass().getSimpleName());
+    }
 }

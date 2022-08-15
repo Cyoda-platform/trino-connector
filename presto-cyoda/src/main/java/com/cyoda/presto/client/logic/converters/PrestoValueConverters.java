@@ -17,31 +17,30 @@
 
 package com.cyoda.presto.client.logic.converters;
 
-import com.cyoda.presto.client.types.ComparableSupportedDataType;
-import com.cyoda.presto.client.types.SupportedDataType;
+import com.cyoda.presto.client.types.DataType;
 
 import java.util.Map;
 import java.util.stream.Collectors;
 
 public class PrestoValueConverters {
 
-    private final Map<SupportedDataType<?>, PrestoValueConverter<?>> converters;
-    private final Map<SupportedDataType<? extends Comparable<?>>, ComparablePrestoValueConverter<?>> comparableConverters;
+    private final Map<DataType, PrestoValueConverter<?>> converters;
+    private final Map<DataType, ComparablePrestoValueConverter<?>> comparableConverters;
 
-    public PrestoValueConverters(Map<SupportedDataType<?>, PrestoValueConverter<?>> converters) {
+    public PrestoValueConverters(Map<DataType, PrestoValueConverter<?>> converters) {
         this.converters = converters;
         this.comparableConverters = converters.entrySet().stream()
-                .filter(it->Comparable.class.isAssignableFrom(it.getKey().getDataType().getJavaType()))
-                .collect(Collectors.toMap(e->(ComparableSupportedDataType<? extends Comparable<?>>) e.getKey(), e->(ComparablePrestoValueConverter<?>)e.getValue()
+                .filter(it->Comparable.class.isAssignableFrom(it.getKey().getJavaType()))
+                .collect(Collectors.toMap(e->e.getKey(), e->(ComparablePrestoValueConverter<?>)e.getValue()
                 ));
     }
 
-    public <S> PrestoValueConverter<S> getPrestoValueConverter(SupportedDataType<S> supportedDataType) {
+    public <S> PrestoValueConverter<S> getPrestoValueConverter(DataType dataType) {
         //noinspection unchecked
-        return (PrestoValueConverter<S>) converters.get(supportedDataType);
+        return (PrestoValueConverter<S>) converters.get(dataType);
     }
 
-    public ComparablePrestoValueConverter<?> getComparablePrestoValueConverter(ComparableSupportedDataType<?> supportedDataType) {
-        return comparableConverters.get(supportedDataType);
+    public ComparablePrestoValueConverter<?> getComparablePrestoValueConverter(DataType dataType) {
+        return comparableConverters.get(dataType);
     }
 }

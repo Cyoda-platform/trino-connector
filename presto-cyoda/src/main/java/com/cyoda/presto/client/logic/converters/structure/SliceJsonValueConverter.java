@@ -15,28 +15,32 @@
  *
  */
 
-package com.cyoda.presto.client.logic.converters.impl;
+package com.cyoda.presto.client.logic.converters.structure;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.SingleValueConverter;
+import com.cyoda.presto.client.types.IDataType;
+import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.common.type.Type;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
 import javax.annotation.Nonnull;
-import java.util.Locale;
 
 import static com.cyoda.presto.client.types.DataTypeValue.OBJECT_MAPPER_SUPPLIER;
 import static com.cyoda.presto.client.types.DataTypeValue.cleanUpJson;
 
-abstract class SliceValueConverter<T> implements PrestoValueConverter<T> {
+public abstract class SliceJsonValueConverter<T> extends SingleValueConverter<T> {
 
-    abstract Class<T> getClazz();
+
+    public SliceJsonValueConverter(IDataType<T> dataType) {
+        super(dataType);
+    }
 
     @Override
-    public Slice toSlice(@Nonnull Type type, @Nonnull T value) {
+    public Slice toSlice(@Nonnull T value) {
         try {
-            String json = OBJECT_MAPPER_SUPPLIER.get().writerFor(Locale.class).writeValueAsString(value);
+            String json = OBJECT_MAPPER_SUPPLIER.get().writerFor(getClazz()).writeValueAsString(value);
             String clean = cleanUpJson(json);
             return Slices.utf8Slice(clean);
         } catch (JsonProcessingException e) {
@@ -46,12 +50,17 @@ abstract class SliceValueConverter<T> implements PrestoValueConverter<T> {
 
     @Nonnull
     @Override
-    public T fromSlice(@Nonnull Type type, Slice value) {
+    public T fromSlice(Slice value) {
         try {
-            return OBJECT_MAPPER_SUPPLIER.get().readerFor(Locale.class).readValue(value.toStringUtf8());
+            return OBJECT_MAPPER_SUPPLIER.get().readerFor(getClazz()).readValue(value.toStringUtf8());
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Cannot convert from json",e);
         }
+    }
+
+    @Override
+    protected void writeValueInternal(Type type, BlockBuilder builder, @Nonnull T value) {
+        type.writeSlice(builder, toSlice(value));
     }
 
 }

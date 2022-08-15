@@ -28,12 +28,11 @@ import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
+import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeManager;
-import com.facebook.presto.common.type.TypeSignature;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
 import com.google.common.base.Joiner;
@@ -80,24 +79,22 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
     private final CyodaColumnHandle typeColumn;
 
     enum ColumnDef implements ColumnDefinition {
-        ID              (0, REPORT_ID_COLUMN, StandardTypes.VARCHAR,STRING),
-        NAME            (1, REPORT_NAME_COLUMN,StandardTypes.VARCHAR, STRING),
-        TABLE_NAME      (2, REPORT_TABLE_NAME_COLUMN,StandardTypes.VARCHAR, STRING),
-        DESCRIPTION     (3, REPORT_DESCRIPTION_COLUMN,StandardTypes.VARCHAR,STRING),
-        TYPE            (4, REPORT_TYPE_COLUMN,StandardTypes.VARCHAR,STRING),
-        USER_ID         (5, REPORT_USER_ID_COLUMN,StandardTypes.VARCHAR,STRING),
-        CREATION_DATE   (6, REPORT_CREATION_DATE_COLUMN,StandardTypes.TIMESTAMP, LOCAL_DATE_TIME);
+        ID              (0, REPORT_ID_COLUMN, STRING),
+        NAME            (1, REPORT_NAME_COLUMN, STRING),
+        TABLE_NAME      (2, REPORT_TABLE_NAME_COLUMN, STRING),
+        DESCRIPTION     (3, REPORT_DESCRIPTION_COLUMN, STRING),
+        TYPE            (4, REPORT_TYPE_COLUMN, STRING),
+        USER_ID         (5, REPORT_USER_ID_COLUMN, STRING),
+        CREATION_DATE   (6, REPORT_CREATION_DATE_COLUMN, LOCAL_DATE_TIME);
 
         private final int pos;
         private final String fieldName;
-        private final String fieldTypeString;
-        private final DataType dataType;
+        private final CompoundDataType dataType;
 
-        ColumnDef(int pos, String fieldName, String fieldTypeString, DataType dateType) {
+        ColumnDef(int pos, String fieldName, DataType dateType) {
             this.pos = pos;
             this.fieldName = fieldName;
-            this.fieldTypeString = fieldTypeString;
-            this.dataType = dateType;
+            this.dataType = new CompoundDataType(fieldName,dateType);
         }
 
         @Override
@@ -111,18 +108,8 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
         }
 
         @Override
-        public String getFieldTypeString() {
-            return fieldTypeString;
-        }
-
-        @Override
-        public DataType getDataType() {
+        public CompoundDataType getDataType() {
             return dataType;
-        }
-
-        @Override
-        public TypeSignature getParType() {
-            return null;
         }
 
         @Override

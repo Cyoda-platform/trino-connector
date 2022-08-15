@@ -17,13 +17,19 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.CollectionConverter;
+import com.cyoda.presto.client.logic.converters.structure.SingleValueConverter;
 
 import java.util.List;
 
-public class ListPrestoValueConverter implements PrestoValueConverter<List<?>> {
+public class ListPrestoValueConverter<E> extends CollectionConverter<List<E>, E> {
+
+    public ListPrestoValueConverter(SingleValueConverter<E> elementConverter) {
+        super(elementConverter);
+    }
+
     @Override
-    public List<?> toObject(Object nativeValue) {
+    public List<E> toObject(Object nativeValue) {
         throw new UnsupportedOperationException("no can do");
     }
 }

@@ -32,7 +32,6 @@ import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
-import com.cyoda.presto.client.logic.converters.impl.UUIDPrestoValueConverter;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
@@ -42,7 +41,6 @@ import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.GroupHeader;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeManager;
-import com.facebook.presto.common.type.VarcharType;
 import io.airlift.slice.Slice;
 import org.joda.beans.MetaProperty;
 import reactor.core.publisher.Flux;
@@ -51,12 +49,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
-import java.util.stream.StreamSupport;
 
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_ID_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_NAME_VARIABLE;
@@ -81,9 +77,9 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
     public static final String GROUPING_REPORT_CONFIG_ID_COLUMN = HISTORY_REPORT_NAME_VARIABLE;
 
     public static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
-            .add(new StandardColumnDefinition(0, HISTORY_REPORT_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))
-            .add(new StandardColumnDefinition(0, GROUPING_VERSION_COLUMN, StandardTypes.VARCHAR, UUID_TYPE, null, null))
-            .add(new StandardColumnDefinition(0, GROUPING_REPORT_CONFIG_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))
+            .add(new StandardColumnDefinition(0, HISTORY_REPORT_ID_COLUMN, STRING))
+            .add(new StandardColumnDefinition(0, GROUPING_VERSION_COLUMN, UUID_TYPE))
+            .add(new StandardColumnDefinition(0, GROUPING_REPORT_CONFIG_ID_COLUMN, STRING))
             .add(GroupHeader.meta())
             .build();
 
@@ -118,12 +114,12 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
         UUID groupingVersion = stats.getGroupingVersion();
         String reportConfigId = stats.getConfigName();
 
-        PrestoValueConverter<UUID> uuidConverter = PrestoValueConverterProvider.getPrestoValueConverter(UUID_TYPE.asSupported());
-        PrestoValueConverter<String> stringConverter = PrestoValueConverterProvider.getPrestoValueConverter(STRING.asSupported());
+        PrestoValueConverter<UUID> uuidConverter = PrestoValueConverterProvider.getPrestoValueConverter(UUID_TYPE);
+        PrestoValueConverter<String> stringConverter = PrestoValueConverterProvider.getPrestoValueConverter(STRING);
 
-        Slice reportIdSlice = stringConverter.toSlice(VarcharType.VARCHAR,reportId);
-        Slice groupingVersionSlice = uuidConverter.toSlice(UUIDPrestoValueConverter.TYPE,groupingVersion);
-        Slice reportConfigIdSlice = stringConverter.toSlice(VarcharType.VARCHAR,reportConfigId);
+        Slice reportIdSlice = stringConverter.toSlice(reportId);
+        Slice groupingVersionSlice = uuidConverter.toSlice(groupingVersion);
+        Slice reportConfigIdSlice = stringConverter.toSlice(reportConfigId);
 
         ColumnsHolder columnsHolder = columnsHolderFunction.apply(tableHandle.getAuthPayload());
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
@@ -196,15 +192,16 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
         private CyodaColumnHandle setupGroupingVersionColumn(AuthContext authContext, InternalReportGroupsApiHandler reportGroupsHandler) {
             return reportGroupsHandler.getTables(authContext).get(0).getColumns().stream()
                     .filter(it -> it.getColumnName().equals(GROUPING_VERSION_COLUMN))
-                    .map(it -> new CyodaColumnHandle(
-                            it.getConnectorId(),
-                            it.getColumnName(),
-                            VarcharType.VARCHAR,
-                            UUID_TYPE,
-                            it.getOrdinalPosition(),
-                            it.getRequestHandlerKey(),
-                            it.getIsNullable())
-                    ).findAny()
+                    //TODO should work without it since UUID.TYPE_STRING = StandardTypes.VARCHAR
+//                    .map(it -> new CyodaColumnHandle(
+//                            it.getConnectorId(),
+//                            it.getColumnName(),
+//                            VarcharType.VARCHAR,
+//                            UUID_TYPE,
+//                            it.getOrdinalPosition(),
+//                            it.getRequestHandlerKey(),
+//                            it.getIsNullable()))
+                    .findAny()
                     .orElseThrow(() -> new IllegalStateException(GROUPING_VERSION_COLUMN + COLUMN_NOT_FOUND));
         }
 
