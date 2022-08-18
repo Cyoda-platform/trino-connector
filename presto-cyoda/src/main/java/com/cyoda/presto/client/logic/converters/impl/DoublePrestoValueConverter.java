@@ -19,8 +19,8 @@ package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.logic.converters.structure.ComparableValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.LongWrittenTypeValueConverter;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.common.type.Type;
@@ -28,70 +28,62 @@ import com.facebook.presto.common.type.Type;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
-public class DoublePrestoValueConverter extends ComparableValueConverter<Double> {
+public class DoublePrestoValueConverter extends LongWrittenTypeValueConverter<Double> {
 
     @Inject
     public DoublePrestoValueConverter() {
         super(DataType.DOUBLE);
     }
 
-    @Override
     public long toLong(@Nonnull Double value) {
         return Double.doubleToLongBits(value);
     }
 
     @Nonnull
-    @Override
     public Double fromLong(long value) {
         return Double.longBitsToDouble(value);
     }
 
     @Override
-    protected void writeValueInternal(Type type, BlockBuilder builder, @Nonnull Double value) {
-        type.writeDouble(builder, value);
+    public boolean areConsecutive(Double a, Double b) {
+        return Math.nextAfter(a, Double.POSITIVE_INFINITY) == b;
     }
 
     @Override
     protected ColumnPredicate<Double> newComparisonPredicate(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, Double value) {
         if (op == ColumnPredicate.ComparisonOp.LESS_EQUAL) {
             if (value == Double.POSITIVE_INFINITY) {
-                return notNullPredicate(column);
+                return ColumnPredicate.isNotNull(column);
             }
             value = Math.nextAfter(value, Double.POSITIVE_INFINITY);
             op = ColumnPredicate.ComparisonOp.LESS;
         } else if (op == ColumnPredicate.ComparisonOp.GREATER) {
             if (value == Double.POSITIVE_INFINITY) {
-                return nonePredicate(column);
+                return ColumnPredicate.none(column);
             }
             value = Math.nextAfter(value, Double.POSITIVE_INFINITY);
             op = ColumnPredicate.ComparisonOp.GREATER_EQUAL;
         }
 
-        DataTypeValue<Double> wrapped = DataTypeValue.of(value);
-
         switch (op) {
             case GREATER_EQUAL:
                 if (value == Double.NEGATIVE_INFINITY) {
-                    return notNullPredicate(column);
+                    return ColumnPredicate.isNotNull(column);
                 } else if (value == Double.POSITIVE_INFINITY) {
-                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, wrapped, null);
+                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, value, null);
                 }
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, wrapped, null);
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, value, null);
             case EQUAL:
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, wrapped, null);
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, value, null);
             case LESS:
                 if (value == Double.NEGATIVE_INFINITY) {
-                    return nonePredicate(column);
+                    return ColumnPredicate.none(column);
                 }
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, null, wrapped);
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, null, value);
             default:
                 throw unsupportedComparison(column, op);
         }
     }
 
-    @Override
-    public Double toObject(Object nativeValue) {
-        return fromLong((Long) nativeValue);
-    }
 
 }

@@ -38,7 +38,7 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Colum
     }
 
     public static ColumnPredicateNode<Any> all(CompoundPredicateNode parent, CyodaColumnHandle handle) {
-        return new LeafPredicateNode<>(parent, ColumnPredicateUtils.<Any>all(handle));
+        return new LeafPredicateNode<>(parent, ColumnPredicate.<Any>all(handle));
     }
 
     @Override

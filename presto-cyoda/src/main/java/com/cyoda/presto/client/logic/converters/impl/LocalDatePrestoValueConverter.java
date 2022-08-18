@@ -17,14 +17,15 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.structure.LongTypeValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.LongComparedTypeValueConverter;
 import com.cyoda.presto.client.types.DataType;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
-public class LocalDatePrestoValueConverter extends LongTypeValueConverter<LocalDate> {
+public class LocalDatePrestoValueConverter extends LongComparedTypeValueConverter<LocalDate> {
 
     @Inject
     public LocalDatePrestoValueConverter() {
@@ -53,8 +54,7 @@ public class LocalDatePrestoValueConverter extends LongTypeValueConverter<LocalD
     }
 
     @Override
-    public LocalDate toObject(Object nativeValue) {
-        return fromLong((Long) nativeValue);
+    public LocalDate fromOtherCyodaType(Object value, String columnName) {
+        return LocalDate.parse((String) value, DateTimeFormatter.ISO_DATE);
     }
-
 }

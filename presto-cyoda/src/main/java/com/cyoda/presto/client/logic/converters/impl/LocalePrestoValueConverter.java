@@ -30,8 +30,4 @@ public class LocalePrestoValueConverter extends SliceJsonValueConverter<Locale> 
         super(DataType.LOCALE);
     }
 
-    @Override
-    public Locale toObject(Object nativeValue) {
-        return fromSlice((Slice) nativeValue);
-    }
 }

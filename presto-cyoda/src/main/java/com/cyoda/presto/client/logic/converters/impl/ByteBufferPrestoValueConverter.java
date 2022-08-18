@@ -20,8 +20,8 @@ package com.cyoda.presto.client.logic.converters.impl;
 import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.logic.converters.structure.SliceComparableValueConverter;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.google.common.io.BaseEncoding;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
@@ -29,7 +29,6 @@ import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Base64;
 
 public class ByteBufferPrestoValueConverter extends SliceComparableValueConverter<ByteBuffer> {
     @Inject
@@ -53,19 +52,19 @@ public class ByteBufferPrestoValueConverter extends SliceComparableValueConverte
             op = ColumnPredicate.ComparisonOp.GREATER_EQUAL;
         }
 
-        DataTypeValue<ByteBuffer> wrapped = DataTypeValue.of(ByteBuffer.wrap(arrayValue));
+        ByteBuffer wrapped = ByteBuffer.wrap(arrayValue);
 
         switch (op) {
             case GREATER_EQUAL:
                 if (arrayValue.length == 0) {
-                    return notNullPredicate(column);
+                    return ColumnPredicate.isNotNull(column);
                 }
                 return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, wrapped, null);
             case EQUAL:
                 return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, wrapped, null);
             case LESS:
                 if (arrayValue.length == 0) {
-                    return nonePredicate(column);
+                    return ColumnPredicate.none(column);
                 }
                 return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, null, wrapped);
             default:
@@ -81,7 +80,7 @@ public class ByteBufferPrestoValueConverter extends SliceComparableValueConverte
         } finally {
             value.rewind();
         }
-        return Base64.getEncoder().encodeToString(b);
+        return "0" + 'x' + BaseEncoding.base16().encode(b);
     }
 
     @Override
@@ -93,10 +92,5 @@ public class ByteBufferPrestoValueConverter extends SliceComparableValueConverte
     @Override
     public ByteBuffer fromSlice(Slice value) {
         return value.toByteBuffer();
-    }
-
-    @Override
-    public ByteBuffer toObject(Object nativeValue) {
-        return fromSlice((Slice) nativeValue);
     }
 }

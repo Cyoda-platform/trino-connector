@@ -17,14 +17,14 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.structure.LongTypeValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.LongComparedTypeValueConverter;
 import com.cyoda.presto.client.types.DataType;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.time.LocalTime;
 
-public class LocalTimePrestoValueConverter extends LongTypeValueConverter<LocalTime> {
+public class LocalTimePrestoValueConverter extends LongComparedTypeValueConverter<LocalTime> {
     @Inject
     public LocalTimePrestoValueConverter() {
         super(DataType.LOCAL_TIME);
@@ -49,11 +49,6 @@ public class LocalTimePrestoValueConverter extends LongTypeValueConverter<LocalT
     @Override
     public long maxValueOfIntType() {
         return LocalTime.MAX.toNanoOfDay();
-    }
-
-    @Override
-    public LocalTime toObject(Object nativeValue) {
-        return fromLong((Long) nativeValue);
     }
 
 }

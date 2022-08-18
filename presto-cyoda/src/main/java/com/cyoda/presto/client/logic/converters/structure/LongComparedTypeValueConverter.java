@@ -1,29 +1,21 @@
 package com.cyoda.presto.client.logic.converters.structure;
 
 import com.cyoda.presto.client.logic.ColumnPredicate;
-import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.client.types.IDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.facebook.presto.common.block.BlockBuilder;
-import com.facebook.presto.common.type.Type;
 import com.google.common.base.Preconditions;
 
-import javax.annotation.Nonnull;
-
-public abstract class LongTypeValueConverter<T extends Comparable<? super T>> extends ComparableValueConverter<T>{
-    public LongTypeValueConverter(IDataType<T> dataType) {
+public abstract class LongComparedTypeValueConverter<T extends Comparable<? super T>> extends LongWrittenTypeValueConverter<T>{
+    public LongComparedTypeValueConverter(IDataType<T> dataType) {
         super(dataType);
     }
 
-    public abstract long toLong(@Nonnull T value);
-    @Nonnull
-    public abstract T fromLong(long value);
     public abstract long minValueOfIntType();
     public abstract long maxValueOfIntType();
 
     @Override
-    protected void writeValueInternal(Type type, BlockBuilder builder, @Nonnull T value) {
-        type.writeLong(builder, toLong(value));
+    public boolean areConsecutive(T a, T b) {
+        return toLong(b) - toLong(a) == 1;
     }
 
     @Override
@@ -43,13 +35,13 @@ public abstract class LongTypeValueConverter<T extends Comparable<? super T>> ex
                 // This has the same effect as an inclusive upper bound on the maximum
                 // value. If the column is not nullable then the IS NOT NULL predicate
                 // is ignored.
-                return notNullPredicate(column);
+                return ColumnPredicate.isNotNull(column);
             }
             longValue += 1;
             op = ColumnPredicate.ComparisonOp.LESS;
         } else if (op == ColumnPredicate.ComparisonOp.GREATER) {
             if (longValue == maxValue) {
-                return nonePredicate(column);
+                return ColumnPredicate.none(column);
             }
             longValue += 1;
             op = ColumnPredicate.ComparisonOp.GREATER_EQUAL;
@@ -59,18 +51,18 @@ public abstract class LongTypeValueConverter<T extends Comparable<? super T>> ex
         switch (op) {
             case GREATER_EQUAL:
                 if (longValue == minValue) {
-                    return notNullPredicate(column);
+                    return ColumnPredicate.isNotNull(column);
                 } else if (longValue == maxValue) {
-                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, DataTypeValue.of(newValue), null);
+                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, newValue, null);
                 }
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, DataTypeValue.of(newValue), null);
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, newValue, null);
             case EQUAL:
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, DataTypeValue.of(newValue), null);
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, newValue, null);
             case LESS:
                 if (longValue == minValue) {
-                    return nonePredicate(column);
+                    return ColumnPredicate.none(column);
                 }
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, null, DataTypeValue.of(newValue));
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, null, newValue);
             default:
                 throw unsupportedComparison(column, op);
         }

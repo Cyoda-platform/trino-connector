@@ -83,14 +83,6 @@ public final class TypesUtil {
         return type.getTypeParameters().get(1);
     }
 
-
-    public static Type toType(ColumnDefinition fieldDef, TypeManager typeManager) {
-        String fieldTypeString = fieldDef.getFieldTypeString();
-        TypeSignature parType = fieldDef.getParType();
-        TypeSignature mapValueType = fieldDef.getMapValuetype();
-        return toType(fieldTypeString,parType,mapValueType,typeManager);
-
-    }
     public static Type toType(String fieldTypeString, TypeSignature parType, TypeSignature mapValueType, TypeManager typeManager) {
         if (fieldTypeString.equals(StandardTypes.ARRAY)) {
             return typeManager.getParameterizedType(StandardTypes.ARRAY,

@@ -87,10 +87,9 @@ public class UUIDPrestoValueConverter extends BigDecimalTypeValueConverter<UUID>
     }
 
     @Override
-    public UUID toObject(Object nativeValue) {
-        return fromSlice((Slice) nativeValue);
+    public UUID fromOtherCyodaType(Object value, String columnName) {
+        return UUID.fromString((String) value);
     }
-
 
     // This is only useful for Trino. Presto can only handle Strings for UUID
 

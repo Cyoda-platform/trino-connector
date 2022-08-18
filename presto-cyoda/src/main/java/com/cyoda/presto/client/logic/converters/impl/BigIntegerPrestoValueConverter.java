@@ -59,7 +59,7 @@ public class BigIntegerPrestoValueConverter extends BigDecimalTypeValueConverter
     }
 
     @Override
-    public BigInteger toObject(Object nativeValue) {
-        return fromSlice((Slice) nativeValue);
+    public boolean areConsecutive(BigInteger a, BigInteger b) {
+        return a.add(BigInteger.ONE).equals(b);
     }
 }

@@ -117,7 +117,6 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
             return MoreObjects.toStringHelper(this)
                     .add("pos", pos)
                     .add("fieldName", fieldName)
-                    .add("fieldTypeString", fieldTypeString)
                     .add("dataType", dataType)
                     .toString();
         }

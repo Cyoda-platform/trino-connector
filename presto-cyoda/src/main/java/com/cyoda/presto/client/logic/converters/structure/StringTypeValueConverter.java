@@ -1,7 +1,6 @@
 package com.cyoda.presto.client.logic.converters.structure;
 
 import com.cyoda.presto.client.logic.ColumnPredicate;
-import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.client.types.IDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 
@@ -15,12 +14,12 @@ public abstract class StringTypeValueConverter<T extends Comparable<? super T>> 
         super(dataType);
     }
 
-    public abstract T fromStr(String value);
+    protected abstract T fromStr(String value);
     protected abstract String toStr(T value);
 
     @Override
     public String stringify(T value) {
-        return toStr(value);
+        return "\"" + toStr(value) + "\"";
     }
 
     @Override
@@ -37,21 +36,20 @@ public abstract class StringTypeValueConverter<T extends Comparable<? super T>> 
         }
 
         T newValue = fromStr(new String(bytes, UTF_8));
-        DataTypeValue<T> wrapped = DataTypeValue.of(newValue);
 
         switch (op) {
             case GREATER_EQUAL:
                 if (bytes.length == 0) {
-                    return notNullPredicate(column);
+                    return ColumnPredicate.isNotNull(column);
                 }
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, wrapped, null);
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, newValue, null);
             case EQUAL:
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, wrapped, null);
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, newValue, null);
             case LESS:
                 if (bytes.length == 0) {
-                    return nonePredicate(column);
+                    return ColumnPredicate.none(column);
                 }
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, null, wrapped);
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, null, newValue);
             default:
                 throw unsupportedComparison(column, op);
         }

@@ -18,7 +18,7 @@
 package com.cyoda.presto.client.types;
 
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
-import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
+import com.cyoda.presto.client.logic.converters.impl.BigDecimalPrestoValueConverter;
 import com.facebook.presto.common.block.Block;
 import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.common.function.SqlFunctionProperties;
@@ -33,7 +33,7 @@ import static com.facebook.presto.common.type.TypeSignature.parseTypeSignature;
 public final class BigDecimalType extends AbstractVariableWidthType {
     public static final BigDecimalType BIG_DECIMAL_TYPE = new BigDecimalType();
     public static final String BIG_DECIMAL = "bigdecimal";
-    public static final PrestoValueConverter<BigDecimal> PRESTO_VALUE_CONVERTER = PrestoValueConverterProvider.getPrestoValueConverter(DataType.BIG_DECIMAL);
+    public static final BigDecimalPrestoValueConverter PRESTO_VALUE_CONVERTER = new BigDecimalPrestoValueConverter();
 
     private BigDecimalType()
     {

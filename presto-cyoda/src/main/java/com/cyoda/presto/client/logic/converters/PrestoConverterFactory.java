@@ -93,11 +93,11 @@ public class PrestoConverterFactory {
             return getSingleValueConverter(mainType);
         switch (mainType){
             case LIST:
-                return new ListPrestoValueConverter<>(getSingleValueConverter(typeParams[0]));
+                return new ListPrestoValueConverter<>(columnName, getSingleValueConverter(typeParams[0]));
             case SET:
-                return new SetPrestoValueConverter<>(getSingleValueConverter(typeParams[0]));
+                return new SetPrestoValueConverter<>(columnName, getSingleValueConverter(typeParams[0]));
             case MAP:
-                return new MapPrestoValueConverter<>(getSingleValueConverter(typeParams[0]),getSingleValueConverter(typeParams[1]));
+                return new MapPrestoValueConverter<>(columnName, getSingleValueConverter(typeParams[0]),getSingleValueConverter(typeParams[1]));
             default:
                 throw new IllegalArgumentException(String.format("Failed to get converter for column \"%s\"(%s[%s])",
                         columnName, mainType, Arrays.toString(typeParams)));

@@ -24,13 +24,8 @@ import io.airlift.slice.Slice;
 @SuppressWarnings({"ALL","java:S3740"})
 public class ClassPrestoValueConverter extends SliceJsonValueConverter<Class> {
 
-
     public ClassPrestoValueConverter() {
         super(DataType.CLASS);
     }
 
-    @Override
-    public Class toObject(Object nativeValue) {
-        return fromSlice((Slice) nativeValue);
-    }
 }

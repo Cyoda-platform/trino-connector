@@ -33,7 +33,7 @@ public class StringPrestoValueConverter extends StringTypeValueConverter<String>
     }
 
     @Override
-    public String fromStr(String value) {
+    protected String fromStr(String value) {
         return value;
     }
 
@@ -53,8 +53,4 @@ public class StringPrestoValueConverter extends StringTypeValueConverter<String>
         return value.toStringUtf8();
     }
 
-    @Override
-    public String toObject(Object nativeValue) {
-        return fromSlice((Slice) nativeValue);
-    }
 }

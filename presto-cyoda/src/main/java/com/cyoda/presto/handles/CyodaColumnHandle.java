@@ -17,9 +17,12 @@
 
 package com.cyoda.presto.handles;
 
+import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
+import com.facebook.presto.common.block.BlockBuilder;
+import com.facebook.presto.common.predicate.DiscreteValues;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
@@ -80,6 +83,22 @@ public class CyodaColumnHandle implements ColumnHandle {
         if (converter == null)
             converter = dataType.getConverter();
         return converter;
+    }
+
+    public void writeValue(BlockBuilder blockBuilder, Object cyodaNative){
+        getConverter().writeCyodaNative(columnType, blockBuilder, cyodaNative, columnName);
+    }
+
+    public ColumnPredicate<?> newComparisonPredicateFromNative(ColumnPredicate.ComparisonOp op, Object nativeValue){
+        return getConverter().newComparisonPredicateFromNative(this, op, nativeValue);
+    }
+
+    public <T extends Comparable<T>> ColumnPredicate<T> newEqualsPredicateFromJava(T javaValue){
+        return getConverter().newComparisonPredicateFromJava(this, ColumnPredicate.ComparisonOp.EQUAL, javaValue);
+    }
+
+    public ColumnPredicate<?> newInListPredicateFromDiscrete(DiscreteValues discreteValues){
+        return getConverter().newInListPredicate(this, discreteValues);
     }
 
     @JsonProperty

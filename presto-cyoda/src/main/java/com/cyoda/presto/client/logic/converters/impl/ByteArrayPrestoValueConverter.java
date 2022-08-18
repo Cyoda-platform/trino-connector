@@ -48,8 +48,4 @@ public class ByteArrayPrestoValueConverter extends SliceUncomparableValueConvert
         return m;
     }
 
-    @Override
-    public byte[] toObject(Object nativeValue) {
-        return fromSlice((Slice) nativeValue);
-    }
 }

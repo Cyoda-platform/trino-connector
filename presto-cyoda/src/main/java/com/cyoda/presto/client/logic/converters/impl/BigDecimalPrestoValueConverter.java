@@ -55,7 +55,7 @@ public class BigDecimalPrestoValueConverter extends BigDecimalTypeValueConverter
     }
 
     @Override
-    public BigDecimal toObject(Object nativeValue) {
-        return fromSlice((Slice) nativeValue);
+    public BigDecimal fromOtherCyodaType(Object value, String columnName) {
+        return BigDecimal.valueOf(((Number) value).doubleValue());
     }
 }

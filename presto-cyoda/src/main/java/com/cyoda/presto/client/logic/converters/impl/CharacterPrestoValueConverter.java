@@ -34,7 +34,7 @@ public class CharacterPrestoValueConverter extends StringTypeValueConverter<Char
     }
 
     @Override
-    public Character fromStr(String value) {
+    protected Character fromStr(String value) {
         char[] chars = value.toCharArray();
         if ( chars.length != 1 ) throw new IllegalStateException("Corrupted converted predicate from String to Character \"" + value + "\"");
         return chars[0];
@@ -54,11 +54,6 @@ public class CharacterPrestoValueConverter extends StringTypeValueConverter<Char
     @Override
     public Character fromSlice(Slice value) {
         return new String(value.getBytes(),StandardCharsets.UTF_8).charAt(0);
-    }
-
-    @Override
-    public Character toObject(Object nativeValue) {
-        return fromSlice((Slice) nativeValue);
     }
 
 }

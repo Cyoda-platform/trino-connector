@@ -55,7 +55,7 @@ public class RowNumHandle {
         if (isListPredicate) {
             return columnPredicate.getInListValues().stream().map(it -> {
                 ColumnPredicate<Long> predicate = new ColumnPredicate<>(
-                        ColumnPredicate.PredicateType.EQUALITY, columnPredicate.getColumnName(), it, null);
+                        ColumnPredicate.PredicateType.EQUALITY, columnPredicate.getColumn(), it, null);
                 return createRowNumHandle(predicate, page, size, true, false);
             }).collect(Collectors.toList());
         }
@@ -64,9 +64,9 @@ public class RowNumHandle {
 
     private static RowNumHandle createRowNumHandle(ColumnPredicate<Long> columnPredicate, long page, long size, boolean isEqualsPredicate, boolean isRangePredicate) {
         long minRownum = columnPredicate.getLower() != null ?
-                Optional.ofNullable(columnPredicate.getLower().value)
+                Optional.ofNullable(columnPredicate.getLower())
                         .orElseThrow(()->new IllegalArgumentException("columnPredicate lower value is null")) : 1;
-        long maxRownum = columnPredicate.getUpper() != null ? Optional.ofNullable(columnPredicate.getUpper().value)
+        long maxRownum = columnPredicate.getUpper() != null ? Optional.ofNullable(columnPredicate.getUpper())
                 .orElseThrow(()->new IllegalArgumentException("columnPredicate lower value is null")) : Long.MAX_VALUE;
 
         long theSize = isEqualsPredicate ? 1 : Math.min(size,maxRownum-minRownum);

@@ -19,6 +19,7 @@ package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.converters.structure.MultiValueConverter;
 import com.cyoda.presto.client.logic.converters.structure.SingleValueConverter;
+import com.cyoda.presto.client.types.DataType;
 import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.common.type.MapType;
 import com.facebook.presto.common.type.Type;
@@ -30,7 +31,8 @@ public class MapPrestoValueConverter<K, V> extends MultiValueConverter<Map<K,V>,
 
     private final SingleValueConverter<K> keyConverter;
     private final SingleValueConverter<V> valueConverter;
-    public MapPrestoValueConverter(SingleValueConverter<K> keyConverter, SingleValueConverter<V> valueConverter){
+    public MapPrestoValueConverter(String columnName, SingleValueConverter<K> keyConverter, SingleValueConverter<V> valueConverter){
+        super(DataType.MAP, columnName);
         this.keyConverter = keyConverter;
         this.valueConverter = valueConverter;
     }
@@ -49,13 +51,8 @@ public class MapPrestoValueConverter<K, V> extends MultiValueConverter<Map<K,V>,
     protected void writeElement(MapType type, BlockBuilder elementBuilder, Map.Entry<K, V> value) {
         Type keyType = type.getKeyType();
         Type valueType = type.getValueType();
-        keyConverter.writeValue(keyType, elementBuilder, value.getKey());
-        valueConverter.writeValue(valueType, elementBuilder, value.getValue());
+        keyConverter.writeCyodaNativeFromCollection(keyType, elementBuilder, value.getKey(), getColumnName());
+        valueConverter.writeCyodaNativeFromCollection(valueType, elementBuilder, value.getValue(), getColumnName());
     }
 
-
-    @Override
-    public Map<K, V> toObject(Object nativeValue) {
-        throw new UnsupportedOperationException("no can do");
-    }
 }

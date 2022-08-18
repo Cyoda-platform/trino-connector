@@ -21,14 +21,13 @@ import com.cyoda.presto.CyodaTable;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.spi.SchemaTableName;
 import reactor.core.publisher.Flux;
 
 import javax.annotation.Nullable;
-import java.util.Iterator;
 import java.util.List;
 
 public interface ApiRequestHandler<T> {
@@ -39,7 +38,7 @@ public interface ApiRequestHandler<T> {
     List<CyodaTable> getTables(AuthContext authContext);
 
     @SuppressWarnings("java:S1452")
-    DataTypeValue<?> getValue(@Nullable T entity, CyodaColumnHandle field);
+    void writeValue(@Nullable T entity, CyodaColumnHandle field, BlockBuilder blockBuilder);
 
     default Flux<T> asFlux(AuthContext authContext, int pageSize, CyodaTableHandle tableHandle,
                    CompoundPredicateNode predicates, SizeListener listener) {

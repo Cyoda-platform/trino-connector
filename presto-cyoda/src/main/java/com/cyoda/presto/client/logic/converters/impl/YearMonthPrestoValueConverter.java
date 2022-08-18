@@ -17,7 +17,7 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.structure.LongTypeValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.LongComparedTypeValueConverter;
 import com.cyoda.presto.client.types.DataType;
 
 import javax.annotation.Nonnull;
@@ -25,7 +25,7 @@ import javax.inject.Inject;
 import java.time.LocalDate;
 import java.time.YearMonth;
 
-public class YearMonthPrestoValueConverter extends LongTypeValueConverter<YearMonth> {
+public class YearMonthPrestoValueConverter extends LongComparedTypeValueConverter<YearMonth> {
 
     public static final long MAX_YEAR_MONTH = YearMonth.from(LocalDate.MAX.atStartOfDay()).atEndOfMonth().toEpochDay();
     public static final long MIN_YEAR_MONTH = YearMonth.from(LocalDate.MIN.atStartOfDay()).atEndOfMonth().toEpochDay();
@@ -56,9 +56,5 @@ public class YearMonthPrestoValueConverter extends LongTypeValueConverter<YearMo
         return MAX_YEAR_MONTH;
     }
 
-    @Override
-    public YearMonth toObject(Object nativeValue) {
-        return fromLong((Long) nativeValue);
-    }
 
 }

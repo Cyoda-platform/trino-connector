@@ -27,11 +27,8 @@ import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.ColumnPredicateNode;
-import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
-import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
@@ -114,18 +111,11 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
         UUID groupingVersion = stats.getGroupingVersion();
         String reportConfigId = stats.getConfigName();
 
-        PrestoValueConverter<UUID> uuidConverter = PrestoValueConverterProvider.getPrestoValueConverter(UUID_TYPE);
-        PrestoValueConverter<String> stringConverter = PrestoValueConverterProvider.getPrestoValueConverter(STRING);
-
-        Slice reportIdSlice = stringConverter.toSlice(reportId);
-        Slice groupingVersionSlice = uuidConverter.toSlice(groupingVersion);
-        Slice reportConfigIdSlice = stringConverter.toSlice(reportConfigId);
-
         ColumnsHolder columnsHolder = columnsHolderFunction.apply(tableHandle.getAuthPayload());
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
-        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.reportIdColumn, reportIdSlice,String.class));
-        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.groupingVersionColumn, groupingVersionSlice,UUID.class));
-        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.reportConfigurationIdColumn, reportConfigIdSlice,String.class));
+        builder.addLeaf(columnsHolder.reportIdColumn.newEqualsPredicateFromJava(reportId));
+        builder.addLeaf(columnsHolder.groupingVersionColumn.newEqualsPredicateFromJava(groupingVersion));
+        builder.addLeaf(columnsHolder.reportConfigurationIdColumn.newEqualsPredicateFromJava(reportConfigId));
         builder.addMember(predicates);
 
         return builder.build();

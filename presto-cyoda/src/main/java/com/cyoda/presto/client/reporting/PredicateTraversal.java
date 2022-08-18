@@ -20,7 +20,6 @@ package com.cyoda.presto.client.reporting;
 import com.cyoda.presto.CyodaErrorCode;
 import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.logic.ColumnPredicateNode;
-import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
 import com.cyoda.presto.client.logic.LeafPredicateNode;
@@ -126,7 +125,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
     }
     private Set<ColumnPredicate<T>> parseForInternal(CyodaColumnHandle columnHandle) {
 
-        if (this.conjunctions.isEmpty()) return Collections.singleton(ColumnPredicateUtils.all(columnHandle));
+        if (this.conjunctions.isEmpty()) return Collections.singleton(ColumnPredicate.all(columnHandle));
 
         ImmutableSet.Builder<ColumnPredicate<T>> resultBuilder = ImmutableSet.builder();
 
@@ -188,7 +187,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
 
         // If there is nothing left, there is nothing to filter.
         if ( root.getMembers().isPresent() && root.getMembers().get().isEmpty()) {
-            resultBuilder.add(ColumnPredicateUtils.all(columnHandle));
+            resultBuilder.add(ColumnPredicate.all(columnHandle));
             return resultBuilder.build();
         }
 
@@ -211,7 +210,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
 
         // If there is nothing left, there is nothing to filter.
         if ( leafQueue.isEmpty() ) {
-            resultBuilder.add(ColumnPredicateUtils.all(columnHandle));
+            resultBuilder.add(ColumnPredicate.all(columnHandle));
             return resultBuilder.build();
         }
 
@@ -223,7 +222,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
         }
         // If there is nothing left, filter everything.
         if ( fromDeque.getType() == ColumnPredicate.PredicateType.NONE ) {
-            resultBuilder.add(ColumnPredicateUtils.none(columnHandle.getColumnName()));
+            resultBuilder.add(ColumnPredicate.none(columnHandle));
         } else {
             resultBuilder.add(fromDeque);
         }
@@ -259,20 +258,20 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
         ColumnPredicate.PredicateType type = predicate.getType();
         switch (type) {
             case IN_LIST: {
-                return predicate.getInListValues().stream().map(item -> item.value);
+                return predicate.getInListValues().stream();
             }
             case EQUALITY: {
-                return Stream.of(predicate.getLower().value);
+                return Stream.of(predicate.getLower());
             }
             case RANGE: {
                 if ( predicate.getUpper() == null ) {
-                    return Stream.of(predicate.getLower().value);
+                    return Stream.of(predicate.getLower());
                 } else if ( predicate.getLower() == null ) {
-                    return Stream.of(predicate.getUpper().value);
+                    return Stream.of(predicate.getUpper());
                 } else {
                     return Stream.of(
-                            predicate.getLower().value,
-                            predicate.getUpper().value
+                            predicate.getLower(),
+                            predicate.getUpper()
                     );
                 }
             }

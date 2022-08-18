@@ -3,25 +3,27 @@ package com.cyoda.presto.client.logic.converters.structure;
 import com.cyoda.presto.client.types.IDataType;
 import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.common.type.Type;
-import io.airlift.slice.Slice;
 
 import javax.annotation.Nonnull;
 
-public abstract class SliceComparableValueConverter<T extends Comparable<? super T>> extends ComparableValueConverter<T> {
+public abstract class LongWrittenTypeValueConverter<T extends Comparable<? super T>> extends ComparableValueConverter<T>{
 
-    public abstract Slice toSlice(@Nonnull T value);
-    public abstract @Nonnull T fromSlice(Slice value);
 
-    public SliceComparableValueConverter(IDataType<T> dataType) {
+    public abstract long toLong(@Nonnull T value);
+    @Nonnull
+    public abstract T fromLong(long value);
+
+    public LongWrittenTypeValueConverter(IDataType<T> dataType) {
         super(dataType);
     }
 
     @Override
     public void writeValue(Type type, BlockBuilder builder, @Nonnull T value) {
-        type.writeSlice(builder, toSlice(value));
+        type.writeLong(builder, toLong(value));
     }
     @Override
     public T fromPrestoNative(Object nativeValue) {
-        return fromSlice((Slice) nativeValue);
+        return fromLong((Long) nativeValue);
     }
+
 }

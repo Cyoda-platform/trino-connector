@@ -17,7 +17,7 @@ public abstract class SliceUncomparableValueConverter<T> extends SingleValueConv
     }
 
     @Override
-    protected void writeValueInternal(Type type, BlockBuilder builder, @Nonnull T value) {
+    public void writeValue(Type type, BlockBuilder builder, @Nonnull T value) {
         type.writeSlice(builder, toSlice(value));
     }
 }

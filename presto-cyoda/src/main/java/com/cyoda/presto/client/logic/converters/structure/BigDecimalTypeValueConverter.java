@@ -1,7 +1,6 @@
 package com.cyoda.presto.client.logic.converters.structure;
 
 import com.cyoda.presto.client.logic.ColumnPredicate;
-import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.client.types.IDataType;
 import com.cyoda.presto.client.util.DecimalUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
@@ -35,24 +34,24 @@ public abstract class BigDecimalTypeValueConverter<T extends Comparable<? super 
                 // This has the same effect as an inclusive upper bound on the maximum
                 // value. If the column is not nullable then the IS NOT NULL predicate
                 // is ignored.
-                return notNullPredicate(column);
+                return ColumnPredicate.isNotNull(column);
             }
             bdValue = bdValue.add(smallestValue);
             op = ColumnPredicate.ComparisonOp.LESS;
         } else if (op == ColumnPredicate.ComparisonOp.GREATER) {
             if (bdValue.equals(maxValue)) {
-                return nonePredicate(column);
+                return ColumnPredicate.none(column);
             }
             bdValue = bdValue.add(smallestValue);
             op = ColumnPredicate.ComparisonOp.GREATER_EQUAL;
         }
 
-        DataTypeValue<T> wrapped = DataTypeValue.of(fromBigDecimal(bdValue));
+        T wrapped = fromBigDecimal(bdValue);
 
         switch (op) {
             case GREATER_EQUAL:
                 if (bdValue.equals(minValue)) {
-                    return notNullPredicate(column);
+                    return ColumnPredicate.isNotNull(column);
                 } else if (bdValue.equals(maxValue)) {
                     return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, wrapped, null);
                 }
@@ -61,7 +60,7 @@ public abstract class BigDecimalTypeValueConverter<T extends Comparable<? super 
                 return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, wrapped, null);
             case LESS:
                 if (bdValue.equals(minValue)) {
-                    return nonePredicate(column);
+                    return ColumnPredicate.none(column);
                 }
                 return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, null, wrapped);
             default:

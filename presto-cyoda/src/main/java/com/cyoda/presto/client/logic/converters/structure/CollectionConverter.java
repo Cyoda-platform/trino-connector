@@ -1,5 +1,6 @@
 package com.cyoda.presto.client.logic.converters.structure;
 
+import com.cyoda.presto.client.types.DataType;
 import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.common.type.ArrayType;
 import com.facebook.presto.common.type.Type;
@@ -11,14 +12,15 @@ public abstract class CollectionConverter<T extends Collection<E>, E> extends Mu
 
     private final SingleValueConverter<E> elementConverter;
 
-    public CollectionConverter(SingleValueConverter<E> elementConverter){
+    public CollectionConverter(String columnName, DataType dataType, SingleValueConverter<E> elementConverter){
+        super(dataType, columnName);
         this.elementConverter = elementConverter;
     }
 
     @Override
     protected void writeElement(ArrayType type, BlockBuilder elementBuilder, E value) {
         Type elementType = type.getElementType();
-        elementConverter.writeValue(elementType, elementBuilder, value);
+        elementConverter.writeCyodaNativeFromCollection(elementType, elementBuilder, value, getColumnName());
     }
 
     @Override

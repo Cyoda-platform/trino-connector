@@ -17,7 +17,6 @@
 
 package com.cyoda.presto.client.logic.converters.structure;
 
-import com.cyoda.presto.client.logic.converters.structure.SingleValueConverter;
 import com.cyoda.presto.client.types.IDataType;
 import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.common.type.Type;
@@ -27,9 +26,6 @@ import io.airlift.slice.Slices;
 
 import javax.annotation.Nonnull;
 
-import static com.cyoda.presto.client.types.DataTypeValue.OBJECT_MAPPER_SUPPLIER;
-import static com.cyoda.presto.client.types.DataTypeValue.cleanUpJson;
-
 public abstract class SliceJsonValueConverter<T> extends SingleValueConverter<T> {
 
 
@@ -37,7 +33,6 @@ public abstract class SliceJsonValueConverter<T> extends SingleValueConverter<T>
         super(dataType);
     }
 
-    @Override
     public Slice toSlice(@Nonnull T value) {
         try {
             String json = OBJECT_MAPPER_SUPPLIER.get().writerFor(getClazz()).writeValueAsString(value);
@@ -49,7 +44,6 @@ public abstract class SliceJsonValueConverter<T> extends SingleValueConverter<T>
     }
 
     @Nonnull
-    @Override
     public T fromSlice(Slice value) {
         try {
             return OBJECT_MAPPER_SUPPLIER.get().readerFor(getClazz()).readValue(value.toStringUtf8());
@@ -59,7 +53,7 @@ public abstract class SliceJsonValueConverter<T> extends SingleValueConverter<T>
     }
 
     @Override
-    protected void writeValueInternal(Type type, BlockBuilder builder, @Nonnull T value) {
+    public void writeValue(Type type, BlockBuilder builder, @Nonnull T value) {
         type.writeSlice(builder, toSlice(value));
     }
 

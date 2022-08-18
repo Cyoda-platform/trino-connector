@@ -27,8 +27,4 @@ public class ObjectPrestoValueConverter extends SliceJsonValueConverter<Object> 
         super(DataType.OBJECT);
     }
 
-    @Override
-    public Object toObject(Object nativeValue) {
-        return fromSlice((Slice) nativeValue);
-    }
 }

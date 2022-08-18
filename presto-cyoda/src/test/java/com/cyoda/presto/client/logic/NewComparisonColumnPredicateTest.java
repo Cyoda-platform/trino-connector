@@ -92,22 +92,50 @@ public class NewComparisonColumnPredicateTest {
 
     private ColumnPredicate<Integer> intInList(Integer... values) {
         SortedSet<DataTypeValue<Integer>> valueSet = toDataTypeValue(values);
-        return newInListPredicate(intCol, valueSet);
+        if (valueSet.isEmpty()) {
+            return ColumnPredicate.none(intCol);
+        }
+        // IN (true, false) predicates can be simplified to IS NOT NULL.
+        if (intCol.getDataType() == DataType.BOOLEAN && valueSet.size() > 1) {
+            return ColumnPredicate.isNotNull(intCol);
+        }
+        return ColumnPredicate.buildInList(intCol, valueSet);
     }
 
     private ColumnPredicate<Long> longInList(Long... values) {
         SortedSet<DataTypeValue<Long>> valueSet = toDataTypeValue(values);
-        return newInListPredicate(intCol, valueSet);
+        if (valueSet.isEmpty()) {
+            return ColumnPredicate.none(intCol);
+        }
+        // IN (true, false) predicates can be simplified to IS NOT NULL.
+        if (intCol.getDataType() == DataType.BOOLEAN && valueSet.size() > 1) {
+            return ColumnPredicate.isNotNull(intCol);
+        }
+        return ColumnPredicate.buildInList(intCol, valueSet);
     }
 
     private ColumnPredicate<Boolean> boolInList(Boolean... values) {
         SortedSet<DataTypeValue<Boolean>> valueSet = toDataTypeValue(values);
-        return newInListPredicate(boolCol, valueSet);
+        if (valueSet.isEmpty()) {
+            return ColumnPredicate.none(boolCol);
+        }
+        // IN (true, false) predicates can be simplified to IS NOT NULL.
+        if (boolCol.getDataType() == DataType.BOOLEAN && valueSet.size() > 1) {
+            return ColumnPredicate.isNotNull(boolCol);
+        }
+        return ColumnPredicate.buildInList(boolCol, valueSet);
     }
 
     private ColumnPredicate<String> stringInList(String... values) {
         SortedSet<DataTypeValue<String >> valueSet = toDataTypeValue(values);
-        return newInListPredicate(stringCol, valueSet);
+        if (valueSet.isEmpty()) {
+            return ColumnPredicate.none(stringCol);
+        }
+        // IN (true, false) predicates can be simplified to IS NOT NULL.
+        if (stringCol.getDataType() == DataType.BOOLEAN && valueSet.size() > 1) {
+            return ColumnPredicate.isNotNull(stringCol);
+        }
+        return ColumnPredicate.buildInList(stringCol, valueSet);
     }
 
     @BeforeMethod
@@ -165,7 +193,7 @@ public class NewComparisonColumnPredicateTest {
         // None
         testMerge(newComparisonPredicate(intCol, EQUAL, 0),
                 newComparisonPredicate(intCol, EQUAL, 1),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // Range + Equality
         //--------------------
@@ -184,7 +212,7 @@ public class NewComparisonColumnPredicateTest {
         // None
         testMerge(newComparisonPredicate(intCol, GREATER_EQUAL, 10),
                 newComparisonPredicate(intCol, EQUAL, 0),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // <--------)
         //      |
@@ -200,7 +228,7 @@ public class NewComparisonColumnPredicateTest {
         // None
         testMerge(newComparisonPredicate(intCol, LESS, 0),
                 newComparisonPredicate(intCol, EQUAL, 10),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // Unbounded Range + Unbounded Range
         //--------------------
@@ -262,7 +290,7 @@ public class NewComparisonColumnPredicateTest {
         // None
         testMerge(newComparisonPredicate(intCol, GREATER_EQUAL, 5),
                 newComparisonPredicate(intCol, LESS, 5),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         //       [-----> AND
         // <---)
@@ -270,7 +298,7 @@ public class NewComparisonColumnPredicateTest {
         // None
         testMerge(newComparisonPredicate(intCol, GREATER_EQUAL, 5),
                 newComparisonPredicate(intCol, LESS, 3),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // Range + Range
         //--------------------
@@ -313,7 +341,7 @@ public class NewComparisonColumnPredicateTest {
         // None
         testMerge(intRange(0, 5),
                 intRange(5, 10),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // [--) AND
         //       [---)
@@ -321,7 +349,7 @@ public class NewComparisonColumnPredicateTest {
         // None
         testMerge(intRange(0, 3),
                 intRange(5, 10),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // Lower Bound + Range
         //--------------------
@@ -356,7 +384,7 @@ public class NewComparisonColumnPredicateTest {
         // None
         testMerge(newComparisonPredicate(intCol, GREATER_EQUAL, 10),
                 intRange(0, 5),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // Upper Bound + Range
         //--------------------
@@ -395,7 +423,7 @@ public class NewComparisonColumnPredicateTest {
         // None
         testMerge(intRange(3, 5),
                 newComparisonPredicate(intCol, EQUAL, 1),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // [---) AND
         // |
@@ -419,7 +447,7 @@ public class NewComparisonColumnPredicateTest {
         // None
         testMerge(intRange(0, 5),
                 newComparisonPredicate(intCol, EQUAL, 5),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // [---) AND
         //       |
@@ -427,7 +455,7 @@ public class NewComparisonColumnPredicateTest {
         // None
         testMerge(intRange(0, 5),
                 newComparisonPredicate(intCol, EQUAL, 7),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // IN list + IN list
         //--------------------
@@ -442,17 +470,17 @@ public class NewComparisonColumnPredicateTest {
         //    | |
         testMerge(intInList(0, 20),
                 intInList(15, 30),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // IN list + NOT NULL
         //--------------------
 
         testMerge(intInList(10),
-                newIsNotNullPredicate(intCol),
+                ColumnPredicate.isNotNull(intCol),
                 newComparisonPredicate(intCol, EQUAL, 10));
 
         testMerge(intInList(10, -100),
-                newIsNotNullPredicate(intCol),
+                ColumnPredicate.isNotNull(intCol),
                 intInList(-100, 10));
 
         // IN list + Equality
@@ -472,7 +500,7 @@ public class NewComparisonColumnPredicateTest {
         // none
         testMerge(intInList(0, 10, 20),
                 newComparisonPredicate(intCol, EQUAL, 30),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // IN list + Range
         //--------------------
@@ -491,7 +519,7 @@ public class NewComparisonColumnPredicateTest {
         // none
         testMerge(intInList(0, 10, 20, 30),
                 intRange(25, 30),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // | | | |
         //    [------>
@@ -515,7 +543,7 @@ public class NewComparisonColumnPredicateTest {
         // none
         testMerge(intInList(0, 10),
                 newComparisonPredicate(intCol, GREATER_EQUAL, 15),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // | | | |
         // <--)
@@ -539,7 +567,7 @@ public class NewComparisonColumnPredicateTest {
         // none
         testMerge(intInList(10, 20),
                 newComparisonPredicate(intCol, LESS, 5),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // None
         //--------------------
@@ -548,41 +576,41 @@ public class NewComparisonColumnPredicateTest {
         // [---->
         // =
         // None
-        testMerge(none(intCol),
+        testMerge(ColumnPredicate.none(intCol),
                 newComparisonPredicate(intCol, GREATER_EQUAL, 0),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // None AND
         // <----)
         // =
         // None
-        testMerge(none(intCol),
+        testMerge(ColumnPredicate.none(intCol),
                 newComparisonPredicate(intCol, LESS, 0),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // None AND
         // [----)
         // =
         // None
-        testMerge(none(intCol),
+        testMerge(ColumnPredicate.none(intCol),
                 intRange(3, 7),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // None AND
         //  |
         // =
         // None
-        testMerge(none(intCol),
+        testMerge(ColumnPredicate.none(intCol),
                 newComparisonPredicate(intCol, EQUAL, 5),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // None AND
         // None
         // =
         // None
-        testMerge(none(intCol),
-                none(intCol),
-                ColumnPredicateUtils.<Integer>none(intCol));
+        testMerge(ColumnPredicate.none(intCol),
+                ColumnPredicate.none(intCol),
+                ColumnPredicate.<Integer>none(intCol));
 
         // IS NOT NULL
         //--------------------
@@ -591,31 +619,31 @@ public class NewComparisonColumnPredicateTest {
         // NONE
         // =
         // NONE
-        testMerge(newIsNotNullPredicate(intCol),
-                none(intCol),
-                ColumnPredicateUtils.<Integer>none(intCol));
+        testMerge(ColumnPredicate.isNotNull(intCol),
+                ColumnPredicate.none(intCol),
+                ColumnPredicate.<Integer>none(intCol));
 
         // IS NOT NULL AND
         // IS NULL
         // =
         // NONE
-        testMerge(newIsNotNullPredicate(intCol),
-                newIsNullPredicate(intCol),
-                ColumnPredicateUtils.<Integer>none(intCol));
+        testMerge(ColumnPredicate.isNotNull(intCol),
+                ColumnPredicate.isNull(intCol),
+                ColumnPredicate.<Integer>none(intCol));
 
         // IS NOT NULL AND
         // IS NOT NULL
         // =
         // IS NOT NULL
-        testMerge(ColumnPredicateUtils.<Integer>newIsNotNullPredicate(intCol),
-                newIsNotNullPredicate(intCol),
-                newIsNotNullPredicate(intCol));
+        testMerge(ColumnPredicate.<Integer>isNotNull(intCol),
+                ColumnPredicate.isNotNull(intCol),
+                ColumnPredicate.isNotNull(intCol));
 
         // IS NOT NULL AND
         // |
         // =
         // |
-        testMerge(newIsNotNullPredicate(intCol),
+        testMerge(ColumnPredicate.isNotNull(intCol),
                 newComparisonPredicate(intCol, EQUAL, 5),
                 newComparisonPredicate(intCol, EQUAL, 5));
 
@@ -623,7 +651,7 @@ public class NewComparisonColumnPredicateTest {
         // [------->
         // =
         // [------->
-        testMerge(newIsNotNullPredicate(intCol),
+        testMerge(ColumnPredicate.isNotNull(intCol),
                 newComparisonPredicate(intCol, GREATER_EQUAL, 5),
                 newComparisonPredicate(intCol, GREATER_EQUAL, 5));
 
@@ -631,7 +659,7 @@ public class NewComparisonColumnPredicateTest {
         // <---------)
         // =
         // <---------)
-        testMerge(newIsNotNullPredicate(intCol),
+        testMerge(ColumnPredicate.isNotNull(intCol),
                 newComparisonPredicate(intCol, LESS, 5),
                 newComparisonPredicate(intCol, LESS, 5));
 
@@ -639,7 +667,7 @@ public class NewComparisonColumnPredicateTest {
         // [-------)
         // =
         // [-------)
-        testMerge(newIsNotNullPredicate(intCol),
+        testMerge(ColumnPredicate.isNotNull(intCol),
                 intRange(0, 12),
                 intRange(0, 12));
 
@@ -648,7 +676,7 @@ public class NewComparisonColumnPredicateTest {
         // |   |   |
         // =
         // |   |   |
-        testMerge(newIsNotNullPredicate(intCol),
+        testMerge(ColumnPredicate.isNotNull(intCol),
                 intInList(0, 10, 20),
                 intInList(0, 10, 20));
 
@@ -659,65 +687,65 @@ public class NewComparisonColumnPredicateTest {
         // NONE
         // =
         // NONE
-        testMerge(ColumnPredicateUtils.<Integer>newIsNullPredicate(intCol),
-                none(intCol),
-                none(intCol));
+        testMerge(ColumnPredicate.<Integer>isNull(intCol),
+                ColumnPredicate.none(intCol),
+                ColumnPredicate.none(intCol));
 
         // IS NULL AND
         // IS NULL
         // =
         // IS_NULL
-        testMerge(ColumnPredicateUtils.<Integer>newIsNullPredicate(intCol),
-                newIsNullPredicate(intCol),
-                newIsNullPredicate(intCol));
+        testMerge(ColumnPredicate.<Integer>isNull(intCol),
+                ColumnPredicate.isNull(intCol),
+                ColumnPredicate.isNull(intCol));
 
         // IS NULL AND
         // IS NOT NULL
         // =
         // NONE
-        testMerge(ColumnPredicateUtils.<Integer>newIsNullPredicate(intCol),
-                newIsNotNullPredicate(intCol),
-                none(intCol));
+        testMerge(ColumnPredicate.<Integer>isNull(intCol),
+                ColumnPredicate.isNotNull(intCol),
+                ColumnPredicate.none(intCol));
 
         // IS NULL AND
         // |
         // =
         // NONE
-        testMerge(newIsNullPredicate(intCol),
+        testMerge(ColumnPredicate.isNull(intCol),
                 newComparisonPredicate(intCol, EQUAL, 5),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // IS NULL AND
         // [------->
         // =
         // NONE
-        testMerge(newIsNullPredicate(intCol),
+        testMerge(ColumnPredicate.isNull(intCol),
                 newComparisonPredicate(intCol, GREATER_EQUAL, 0),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // IS NULL AND
         // <---------)
         // =
         // NONE
-        testMerge(newIsNullPredicate(intCol),
+        testMerge(ColumnPredicate.isNull(intCol),
                 newComparisonPredicate(intCol, LESS, 5),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // IS NULL AND
         // [-------)
         // =
         // NONE
-        testMerge(newIsNullPredicate(intCol),
+        testMerge(ColumnPredicate.isNull(intCol),
                 intRange(0, 12),
-                none(intCol));
+                ColumnPredicate.none(intCol));
 
         // IS NULL AND
         // |   |   |
         // =
         // NONE
-        testMerge(newIsNullPredicate(intCol),
+        testMerge(ColumnPredicate.isNull(intCol),
                 intInList(0, 10, 20),
-                none(intCol));
+                ColumnPredicate.none(intCol));
     }
 
     /**
@@ -732,7 +760,7 @@ public class NewComparisonColumnPredicateTest {
         // None
         testMerge(newComparisonPredicate(stringCol, GREATER_EQUAL, "b\0"),
                 newComparisonPredicate(stringCol, LESS, "b"),
-                none(stringCol));
+                ColumnPredicate.none(stringCol));
 
         //        [----->
         //  <-----)
@@ -740,7 +768,7 @@ public class NewComparisonColumnPredicateTest {
         // None
         testMerge(newComparisonPredicate(stringCol, GREATER_EQUAL, "b"),
                 newComparisonPredicate(stringCol, LESS, "b"),
-                none(stringCol));
+                ColumnPredicate.none(stringCol));
 
         //       [----->
         //  <----)
@@ -771,7 +799,7 @@ public class NewComparisonColumnPredicateTest {
         //   | | | |
         // =
         //   | | | |
-        testMerge(newIsNotNullPredicate(stringCol),
+        testMerge(ColumnPredicate.isNotNull(stringCol),
                 stringInList("a", "c", "b", ""),
                 stringInList("", "a", "b", "c"));
     }
@@ -780,7 +808,7 @@ public class NewComparisonColumnPredicateTest {
     public void testBoolean() {
 
         // b >= false
-        Assert.assertEquals(newIsNotNullPredicate(boolCol),
+        Assert.assertEquals(ColumnPredicate.isNotNull(boolCol),
                 newComparisonPredicate(boolCol, GREATER_EQUAL, false));
         // b > false
         Assert.assertEquals(newComparisonPredicate(boolCol, EQUAL, true),
@@ -789,7 +817,7 @@ public class NewComparisonColumnPredicateTest {
         Assert.assertEquals(newComparisonPredicate(boolCol, EQUAL, false),
                 newComparisonPredicate(boolCol, EQUAL, false));
         // b < false
-        Assert.assertEquals(none(boolCol),
+        Assert.assertEquals(ColumnPredicate.none(boolCol),
                 newComparisonPredicate(boolCol, LESS, false));
         // b <= false
         Assert.assertEquals(newComparisonPredicate(boolCol, EQUAL, false),
@@ -799,7 +827,7 @@ public class NewComparisonColumnPredicateTest {
         Assert.assertEquals(newComparisonPredicate(boolCol, EQUAL, true),
                 newComparisonPredicate(boolCol, GREATER_EQUAL, true));
         // b > true
-        Assert.assertEquals(none(boolCol),
+        Assert.assertEquals(ColumnPredicate.none(boolCol),
                 newComparisonPredicate(boolCol, GREATER, true));
         // b = true
         Assert.assertEquals(newComparisonPredicate(boolCol, EQUAL, true),
@@ -808,11 +836,11 @@ public class NewComparisonColumnPredicateTest {
         Assert.assertEquals(newComparisonPredicate(boolCol, EQUAL, false),
                 newComparisonPredicate(boolCol, LESS, true));
         // b <= true
-        Assert.assertEquals(newIsNotNullPredicate(boolCol),
+        Assert.assertEquals(ColumnPredicate.isNotNull(boolCol),
                 newComparisonPredicate(boolCol, LESS_EQUAL, true));
 
         // b IN ()
-        Assert.assertEquals(none(boolCol), boolInList());
+        Assert.assertEquals(ColumnPredicate.none(boolCol), boolInList());
 
         // b IN (true)
         Assert.assertEquals(newComparisonPredicate(boolCol, EQUAL, true),
@@ -823,7 +851,7 @@ public class NewComparisonColumnPredicateTest {
                 boolInList(false));
 
         // b IN (false, true)
-        Assert.assertEquals(newIsNotNullPredicate(boolCol),
+        Assert.assertEquals(ColumnPredicate.isNotNull(boolCol),
                 boolInList(false, true, false, true));
     }
 
@@ -840,7 +868,7 @@ public class NewComparisonColumnPredicateTest {
 
         testMerge(newComparisonPredicate(boolCol, GREATER_EQUAL, false),
                 newComparisonPredicate(boolCol, LESS_EQUAL, true),
-                newIsNotNullPredicate(boolCol));
+                ColumnPredicate.isNotNull(boolCol));
 
         testMerge(newComparisonPredicate(byteCol, GREATER_EQUAL, 0),
                 newComparisonPredicate(byteCol, LESS, 10),
@@ -851,15 +879,36 @@ public class NewComparisonColumnPredicateTest {
                 )
         );
 
-        testMerge(newInListPredicate(byteCol,
-                        toDataTypeValue((byte) 12, (byte) 14, (byte) 16, (byte) 18)
-                ),
-                newInListPredicate(byteCol,
-                        toDataTypeValue((byte) 14, (byte) 18, (byte) 20)
-                ),
-                newInListPredicate(byteCol,
-                        toDataTypeValue((byte) 14, (byte) 18)
-                )
+        ColumnPredicate<Byte> result24;
+        final SortedSet<DataTypeValue<Byte>> values24 = toDataTypeValue((byte) 14, (byte) 18);
+        if (values24.isEmpty()) {
+            result24 = ColumnPredicate.none(byteCol);
+        } else if (byteCol.getDataType() == DataType.BOOLEAN && values24.size() > 1) {
+            result24 = ColumnPredicate.isNotNull(byteCol);
+        } else {
+            result24 = ColumnPredicate.buildInList(byteCol, values24);
+        }
+        ColumnPredicate<Byte> result25;
+        final SortedSet<DataTypeValue<Byte>> values25 = toDataTypeValue((byte) 14, (byte) 18, (byte) 20);
+        if (values25.isEmpty()) {
+            result25 = ColumnPredicate.none(byteCol);
+        } else if (byteCol.getDataType() == DataType.BOOLEAN && values25.size() > 1) {
+            result25 = ColumnPredicate.isNotNull(byteCol);
+        } else {
+            result25 = ColumnPredicate.buildInList(byteCol, values25);
+        }
+        ColumnPredicate<Byte> result26;
+        final SortedSet<DataTypeValue<Byte>> values26 = toDataTypeValue((byte) 12, (byte) 14, (byte) 16, (byte) 18);
+        if (values26.isEmpty()) {
+            result26 = ColumnPredicate.none(byteCol);
+        } else if (byteCol.getDataType() == DataType.BOOLEAN && values26.size() > 1) {
+            result26 = ColumnPredicate.isNotNull(byteCol);
+        } else {
+            result26 = ColumnPredicate.buildInList(byteCol, values26);
+        }
+        testMerge(result26,
+                result25,
+                result24
         );
 
         testMerge(newComparisonPredicate(shortCol, GREATER_EQUAL, (short)0),
@@ -869,15 +918,36 @@ public class NewComparisonColumnPredicateTest {
                         DataTypeValue.of((short) 0),
                         DataTypeValue.of((short) 10)));
 
-        testMerge(newInListPredicate(shortCol,
-                        toDataTypeValue((short) 12, (short) 14, (short) 16, (short) 18)
-                ),
-                newInListPredicate(shortCol,
-                        toDataTypeValue((short) 14, (short) 18, (short) 20)
-                ),
-                newInListPredicate(shortCol,
-                        toDataTypeValue((short) 14, (short) 18)
-                )
+        ColumnPredicate<Short> result21;
+        final SortedSet<DataTypeValue<Short>> values21 = toDataTypeValue((short) 14, (short) 18);
+        if (values21.isEmpty()) {
+            result21 = ColumnPredicate.none(shortCol);
+        } else if (shortCol.getDataType() == DataType.BOOLEAN && values21.size() > 1) {
+            result21 = ColumnPredicate.isNotNull(shortCol);
+        } else {
+            result21 = ColumnPredicate.buildInList(shortCol, values21);
+        }
+        ColumnPredicate<Short> result22;
+        final SortedSet<DataTypeValue<Short>> values22 = toDataTypeValue((short) 14, (short) 18, (short) 20);
+        if (values22.isEmpty()) {
+            result22 = ColumnPredicate.none(shortCol);
+        } else if (shortCol.getDataType() == DataType.BOOLEAN && values22.size() > 1) {
+            result22 = ColumnPredicate.isNotNull(shortCol);
+        } else {
+            result22 = ColumnPredicate.buildInList(shortCol, values22);
+        }
+        ColumnPredicate<Short> result23;
+        final SortedSet<DataTypeValue<Short>> values23 = toDataTypeValue((short) 12, (short) 14, (short) 16, (short) 18);
+        if (values23.isEmpty()) {
+            result23 = ColumnPredicate.none(shortCol);
+        } else if (shortCol.getDataType() == DataType.BOOLEAN && values23.size() > 1) {
+            result23 = ColumnPredicate.isNotNull(shortCol);
+        } else {
+            result23 = ColumnPredicate.buildInList(shortCol, values23);
+        }
+        testMerge(result23,
+                result22,
+                result21
         );
 
         testMerge(newComparisonPredicate(longCol, GREATER_EQUAL, 0L),
@@ -887,15 +957,36 @@ public class NewComparisonColumnPredicateTest {
                         DataTypeValue.of(0L),
                         DataTypeValue.of(10L)));
 
-        testMerge(newInListPredicate(longCol,
-                        toDataTypeValue(12L, 14L, 16L, 18L)
-                ),
-                newInListPredicate(longCol,
-                        toDataTypeValue(14L, 18L, 20L)
-                ),
-                newInListPredicate(longCol,
-                        toDataTypeValue(14L, 18L)
-                )
+        ColumnPredicate<Long> result18;
+        final SortedSet<DataTypeValue<Long>> values18 = toDataTypeValue(14L, 18L);
+        if (values18.isEmpty()) {
+            result18 = ColumnPredicate.none(longCol);
+        } else if (longCol.getDataType() == DataType.BOOLEAN && values18.size() > 1) {
+            result18 = ColumnPredicate.isNotNull(longCol);
+        } else {
+            result18 = ColumnPredicate.buildInList(longCol, values18);
+        }
+        ColumnPredicate<Long> result19;
+        final SortedSet<DataTypeValue<Long>> values19 = toDataTypeValue(14L, 18L, 20L);
+        if (values19.isEmpty()) {
+            result19 = ColumnPredicate.none(longCol);
+        } else if (longCol.getDataType() == DataType.BOOLEAN && values19.size() > 1) {
+            result19 = ColumnPredicate.isNotNull(longCol);
+        } else {
+            result19 = ColumnPredicate.buildInList(longCol, values19);
+        }
+        ColumnPredicate<Long> result20;
+        final SortedSet<DataTypeValue<Long>> values20 = toDataTypeValue(12L, 14L, 16L, 18L);
+        if (values20.isEmpty()) {
+            result20 = ColumnPredicate.none(longCol);
+        } else if (longCol.getDataType() == DataType.BOOLEAN && values20.size() > 1) {
+            result20 = ColumnPredicate.isNotNull(longCol);
+        } else {
+            result20 = ColumnPredicate.buildInList(longCol, values20);
+        }
+        testMerge(result20,
+                result19,
+                result18
         );
 
         testMerge(newComparisonPredicate(floatCol, GREATER_EQUAL, 123.45f),
@@ -905,9 +996,36 @@ public class NewComparisonColumnPredicateTest {
                         DataTypeValue.of(123.45f),
                         DataTypeValue.of(678.90f)));
 
-        testMerge(newInListPredicate(floatCol, toDataTypeValue(12f, 14f, 16f, 18f)),
-                newInListPredicate(floatCol, toDataTypeValue(14f, 18f, 20f)),
-                newInListPredicate(floatCol, toDataTypeValue(14f, 18f))
+        ColumnPredicate<Float> result15;
+        final SortedSet<DataTypeValue<Float>> values15 = toDataTypeValue(14f, 18f);
+        if (values15.isEmpty()) {
+            result15 = ColumnPredicate.none(floatCol);
+        } else if (floatCol.getDataType() == DataType.BOOLEAN && values15.size() > 1) {
+            result15 = ColumnPredicate.isNotNull(floatCol);
+        } else {
+            result15 = ColumnPredicate.buildInList(floatCol, values15);
+        }
+        ColumnPredicate<Float> result16;
+        final SortedSet<DataTypeValue<Float>> values16 = toDataTypeValue(14f, 18f, 20f);
+        if (values16.isEmpty()) {
+            result16 = ColumnPredicate.none(floatCol);
+        } else if (floatCol.getDataType() == DataType.BOOLEAN && values16.size() > 1) {
+            result16 = ColumnPredicate.isNotNull(floatCol);
+        } else {
+            result16 = ColumnPredicate.buildInList(floatCol, values16);
+        }
+        ColumnPredicate<Float> result17;
+        final SortedSet<DataTypeValue<Float>> values17 = toDataTypeValue(12f, 14f, 16f, 18f);
+        if (values17.isEmpty()) {
+            result17 = ColumnPredicate.none(floatCol);
+        } else if (floatCol.getDataType() == DataType.BOOLEAN && values17.size() > 1) {
+            result17 = ColumnPredicate.isNotNull(floatCol);
+        } else {
+            result17 = ColumnPredicate.buildInList(floatCol, values17);
+        }
+        testMerge(result17,
+                result16,
+                result15
         );
 
         testMerge(newComparisonPredicate(doubleCol, GREATER_EQUAL, 123.45),
@@ -917,9 +1035,36 @@ public class NewComparisonColumnPredicateTest {
                         DataTypeValue.of(123.45),
                         DataTypeValue.of(678.90)));
 
-        testMerge(newInListPredicate(doubleCol, toDataTypeValue(12d, 14d, 16d, 18d)),
-                newInListPredicate(doubleCol, toDataTypeValue(14d, 18d, 20d)),
-                newInListPredicate(doubleCol, toDataTypeValue(14d, 18d))
+        ColumnPredicate<Double> result12;
+        final SortedSet<DataTypeValue<Double>> values12 = toDataTypeValue(14d, 18d);
+        if (values12.isEmpty()) {
+            result12 = ColumnPredicate.none(doubleCol);
+        } else if (doubleCol.getDataType() == DataType.BOOLEAN && values12.size() > 1) {
+            result12 = ColumnPredicate.isNotNull(doubleCol);
+        } else {
+            result12 = ColumnPredicate.buildInList(doubleCol, values12);
+        }
+        ColumnPredicate<Double> result13;
+        final SortedSet<DataTypeValue<Double>> values13 = toDataTypeValue(14d, 18d, 20d);
+        if (values13.isEmpty()) {
+            result13 = ColumnPredicate.none(doubleCol);
+        } else if (doubleCol.getDataType() == DataType.BOOLEAN && values13.size() > 1) {
+            result13 = ColumnPredicate.isNotNull(doubleCol);
+        } else {
+            result13 = ColumnPredicate.buildInList(doubleCol, values13);
+        }
+        ColumnPredicate<Double> result14;
+        final SortedSet<DataTypeValue<Double>> values14 = toDataTypeValue(12d, 14d, 16d, 18d);
+        if (values14.isEmpty()) {
+            result14 = ColumnPredicate.none(doubleCol);
+        } else if (doubleCol.getDataType() == DataType.BOOLEAN && values14.size() > 1) {
+            result14 = ColumnPredicate.isNotNull(doubleCol);
+        } else {
+            result14 = ColumnPredicate.buildInList(doubleCol, values14);
+        }
+        testMerge(result14,
+                result13,
+                result12
         );
 
         testMerge(newComparisonPredicate(bigDecimalCol, GREATER_EQUAL, BigDecimal.valueOf(12345, 2)),
@@ -931,25 +1076,74 @@ public class NewComparisonColumnPredicateTest {
                 )
         );
 
-        testMerge(newInListPredicate(bigDecimalCol,
-                toDataTypeValue(BigDecimal.valueOf(12345, 2), BigDecimal.valueOf(45678, 2))),
-                newInListPredicate(bigDecimalCol, toDataTypeValue(BigDecimal.valueOf(45678, 2), BigDecimal.valueOf(98765, 2))),
-                newInListPredicate(bigDecimalCol, toDataTypeValue(BigDecimal.valueOf(45678, 2)))
+        ColumnPredicate<BigDecimal> result9;
+        final SortedSet<DataTypeValue<BigDecimal>> values9 = toDataTypeValue(BigDecimal.valueOf(45678, 2));
+        if (values9.isEmpty()) {
+            result9 = ColumnPredicate.none(bigDecimalCol);
+        } else if (bigDecimalCol.getDataType() == DataType.BOOLEAN && values9.size() > 1) {
+            result9 = ColumnPredicate.isNotNull(bigDecimalCol);
+        } else {
+            result9 = ColumnPredicate.buildInList(bigDecimalCol, values9);
+        }
+        ColumnPredicate<BigDecimal> result10;
+        final SortedSet<DataTypeValue<BigDecimal>> values10 = toDataTypeValue(BigDecimal.valueOf(45678, 2), BigDecimal.valueOf(98765, 2));
+        if (values10.isEmpty()) {
+            result10 = ColumnPredicate.none(bigDecimalCol);
+        } else if (bigDecimalCol.getDataType() == DataType.BOOLEAN && values10.size() > 1) {
+            result10 = ColumnPredicate.isNotNull(bigDecimalCol);
+        } else {
+            result10 = ColumnPredicate.buildInList(bigDecimalCol, values10);
+        }
+        ColumnPredicate<BigDecimal> result11;
+        final SortedSet<DataTypeValue<BigDecimal>> values11 = toDataTypeValue(BigDecimal.valueOf(12345, 2), BigDecimal.valueOf(45678, 2));
+        if (values11.isEmpty()) {
+            result11 = ColumnPredicate.none(bigDecimalCol);
+        } else if (bigDecimalCol.getDataType() == DataType.BOOLEAN && values11.size() > 1) {
+            result11 = ColumnPredicate.isNotNull(bigDecimalCol);
+        } else {
+            result11 = ColumnPredicate.buildInList(bigDecimalCol, values11);
+        }
+        testMerge(result11,
+                result10,
+                result9
         );
 
-        testMerge(newInListPredicate(bigDecimalCol,
-                        toDataTypeValue(
-                                BigDecimal.valueOf(12345678910L, 2),
-                                BigDecimal.valueOf(34567891011L, 2)
-                        )
-                ),
-                newInListPredicate(bigDecimalCol,
-                        toDataTypeValue(
-                                BigDecimal.valueOf(34567891011L, 2),
-                                BigDecimal.valueOf(98765432111L, 2)
-                        )
-                ),
-                newInListPredicate(bigDecimalCol, toDataTypeValue(BigDecimal.valueOf(34567891011L, 2)))
+        ColumnPredicate<BigDecimal> result6;
+        final SortedSet<DataTypeValue<BigDecimal>> values6 = toDataTypeValue(BigDecimal.valueOf(34567891011L, 2));
+        if (values6.isEmpty()) {
+            result6 = ColumnPredicate.none(bigDecimalCol);
+        } else if (bigDecimalCol.getDataType() == DataType.BOOLEAN && values6.size() > 1) {
+            result6 = ColumnPredicate.isNotNull(bigDecimalCol);
+        } else {
+            result6 = ColumnPredicate.buildInList(bigDecimalCol, values6);
+        }
+        ColumnPredicate<BigDecimal> result7;
+        final SortedSet<DataTypeValue<BigDecimal>> values7 = toDataTypeValue(
+                BigDecimal.valueOf(34567891011L, 2),
+                BigDecimal.valueOf(98765432111L, 2)
+        );
+        if (values7.isEmpty()) {
+            result7 = ColumnPredicate.none(bigDecimalCol);
+        } else if (bigDecimalCol.getDataType() == DataType.BOOLEAN && values7.size() > 1) {
+            result7 = ColumnPredicate.isNotNull(bigDecimalCol);
+        } else {
+            result7 = ColumnPredicate.buildInList(bigDecimalCol, values7);
+        }
+        ColumnPredicate<BigDecimal> result8;
+        final SortedSet<DataTypeValue<BigDecimal>> values8 = toDataTypeValue(
+                BigDecimal.valueOf(12345678910L, 2),
+                BigDecimal.valueOf(34567891011L, 2)
+        );
+        if (values8.isEmpty()) {
+            result8 = ColumnPredicate.none(bigDecimalCol);
+        } else if (bigDecimalCol.getDataType() == DataType.BOOLEAN && values8.size() > 1) {
+            result8 = ColumnPredicate.isNotNull(bigDecimalCol);
+        } else {
+            result8 = ColumnPredicate.buildInList(bigDecimalCol, values8);
+        }
+        testMerge(result8,
+                result7,
+                result6
         );
 
         testMerge(newComparisonPredicate(bigDecimalCol, GREATER_EQUAL,
@@ -963,19 +1157,42 @@ public class NewComparisonColumnPredicateTest {
                 )
         );
 
-        testMerge(newInListPredicate(bigDecimalCol,
-                        toDataTypeValue(
-                                new BigDecimal("1234567891011121314.15"),
-                                new BigDecimal("3456789101112131415.16")
-                        )
-                ),
-                newInListPredicate(bigDecimalCol,
-                        toDataTypeValue(
-                                new BigDecimal("3456789101112131415.16"),
-                                new BigDecimal("9876543212345678910.11")
-                        )
-                ),
-                newInListPredicate(bigDecimalCol, toDataTypeValue(new BigDecimal("3456789101112131415.16")))
+        ColumnPredicate<BigDecimal> result3;
+        final SortedSet<DataTypeValue<BigDecimal>> values3 = toDataTypeValue(new BigDecimal("3456789101112131415.16"));
+        if (values3.isEmpty()) {
+            result3 = ColumnPredicate.none(bigDecimalCol);
+        } else if (bigDecimalCol.getDataType() == DataType.BOOLEAN && values3.size() > 1) {
+            result3 = ColumnPredicate.isNotNull(bigDecimalCol);
+        } else {
+            result3 = ColumnPredicate.buildInList(bigDecimalCol, values3);
+        }
+        ColumnPredicate<BigDecimal> result4;
+        final SortedSet<DataTypeValue<BigDecimal>> values4 = toDataTypeValue(
+                new BigDecimal("3456789101112131415.16"),
+                new BigDecimal("9876543212345678910.11")
+        );
+        if (values4.isEmpty()) {
+            result4 = ColumnPredicate.none(bigDecimalCol);
+        } else if (bigDecimalCol.getDataType() == DataType.BOOLEAN && values4.size() > 1) {
+            result4 = ColumnPredicate.isNotNull(bigDecimalCol);
+        } else {
+            result4 = ColumnPredicate.buildInList(bigDecimalCol, values4);
+        }
+        ColumnPredicate<BigDecimal> result5;
+        final SortedSet<DataTypeValue<BigDecimal>> values5 = toDataTypeValue(
+                new BigDecimal("1234567891011121314.15"),
+                new BigDecimal("3456789101112131415.16")
+        );
+        if (values5.isEmpty()) {
+            result5 = ColumnPredicate.none(bigDecimalCol);
+        } else if (bigDecimalCol.getDataType() == DataType.BOOLEAN && values5.size() > 1) {
+            result5 = ColumnPredicate.isNotNull(bigDecimalCol);
+        } else {
+            result5 = ColumnPredicate.buildInList(bigDecimalCol, values5);
+        }
+        testMerge(result5,
+                result4,
+                result3
         );
 
         testMerge(newComparisonPredicate(bigDecimalCol, GREATER_EQUAL,
@@ -1013,9 +1230,36 @@ public class NewComparisonColumnPredicateTest {
         ByteBuffer valC = ByteBuffer.wrap("c".getBytes(UTF_8));
         ByteBuffer valD = ByteBuffer.wrap("d".getBytes(UTF_8));
         ByteBuffer valE = ByteBuffer.wrap("e".getBytes(UTF_8));
-        testMerge(newInListPredicate(binaryCol, toDataTypeValue(ImmutableList.of(valA, valB, valC, valD))),
-                newInListPredicate(binaryCol, toDataTypeValue(ImmutableList.of(valB, valD, valE))),
-                newInListPredicate(binaryCol, toDataTypeValue(ImmutableList.of(valB, valD))));
+        ColumnPredicate<ByteBuffer> result;
+        final SortedSet<DataTypeValue<ByteBuffer>> values = toDataTypeValue(ImmutableList.of(valB, valD));
+        if (values.isEmpty()) {
+            result = ColumnPredicate.none(binaryCol);
+        } else if (binaryCol.getDataType() == DataType.BOOLEAN && values.size() > 1) {
+            result = ColumnPredicate.isNotNull(binaryCol);
+        } else {
+            result = ColumnPredicate.buildInList(binaryCol, values);
+        }
+        ColumnPredicate<ByteBuffer> result1;
+        final SortedSet<DataTypeValue<ByteBuffer>> values1 = toDataTypeValue(ImmutableList.of(valB, valD, valE));
+        if (values1.isEmpty()) {
+            result1 = ColumnPredicate.none(binaryCol);
+        } else if (binaryCol.getDataType() == DataType.BOOLEAN && values1.size() > 1) {
+            result1 = ColumnPredicate.isNotNull(binaryCol);
+        } else {
+            result1 = ColumnPredicate.buildInList(binaryCol, values1);
+        }
+        ColumnPredicate<ByteBuffer> result2;
+        final SortedSet<DataTypeValue<ByteBuffer>> values2 = toDataTypeValue(ImmutableList.of(valA, valB, valC, valD));
+        if (values2.isEmpty()) {
+            result2 = ColumnPredicate.none(binaryCol);
+        } else if (binaryCol.getDataType() == DataType.BOOLEAN && values2.size() > 1) {
+            result2 = ColumnPredicate.isNotNull(binaryCol);
+        } else {
+            result2 = ColumnPredicate.buildInList(binaryCol, values2);
+        }
+        testMerge(result2,
+                result1,
+                result);
     }
 
     @Test
@@ -1045,30 +1289,30 @@ public class NewComparisonColumnPredicateTest {
                 newComparisonPredicate(binaryCol, LESS_EQUAL, new byte[] { (byte) 10 }),
                 newComparisonPredicate(binaryCol, LESS, new byte[] { (byte) 10, (byte) 0 }));
         Assert.assertEquals(newComparisonPredicate(byteCol, LESS_EQUAL, Byte.MAX_VALUE),
-                newIsNotNullPredicate(byteCol));
+                ColumnPredicate.isNotNull(byteCol));
         Assert.assertEquals(newComparisonPredicate(shortCol, LESS_EQUAL, Short.MAX_VALUE),
-                newIsNotNullPredicate(shortCol));
+                ColumnPredicate.isNotNull(shortCol));
         Assert.assertEquals(newComparisonPredicate(intCol, LESS_EQUAL, Integer.MAX_VALUE),
-                newIsNotNullPredicate(intCol));
+                ColumnPredicate.isNotNull(intCol));
         Assert.assertEquals(newComparisonPredicate(longCol, LESS_EQUAL, Long.MAX_VALUE),
-                newIsNotNullPredicate(longCol));
+                ColumnPredicate.isNotNull(longCol));
         Assert.assertEquals(
                 newComparisonPredicate(floatCol, LESS_EQUAL, Float.MAX_VALUE),
                 newComparisonPredicate(floatCol, LESS, Float.POSITIVE_INFINITY));
         Assert.assertEquals(
                 newComparisonPredicate(floatCol, LESS_EQUAL, Float.POSITIVE_INFINITY),
-                newIsNotNullPredicate(floatCol));
+                ColumnPredicate.isNotNull(floatCol));
         Assert.assertEquals(
                 newComparisonPredicate(doubleCol, LESS_EQUAL, Double.MAX_VALUE),
                 newComparisonPredicate(doubleCol, LESS, Double.POSITIVE_INFINITY));
         Assert.assertEquals(
                 newComparisonPredicate(doubleCol, LESS_EQUAL, Double.POSITIVE_INFINITY),
-                newIsNotNullPredicate(doubleCol));
+                ColumnPredicate.isNotNull(doubleCol));
         Assert.assertEquals(newComparisonPredicate(dateCol, LESS_EQUAL, LocalDate.of(2020,6,1)),
                 newComparisonPredicate(dateCol, LESS, LocalDate.of(2020,6,2))
         );
         Assert.assertEquals(newComparisonPredicate(dateCol, LESS_EQUAL, LocalDate.MAX.toEpochDay()),
-                newIsNotNullPredicate(dateCol));
+                ColumnPredicate.isNotNull(dateCol));
     }
 
     @Test
@@ -1109,16 +1353,16 @@ public class NewComparisonColumnPredicateTest {
                 newComparisonPredicate(binaryCol, GREATER, new byte[] { (byte) 10 })
         );
 
-        Assert.assertEquals(none(byteCol),
+        Assert.assertEquals(ColumnPredicate.none(byteCol),
                 newComparisonPredicate(byteCol, GREATER, Byte.MAX_VALUE)
         );
-        Assert.assertEquals(none(shortCol),
+        Assert.assertEquals(ColumnPredicate.none(shortCol),
                 newComparisonPredicate(shortCol, GREATER, Short.MAX_VALUE)
         );
-        Assert.assertEquals(none(intCol),
+        Assert.assertEquals(ColumnPredicate.none(intCol),
                 newComparisonPredicate(intCol, GREATER, Integer.MAX_VALUE)
         );
-        Assert.assertEquals(none(longCol),
+        Assert.assertEquals(ColumnPredicate.none(longCol),
                 newComparisonPredicate(longCol, GREATER, Long.MAX_VALUE)
         );
         Assert.assertEquals(
@@ -1126,7 +1370,7 @@ public class NewComparisonColumnPredicateTest {
                 newComparisonPredicate(floatCol, GREATER, Float.MAX_VALUE)
         );
         Assert.assertEquals(
-                none(floatCol),
+                ColumnPredicate.none(floatCol),
                 newComparisonPredicate(floatCol, GREATER, Float.POSITIVE_INFINITY)
         );
         Assert.assertEquals(
@@ -1134,7 +1378,7 @@ public class NewComparisonColumnPredicateTest {
                 newComparisonPredicate(doubleCol, GREATER, Double.MAX_VALUE)
         );
         Assert.assertEquals(
-                none(doubleCol),
+                ColumnPredicate.none(doubleCol),
                 newComparisonPredicate(doubleCol, GREATER, Double.POSITIVE_INFINITY)
         );
         Assert.assertEquals(newComparisonPredicate(dateCol, GREATER_EQUAL,
@@ -1146,70 +1390,70 @@ public class NewComparisonColumnPredicateTest {
     @Test
     public void testLess() {
         Assert.assertEquals(newComparisonPredicate(byteCol, LESS, Byte.MIN_VALUE),
-                none(byteCol));
+                ColumnPredicate.none(byteCol));
         Assert.assertEquals(newComparisonPredicate(shortCol, LESS, Short.MIN_VALUE),
-                none(shortCol));
+                ColumnPredicate.none(shortCol));
         Assert.assertEquals(newComparisonPredicate(intCol, LESS, Integer.MIN_VALUE),
-                none(intCol));
+                ColumnPredicate.none(intCol));
         Assert.assertEquals(newComparisonPredicate(longCol, LESS, Long.MIN_VALUE),
-                none(longCol));
+                ColumnPredicate.none(longCol));
         Assert.assertEquals(
                 newComparisonPredicate(floatCol, LESS, Float.NEGATIVE_INFINITY),
-                none(floatCol));
+                ColumnPredicate.none(floatCol));
         Assert.assertEquals(
                 newComparisonPredicate(doubleCol, LESS, Double.NEGATIVE_INFINITY),
-                none(doubleCol));
+                ColumnPredicate.none(doubleCol));
         Assert.assertEquals(newComparisonPredicate(bigDecimalCol, LESS,
                         DecimalUtil.minValue(DecimalUtil.MAX_DECIMAL32_PRECISION, 2)),
-                none(bigDecimalCol));
+                ColumnPredicate.none(bigDecimalCol));
         Assert.assertEquals(newComparisonPredicate(bigDecimalCol, LESS,
                         DecimalUtil.minValue(DecimalUtil.MAX_DECIMAL64_PRECISION, 2)),
-                none(bigDecimalCol));
+                ColumnPredicate.none(bigDecimalCol));
         Assert.assertEquals(newComparisonPredicate(bigDecimalCol, LESS,
                         DecimalUtil.minValue(DecimalUtil.MAX_DECIMAL128_PRECISION, 2)),
-                none(bigDecimalCol));
+                ColumnPredicate.none(bigDecimalCol));
         Assert.assertEquals(newComparisonPredicate(stringCol, LESS, ""),
-                none(stringCol));
+                ColumnPredicate.none(stringCol));
         Assert.assertEquals(newComparisonPredicate(binaryCol, LESS, new byte[] {}),
-                none(binaryCol));
+                ColumnPredicate.none(binaryCol));
         Assert.assertEquals(newComparisonPredicate(dateCol, LESS,
-                LocalDate.MIN.toEpochDay()), none(dateCol));
+                LocalDate.MIN.toEpochDay()), ColumnPredicate.none(dateCol));
     }
 
     @Test
     public void testGreaterEqual() {
         Assert.assertEquals(
                 newComparisonPredicate(byteCol, GREATER_EQUAL, Byte.MIN_VALUE),
-                newIsNotNullPredicate(byteCol));
+                ColumnPredicate.isNotNull(byteCol));
         Assert.assertEquals(
                 newComparisonPredicate(shortCol, GREATER_EQUAL, Short.MIN_VALUE),
-                newIsNotNullPredicate(shortCol));
+                ColumnPredicate.isNotNull(shortCol));
         Assert.assertEquals(
                 newComparisonPredicate(intCol, GREATER_EQUAL, Integer.MIN_VALUE),
-                newIsNotNullPredicate(intCol));
+                ColumnPredicate.isNotNull(intCol));
         Assert.assertEquals(
                 newComparisonPredicate(longCol, GREATER_EQUAL, Long.MIN_VALUE),
-                newIsNotNullPredicate(longCol));
+                ColumnPredicate.isNotNull(longCol));
         Assert.assertEquals(
                 newComparisonPredicate(floatCol, GREATER_EQUAL, Float.NEGATIVE_INFINITY),
-                newIsNotNullPredicate(floatCol));
+                ColumnPredicate.isNotNull(floatCol));
         Assert.assertEquals(
                 newComparisonPredicate(doubleCol, GREATER_EQUAL, Double.NEGATIVE_INFINITY),
-                newIsNotNullPredicate(doubleCol));
+                ColumnPredicate.isNotNull(doubleCol));
         Assert.assertEquals(newComparisonPredicate(bigDecimalCol, GREATER_EQUAL,
                         DecimalUtil.minValue(DecimalUtil.MAX_DECIMAL32_PRECISION, 2)),
-                newIsNotNullPredicate(bigDecimalCol));
+                ColumnPredicate.isNotNull(bigDecimalCol));
         Assert.assertEquals(newComparisonPredicate(bigDecimalCol, GREATER_EQUAL,
                         DecimalUtil.minValue(DecimalUtil.MAX_DECIMAL64_PRECISION, 2)),
-                newIsNotNullPredicate(bigDecimalCol));
+                ColumnPredicate.isNotNull(bigDecimalCol));
         Assert.assertEquals(newComparisonPredicate(bigDecimalCol, GREATER_EQUAL,
                         DecimalUtil.minValue(DecimalUtil.MAX_DECIMAL128_PRECISION, 2)),
-                newIsNotNullPredicate(bigDecimalCol));
+                ColumnPredicate.isNotNull(bigDecimalCol));
         Assert.assertEquals(newComparisonPredicate(stringCol, GREATER_EQUAL, ""),
-                newIsNotNullPredicate(stringCol));
+                ColumnPredicate.isNotNull(stringCol));
         Assert.assertEquals(
                 newComparisonPredicate(binaryCol, GREATER_EQUAL, new byte[] {}),
-                newIsNotNullPredicate(binaryCol));
+                ColumnPredicate.isNotNull(binaryCol));
 
         Assert.assertEquals(
                 newComparisonPredicate(byteCol, GREATER_EQUAL, Byte.MAX_VALUE),
@@ -1232,10 +1476,10 @@ public class NewComparisonColumnPredicateTest {
         Assert.assertEquals(
                 newComparisonPredicate(dateCol, GREATER_EQUAL,
                         LocalDate.MIN.toEpochDay()),
-                newIsNotNullPredicate(dateCol));
+                ColumnPredicate.isNotNull(dateCol));
         Assert.assertEquals(
                 newComparisonPredicate(dateCol, GREATER_EQUAL, LocalDate.MIN.toEpochDay()),
-                newIsNotNullPredicate(dateCol));
+                ColumnPredicate.isNotNull(dateCol));
     }
 
     @Test
@@ -1311,39 +1555,120 @@ public class NewComparisonColumnPredicateTest {
                 binaryCol, EQUAL, new byte[]{(byte) 0xAB, (byte) 0x01, (byte) 0xCD}).toString(), "`binary` = 0xAB01CD");
         Assert.assertEquals(intInList(10, 0, -10).toString(),
                 "`int` IN (-10, 0, 10)");
-        Assert.assertEquals(newIsNotNullPredicate(stringCol).toString(),
+        Assert.assertEquals(ColumnPredicate.isNotNull(stringCol).toString(),
                 "`string` IS NOT NULL");
-        Assert.assertEquals(newIsNullPredicate(stringCol).toString(),
+        Assert.assertEquals(ColumnPredicate.isNull(stringCol).toString(),
                 "`string` IS NULL");
         Assert.assertEquals(newComparisonPredicate(stringCol, EQUAL, "my varchar").toString(),
                 "`string` = \"my varchar\"");
-        Assert.assertEquals(newIsNotNullPredicate(binaryCol).toString(),
+        Assert.assertEquals(ColumnPredicate.isNotNull(binaryCol).toString(),
                 "`binary` IS NOT NULL");
-        Assert.assertEquals(newIsNullPredicate(binaryCol).toString(),
+        Assert.assertEquals(ColumnPredicate.isNull(binaryCol).toString(),
                 "`binary` IS NULL");
         // IS NULL predicate on non-nullable column = NONE predicate
-        Assert.assertEquals(newIsNullPredicate(intCol).toString(),
+        Assert.assertEquals(ColumnPredicate.isNull(intCol).toString(),
                 "`int` NONE");
 
-        Assert.assertEquals(newInListPredicate(
-                boolCol, toDataTypeValue(true)).toString(), "`bool` = true");
-        Assert.assertEquals(newInListPredicate(
-                boolCol, toDataTypeValue(false)).toString(), "`bool` = false");
-        Assert.assertEquals(newInListPredicate(
-                boolCol, toDataTypeValue(false, true, true)).toString(), "`bool` IS NOT NULL");
-        Assert.assertEquals(newInListPredicate(
-                byteCol, toDataTypeValue((byte) 1, (byte) 10, (byte) 100)).toString(), "`byte` IN (1, 10, 100)");
-        Assert.assertEquals(newInListPredicate(
-                shortCol, toDataTypeValue((short) 1, (short) 100, (short) 10)).toString(), "`short` IN (1, 10, 100)");
-        Assert.assertEquals(newInListPredicate(
-                intCol, toDataTypeValue(1, 100, 10)).toString(), "`int` IN (1, 10, 100)");
-        Assert.assertEquals(newInListPredicate(
-                longCol, toDataTypeValue(1L, 100L, 10L)).toString(), "`long` IN (1, 10, 100)");
-        Assert.assertEquals(newInListPredicate(
-                floatCol, toDataTypeValue(123.456f, 78.9f)).toString(), "`float` IN (78.9, 123.456)");
-        Assert.assertEquals(newInListPredicate(
-                doubleCol, toDataTypeValue(123.456d, 78.9d)).toString(), "`double` IN (78.9, 123.456)");
-        Assert.assertEquals(newInListPredicate(stringCol, toDataTypeValue("my string", "a")).toString(),
+        ColumnPredicate<Boolean> result11;
+        final SortedSet<DataTypeValue<Boolean>> values9 = toDataTypeValue(true);
+        if (values9.isEmpty()) {
+            result11 = ColumnPredicate.none(boolCol);
+        } else if (boolCol.getDataType() == DataType.BOOLEAN && values9.size() > 1) {
+            result11 = ColumnPredicate.isNotNull(boolCol);
+        } else {
+            result11 = ColumnPredicate.buildInList(boolCol, values9);
+        }
+        Assert.assertEquals(result11.toString(), "`bool` = true");
+        ColumnPredicate<Boolean> result10;
+        final SortedSet<DataTypeValue<Boolean>> values8 = toDataTypeValue(false);
+        if (values8.isEmpty()) {
+            result10 = ColumnPredicate.none(boolCol);
+        } else if (boolCol.getDataType() == DataType.BOOLEAN && values8.size() > 1) {
+            result10 = ColumnPredicate.isNotNull(boolCol);
+        } else {
+            result10 = ColumnPredicate.buildInList(boolCol, values8);
+        }
+        Assert.assertEquals(result10.toString(), "`bool` = false");
+        ColumnPredicate<Boolean> result9;
+        final SortedSet<DataTypeValue<Boolean>> values7 = toDataTypeValue(false, true, true);
+        if (values7.isEmpty()) {
+            result9 = ColumnPredicate.none(boolCol);
+        } else if (boolCol.getDataType() == DataType.BOOLEAN && values7.size() > 1) {
+            result9 = ColumnPredicate.isNotNull(boolCol);
+        } else {
+            result9 = ColumnPredicate.buildInList(boolCol, values7);
+        }
+        Assert.assertEquals(result9.toString(), "`bool` IS NOT NULL");
+        ColumnPredicate<Byte> result8;
+        final SortedSet<DataTypeValue<Byte>> values6 = toDataTypeValue((byte) 1, (byte) 10, (byte) 100);
+        if (values6.isEmpty()) {
+            result8 = ColumnPredicate.none(byteCol);
+        } else if (byteCol.getDataType() == DataType.BOOLEAN && values6.size() > 1) {
+            result8 = ColumnPredicate.isNotNull(byteCol);
+        } else {
+            result8 = ColumnPredicate.buildInList(byteCol, values6);
+        }
+        Assert.assertEquals(result8.toString(), "`byte` IN (1, 10, 100)");
+        ColumnPredicate<Short> result7;
+        final SortedSet<DataTypeValue<Short>> values5 = toDataTypeValue((short) 1, (short) 100, (short) 10);
+        if (values5.isEmpty()) {
+            result7 = ColumnPredicate.none(shortCol);
+        } else if (shortCol.getDataType() == DataType.BOOLEAN && values5.size() > 1) {
+            result7 = ColumnPredicate.isNotNull(shortCol);
+        } else {
+            result7 = ColumnPredicate.buildInList(shortCol, values5);
+        }
+        Assert.assertEquals(result7.toString(), "`short` IN (1, 10, 100)");
+        ColumnPredicate<Integer> result6;
+        final SortedSet<DataTypeValue<Integer>> values4 = toDataTypeValue(1, 100, 10);
+        if (values4.isEmpty()) {
+            result6 = ColumnPredicate.none(intCol);
+        } else if (intCol.getDataType() == DataType.BOOLEAN && values4.size() > 1) {
+            result6 = ColumnPredicate.isNotNull(intCol);
+        } else {
+            result6 = ColumnPredicate.buildInList(intCol, values4);
+        }
+        Assert.assertEquals(result6.toString(), "`int` IN (1, 10, 100)");
+        ColumnPredicate<Long> result5;
+        final SortedSet<DataTypeValue<Long>> values3 = toDataTypeValue(1L, 100L, 10L);
+        if (values3.isEmpty()) {
+            result5 = ColumnPredicate.none(longCol);
+        } else if (longCol.getDataType() == DataType.BOOLEAN && values3.size() > 1) {
+            result5 = ColumnPredicate.isNotNull(longCol);
+        } else {
+            result5 = ColumnPredicate.buildInList(longCol, values3);
+        }
+        Assert.assertEquals(result5.toString(), "`long` IN (1, 10, 100)");
+        ColumnPredicate<Float> result4;
+        final SortedSet<DataTypeValue<Float>> values2 = toDataTypeValue(123.456f, 78.9f);
+        if (values2.isEmpty()) {
+            result4 = ColumnPredicate.none(floatCol);
+        } else if (floatCol.getDataType() == DataType.BOOLEAN && values2.size() > 1) {
+            result4 = ColumnPredicate.isNotNull(floatCol);
+        } else {
+            result4 = ColumnPredicate.buildInList(floatCol, values2);
+        }
+        Assert.assertEquals(result4.toString(), "`float` IN (78.9, 123.456)");
+        ColumnPredicate<Double> result3;
+        final SortedSet<DataTypeValue<Double>> values1 = toDataTypeValue(123.456d, 78.9d);
+        if (values1.isEmpty()) {
+            result3 = ColumnPredicate.none(doubleCol);
+        } else if (doubleCol.getDataType() == DataType.BOOLEAN && values1.size() > 1) {
+            result3 = ColumnPredicate.isNotNull(doubleCol);
+        } else {
+            result3 = ColumnPredicate.buildInList(doubleCol, values1);
+        }
+        Assert.assertEquals(result3.toString(), "`double` IN (78.9, 123.456)");
+        ColumnPredicate<String> result2;
+        final SortedSet<DataTypeValue<String>> values = toDataTypeValue("my string", "a");
+        if (values.isEmpty()) {
+            result2 = ColumnPredicate.none(stringCol);
+        } else if (stringCol.getDataType() == DataType.BOOLEAN && values.size() > 1) {
+            result2 = ColumnPredicate.isNotNull(stringCol);
+        } else {
+            result2 = ColumnPredicate.buildInList(stringCol, values);
+        }
+        Assert.assertEquals(result2.toString(),
                 "`string` IN (\"a\", \"my string\")");
 
         ByteBuffer firstBuffer = ByteBuffer.wrap(new byte[]{(byte) 0xAB, (byte) 0x01, (byte) 0xCD});
@@ -1351,12 +1676,19 @@ public class NewComparisonColumnPredicateTest {
         SortedSet<DataTypeValue<ByteBuffer>> setOfStuff = toDataTypeValue(firstBuffer, secondBuffer);
         Assert.assertEquals(setOfStuff.first().value,secondBuffer);
         Assert.assertEquals(setOfStuff.last().value,firstBuffer);
-        Assert.assertEquals(newInListPredicate(
-                binaryCol, setOfStuff).toString(), "`binary` IN (0x00, 0xAB01CD)");
+        ColumnPredicate<ByteBuffer> result1;
+        if (setOfStuff.isEmpty()) {
+            result1 = ColumnPredicate.none(binaryCol);
+        } else if (binaryCol.getDataType() == DataType.BOOLEAN && setOfStuff.size() > 1) {
+            result1 = ColumnPredicate.isNotNull(binaryCol);
+        } else {
+            result1 = ColumnPredicate.buildInList(binaryCol, setOfStuff);
+        }
+        Assert.assertEquals(result1.toString(), "`binary` IN (0x00, 0xAB01CD)");
 
 
-        Assert.assertEquals(newIsNullPredicate(dateCol).toString(), "`date` IS NULL");
-        Assert.assertEquals(newIsNotNullPredicate(dateCol).toString(),
+        Assert.assertEquals(ColumnPredicate.isNull(dateCol).toString(), "`date` IS NULL");
+        Assert.assertEquals(ColumnPredicate.isNotNull(dateCol).toString(),
                 "`date` IS NOT NULL");
 
         Assert.assertEquals(newComparisonPredicate(dateCol, EQUAL, LocalDate.of(2020, 6, 16))
@@ -1366,7 +1698,15 @@ public class NewComparisonColumnPredicateTest {
                 LocalDate.of(2020,6,16),
                 LocalDate.of(2019,1,1),
                 LocalDate.of(2020,11,10));
-        Assert.assertEquals(newInListPredicate(dateCol, dataTypeValues).toString(),
+        ColumnPredicate<ChronoLocalDate> result;
+        if (dataTypeValues.isEmpty()) {
+            result = ColumnPredicate.none(dateCol);
+        } else if (dateCol.getDataType() == DataType.BOOLEAN && dataTypeValues.size() > 1) {
+            result = ColumnPredicate.isNotNull(dateCol);
+        } else {
+            result = ColumnPredicate.buildInList(dateCol, dataTypeValues);
+        }
+        Assert.assertEquals(result.toString(),
                 "`date` IN (2019-01-01, 2020-06-16, 2020-11-10)");
     }
 

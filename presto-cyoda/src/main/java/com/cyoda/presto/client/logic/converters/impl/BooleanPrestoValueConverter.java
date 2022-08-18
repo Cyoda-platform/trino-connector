@@ -20,13 +20,13 @@ package com.cyoda.presto.client.logic.converters.impl;
 import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.logic.converters.structure.ComparableValueConverter;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.common.type.Type;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
+import java.util.SortedSet;
 
 public class BooleanPrestoValueConverter extends ComparableValueConverter<Boolean> {
 
@@ -36,8 +36,17 @@ public class BooleanPrestoValueConverter extends ComparableValueConverter<Boolea
     }
 
     @Override
-    protected void writeValueInternal(Type type, BlockBuilder builder, @Nonnull Boolean value) {
+    public void writeValue(Type type, BlockBuilder builder, @Nonnull Boolean value) {
         type.writeBoolean(builder, value);
+    }
+
+    @Override
+    protected ColumnPredicate<Boolean> buildInListPredicate(CyodaColumnHandle column, SortedSet<Boolean> values) {
+        // IN (true, false) predicates can be simplified to IS NOT NULL.
+        if (values.size() > 1) {
+            return ColumnPredicate.isNotNull(column);
+        }
+        return super.buildInListPredicate(column, values);
     }
 
     @Override
@@ -50,38 +59,38 @@ public class BooleanPrestoValueConverter extends ComparableValueConverter<Boolea
                 // b > true  -> b NONE
                 // b > false -> b = true
                 if (value) {
-                    return nonePredicate(column);
+                    return ColumnPredicate.none(column);
                 } else {
-                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, DataTypeValue.of(true), null);
+                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, true, null);
                 }
             }
             case GREATER_EQUAL: {
                 // b >= true  -> b = true
                 // b >= false -> b IS NOT NULL
                 if (value) {
-                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, DataTypeValue.of(true), null);
+                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, true, null);
                 } else {
-                    return notNullPredicate(column);
+                    return ColumnPredicate.isNotNull(column);
                 }
             }
             case EQUAL:
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, DataTypeValue.of(value), null);
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, value, null);
             case LESS: {
                 // b < true  -> b NONE
                 // b < false -> b = true
                 if (value) {
-                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, DataTypeValue.of(false), null);
+                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, false, null);
                 } else {
-                    return nonePredicate(column);
+                    return ColumnPredicate.none(column);
                 }
             }
             case LESS_EQUAL: {
                 // b <= true  -> b IS NOT NULL
                 // b <= false -> b = false
                 if (value) {
-                    return notNullPredicate(column);
+                    return ColumnPredicate.isNotNull(column);
                 } else {
-                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, DataTypeValue.of(false), null);
+                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, false, null);
                 }
             }
             default:
@@ -90,7 +99,7 @@ public class BooleanPrestoValueConverter extends ComparableValueConverter<Boolea
     }
 
     @Override
-    public Boolean toObject(Object nativeValue) {
+    public Boolean fromPrestoNative(Object nativeValue) {
         return (Boolean) nativeValue;
     }
 }
