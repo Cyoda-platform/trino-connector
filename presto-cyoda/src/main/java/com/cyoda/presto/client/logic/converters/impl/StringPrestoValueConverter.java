@@ -53,4 +53,11 @@ public class StringPrestoValueConverter extends StringTypeValueConverter<String>
         return value.toStringUtf8();
     }
 
+    @Override
+    public boolean areConsecutive(String a, String b) {
+        if (a.length() + 1 != b.length() || b.charAt(b.length() - 1) != 0) {
+            return false;
+        }
+        return a.equals(b.substring(0, b.length() - 1));
+    }
 }

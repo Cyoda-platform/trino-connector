@@ -220,6 +220,9 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
         if (other.type == PredicateType.NONE) {
             return other;
         }
+        if (other.type == PredicateType.ALL) {
+            return this;
+        }
 
         // NOT NULL is dominated by all other predicates,
         // except IS NULL, for which the merge is NONE.
@@ -236,6 +239,7 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
         switch (type) {
             case NONE:
                 return this;
+            case ALL:
             case IS_NOT_NULL:
                 return other;
             case IS_NULL:
@@ -380,7 +384,7 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
 //                double n = b.asDouble();
 //                return m < n && Math.nextAfter(m, Double.POSITIVE_INFINITY) == n;
 //            }
-//                TODO IMO the rest are wrong
+//                TODO IMO this is wrong
 //            case BIG_DECIMAL: {
 //                BigDecimal m = a.asBigDecimal();
 //                BigDecimal n = b.asBigDecimal();
@@ -475,19 +479,20 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
 
     @Override
     public String toString() {
+        String columnName = getColumnName();
         switch (type) {
             case EQUALITY:
-                return String.format("`%s` = %s", column,
+                return String.format("`%s` = %s", columnName,
                         converter.stringify(lower));
             case RANGE: {
                 if (lower == null) {
-                    return String.format("`%s` < %s", column, converter.stringify(upper));
+                    return String.format("`%s` < %s", columnName, converter.stringify(upper));
                 } else if (upper == null) {
-                    return String.format("`%s` >= %s", column, converter.stringify(lower));
+                    return String.format("`%s` >= %s", columnName, converter.stringify(lower));
                 } else {
                     return String.format("`%s` >= %s AND `%s` < %s",
-                            column, converter.stringify(lower),
-                            column, converter.stringify(upper));
+                            columnName, converter.stringify(lower),
+                            columnName, converter.stringify(upper));
                 }
             }
             case IN_LIST: {
@@ -497,14 +502,16 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
                 while (iterator.hasNext()) {
                     builder.add(Optional.ofNullable(converter.stringify((T) iterator.next())).orElse("NULL"));
                 }
-                return String.format("`%s` IN (%s)", column, Joiner.on(", ").join(builder.build()));
+                return String.format("`%s` IN (%s)", columnName, Joiner.on(", ").join(builder.build()));
             }
             case IS_NOT_NULL:
-                return String.format("`%s` IS NOT NULL", column);
+                return String.format("`%s` IS NOT NULL", columnName);
             case IS_NULL:
-                return String.format("`%s` IS NULL", column);
+                return String.format("`%s` IS NULL", columnName);
             case NONE:
-                return String.format("`%s` NONE", column);
+                return String.format("`%s` NONE", columnName);
+            case ALL:
+
             default:
                 throw new IllegalArgumentException(String.format("unknown predicate type %s", type));
         }

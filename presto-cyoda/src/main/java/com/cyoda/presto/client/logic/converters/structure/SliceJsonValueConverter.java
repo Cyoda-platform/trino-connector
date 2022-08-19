@@ -26,7 +26,8 @@ import io.airlift.slice.Slices;
 
 import javax.annotation.Nonnull;
 
-public abstract class SliceJsonValueConverter<T> extends SingleValueConverter<T> {
+public abstract class SliceJsonValueConverter<T> extends SingleValueConverter<T>
+        implements SliceWrittenTypeValueConverter<T> {
 
 
     public SliceJsonValueConverter(IDataType<T> dataType) {
