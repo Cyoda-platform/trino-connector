@@ -33,8 +33,6 @@ import org.joda.beans.impl.direct.DirectMetaPropertyMap;
 
 import java.util.Map;
 
-
-@BeanDefinition
 public class ReportColDef implements Bean {
 
     @PropertyDefinition

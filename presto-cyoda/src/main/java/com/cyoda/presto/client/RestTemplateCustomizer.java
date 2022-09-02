@@ -25,6 +25,7 @@ import com.cyoda.presto.auth.RefreshContext;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.security.AccessDeniedException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.net.HostAndPort;
@@ -37,6 +38,7 @@ import org.springframework.hateoas.client.Traverson;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
 import javax.inject.Inject;
@@ -136,6 +138,10 @@ public class RestTemplateCustomizer {
         }
 
         template.setRequestFactory(new OkHttp3ClientHttpRequestFactory(builder.build()));
+
+        MappingJackson2HttpMessageConverter converter = (MappingJackson2HttpMessageConverter) template.getMessageConverters().stream().filter(it -> it instanceof MappingJackson2HttpMessageConverter).findAny()
+                .orElseThrow(() -> new RuntimeException("Cannot find converter"));
+        converter.getObjectMapper().enable(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT);
 
         return template;
     }

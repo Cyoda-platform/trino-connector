@@ -31,6 +31,7 @@ import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
+import com.cyoda.service.interactors.WrappedEntityModel;
 import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
@@ -145,15 +146,15 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Dist
             Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
             traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(authContext));
 
-            TypeReferences.EntityModelType<DistributedReportInfoView> typeReference
-                    = new TypeReferences.EntityModelType<DistributedReportInfoView>(){};
+            TypeReferences.EntityModelType<WrappedEntityModel<DistributedReportInfoView>> typeReference
+                    = new TypeReferences.EntityModelType<WrappedEntityModel<DistributedReportInfoView>>(){};
 
             try {
-                EntityModel<DistributedReportInfoView> entityModel = traverson
+                EntityModel<WrappedEntityModel<DistributedReportInfoView>> entityModel = traverson
                         .follow()
                         .toObject(typeReference);
                 Optional<DistributedReportInfoView> reportStatistics = Optional.ofNullable(entityModel)
-                        .map(EntityModel::getContent);
+                        .map(EntityModel::getContent).map(WrappedEntityModel::getContent);
                 builder.add(reportStatistics.orElse(DistributedReportInfoView.builder().id(reportId).build()));
             } catch (HttpClientErrorException e) {
                 throw requestFailedException(this, "retrieveCollection", e, templatedUri);

@@ -46,7 +46,7 @@ public final class DistributedReportInfoView implements ImmutableBean {
     // Fields from DistributedReportStatisticsCql
 
     @JsonProperty
-    @PropertyDefinition(validate = "notNull")
+    @PropertyDefinition
     private final String id;
 
     @JsonProperty
