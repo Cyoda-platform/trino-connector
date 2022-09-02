@@ -18,10 +18,12 @@
 package com.cyoda.presto.client.logic;
 
 import com.cyoda.presto.client.types.DataType;
-import io.jsonwebtoken.lang.Assert;
+import org.testng.Assert;
 import org.testng.annotations.Test;
 
 import java.util.Arrays;
+
+import static org.testng.Assert.assertNotNull;
 
 public class ColumnPredicateConversionTopicsTest {
 
@@ -36,7 +38,7 @@ public class ColumnPredicateConversionTopicsTest {
         // There should not be any Exceptions flying.
         Arrays.stream(DataType.values()).filter(DataType::isIntType)
                 .map(ColumnPredicateUtils::minValueOfIntType)
-                .forEach(Assert::notNull);
+                .forEach(Assert::assertNotNull);
 
 
     }

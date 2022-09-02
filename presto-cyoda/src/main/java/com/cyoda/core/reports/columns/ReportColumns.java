@@ -31,7 +31,6 @@ import java.util.Map;
 /**
  * Container object used only for storing list of ReportColumn, to be able to serialize it with JodaBeanTypeCodec
  */
-@BeanDefinition(builderScope = "public")
 public class ReportColumns {
 
     private final List<ReportColumn> columns;
