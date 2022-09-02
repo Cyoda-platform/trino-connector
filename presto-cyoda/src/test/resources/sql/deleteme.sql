@@ -20,7 +20,7 @@
 -- where reportId = '000186c8-0000-1000-8080-808080808080-LEIMessage-a6aabec0-d476-11ec-9492-926df8204c70'
 --   and groupingversion = '00000000-0000-1000-0000-000000000000';
 
-use cyoda.reporting;
+use trading.reporting;
 select * from reports;
 select * from report_details;
 select * from report_histories;
@@ -34,15 +34,16 @@ select reportid from (
 
 
 
-select * from cyoda.reporting."play-interfacemessage-fix extract report"
+select * from trading.reporting."play-interfacemessage-paul trade report"
 where reportId in (
     select reportid from (
-        select reportid, max(createtime) from report_histories where configname = 'PLAY-InterfaceMessage-FIX Extract Report'
+        select reportid, max(createtime) from report_histories where configname = 'PLAY-InterfaceMessage-Paul Trade Report'
         and groupingversion = '00000000-0000-1000-0000-000000000000'
         group by reportid
         )
     )
-and groupingversion = '00000000-0000-1000-0000-000000000000';
+and groupingversion = '00000000-0000-1000-0000-000000000000'
+and rownum between 1 and 100;
 
 -- Demo
 select * from cyoda.reporting."play-interfacemessage-fix extract report"

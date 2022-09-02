@@ -191,11 +191,6 @@
                 <artifactId>joda-beans</artifactId>
                 <version>${joda-beans.version}</version>
             </dependency>
-            <dependency>
-                <groupId>io.jsonwebtoken</groupId>
-                <artifactId>jjwt</artifactId>
-                <version>${jjwt.version}</version>
-            </dependency>
 
             <dependency>
                 <groupId>org.codehaus.plexus</groupId>
