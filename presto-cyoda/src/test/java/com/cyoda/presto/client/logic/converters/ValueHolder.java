@@ -28,7 +28,6 @@ import com.cyoda.presto.client.logic.converters.impl.YearPrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.ZonedDateTimePrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.structure.LongWrittenTypeValueConverter;
 import com.cyoda.presto.client.logic.converters.structure.SliceComparableValueConverter;
-import com.cyoda.presto.client.logic.converters.structure.SliceWrittenTypeValueConverter;
 import com.cyoda.presto.client.types.IDataType;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -44,10 +43,8 @@ import java.time.LocalTime;
 import java.time.Year;
 import java.time.YearMonth;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
@@ -57,8 +54,6 @@ import static org.testng.Assert.*;
 public class ValueHolder<T> {
 
     public static final Map<IDataType<?>, ValueHolder<?>> MAP = new HashMap<>();
-    public static final List<SliceWrittenTypeValueConverter<?>> sliceValueConverters = new ArrayList<>();
-    public static final List<LongWrittenTypeValueConverter<?>> longValueConverters = new ArrayList<>();
     public final IDataType<T> dataType;
     public final PrestoValueConverter<T> converter;
     public final T exampleValue;

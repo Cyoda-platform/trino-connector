@@ -8,8 +8,10 @@ import io.airlift.slice.Slice;
 import javax.annotation.Nonnull;
 
 public abstract class SliceComparableValueConverter<T extends Comparable<? super T>>
-        extends ComparableValueConverter<T> implements SliceWrittenTypeValueConverter<T> {
+        extends ComparableValueConverter<T> {
 
+    public abstract Slice toSlice(@Nonnull T value);
+    public abstract @Nonnull T fromSlice(Slice value);
 
     public SliceComparableValueConverter(IDataType<T> dataType) {
         super(dataType);

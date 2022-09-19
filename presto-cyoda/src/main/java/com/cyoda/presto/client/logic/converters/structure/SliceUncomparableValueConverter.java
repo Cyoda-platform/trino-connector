@@ -7,8 +7,10 @@ import io.airlift.slice.Slice;
 
 import javax.annotation.Nonnull;
 
-public abstract class SliceUncomparableValueConverter<T> extends SingleValueConverter<T>
-        implements SliceWrittenTypeValueConverter<T> {
+public abstract class SliceUncomparableValueConverter<T> extends SingleValueConverter<T> {
+
+    public abstract Slice toSlice(@Nonnull T value);
+    public abstract @Nonnull T fromSlice(Slice value);
 
     public SliceUncomparableValueConverter(IDataType<T> dataType) {
         super(dataType);
