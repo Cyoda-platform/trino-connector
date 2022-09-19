@@ -110,7 +110,7 @@ public class GroupHeader implements ImmutableBean {
         this.isNext = isNext;
         this.leaf = leaf;
         this.summary = summary;
-        this.commonGroupValues = commonGroupValues.entrySet().stream()
+        this.commonGroupValues = commonGroupValues == null ? null : commonGroupValues.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, it->Optional.ofNullable(it.getValue())));
     }
 

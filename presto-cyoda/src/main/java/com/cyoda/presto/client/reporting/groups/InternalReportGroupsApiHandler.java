@@ -34,6 +34,7 @@ import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.GroupHeader;
+import com.cyoda.service.interactors.WrappedEntityModel;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.spi.PrestoException;
@@ -155,17 +156,17 @@ public class InternalReportGroupsApiHandler extends BasePagingReportsApiHandler<
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
         traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(authContext));
 
-        TypeReferences.PagedModelType<GroupHeader> typeReference =
-                new TypeReferences.PagedModelType<GroupHeader>() {};
+        TypeReferences.PagedModelType<WrappedEntityModel<GroupHeader>> typeReference =
+                new TypeReferences.PagedModelType<WrappedEntityModel<GroupHeader>>() {};
 
         try {
-            final PagedModel<GroupHeader> fieldsViews = traverson
+            final PagedModel<WrappedEntityModel<GroupHeader>> fieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
             Optional<PagedModel<GroupingHandle>> groupingHandles = Optional.ofNullable(fieldsViews)
                     .map(item -> {
                         List<GroupingHandle> handles = item.getContent().stream()
-                                .map(handle -> new GroupingHandle(reportId, groupingVersion, handle, reportConfigName))
+                                .map(handle -> new GroupingHandle(reportId, groupingVersion, handle.getContent(), reportConfigName))
                                 .collect(Collectors.toList());
                         return PagedModel.of(handles, item.getMetadata());
                     });

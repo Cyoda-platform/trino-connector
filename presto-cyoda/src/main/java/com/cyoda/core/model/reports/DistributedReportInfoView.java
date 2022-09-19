@@ -46,7 +46,7 @@ public final class DistributedReportInfoView implements ImmutableBean {
     // Fields from DistributedReportStatisticsCql
 
     @JsonProperty
-    @PropertyDefinition(validate = "notNull")
+    @PropertyDefinition
     private final String id;
 
     @JsonProperty
@@ -160,7 +160,7 @@ public final class DistributedReportInfoView implements ImmutableBean {
 
     /**
      * Creates an instance.
-     * @param id  the value of the property, not null
+     * @param id  the value of the property
      * @param createTime  the value of the property
      * @param finishTime  the value of the property
      * @param reportFailed  the value of the property
@@ -207,7 +207,6 @@ public final class DistributedReportInfoView implements ImmutableBean {
             boolean hierarchy,
             boolean regroupingPossible,
             ReportColumns groupingCols) {
-        JodaBeanUtils.notNull(id, "id");
         this.id = id;
         this.createTime = (createTime != null ? (Date) createTime.clone() : null);
         this.finishTime = (finishTime != null ? (Date) finishTime.clone() : null);
@@ -240,7 +239,7 @@ public final class DistributedReportInfoView implements ImmutableBean {
     //-----------------------------------------------------------------------
     /**
      * Gets the id.
-     * @return the value of the property, not null
+     * @return the value of the property
      */
     public String getId() {
         return id;
@@ -1226,11 +1225,10 @@ public final class DistributedReportInfoView implements ImmutableBean {
         //-----------------------------------------------------------------------
         /**
          * Sets the id.
-         * @param id  the new value, not null
+         * @param id  the new value
          * @return this, for chaining, not null
          */
         public Builder id(String id) {
-            JodaBeanUtils.notNull(id, "id");
             this.id = id;
             return this;
         }
