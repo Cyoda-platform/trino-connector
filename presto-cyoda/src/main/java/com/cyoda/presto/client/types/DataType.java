@@ -70,7 +70,7 @@ public enum DataType implements IDataType {
     DOUBLE          (Double.class,          StandardTypes.DOUBLE,       true, 0),
     INTEGER         (Integer.class,         StandardTypes.INTEGER,      true, 0),
     BIG_DECIMAL     (BigDecimal.class,      BigDecimalType.BIG_DECIMAL, true, 0),
-    BIG_INTEGER     (BigInteger.class,      StandardTypes.BIGINT,       true, 0),
+    BIG_INTEGER     (BigInteger.class,      BigDecimalType.BIG_DECIMAL, true, 0),
     BOOLEAN         (Boolean.class,         StandardTypes.BOOLEAN,      true, 0),
     LOCAL_DATE      (LocalDate.class,       StandardTypes.DATE,         true, 0),
     LOCAL_DATE_TIME (LocalDateTime.class,   StandardTypes.TIMESTAMP,    true, 0),
