@@ -23,6 +23,7 @@ import com.cyoda.presto.client.types.DataType;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 
 public class LocalTimePrestoValueConverter extends LongComparedTypeValueConverter<LocalTime> {
     @Inject
@@ -51,4 +52,8 @@ public class LocalTimePrestoValueConverter extends LongComparedTypeValueConverte
         return LocalTime.MAX.toNanoOfDay();
     }
 
+    @Override
+    public LocalTime fromOtherCyodaType(Object value, String columnName) {
+        return LocalTime.parse((String)value, DateTimeFormatter.ISO_LOCAL_TIME);
+    }
 }

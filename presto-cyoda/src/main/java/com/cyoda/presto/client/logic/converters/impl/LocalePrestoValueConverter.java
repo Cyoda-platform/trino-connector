@@ -30,4 +30,9 @@ public class LocalePrestoValueConverter extends SliceJsonValueConverter<Locale> 
         super(DataType.LOCALE);
     }
 
+    @Override
+    public Locale fromOtherCyodaType(Object value, String columnName) {
+        String[] spl = ((String)value).split(",");
+        return new Locale(spl[0].trim(), spl[1].trim());
+    }
 }

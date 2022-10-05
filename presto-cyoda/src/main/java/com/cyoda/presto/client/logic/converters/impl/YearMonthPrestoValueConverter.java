@@ -24,6 +24,7 @@ import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 
 public class YearMonthPrestoValueConverter extends LongComparedTypeValueConverter<YearMonth> {
 
@@ -56,5 +57,8 @@ public class YearMonthPrestoValueConverter extends LongComparedTypeValueConverte
         return MAX_YEAR_MONTH;
     }
 
-
+    @Override
+    public YearMonth fromOtherCyodaType(Object value, String columnName) {
+        return YearMonth.parse((String)value, DateTimeFormatter.ISO_DATE);
+    }
 }

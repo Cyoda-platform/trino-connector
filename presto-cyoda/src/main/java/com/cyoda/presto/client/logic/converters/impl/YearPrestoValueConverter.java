@@ -23,6 +23,7 @@ import com.cyoda.presto.client.types.DataType;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.time.Year;
+import java.time.format.DateTimeFormatter;
 
 public class YearPrestoValueConverter extends LongComparedTypeValueConverter<Year> {
     @Inject
@@ -51,4 +52,8 @@ public class YearPrestoValueConverter extends LongComparedTypeValueConverter<Yea
         return Year.MAX_VALUE;
     }
 
+    @Override
+    public Year fromOtherCyodaType(Object value, String columnName) {
+        return Year.of(Integer.parseInt((String) value));
+    }
 }

@@ -90,4 +90,9 @@ public class FloatPrestoValueConverter extends LongWrittenTypeValueConverter<Flo
                 throw unsupportedComparison(column, op);
         }
     }
+
+    @Override
+    public Float fromOtherCyodaType(Object value, String columnName) {
+        return ((Double) value).floatValue();
+    }
 }
