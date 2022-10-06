@@ -42,9 +42,21 @@ public class ReportRowNavigator {
      * @return the Object found at end of the path
      */
     public static Object getValue(String cyodaColumpath, Map<String, Object> reportRow) {
+        Object result = reportRow.get(cyodaColumpath);
+        if (result != null) return result;
+
+        //temporary shortcut
+        if (cyodaColumpath.endsWith("]")){
+            int end = cyodaColumpath.lastIndexOf(".");
+            if (end > 0){
+                String key = cyodaColumpath.substring(0,end);
+                result = reportRow.get(key);
+                if (result != null) return result;
+            }
+        }
+
         Deque<DequeHandle> deque = new ArrayDeque<>();
         deque.add(new DequeHandle(reportRow,cyodaColumpath));
-        Object result = null;
 
         while (!deque.isEmpty()) {
             DequeHandle pop = deque.pop();
