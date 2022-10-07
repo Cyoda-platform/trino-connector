@@ -85,5 +85,8 @@ public class DoublePrestoValueConverter extends LongWrittenTypeValueConverter<Do
         }
     }
 
-
+    @Override
+    public void writeValue(Type type, BlockBuilder builder, @Nonnull Double value) {
+        type.writeDouble(builder, value);
+    }
 }
