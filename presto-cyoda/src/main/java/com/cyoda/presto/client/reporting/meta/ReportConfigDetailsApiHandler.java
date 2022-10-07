@@ -270,7 +270,7 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
         // TODO: Just a hack right now. Check actual logic on Cyoda side.
         // Currently Maps are never returned in reports, only their values. See MapAllElementAccessorCmp
         // We can multiple [*] references in a CyodaColumnPath. See for example TestTrade.
-        if (path.matches("^.+\\[\\*\\]@(\\w+#)+\\w+\\.\\w+$")) {
+        if (path.matches("^.+\\[\\*\\](@(\\w+#)+\\w+\\.\\w+)?$")) {
             return Types.newParameterizedType(List.class, clazz);
         }
 //        if (path.endsWith("[*]")) {
