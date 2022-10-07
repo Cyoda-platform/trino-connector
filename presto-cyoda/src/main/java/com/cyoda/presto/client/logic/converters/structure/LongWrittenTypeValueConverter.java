@@ -19,7 +19,7 @@ public abstract class LongWrittenTypeValueConverter<T extends Comparable<? super
 
     @Override
     public void writeValue(Type type, BlockBuilder builder, @Nonnull T value) {
-        builder.writeLong(toLong(value)).closeEntry();
+        type.writeLong(builder, toLong(value));
     }
     @Override
     public T fromPrestoNative(Object nativeValue) {
