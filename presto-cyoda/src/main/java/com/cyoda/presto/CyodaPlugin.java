@@ -20,6 +20,8 @@ package com.cyoda.presto;
 import com.cyoda.presto.auth.CyodaAuthenticatorFactory;
 import com.cyoda.presto.client.types.BigDecimalOperators;
 import com.cyoda.presto.client.types.BigDecimalType;
+import com.cyoda.presto.client.types.BigIntegerOperators;
+import com.cyoda.presto.client.types.BigIntegerType;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.Plugin;
 import com.facebook.presto.spi.connector.ConnectorFactory;
@@ -38,6 +40,7 @@ public class CyodaPlugin implements Plugin {
 
     private static final List<Type> OUR_TYPES = ImmutableList.<Type>builder()
             .add(BigDecimalType.BIG_DECIMAL_TYPE)
+            .add(BigIntegerType.BIG_INTEGER_TYPE)
             .build();
 
     @Override
@@ -47,6 +50,7 @@ public class CyodaPlugin implements Plugin {
 
     private static final Set<Class<?>> OUR_FUNCTIONS = ImmutableSet.<Class<?>>builder()
             .add(BigDecimalOperators.class)
+            .add(BigIntegerOperators.class)
             .build();
 
     @Override
