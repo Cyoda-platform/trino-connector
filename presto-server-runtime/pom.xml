@@ -25,7 +25,7 @@
 
     <groupId>com.cyoda.presto</groupId>
     <artifactId>presto-server-runtime</artifactId>
-    <version>0.272</version>
+    <version>0.277</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
