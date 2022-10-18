@@ -98,16 +98,27 @@ public class ReportRowNavigator {
         String theIndex = key.replaceFirst(LIST_CONSTITUENTS_REGEX,"$2");
         result = map.get(theKey);
         List<?> list = (List<?>) result;
-        String rest = path.substring(end +1);
+        String rest = null;
+        if (end < path.length()) {
+            rest = path.substring(end + 1);
+        }
         ImmutableList.Builder<Object> builder = ImmutableList.builder();
         if (theIndex.equals("*")) {
-            list.forEach(item -> {
-                addItem(cyodaColumpath, rest, builder, item);
-            });
+            if (rest == null){
+                return list;
+            } else {
+                for (Object item : list) {
+                    addItem(cyodaColumpath, rest, builder, item);
+                }
+            }
         } else {
             int index = Integer.parseInt(theIndex);
             Preconditions.checkArgument(list.size()>index,"The List at %s has %s elements, but the requested index is %s",key,list.size(),index);
-            addItem(cyodaColumpath,rest,builder,list.get(index));
+            if (rest == null) {
+                return list.get(index);
+            } else {
+                addItem(cyodaColumpath, rest, builder, list.get(index));
+            }
         }
         return builder.build();
     }
