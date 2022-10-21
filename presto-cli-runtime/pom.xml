@@ -24,7 +24,7 @@
     <!-- Remove parent to avoid any checks and packagings -->
     <groupId>com.cyoda.presto</groupId>
     <artifactId>presto-cli-runtime</artifactId>
-    <version>0.277</version>
+    <version>0.272</version>
 
     <properties>
         <!--suppress UnresolvedMavenProperty -->
