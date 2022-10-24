@@ -50,7 +50,9 @@ public class CyodaPlugin implements Plugin {
 
     private static final Set<Class<?>> OUR_FUNCTIONS = ImmutableSet.<Class<?>>builder()
             .add(BigDecimalOperators.class)
+            .add(BigDecimalOperators.BigDecimalDistinctFromOperator.class)
             .add(BigIntegerOperators.class)
+            .add(BigIntegerOperators.BigIntegerDistinctFromOperator.class)
             .build();
 
     @Override
