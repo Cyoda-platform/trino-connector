@@ -324,45 +324,6 @@ public class BigIntegerOperators {
         return value.longValue();
     }
 
-    @ScalarOperator(IS_DISTINCT_FROM)
-    public static class BigIntegerDistinctFromOperator
-    {
-        @SqlType(StandardTypes.BOOLEAN)
-        public static boolean isDistinctFrom(
-                @SqlType(BigIntegerType.BIG_INTEGER) Slice left,
-                @IsNull boolean leftNull,
-                @SqlType(BigIntegerType.BIG_INTEGER) Slice right,
-                @IsNull boolean rightNull)
-        {
-            if (leftNull != rightNull) {
-                return true;
-            }
-            if (leftNull) {
-                return false;
-            }
-            return notEqual(left, right);
-        }
-
-        @SqlType(StandardTypes.BOOLEAN)
-        public static boolean isDistinctFrom(
-                @BlockPosition @SqlType(value = BigIntegerType.BIG_INTEGER, nativeContainerType = BigInteger.class) Block leftBlock,
-                @BlockIndex int leftPosition,
-                @BlockPosition @SqlType(value = BigIntegerType.BIG_INTEGER, nativeContainerType = BigInteger.class) Block rightBlock,
-                @BlockIndex int rightPosition)
-        {
-            if (leftBlock.isNull(leftPosition) != rightBlock.isNull(rightPosition)) {
-                return true;
-            }
-            if (leftBlock.isNull(leftPosition)) {
-                return false;
-            }
-            BigInteger left = BIG_INTEGER_TYPE.getBigInteger(leftBlock, leftPosition);
-            BigInteger right = BIG_INTEGER_TYPE.getBigInteger(rightBlock, rightPosition);
-
-            return !left.equals(right);
-        }
-    }
-
     @ScalarOperator(XX_HASH_64)
     @SqlType(StandardTypes.BIGINT)
     public static long xxHash64(@SqlType(BigIntegerType.BIG_INTEGER) Slice value)
