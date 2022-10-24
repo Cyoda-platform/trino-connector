@@ -33,9 +33,9 @@ public class BigDecimalDistinctFromOperator {
 
     @SqlType(StandardTypes.BOOLEAN)
     public static boolean isDistinctFrom(
-            @BlockPosition @SqlType(value = BigDecimalType.BIG_DECIMAL, nativeContainerType = BigDecimal.class) Block leftBlock,
+            @BlockPosition @SqlType(value = BigDecimalType.BIG_DECIMAL, nativeContainerType = Slice.class) Block leftBlock,
             @BlockIndex int leftPosition,
-            @BlockPosition @SqlType(value = BigDecimalType.BIG_DECIMAL, nativeContainerType = BigDecimal.class) Block rightBlock,
+            @BlockPosition @SqlType(value = BigDecimalType.BIG_DECIMAL, nativeContainerType = Slice.class) Block rightBlock,
             @BlockIndex int rightPosition) {
         if (leftBlock.isNull(leftPosition) != rightBlock.isNull(rightPosition)) {
             return true;
