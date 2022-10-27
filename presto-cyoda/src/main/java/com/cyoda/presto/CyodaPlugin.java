@@ -23,6 +23,7 @@ import com.cyoda.presto.client.types.BigDecimalType;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.Plugin;
 import com.facebook.presto.spi.connector.ConnectorFactory;
+import com.facebook.presto.spi.eventlistener.EventListenerFactory;
 import com.facebook.presto.spi.security.PasswordAuthenticatorFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -34,6 +35,11 @@ public class CyodaPlugin implements Plugin {
     @Override
     public Iterable<ConnectorFactory> getConnectorFactories() {
         return ImmutableList.of(new CyodaConnectorFactory());
+    }
+
+    @Override
+    public Iterable<EventListenerFactory> getEventListenerFactories() {
+        return ImmutableList.of(new CyodaEventListenerFactory());
     }
 
     private static final List<Type> OUR_TYPES = ImmutableList.<Type>builder()
