@@ -1133,17 +1133,6 @@ public class NewComparisonColumnPredicateTest {
                 )
         );
 
-        //TODO byte[] is not comparable for now
-//        testMerge(newComparisonPredicate(binaryCol, GREATER_EQUAL,
-//                        new byte[] { 0, 1, 2, 3, 4, 5, 6 }),
-//                newComparisonPredicate(binaryCol, LESS, new byte[] { 10 }),
-//                new ColumnPredicate<>(RANGE,
-//                        binaryCol,
-//                        DataTypeValue.of(ByteBuffer.wrap(new byte[] { 0, 1, 2, 3, 4, 5, 6 })),
-//                        DataTypeValue.of(ByteBuffer.wrap(new byte[] { 10 }))
-//                )
-//        );
-
         testMerge(newComparisonPredicate(stringCol, GREATER_EQUAL, "bar"),
                 newComparisonPredicate(stringCol, LESS, "foo"),
                 new ColumnPredicate<>(RANGE,

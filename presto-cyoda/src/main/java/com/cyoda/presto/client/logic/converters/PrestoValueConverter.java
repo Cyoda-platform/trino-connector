@@ -30,27 +30,6 @@ public interface PrestoValueConverter<T> {
     SupplierLogger LOG = SupplierLogger.get(PrestoValueConverter.class);
     String stringify(T value);
 
-
-    /****** conversion to/from long *******/
-//    default long toLong(@Nonnull T value) {
-//        throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
-//    }
-//
-//    default @Nonnull T fromLong(long value) {
-//        throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
-//    }
-
-    /****** conversion to/from Slice *******/
-//    default Slice toSlice(@Nonnull T value) {
-//        throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
-//    }
-//
-//    default @Nonnull T fromSlice(Slice value) {
-//        throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
-//    }
-//
-//    T toObject(Object nativeValue);
-
     default ColumnPredicate<?> newComparisonPredicateFromNative(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, Object nativeValue){
         throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
     }

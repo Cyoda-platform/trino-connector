@@ -160,15 +160,6 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
         return new ColumnPredicate<>(PredicateType.IS_NULL, column, null, null);
     }
 
-//    public <S extends Comparable<? super S>> ColumnPredicate<S> cloneTo(CyodaColumnHandle column, Function<DataTypeValue<T>,S> func ) {
-//        Optional<S> lowerCast = Optional.ofNullable(this.getLower()).map(func);
-//        Optional<S> upperCast = Optional.ofNullable(this.getUpper()).map(func);
-//        return new ColumnPredicate<>(this.getType(),column,
-//                lowerCast.map(DataTypeValue::of).orElse(null),
-//                upperCast.map(DataTypeValue::of).orElse(null)
-//        );
-//    }
-
     public String getColumnName() {
         return column.getColumnName();
     }
@@ -330,117 +321,6 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
                 (upper == null || value.compareTo(upper) < 0);
     }
 
-
-    /*
-     * Returns true if increment(a) == b.
-     *
-     * @param a the value which would be incremented
-     * @param b the target value
-     * @return true if increment(a) == b
-     */
-    @SuppressWarnings("java:S3776")
-//    private boolean areConsecutive(DataTypeValue<T> a, DataTypeValue<T> b) {
-//        switch (a.getDataType()) {
-//            case BOOLEAN:
-//                return false;
-//            case BYTE: {
-//                byte m = a.asByte();
-//                byte n = b.asByte();
-//                return m < n && m + (byte) 1 == n;
-//            }
-//            case SHORT: {
-//                short m = a.asShort();
-//                short n = b.asShort();
-//                return m < n && m + (short) 1 == n;
-//            }
-//            case INTEGER: {
-//                int m = a.asInt();
-//                int n = b.asInt();
-//                return m < n && m + 1 == n;
-//            }
-//            case LONG: {
-//                long m = a.asLong();
-//                long n = b.asLong();
-//                return m < n && m + 1 == n;
-//            }
-//            case DATE: {
-//                long m = a.asDate().getTime();
-//                long n = b.asDate().getTime();
-//                return m < n && m + 1 == n;
-//            }
-//            case BIG_INTEGER: {
-//                BigInteger m = a.asBigInteger();
-//                BigInteger n = b.asBigInteger();
-//                return m.compareTo(n) < 0 && m.add(BigInteger.ONE).equals(n);
-//            }
-//
-//            case FLOAT: {
-//                float m = a.asFloat();
-//                float n = b.asFloat();
-//                return m < n && Math.nextAfter(m, Float.POSITIVE_INFINITY) == n;
-//            }
-//            case DOUBLE: {
-//                double m = a.asDouble();
-//                double n = b.asDouble();
-//                return m < n && Math.nextAfter(m, Double.POSITIVE_INFINITY) == n;
-//            }
-//                TODO IMO this is wrong
-//            case BIG_DECIMAL: {
-//                BigDecimal m = a.asBigDecimal();
-//                BigDecimal n = b.asBigDecimal();
-//                return m.compareTo(n) < 0 && m.add(BigDecimal.ONE).equals(n);
-//
-//            }
-//            case STRING: {
-//                String m = a.asString();
-//                String n = b.asString();
-//                if (m.length() + 1 != n.length() || n.charAt(n.length() - 1) != 0) {
-//                    return false;
-//                }
-//                return m.equals(n.substring(0, n.length() - 1));
-//            }
-//            case BYTE_ARRAY: {
-//                byte[] m = a.asByteArray();
-//                byte[] n = b.asByteArray();
-//                if (m.length + 1 != n.length || n[m.length] != 0) {
-//                    return false;
-//                }
-//                for (int i = 0; i < m.length; i++) {
-//                    if (m[i] != n[i]) {
-//                        return false;
-//                    }
-//                }
-//                return true;
-//            }
-//            case BYTE_BUFFER: {
-//                ByteBuffer mBuffer = a.asByteBuffer();
-//                ByteBuffer nBuffer = b.asByteBuffer();
-//                byte[] m = new byte[mBuffer.remaining()];
-//                try {
-//                    mBuffer.get(m);
-//                } finally {
-//                    mBuffer.rewind();
-//                }
-//                byte[] n = new byte[nBuffer.remaining()];
-//                try {
-//                    nBuffer.get(n);
-//                } finally {
-//                    nBuffer.rewind();
-//                }
-//                if (m.length + 1 != n.length || n[m.length] != 0) {
-//                    return false;
-//                }
-//                for (int i = 0; i < m.length; i++) {
-//                    if (m[i] != n[i]) {
-//                        return false;
-//                    }
-//                }
-//                return true;
-//            }
-//            default:
-//                throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, String.format("Method \"areConsecutive\" unavailable for type %s", a.getDataType()));
-//        }
-//    }
 
     /**
      * This is not meant for general use, but only locally in this package

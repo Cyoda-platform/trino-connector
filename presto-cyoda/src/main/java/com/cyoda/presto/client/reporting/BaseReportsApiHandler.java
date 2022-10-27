@@ -156,47 +156,6 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         columnHandle.writeValue(blockBuilder, value);
     }
 
-//    // TODO: Kept for backward reference, delete after regression testing
-//    protected @Nonnull Object mapFieldValue(@Nonnull final Object value, CyodaColumnHandle columnHandle) {
-//        if (columnHandle.getDataType() == LIST) {
-//            Type elementType = TypesUtil.getElementType(columnHandle.getColumnType());
-//            return ((List<?>) value).stream().map(it -> mapFieldSingleValue(it, DataType.fromType(elementType))).collect(Collectors.toList());
-//        }
-////        if (columnHandle.getDataType() == ARRAY) {
-////            return processList(Arrays.stream(((Object[])value)).collect(Collectors.toList()), columnHandle)
-////                    .toArray();
-////        }
-//
-//        if ( value instanceof List && columnHandle.getDataType() != LIST && ((List<?>)value).size() == 1) {
-//            return mapFieldSingleValue(((List<?>)value).get(0),columnHandle.getDataType());
-//        }
-//
-//        return mapFieldSingleValue(value, columnHandle.getDataType());
-//    }
-//
-//    private Object mapFieldSingleValue(Object value, DataType dataType) {
-//        if (dataType == UUID_TYPE && value instanceof String) {
-//            return UUID.fromString((String) value);
-//        }
-//        if (dataType == DATE && value instanceof String) {
-//            LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateTimeFormatter.ISO_DATE_TIME);
-//            return Timestamp.valueOf(localDateTime);
-//        }
-//        if (dataType == LOCAL_DATE_TIME && value instanceof String) {
-//            return LocalDateTime.parse((String) value, DateTimeFormatter.ISO_DATE_TIME);
-//        }
-//        if (dataType == LOCAL_DATE && value instanceof String) {
-//            return LocalDate.parse((String) value, DateTimeFormatter.ISO_DATE);
-//        }
-//        if (dataType == ZONED_DATE_TIME && value instanceof String) {
-//            return ZonedDateTime.parse((String) value, DateTimeFormatter.ISO_ZONED_DATE_TIME);
-//        }
-//        if (dataType == BIG_DECIMAL && value instanceof Number && !(value instanceof BigDecimal)) {
-//            return BigDecimal.valueOf(((Number) value).doubleValue());
-//        }
-//        return value;
-//    }
-
     protected abstract @Nullable Object getFieldValueFromEntity(@Nonnull T field, CyodaColumnHandle columnHandle);
 
     protected static String toReportName(@Nonnull String reportConfigId) {
