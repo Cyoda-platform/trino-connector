@@ -137,6 +137,7 @@ public class CyodaEventListenerTest {
 
     private void doSplitCompleted(Map<String, String> config, boolean debugEnabled, int debugCalled) {
         SplitCompletedEvent mockSplitCompletedEvent = mock(SplitCompletedEvent.class);
+        when(mockSplitCompletedEvent.getQueryId()).thenReturn("query-id");
         SplitStatistics randomSplitStatistics = easyRandom.nextObject(SplitStatistics.class);
         when(mockSplitCompletedEvent.getStatistics()).thenReturn(randomSplitStatistics);
 
