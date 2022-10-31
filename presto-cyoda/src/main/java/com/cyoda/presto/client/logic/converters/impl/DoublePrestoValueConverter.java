@@ -27,6 +27,7 @@ import com.facebook.presto.common.type.Type;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
+import java.math.BigDecimal;
 
 public class DoublePrestoValueConverter extends LongWrittenTypeValueConverter<Double> {
 
@@ -88,5 +89,10 @@ public class DoublePrestoValueConverter extends LongWrittenTypeValueConverter<Do
     @Override
     public void writeValue(Type type, BlockBuilder builder, @Nonnull Double value) {
         type.writeDouble(builder, value);
+    }
+
+    @Override
+    public Double fromOtherCyodaType(Object value, String columnName) {
+        return ((BigDecimal)value).doubleValue();
     }
 }

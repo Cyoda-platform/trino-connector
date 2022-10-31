@@ -54,8 +54,4 @@ public class BigDecimalPrestoValueConverter extends BigDecimalTypeValueConverter
         return new BigDecimal(value.toStringUtf8());
     }
 
-    @Override
-    public BigDecimal fromOtherCyodaType(Object value, String columnName) {
-        return BigDecimal.valueOf(((Number) value).doubleValue());
-    }
 }

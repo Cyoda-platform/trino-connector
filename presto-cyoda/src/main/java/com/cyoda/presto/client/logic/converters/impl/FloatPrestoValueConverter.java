@@ -28,6 +28,8 @@ import com.facebook.presto.common.type.Type;
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 
+import java.math.BigDecimal;
+
 import static java.lang.Float.floatToRawIntBits;
 import static java.lang.Float.intBitsToFloat;
 
@@ -93,6 +95,6 @@ public class FloatPrestoValueConverter extends LongWrittenTypeValueConverter<Flo
 
     @Override
     public Float fromOtherCyodaType(Object value, String columnName) {
-        return ((Double) value).floatValue();
+        return ((BigDecimal) value).floatValue();
     }
 }
