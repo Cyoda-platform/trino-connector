@@ -54,4 +54,8 @@ public class BigDecimalPrestoValueConverter extends BigDecimalTypeValueConverter
         return new BigDecimal(value.toStringUtf8());
     }
 
+    @Override
+    public String stringify(BigDecimal value) {
+        return value.toString();
+    }
 }
