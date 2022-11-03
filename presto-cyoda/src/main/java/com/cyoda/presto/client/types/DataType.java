@@ -69,8 +69,8 @@ public enum DataType implements IDataType {
     BYTE            (Byte.class,            StandardTypes.TINYINT,      true, 0),
     DOUBLE          (Double.class,          StandardTypes.DOUBLE,       true, 0),
     INTEGER         (Integer.class,         StandardTypes.INTEGER,      true, 0),
-    BIG_DECIMAL     (BigDecimal.class,      StandardTypes.DECIMAL,      true, 0),
-    BIG_INTEGER     (BigInteger.class,      StandardTypes.DECIMAL,      true, 0),
+    BIG_DECIMAL     (BigDecimal.class,      StandardTypes.DECIMAL + "(38,25)",      true, 0),
+    BIG_INTEGER     (BigInteger.class,      StandardTypes.DECIMAL + "(38,25)",      true, 0),
     BOOLEAN         (Boolean.class,         StandardTypes.BOOLEAN,      true, 0),
     LOCAL_DATE      (LocalDate.class,       StandardTypes.DATE,         true, 0),
     LOCAL_DATE_TIME (LocalDateTime.class,   StandardTypes.TIMESTAMP,    true, 0),
@@ -234,12 +234,12 @@ public enum DataType implements IDataType {
     }
 
 
-    public static final Set<String> supportedPrestoTypes = ImmutableSet.copyOf(
-            Arrays.stream(DataType.values())
-                    .map(DataType::getTypeString)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet())
-    );
+//    public static final Set<String> supportedPrestoTypes = ImmutableSet.copyOf(
+//            Arrays.stream(DataType.values())
+//                    .map(DataType::getTypeString)
+//                    .filter(Objects::nonNull)
+//                    .collect(Collectors.toSet())
+//    );
 
 }
 

@@ -25,14 +25,11 @@ import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.client.types.TypesUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.block.BlockBuilder;
-import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
-import com.facebook.presto.common.type.TypeSignature;
 import com.facebook.presto.spi.SchemaTableName;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -132,9 +129,9 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         );
     }
 
-    protected Type toType(String fieldTypeString,TypeSignature parType, TypeSignature mapValueType) {
-        return TypesUtil.toType(fieldTypeString,parType,mapValueType,typeManager);
-    }
+//    protected Type toType(String fieldTypeString,TypeSignature parType, TypeSignature mapValueType) {
+//        return TypesUtil.toType(fieldTypeString,parType,mapValueType,typeManager);
+//    }
 
     @Override
     public boolean hasTable(AuthContext authContext, SchemaTableName tableName) {
