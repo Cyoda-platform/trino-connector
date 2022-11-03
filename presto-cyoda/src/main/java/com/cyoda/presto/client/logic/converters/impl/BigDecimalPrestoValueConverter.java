@@ -31,7 +31,8 @@ import java.math.MathContext;
 
 public class BigDecimalPrestoValueConverter extends BigDecimalTypeValueConverter<BigDecimal> {
 
-    protected static DecimalType DECIMAL_TYPE = DecimalType.createDecimalType();
+    private static int SCALE = 25;
+    private static DecimalType DECIMAL_TYPE = DecimalType.createDecimalType(Decimals.MAX_PRECISION, SCALE);
 
     @Inject
     public BigDecimalPrestoValueConverter() {
