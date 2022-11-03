@@ -19,14 +19,19 @@ package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.converters.structure.BigDecimalTypeValueConverter;
 import com.cyoda.presto.client.types.DataType;
+import com.facebook.presto.common.type.DecimalType;
+import com.facebook.presto.common.type.Decimals;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.math.BigDecimal;
+import java.math.MathContext;
 
 public class BigDecimalPrestoValueConverter extends BigDecimalTypeValueConverter<BigDecimal> {
+
+    protected static DecimalType DECIMAL_TYPE = DecimalType.createDecimalType();
 
     @Inject
     public BigDecimalPrestoValueConverter() {
@@ -45,13 +50,14 @@ public class BigDecimalPrestoValueConverter extends BigDecimalTypeValueConverter
 
     @Override
     public Slice toSlice(@Nonnull BigDecimal value) {
-        return Slices.utf8Slice(value.toString());
+        BigDecimal rescaled = Decimals.rescale(value, DECIMAL_TYPE);
+        return Decimals.encodeScaledValue(rescaled);
     }
 
     @Nonnull
     @Override
     public BigDecimal fromSlice(Slice value) {
-        return new BigDecimal(value.toStringUtf8());
+        return new BigDecimal(Decimals.decodeUnscaledValue(value), DECIMAL_TYPE.getScale(), new MathContext(DECIMAL_TYPE.getPrecision()));
     }
 
     @Override
