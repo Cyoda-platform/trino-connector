@@ -34,6 +34,7 @@ import com.facebook.presto.common.type.TimestampType;
 import com.facebook.presto.common.type.TinyintType;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeSignature;
+import com.facebook.presto.common.type.TypeSignatureParameter;
 import com.facebook.presto.common.type.VarcharType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
@@ -69,8 +70,9 @@ public enum DataType implements IDataType {
     BYTE            (Byte.class,            StandardTypes.TINYINT,      true, 0),
     DOUBLE          (Double.class,          StandardTypes.DOUBLE,       true, 0),
     INTEGER         (Integer.class,         StandardTypes.INTEGER,      true, 0),
-    BIG_DECIMAL     (BigDecimal.class,      StandardTypes.DECIMAL + "(38,25)",      true, 0),
-    BIG_INTEGER     (BigInteger.class,      StandardTypes.DECIMAL + "(38,25)",      true, 0),
+    BIG_DECIMAL     (BigDecimal.class,      StandardTypes.DECIMAL,      true, 0,
+            TypeSignatureParameter.of(38), TypeSignatureParameter.of(25)),
+    BIG_INTEGER     (BigInteger.class,      StandardTypes.DECIMAL,      true, 0),
     BOOLEAN         (Boolean.class,         StandardTypes.BOOLEAN,      true, 0),
     LOCAL_DATE      (LocalDate.class,       StandardTypes.DATE,         true, 0),
     LOCAL_DATE_TIME (LocalDateTime.class,   StandardTypes.TIMESTAMP,    true, 0),
@@ -103,12 +105,15 @@ public enum DataType implements IDataType {
     private final boolean comparable;
     private final int typeParametersCount;
 
+    private final List<TypeSignatureParameter> staticParams;
 
-    DataType(Class<?> javaType, String typeString, boolean comparable, int typeParametersCount) {
+
+    DataType(Class<?> javaType, String typeString, boolean comparable, int typeParametersCount, TypeSignatureParameter...staticParams) {
         this.javaType = javaType;
         this.typeString = typeString;
         this.comparable = comparable;
         this.typeParametersCount = typeParametersCount;
+        this.staticParams = Arrays.asList(staticParams);
     }
 
     public static <T> Class<T> getJType(IDataType<T> dataType){
@@ -153,6 +158,10 @@ public enum DataType implements IDataType {
 
     public int getTypeParametersCount() {
         return typeParametersCount;
+    }
+
+    public List<TypeSignatureParameter> getStaticParams() {
+        return staticParams;
     }
 
     public boolean isComparable() {

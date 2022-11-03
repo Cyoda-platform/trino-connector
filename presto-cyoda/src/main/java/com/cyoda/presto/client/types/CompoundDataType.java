@@ -92,7 +92,10 @@ public class CompoundDataType {
 
     public Type toPrestoType(TypeManager typeManager){
         if (mainType.getTypeParametersCount() == 0) {
-            return typeManager.getType(new TypeSignature(mainType.getTypeString()));
+            if (mainType.getStaticParams().isEmpty())
+                return typeManager.getType(new TypeSignature(mainType.getTypeString()));
+            else
+                return typeManager.getParameterizedType(mainType.getTypeString(), mainType.getStaticParams());
         } else {
             List<TypeSignatureParameter> attrs = Arrays.stream(typeParams)
                     .map(DataType::getTypeString)
