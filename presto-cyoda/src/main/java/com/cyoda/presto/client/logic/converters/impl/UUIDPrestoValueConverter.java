@@ -22,7 +22,6 @@ import com.cyoda.presto.client.types.DataType;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.VarcharType;
-import com.facebook.presto.type.UuidType;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
@@ -40,11 +39,11 @@ import static java.lang.String.format;
 
 public class UUIDPrestoValueConverter extends BigDecimalTypeValueConverter<UUID> {
 
-//    public static final String TYPE_STRING = StandardTypes.VARCHAR; // For Presto
-    public static final String TYPE_STRING = StandardTypes.UUID; // For Trino
+    public static final String TYPE_STRING = StandardTypes.VARCHAR; // For Presto
+    //public static final String TYPE_STRING = StandardTypes.UUID; // For Trino
 
-//    public static final Type TYPE = VarcharType.VARCHAR; // For Presto
-    public static final Type TYPE = UuidType.UUID; // For Trino
+    public static final Type TYPE = VarcharType.VARCHAR; // For Presto
+    //public static final Type TYPE = UuidType.UUID; // For Trino
 
     private static final BigInteger B = BigInteger.ONE.shiftLeft(64); // 2^64
     private static final BigInteger L = BigInteger.valueOf(Long.MAX_VALUE);
@@ -72,7 +71,7 @@ public class UUIDPrestoValueConverter extends BigDecimalTypeValueConverter<UUID>
 
     @Override
     public Slice toSlice(@Nonnull UUID value) {
-        return toSliceForTrino(value);
+        return toSliceForPresto(value);
     }
     public UUID fromSliceForPresto(Slice value) {
         return UUID.fromString(value.toStringUtf8());
@@ -84,7 +83,7 @@ public class UUIDPrestoValueConverter extends BigDecimalTypeValueConverter<UUID>
     @Nonnull
     @Override
     public UUID fromSlice(Slice value) {
-        return fromSliceForTrino(value);
+        return fromSliceForPresto(value);
     }
 
     @Override

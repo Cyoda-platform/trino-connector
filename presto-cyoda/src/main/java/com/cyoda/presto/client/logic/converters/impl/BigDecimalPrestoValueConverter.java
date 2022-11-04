@@ -21,8 +21,8 @@ import com.cyoda.presto.client.logic.converters.structure.BigDecimalTypeValueCon
 import com.cyoda.presto.client.types.DataType;
 import com.facebook.presto.common.type.DecimalType;
 import com.facebook.presto.common.type.Decimals;
+import com.facebook.presto.common.type.TypeSignatureParameter;
 import io.airlift.slice.Slice;
-import io.airlift.slice.Slices;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -31,8 +31,11 @@ import java.math.MathContext;
 
 public class BigDecimalPrestoValueConverter extends BigDecimalTypeValueConverter<BigDecimal> {
 
-    private static int SCALE = 25;
-    private static DecimalType DECIMAL_TYPE = DecimalType.createDecimalType(Decimals.MAX_PRECISION, SCALE);
+    private static final int SCALE = 18;
+    private static final int PRECISION = Decimals.MAX_PRECISION;
+    private static final DecimalType DECIMAL_TYPE = DecimalType.createDecimalType(PRECISION, SCALE);
+    public static final TypeSignatureParameter P_SC = TypeSignatureParameter.of(SCALE);
+    public static final TypeSignatureParameter P_PR = TypeSignatureParameter.of(PRECISION);
 
     @Inject
     public BigDecimalPrestoValueConverter() {

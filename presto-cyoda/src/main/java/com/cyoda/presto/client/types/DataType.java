@@ -18,6 +18,7 @@
 package com.cyoda.presto.client.types;
 
 import com.cyoda.presto.client.logic.Any;
+import com.cyoda.presto.client.logic.converters.impl.BigDecimalPrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.UUIDPrestoValueConverter;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -71,7 +72,7 @@ public enum DataType implements IDataType {
     DOUBLE          (Double.class,          StandardTypes.DOUBLE,       true, 0),
     INTEGER         (Integer.class,         StandardTypes.INTEGER,      true, 0),
     BIG_DECIMAL     (BigDecimal.class,      StandardTypes.DECIMAL,      true, 0,
-            TypeSignatureParameter.of(38), TypeSignatureParameter.of(25)),
+            BigDecimalPrestoValueConverter.P_PR, BigDecimalPrestoValueConverter.P_SC),
     BIG_INTEGER     (BigInteger.class,      StandardTypes.DECIMAL,      true, 0),
     BOOLEAN         (Boolean.class,         StandardTypes.BOOLEAN,      true, 0),
     LOCAL_DATE      (LocalDate.class,       StandardTypes.DATE,         true, 0),
