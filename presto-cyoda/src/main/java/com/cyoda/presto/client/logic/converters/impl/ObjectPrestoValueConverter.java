@@ -17,18 +17,14 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.facebook.presto.common.type.VarcharType;
+import com.cyoda.presto.client.logic.converters.structure.SliceJsonValueConverter;
+import com.cyoda.presto.client.types.DataType;
 import io.airlift.slice.Slice;
 
-public class ObjectPrestoValueConverter extends SliceValueConverter<Object> {
+public class ObjectPrestoValueConverter extends SliceJsonValueConverter<Object> {
 
-    @Override
-    Class<Object> getClazz() {
-        return Object.class;
+    public ObjectPrestoValueConverter() {
+        super(DataType.OBJECT);
     }
 
-    @Override
-    public Object toObject(Object nativeValue) {
-        return fromSlice(VarcharType.VARCHAR,(Slice) nativeValue);
-    }
 }

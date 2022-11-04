@@ -17,11 +17,9 @@
 
 package com.cyoda.presto.client.reporting.data;
 
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
+import java.util.ArrayList;
+import java.util.Collection;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 
@@ -29,8 +27,6 @@ import java.util.Map;
  * Navigates through the CyodaColumnPath notation of a report row to get its value.
  */
 public class ReportRowNavigator {
-
-    public static final String LIST_CONSTITUENTS_REGEX = "^(.+?)\\.\\[([0-9|*]+)]$";
 
     private ReportRowNavigator() {
     }
@@ -42,88 +38,86 @@ public class ReportRowNavigator {
      * @return the Object found at end of the path
      */
     public static Object getValue(String cyodaColumpath, Map<String, Object> reportRow) {
-        Deque<DequeHandle> deque = new ArrayDeque<>();
-        deque.add(new DequeHandle(reportRow,cyodaColumpath));
-        Object result = null;
+        Object result = reportRow.get(cyodaColumpath);
+        if (result != null) return result;
 
-        while (!deque.isEmpty()) {
-            DequeHandle pop = deque.pop();
-            Map<String, Object> map = pop.map;
-            String path = pop.path;
-            int end = path.indexOf("@");
-            int start = path.indexOf(".")+1;
-            if ( end < start || start < 1 ) {
-                start = 0;
-            }
-            if ( end < 0 ) {
-                end=path.length();
-                start=path.indexOf(".")+1;
-            }
-            String key = path.substring(start,end);
-            if ( key.contains("#") || key.contains("@")) {
-                throw new IllegalArgumentException("Corrupted Path "+cyodaColumpath);
-            }
-            if ( isListPath(key) ) {
-                result = handleList(cyodaColumpath, map, path, end, key);
+        String[] path = removeClassNamesFromPath(cyodaColumpath).split("\\.");
+        return getValue(path, 1, reportRow.get(path[0]));
+    }
+
+    private static Object getValue(String[] path, int cursor, Object object) {
+        if (cursor >= path.length || object == null){
+            return object;
+        }
+        String next = path[cursor++];
+        if (next.startsWith("[")){ // an index
+            String key = next.substring(1, next.length()-1);
+            if (object instanceof List) {
+                return handleList(path, cursor, (List<?>) object, key);
+            } else if (object instanceof Map){
+                return handleMap(path, cursor, (Map<?, ?>) object, key);
             } else {
-                result = map.get(key);
-                if (result != null && end < path.length()) {
-                    String rest = path.substring(end + 1);
-                    if (!(result instanceof Map)) {
-                        throw new IllegalArgumentException("Unexpected end of traversal on " + cyodaColumpath);
-                    }
-                    //noinspection unchecked
-                    deque.add(new DequeHandle((Map<String, Object>) result, rest));
-                }
+                throw new IllegalArgumentException(String.format("Cannot apply index %s to an object (%s) at path %s",
+                        next, object, pathToCurrent(path, cursor-2)));
+            }
+        } else { // a field
+            if (object instanceof Map){
+                return getValue(path, cursor, ((Map<String, Object>)object).get(next));
+            } else {
+                throw new IllegalArgumentException(String.format("Cannot apply path element %s to an object (%s) at path %s",
+                        next, object, pathToCurrent(path, cursor-2)));
             }
         }
-        return result;
     }
 
-    private static Object handleList(String cyodaColumpath, Map<String, Object> map, String path, int end, String key) {
-        Object result;
-        String theKey = key.replaceFirst(LIST_CONSTITUENTS_REGEX, "$1");
-        String theIndex = key.replaceFirst(LIST_CONSTITUENTS_REGEX,"$2");
-        result = map.get(theKey);
-        List<?> list = (List<?>) result;
-        String rest = path.substring(end +1);
-        ImmutableList.Builder<Object> builder = ImmutableList.builder();
-        if (theIndex.equals("*")) {
-            list.forEach(item -> {
-                addItem(cyodaColumpath, rest, builder, item);
-            });
+    private static String pathToCurrent(String[] path, int cursor){
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < cursor; i++) {
+            sb.append(path[i]).append(".");
+        }
+        sb.append(path[cursor]);
+        return sb.toString();
+    }
+
+    private static Object handleList(String[] path, int cursor, List<?> list, String key) {
+        if ("*".equals(key)){
+            if (cursor >= path.length){
+                return list;
+            } else {
+                return handleCollection(path, cursor, list);
+            }
         } else {
-            int index = Integer.parseInt(theIndex);
-            Preconditions.checkArgument(list.size()>index,"The List at %s has %s elements, but the requested index is %s",key,list.size(),index);
-            addItem(cyodaColumpath,rest,builder,list.get(index));
-        }
-        return builder.build();
-    }
-
-    private static void addItem(String cyodaColumpath, String rest, ImmutableList.Builder<Object> builder, Object item) {
-        if (!(item instanceof Map)) {
-            throw new IllegalArgumentException("Unexpected end of traversal on " + cyodaColumpath);
-        }
-
-        @SuppressWarnings("unchecked")
-        Object value = getValue(rest, (Map<String, Object>) item);
-
-        if (value != null) {
-            builder.add(value);
+            int index = Integer.parseInt(key);
+            if (index >= list.size()) return null;
+            return getValue(path, cursor, list.get(index));
         }
     }
 
-    private static boolean isListPath(String key) {
-        return key.matches("^.+?\\.\\[[0-9|*]+]$");
+    private static Object handleMap(String[] path, int cursor, Map<?, ?> map, String key) {
+        if ("*".equals(key)){
+            if (cursor >= path.length)
+                return map;
+            else
+                return handleCollection(path, cursor, map.values());
+        } else {
+            return getValue(path, cursor, map.get(key));
+        }
     }
 
-    private static class DequeHandle {
-        private final Map<String, Object> map;
-        private final String path;
-
-        private DequeHandle(Map<String, Object> map, String path) {
-            this.map = map;
-            this.path = path;
+    public static List<?> handleCollection(String[] path, int cursor, Collection<?> list){
+        List<Object> res = new ArrayList<>();
+        for (Object item : list){
+            Object value = getValue(path, cursor, item);
+            if (value instanceof Collection){
+                res.addAll((Collection<?>) value);
+            } else {
+                res.add(value);
+            }
         }
+        return res;
+    }
+
+    public static String removeClassNamesFromPath(String source){
+        return source.replaceAll("@[^.]+", "");
     }
 }

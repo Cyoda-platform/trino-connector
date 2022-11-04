@@ -17,20 +17,22 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.facebook.presto.common.type.VarcharType;
+import com.cyoda.presto.client.logic.converters.structure.SliceJsonValueConverter;
+import com.cyoda.presto.client.types.DataType;
 import io.airlift.slice.Slice;
 
 import java.util.Locale;
 
-public class LocalePrestoValueConverter extends SliceValueConverter<Locale> {
+public class LocalePrestoValueConverter extends SliceJsonValueConverter<Locale> {
 
-    @Override
-    Class<Locale> getClazz() {
-        return Locale.class;
+
+    public LocalePrestoValueConverter() {
+        super(DataType.LOCALE);
     }
 
     @Override
-    public Locale toObject(Object nativeValue) {
-        return fromSlice(VarcharType.VARCHAR,(Slice) nativeValue);
+    public Locale fromOtherCyodaType(Object value, String columnName) {
+        String[] spl = ((String)value).split(",");
+        return new Locale(spl[0].trim(), spl[1].trim());
     }
 }

@@ -17,38 +17,43 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
-import com.facebook.presto.common.type.Type;
-import com.facebook.presto.common.type.VarcharType;
+import com.cyoda.presto.client.logic.converters.structure.StringTypeValueConverter;
+import com.cyoda.presto.client.types.DataType;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.nio.charset.StandardCharsets;
 
-public class CharacterPrestoValueConverter implements ComparablePrestoValueConverter<Character> {
+public class CharacterPrestoValueConverter extends StringTypeValueConverter<Character> {
 
-
-    @Override
-    public Class<Character> getClazz() {
-        return Character.class;
+    @Inject
+    public CharacterPrestoValueConverter() {
+        super(DataType.CHARACTER);
     }
 
     @Override
-    public Slice toSlice(@Nonnull Type type, @Nonnull Character value) {
+    protected Character fromStr(String value) {
+        char[] chars = value.toCharArray();
+        if ( chars.length != 1 ) throw new IllegalStateException("Corrupted converted predicate from String to Character \"" + value + "\"");
+        return chars[0];
+    }
+
+    @Override
+    protected String toStr(Character value) {
+        return String.valueOf(value);
+    }
+
+    @Override
+    public Slice toSlice(@Nonnull Character value) {
         return Slices.wrappedBuffer(value.toString().getBytes(StandardCharsets.UTF_8));
     }
 
     @Nonnull
     @Override
-    public Character fromSlice(@Nonnull Type type, Slice value) {
+    public Character fromSlice(Slice value) {
         return new String(value.getBytes(),StandardCharsets.UTF_8).charAt(0);
     }
-
-    @Override
-    public Character toObject(Object nativeValue) {
-        return fromSlice(VarcharType.VARCHAR,(Slice) nativeValue);
-    }
-
 
 }

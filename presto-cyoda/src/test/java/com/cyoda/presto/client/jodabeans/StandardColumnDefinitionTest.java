@@ -35,8 +35,8 @@ public class StandardColumnDefinitionTest {
     @Test
     public void testMixed() {
         final List<ColumnDefinition> defs = StandardColumnDefinition.builder()
-                .add(new StandardColumnDefinition(0, "varcharColumn", StandardTypes.VARCHAR, STRING, null, null))
-                .add(new StandardColumnDefinition(0, "anotherVarcharColumn", StandardTypes.VARCHAR, STRING, null, null))
+                .add(new StandardColumnDefinition(0, "varcharColumn", STRING))
+                .add(new StandardColumnDefinition(0, "anotherVarcharColumn", STRING))
                 .add(GroupHeader.meta())
                 .build();
         try {
@@ -50,8 +50,8 @@ public class StandardColumnDefinitionTest {
     @Test
     public void testSingle() {
         final List<ColumnDefinition> defs = StandardColumnDefinition.builder()
-                .add(new StandardColumnDefinition(0, "varcharColumn", StandardTypes.VARCHAR, STRING, null, null))
-                .add(new StandardColumnDefinition(0, "anotherVarcharColumn", StandardTypes.VARCHAR, STRING, null, null))
+                .add(new StandardColumnDefinition(0, "varcharColumn", STRING))
+                .add(new StandardColumnDefinition(0, "anotherVarcharColumn", STRING))
                 .build();
         try {
             Map<Integer, ColumnDefinition> colMap = defs.stream().collect(Collectors.toMap(ColumnDefinition::getPos, x -> x));

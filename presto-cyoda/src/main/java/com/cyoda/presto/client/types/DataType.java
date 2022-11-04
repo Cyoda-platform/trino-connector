@@ -19,41 +19,27 @@ package com.cyoda.presto.client.types;
 
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.converters.impl.UUIDPrestoValueConverter;
-import com.cyoda.presto.client.types.impl.ArrayDataType;
-import com.cyoda.presto.client.types.impl.BigDecimalDataType;
-import com.cyoda.presto.client.types.impl.BigIntegerDataType;
-import com.cyoda.presto.client.types.impl.BooleanDataType;
-import com.cyoda.presto.client.types.impl.ByteArrayDataType;
-import com.cyoda.presto.client.types.impl.ByteBufferDataType;
-import com.cyoda.presto.client.types.impl.ByteDataType;
-import com.cyoda.presto.client.types.impl.DateDataType;
-import com.cyoda.presto.client.types.impl.DoubleDataType;
-import com.cyoda.presto.client.types.impl.FloatDataType;
-import com.cyoda.presto.client.types.impl.IntegerDataType;
-import com.cyoda.presto.client.types.impl.ListDataType;
-import com.cyoda.presto.client.types.impl.LocalDateDataType;
-import com.cyoda.presto.client.types.impl.LocalDateTimeDataType;
-import com.cyoda.presto.client.types.impl.LocalTimeDataType;
-import com.cyoda.presto.client.types.impl.LongDataType;
-import com.cyoda.presto.client.types.impl.MapDataType;
-import com.cyoda.presto.client.types.impl.ObjectDataType;
-import com.cyoda.presto.client.types.impl.SetDataType;
-import com.cyoda.presto.client.types.impl.ShortDataType;
-import com.cyoda.presto.client.types.impl.StringDataType;
-import com.cyoda.presto.client.types.impl.UUIDDataType;
-import com.cyoda.presto.client.types.impl.YearDataType;
-import com.cyoda.presto.client.types.impl.YearMonthDataType;
-import com.cyoda.presto.client.types.impl.ZonedDateTimeDataType;
+import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
+import com.cyoda.presto.logging.SupplierLogger;
+import com.facebook.presto.common.type.BigintType;
+import com.facebook.presto.common.type.BooleanType;
+import com.facebook.presto.common.type.DateType;
+import com.facebook.presto.common.type.DoubleType;
 import com.facebook.presto.common.type.IntegerType;
 import com.facebook.presto.common.type.JsonType;
+import com.facebook.presto.common.type.RealType;
+import com.facebook.presto.common.type.SmallintType;
 import com.facebook.presto.common.type.StandardTypes;
+import com.facebook.presto.common.type.TimestampType;
+import com.facebook.presto.common.type.TinyintType;
 import com.facebook.presto.common.type.Type;
+import com.facebook.presto.common.type.TypeSignature;
 import com.facebook.presto.common.type.VarcharType;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
-import java.io.Serializable;
+import javax.annotation.Nonnull;
+import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -63,6 +49,7 @@ import java.time.LocalTime;
 import java.time.Year;
 import java.time.YearMonth;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -77,49 +64,85 @@ import java.util.stream.Collectors;
 /**
  * This might help to figure out what the correct presto type is: com.facebook.presto.client.FixJsonDataUtils
  */
-public enum DataType {
-    STRING(String.class, StandardTypes.VARCHAR),
-    BYTE(Byte.class, StandardTypes.TINYINT),
-    DOUBLE(Double.class, StandardTypes.DOUBLE),
-    INTEGER(Integer.class, StandardTypes.INTEGER),
-    BIG_DECIMAL(BigDecimal.class, BigDecimalType.BIG_DECIMAL),
-    BIG_INTEGER(BigInteger.class, StandardTypes.BIGINT),
-    BOOLEAN(Boolean.class,StandardTypes.BOOLEAN),
-    LOCAL_DATE(LocalDate.class,StandardTypes.DATE),
-    LOCAL_DATE_TIME(LocalDateTime.class,StandardTypes.TIMESTAMP),
-    SHORT(Short.class,StandardTypes.SMALLINT),
-    CHARACTER(Character.class,StandardTypes.CHAR),
-    LONG(Long.class,StandardTypes.BIGINT),
-    FLOAT(Float.class, StandardTypes.REAL),
-    DATE(Date.class,StandardTypes.TIMESTAMP),
-    ZONED_DATE_TIME(ZonedDateTime.class,StandardTypes.TIMESTAMP_WITH_TIME_ZONE),
-    YEAR(Year.class,StandardTypes.INTEGER),
-    YEAR_MONTH(YearMonth.class,StandardTypes.VARCHAR),
-    LOCAL_TIME(LocalTime.class,StandardTypes.TIME), // Unsure
-    UUID_TYPE(UUID.class, UUIDPrestoValueConverter.TYPE_STRING),
-    BYTE_ARRAY(byte[].class,StandardTypes.VARBINARY),
-    BYTE_BUFFER(ByteBuffer.class,StandardTypes.VARBINARY),
-    CLASS(Class.class,StandardTypes.VARCHAR),
-    LOCALE(Locale.class,StandardTypes.VARCHAR),
-    NULL(null,null),
-    OBJECT(Object.class,StandardTypes.JSON), //Unsure. We will transform these to Json strings.
-    ARRAY(Object[].class,StandardTypes.ARRAY),
-    LIST(List.class,StandardTypes.ARRAY),
-    MAP(Map.class,StandardTypes.MAP),
-    SET(Set.class,StandardTypes.ARRAY),
-    ANY(Any.class,null); // Placeholder for anything. To differentiate from Object.
+public enum DataType implements IDataType {
+    STRING          (String.class,          StandardTypes.VARCHAR,      true, 0),
+    BYTE            (Byte.class,            StandardTypes.TINYINT,      true, 0),
+    DOUBLE          (Double.class,          StandardTypes.DOUBLE,       true, 0),
+    INTEGER         (Integer.class,         StandardTypes.INTEGER,      true, 0),
+    BIG_DECIMAL     (BigDecimal.class,      BigDecimalType.BIG_DECIMAL, true, 0),
+    BIG_INTEGER     (BigInteger.class,      BigIntegerType.BIG_INTEGER, true, 0),
+    BOOLEAN         (Boolean.class,         StandardTypes.BOOLEAN,      true, 0),
+    LOCAL_DATE      (LocalDate.class,       StandardTypes.DATE,         true, 0),
+    LOCAL_DATE_TIME (LocalDateTime.class,   StandardTypes.TIMESTAMP,    true, 0),
+    SHORT           (Short.class,           StandardTypes.SMALLINT,     true, 0),
+    CHARACTER       (Character.class,       StandardTypes.CHAR,         true, 0),
+    LONG            (Long.class,            StandardTypes.BIGINT,       true, 0),
+    FLOAT           (Float.class,           StandardTypes.REAL,         true, 0),
+    DATE            (Date.class,            StandardTypes.TIMESTAMP,    true, 0),
+    ZONED_DATE_TIME (ZonedDateTime.class,   StandardTypes.TIMESTAMP_WITH_TIME_ZONE, true, 0),
+    YEAR            (Year.class,            StandardTypes.INTEGER,      true, 0),
+    YEAR_MONTH      (YearMonth.class,       StandardTypes.DATE,         true, 0),
+    LOCAL_TIME      (LocalTime.class,       StandardTypes.TIME,         true, 0), // Unsure
+    UUID_TYPE       (UUID.class,            UUIDPrestoValueConverter.TYPE_STRING, true, 0),
+    BYTE_ARRAY      (byte[].class,          StandardTypes.VARBINARY,    false, 0),
+    BYTE_BUFFER     (ByteBuffer.class,      StandardTypes.VARBINARY,    false, 0),
+    CLASS           (Class.class,           StandardTypes.VARCHAR,      false, 0),
+    LOCALE          (Locale.class,          StandardTypes.VARCHAR,      false, 0),
+//    NULL            (null,                  null, false, 0),
+    OBJECT          (Object.class,          StandardTypes.JSON,         false, 0), //Unsure. We will transform these to Json strings.
+//    ARRAY           (Object[].class,        StandardTypes.ARRAY,        false, 0),
+    LIST            (List.class,            StandardTypes.ARRAY,        false, 1),
+    MAP             (Map.class,             StandardTypes.MAP,          false, 2),
+    SET             (Set.class,             StandardTypes.ARRAY,        false, 1);
 
+
+    private static final SupplierLogger LOG = SupplierLogger.get(DataType.class);
 
     private final Class<?> javaType;
     private final String typeString;
+    private final boolean comparable;
+    private final int typeParametersCount;
 
 
-    DataType(Class<?> javaType, String typeString) {
+    DataType(Class<?> javaType, String typeString, boolean comparable, int typeParametersCount) {
         this.javaType = javaType;
         this.typeString = typeString;
+        this.comparable = comparable;
+        this.typeParametersCount = typeParametersCount;
     }
 
+    public static <T> Class<T> getJType(IDataType<T> dataType){
+        return dataType.getJavaType();
+    }
 
+    public static TypeSignature toPrestoTypeSignature(DataType dataType) {
+        switch (dataType) {
+            case BOOLEAN: return BooleanType.BOOLEAN.getTypeSignature();
+            case BYTE: return TinyintType.TINYINT.getTypeSignature();
+            case SHORT: return SmallintType.SMALLINT.getTypeSignature();
+            case INTEGER: return IntegerType.INTEGER.getTypeSignature();
+            case LONG: return BigintType.BIGINT.getTypeSignature();
+            case FLOAT: return RealType.REAL.getTypeSignature();
+            case DOUBLE: return DoubleType.DOUBLE.getTypeSignature();
+            case STRING: return VarcharType.VARCHAR.getTypeSignature();
+            case DATE: return DateType.DATE.getTypeSignature();
+            case LOCAL_DATE_TIME: return TimestampType.TIMESTAMP.getTypeSignature();
+            case LOCAL_DATE: return BigintType.BIGINT.getTypeSignature();
+            case YEAR: return VarcharType.VARCHAR.getTypeSignature();
+            case OBJECT: return JsonType.JSON.getTypeSignature();
+            default: throw new UnsupportedOperationException(dataType + " Not yet done");
+        }
+    }
+
+    public static List<DataType> validateDataTypes(List<DataType> dataTypes, String columnName) {
+        if (dataTypes == null || dataTypes.isEmpty())
+            throw new IllegalArgumentException("No DataType for field " + columnName);
+        if (dataTypes.size() - 1 != dataTypes.get(0).getTypeParametersCount())
+            throw new IllegalArgumentException("Invalid DataType set (" + Arrays.toString(dataTypes.toArray()) + ") for field " + columnName);
+        return dataTypes;
+    }
+
+    @Override
     public Class<?> getJavaType() {
         return javaType;
     }
@@ -128,77 +151,12 @@ public enum DataType {
         return typeString;
     }
 
-    public boolean isNumber() {
-        return Number.class.isAssignableFrom(javaType);
+    public int getTypeParametersCount() {
+        return typeParametersCount;
     }
 
-    public boolean isSerializable() {
-        return Serializable.class.isAssignableFrom(javaType);
-    }
-
-    public boolean isBinary() {
-        return this == BYTE_ARRAY || this == OBJECT ;
-    }
-
-    // TODO: Need unit test to assert we have a SupportedDataType for each DataType.
-    @SuppressWarnings("unchecked")
-    public <S> SupportedDataType<S> asSupported() {
-        switch (this) {
-            case LOCAL_DATE: return (SupportedDataType<S>) LocalDateDataType.INSTANCE;
-            case LOCAL_DATE_TIME: return (SupportedDataType<S>) LocalDateTimeDataType.INSTANCE;
-            case LOCAL_TIME: return (SupportedDataType<S>) LocalTimeDataType.INSTANCE;
-            case ZONED_DATE_TIME: return (SupportedDataType<S>) ZonedDateTimeDataType.INSTANCE;
-            case DATE: return (SupportedDataType<S>) DateDataType.INSTANCE;
-            case STRING: return (SupportedDataType<S>) StringDataType.INSTANCE;
-            case OBJECT: return (SupportedDataType<S>) ObjectDataType.INSTANCE;
-            case YEAR: return (SupportedDataType<S>) YearDataType.INSTANCE;
-            case YEAR_MONTH: return (SupportedDataType<S>) YearMonthDataType.INSTANCE;
-            case BOOLEAN: return (SupportedDataType<S>) BooleanDataType.INSTANCE;
-            case LONG: return (SupportedDataType<S>) LongDataType.INSTANCE;
-            case INTEGER: return (SupportedDataType<S>) IntegerDataType.INSTANCE;
-            case SHORT: return (SupportedDataType<S>) ShortDataType.INSTANCE;
-            case FLOAT: return (SupportedDataType<S>) FloatDataType.INSTANCE;
-            case DOUBLE: return (SupportedDataType<S>) DoubleDataType.INSTANCE;
-            case BYTE: return (SupportedDataType<S>) ByteDataType.INSTANCE;
-            case BYTE_BUFFER: return (SupportedDataType<S>) ByteBufferDataType.INSTANCE;
-            case BYTE_ARRAY: return (SupportedDataType<S>) ByteArrayDataType.INSTANCE;
-            case BIG_DECIMAL: return (SupportedDataType<S>) BigDecimalDataType.INSTANCE;
-            case BIG_INTEGER: return (SupportedDataType<S>) BigIntegerDataType.INSTANCE;
-            case UUID_TYPE: return (SupportedDataType<S>) UUIDDataType.INSTANCE;
-            case LIST: return (SupportedDataType<S>) ListDataType.INSTANCE;
-            case MAP: return (SupportedDataType<S>) MapDataType.INSTANCE;
-            case SET: return (SupportedDataType<S>) SetDataType.INSTANCE;
-            case ARRAY: return (SupportedDataType<S>) ArrayDataType.INSTANCE;
-            default:
-                throw new UnsupportedOperationException(this+ " Not yet implemented");
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    public <S extends Comparable<? super S>> ComparableSupportedDataType<S> asComparableSupported() {
-        switch (this) {
-            case LOCAL_DATE: return (ComparableSupportedDataType<S>) LocalDateDataType.INSTANCE;
-            case LOCAL_DATE_TIME: return (ComparableSupportedDataType<S>) LocalDateTimeDataType.INSTANCE;
-            case LOCAL_TIME: return (ComparableSupportedDataType<S>) LocalTimeDataType.INSTANCE;
-            case ZONED_DATE_TIME: return (ComparableSupportedDataType<S>) ZonedDateTimeDataType.INSTANCE;
-            case DATE: return (ComparableSupportedDataType<S>) DateDataType.INSTANCE;
-            case STRING: return (ComparableSupportedDataType<S>) StringDataType.INSTANCE;
-            case YEAR: return (ComparableSupportedDataType<S>) YearDataType.INSTANCE;
-            case YEAR_MONTH: return (ComparableSupportedDataType<S>) YearMonthDataType.INSTANCE;
-            case BOOLEAN: return (ComparableSupportedDataType<S>) BooleanDataType.INSTANCE;
-            case LONG: return (ComparableSupportedDataType<S>) LongDataType.INSTANCE;
-            case INTEGER: return (ComparableSupportedDataType<S>) IntegerDataType.INSTANCE;
-            case SHORT: return (ComparableSupportedDataType<S>) ShortDataType.INSTANCE;
-            case FLOAT: return (ComparableSupportedDataType<S>) FloatDataType.INSTANCE;
-            case DOUBLE: return (ComparableSupportedDataType<S>) DoubleDataType.INSTANCE;
-            case BYTE: return (ComparableSupportedDataType<S>) ByteDataType.INSTANCE;
-            case BYTE_BUFFER: return (ComparableSupportedDataType<S>) ByteBufferDataType.INSTANCE;
-            case BIG_DECIMAL: return (ComparableSupportedDataType<S>) BigDecimalDataType.INSTANCE;
-            case BIG_INTEGER: return (ComparableSupportedDataType<S>) BigIntegerDataType.INSTANCE;
-            case UUID_TYPE: return (ComparableSupportedDataType<S>) UUIDDataType.INSTANCE;
-            default:
-                throw new UnsupportedOperationException(this+ " Not yet implemented");
-        }
+    public boolean isComparable() {
+        return comparable;
     }
 
     public static final Map<Class<?>, DataType> objectClassToDataType = ImmutableMap.copyOf(
@@ -221,18 +179,41 @@ public enum DataType {
             .putAll(primitiveClassToDataType)
             .build();
 
-    public static DataType dataTypeFromClass(Class<?> clazz) {
-        return Optional.ofNullable(classToDataType.get(clazz))
-                .orElse(Arrays.stream(DataType.values())
-                        .filter(it -> it.javaType != null)
-                        .filter(it->it.javaType.isAssignableFrom(clazz))
-                        .findAny()
-                        .orElse(null)
-                );
-    }
-
     public static Optional<DataType> fromClass(Class<?> clazz) {
        return Optional.ofNullable(classToDataType.get(clazz));
+    }
+
+    public static @Nonnull DataType fromClassExact(Class<?> clazz, String columnName) {
+        return Optional.ofNullable(classToDataType.get(clazz)).orElseThrow(
+                () -> new IllegalArgumentException(String.format("Error creating column \"%s\": Class [%s] is not supported.",
+                        columnName, clazz.getName())));
+    }
+
+    public static @Nonnull DataType fromClassFSToObject(Class<?> clazz, String columnName) {
+        DataType res = classToDataType.get(clazz);
+        if (res != null)
+            return res;
+        else {
+            LOG.warn(String.format("Warning for field \"%s\": Unable to determine DataType for class %s. Returning OBJECT.",
+                    columnName, clazz.getName()));
+            return OBJECT;
+        }
+    }
+
+    public static List<DataType> fromReflectType(ParameterizedType type, String columnName){
+        DataType mainType = DataType.fromClassExact((Class<?>) type.getRawType(), columnName);
+        List<DataType> res = new ArrayList<>(mainType.getTypeParametersCount()+1);
+        res.add(mainType);
+        if (mainType.getTypeParametersCount() > 0) {
+            java.lang.reflect.Type[] actualTypeArguments = type.getActualTypeArguments();
+            if (actualTypeArguments.length < mainType.getTypeParametersCount())
+                throw new IllegalArgumentException(String.format("Error creating column \"%s\": Not matching type arguments for type %s",
+                        columnName, type));
+            res.add(fromClassExact((Class<?>) actualTypeArguments[0],columnName));
+            if (mainType.getTypeParametersCount() > 1)
+                res.add(fromClassExact((Class<?>) actualTypeArguments[1],columnName));
+        }
+        return res;
     }
 
 
@@ -259,29 +240,6 @@ public enum DataType {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toSet())
     );
-
-    private static List<DataType> integerBasedTypes = ImmutableList.<DataType>builder()
-            .add(BYTE)
-            .add(SHORT)
-            .add(INTEGER)
-            .add(LONG)
-            .add(YEAR)
-            .add(YEAR_MONTH)
-            .add(LOCAL_DATE_TIME)
-            .add(ZONED_DATE_TIME)
-            .add(LOCAL_DATE)
-            .add(DATE)
-            .build();
-
-    // TODO: Theoretically, for performance purposes, we could add this as an attribute of DataType
-    /**
-     * Can this DataType be converted to/from a long ?
-     * @param dataType to check
-     * @return if this DataType can be converted to/from a long
-     */
-    public static boolean isIntType(DataType dataType) {
-        return integerBasedTypes.contains(dataType);
-    }
 
 }
 

@@ -18,8 +18,7 @@
 package com.cyoda.presto.client.types;
 
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
-import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
-import com.cyoda.presto.client.types.impl.BigDecimalDataType;
+import com.cyoda.presto.client.logic.converters.impl.BigDecimalPrestoValueConverter;
 import com.facebook.presto.common.block.Block;
 import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.common.function.SqlFunctionProperties;
@@ -34,7 +33,7 @@ import static com.facebook.presto.common.type.TypeSignature.parseTypeSignature;
 public final class BigDecimalType extends AbstractVariableWidthType {
     public static final BigDecimalType BIG_DECIMAL_TYPE = new BigDecimalType();
     public static final String BIG_DECIMAL = "bigdecimal";
-    public static final PrestoValueConverter<BigDecimal> PRESTO_VALUE_CONVERTER = PrestoValueConverterProvider.getPrestoValueConverter(BigDecimalDataType.INSTANCE);
+    public static final BigDecimalPrestoValueConverter PRESTO_VALUE_CONVERTER = new BigDecimalPrestoValueConverter();
 
     private BigDecimalType()
     {
@@ -64,7 +63,7 @@ public final class BigDecimalType extends AbstractVariableWidthType {
         if (block.isNull(position)) {
             return null;
         }
-        return PRESTO_VALUE_CONVERTER.fromSlice(BIG_DECIMAL_TYPE,block.getSlice(position, 0, block.getSliceLength(position)));
+        return PRESTO_VALUE_CONVERTER.fromSlice(block.getSlice(position, 0, block.getSliceLength(position)));
     }
 
     @Override
@@ -135,6 +134,6 @@ public final class BigDecimalType extends AbstractVariableWidthType {
     }
 
     public BigDecimal getBigDecimal(Block block, int position) {
-        return PRESTO_VALUE_CONVERTER.fromSlice(BIG_DECIMAL_TYPE,block.getSlice(position, 0, block.getSliceLength(position)));
+        return PRESTO_VALUE_CONVERTER.fromSlice(block.getSlice(position, 0, block.getSliceLength(position)));
     }
 }

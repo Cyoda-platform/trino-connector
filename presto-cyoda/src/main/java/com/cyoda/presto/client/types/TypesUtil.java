@@ -25,6 +25,9 @@ import com.facebook.presto.common.type.TypeSignature;
 import com.facebook.presto.common.type.TypeSignatureParameter;
 import com.google.common.collect.ImmutableList;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 /**
  * Utility class for Presto Type-related functionality.
  * Taken fro Accumulo connector. Thanks!
@@ -80,14 +83,6 @@ public final class TypesUtil {
         return type.getTypeParameters().get(1);
     }
 
-
-    public static Type toType(ColumnDefinition fieldDef, TypeManager typeManager) {
-        String fieldTypeString = fieldDef.getFieldTypeString();
-        TypeSignature parType = fieldDef.getParType();
-        TypeSignature mapValueType = fieldDef.getMapValuetype();
-        return toType(fieldTypeString,parType,mapValueType,typeManager);
-
-    }
     public static Type toType(String fieldTypeString, TypeSignature parType, TypeSignature mapValueType, TypeManager typeManager) {
         if (fieldTypeString.equals(StandardTypes.ARRAY)) {
             return typeManager.getParameterizedType(StandardTypes.ARRAY,
@@ -104,6 +99,20 @@ public final class TypesUtil {
             return typeManager.getType(new TypeSignature(fieldTypeString));
         } else {
             throw new UnsupportedOperationException(fieldTypeString + " Not yet mapped");
+        }
+    }
+
+    public static Type toType(List<DataType> dataTypes, TypeManager typeManager){
+        DataType mainType = dataTypes.get(0);
+        if (mainType.getTypeParametersCount() == 0) {
+            return typeManager.getType(new TypeSignature(mainType.getTypeString()));
+        } else {
+            List<TypeSignatureParameter> attrs = dataTypes.stream().skip(1)
+                    .map(DataType::getTypeString)
+                    .map(TypeSignature::new)
+                    .map(TypeSignatureParameter::of)
+                    .collect(Collectors.toList());
+            return typeManager.getParameterizedType(mainType.getTypeString(), attrs);
         }
     }
 }

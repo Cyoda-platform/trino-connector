@@ -17,25 +17,27 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
-import com.cyoda.presto.client.types.impl.ByteArrayDataType;
-import com.facebook.presto.common.type.Type;
-import com.facebook.presto.common.type.VarbinaryType;
+import com.cyoda.presto.client.logic.converters.structure.SliceUncomparableValueConverter;
+import com.cyoda.presto.client.types.DataType;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
 import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
 
-public class ByteArrayPrestoValueConverter implements PrestoValueConverter<byte[]> {
+public class ByteArrayPrestoValueConverter extends SliceUncomparableValueConverter<byte[]> {
+    public ByteArrayPrestoValueConverter() {
+        super(DataType.BYTE_ARRAY);
+    }
+
     @Override
-    public Slice toSlice(@Nonnull Type type, @Nonnull byte[] value) {
+    public Slice toSlice(@Nonnull byte[] value) {
         return Slices.wrappedBuffer(ByteBuffer.wrap(value));
     }
 
     @Nonnull
     @Override
-    public byte[] fromSlice(@Nonnull Type type, Slice value) {
+    public byte[] fromSlice(Slice value) {
         ByteBuffer byteBuffer = value.toByteBuffer();
         byte[] m = new byte[byteBuffer.remaining()];
         try {
@@ -47,7 +49,15 @@ public class ByteArrayPrestoValueConverter implements PrestoValueConverter<byte[
     }
 
     @Override
-    public byte[] toObject(Object nativeValue) {
-        return fromSlice(VarbinaryType.VARBINARY, (Slice) nativeValue);
+    public boolean areConsecutive(byte[] a, byte[] b) {
+        if (a.length + 1 != b.length || b[a.length] != 0) {
+            return false;
+        }
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] != b[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 }

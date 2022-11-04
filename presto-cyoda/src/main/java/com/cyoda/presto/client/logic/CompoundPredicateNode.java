@@ -17,7 +17,6 @@
 
 package com.cyoda.presto.client.logic;
 
-import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 
@@ -74,7 +73,7 @@ public class CompoundPredicateNode implements ColumnPredicateNode<Any> {
 
     @Override
     @Nonnull
-    public Optional<CyodaColumnHandle> getColumn() {
+    public Optional<String> getColumnName() {
         return Optional.empty();
     }
 

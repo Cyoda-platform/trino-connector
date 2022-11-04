@@ -18,15 +18,11 @@
 package com.cyoda.presto.client.reporting.data;
 
 import com.cyoda.presto.client.logic.ColumnPredicate;
-import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import org.springframework.hateoas.PagedModel;
 import org.testng.annotations.Test;
 
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -79,7 +75,7 @@ public class RowNumHandleTest {
         CyodaColumnHandle column = mock(CyodaColumnHandle.class);
         when(column.getColumnName()).thenReturn("happyColumnName");
         ColumnPredicate<Long> columnPredicate = new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY,
-                column, DataTypeValue.of(rowNum), null);
+                column, rowNum, null);
 
         List<RowNumHandle> from = RowNumHandle.from(columnPredicate, page, size);
         assertEquals(from.size(), 1);
@@ -117,7 +113,7 @@ public class RowNumHandleTest {
         CyodaColumnHandle column = mock(CyodaColumnHandle.class);
         when(column.getColumnName()).thenReturn("happyColumnName");
         ColumnPredicate<Long> columnPredicate = new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE,
-                column, DataTypeValue.of(lower), DataTypeValue.of(upper));
+                column, lower, upper);
 
         List<RowNumHandle> from = RowNumHandle.from(columnPredicate, page, size);
         assertEquals(from.size(), 1);

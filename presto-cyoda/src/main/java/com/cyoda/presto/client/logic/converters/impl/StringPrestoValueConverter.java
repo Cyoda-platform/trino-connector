@@ -17,35 +17,47 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
-import com.facebook.presto.common.type.Type;
-import com.facebook.presto.common.type.VarcharType;
+import com.cyoda.presto.client.logic.converters.structure.StringTypeValueConverter;
+import com.cyoda.presto.client.types.DataType;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 
-public class StringPrestoValueConverter implements ComparablePrestoValueConverter<String> {
+public class StringPrestoValueConverter extends StringTypeValueConverter<String> {
 
-    @Override
-    public Class<String> getClazz() {
-        return String.class;
+    @Inject
+    public StringPrestoValueConverter() {
+        super(DataType.STRING);
     }
 
     @Override
-    public Slice toSlice(@Nonnull Type type, @Nonnull String value) {
+    protected String fromStr(String value) {
+        return value;
+    }
+
+    @Override
+    protected String toStr(String value) {
+        return value;
+    }
+
+    @Override
+    public Slice toSlice(@Nonnull String value) {
         return Slices.utf8Slice(value);
     }
 
     @Nonnull
     @Override
-    public String fromSlice(@Nonnull Type type, Slice value) {
+    public String fromSlice(Slice value) {
         return value.toStringUtf8();
     }
 
     @Override
-    public String toObject(Object nativeValue) {
-        return fromSlice(VarcharType.VARCHAR,(Slice) nativeValue);
+    public boolean areConsecutive(String a, String b) {
+        if (a.length() + 1 != b.length() || b.charAt(b.length() - 1) != 0) {
+            return false;
+        }
+        return a.equals(b.substring(0, b.length() - 1));
     }
-
 }

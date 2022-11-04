@@ -17,7 +17,6 @@
 
 package com.cyoda.presto.client.types;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
 import com.cyoda.presto.client.logic.converters.impl.BigDecimalPrestoValueConverter;
 import com.facebook.presto.common.block.Block;
 import com.facebook.presto.common.type.AbstractLongType;
@@ -71,7 +70,7 @@ public class BigDecimalOperators {
     }
 
     private static BigDecimal toBigDecimal(Slice left) {
-        return converter.fromSlice(BIG_DECIMAL_TYPE, left);
+        return converter.fromSlice(left);
     }
 
     @ScalarOperator(SUBTRACT)
@@ -319,45 +318,6 @@ public class BigDecimalOperators {
             return maxValue;
         }
         return value.setScale(0, RoundingMode.FLOOR).longValue();
-    }
-
-    @ScalarOperator(IS_DISTINCT_FROM)
-    public static class BigDecimalDistinctFromOperator
-    {
-        @SqlType(StandardTypes.BOOLEAN)
-        public static boolean isDistinctFrom(
-                @SqlType(BigDecimalType.BIG_DECIMAL) Slice left,
-                @IsNull boolean leftNull,
-                @SqlType(BigDecimalType.BIG_DECIMAL) Slice right,
-                @IsNull boolean rightNull)
-        {
-            if (leftNull != rightNull) {
-                return true;
-            }
-            if (leftNull) {
-                return false;
-            }
-            return notEqual(left, right);
-        }
-
-        @SqlType(StandardTypes.BOOLEAN)
-        public static boolean isDistinctFrom(
-                @BlockPosition @SqlType(value = BigDecimalType.BIG_DECIMAL, nativeContainerType = BigDecimal.class) Block leftBlock,
-                @BlockIndex int leftPosition,
-                @BlockPosition @SqlType(value = BigDecimalType.BIG_DECIMAL, nativeContainerType = BigDecimal.class) Block rightBlock,
-                @BlockIndex int rightPosition)
-        {
-            if (leftBlock.isNull(leftPosition) != rightBlock.isNull(rightPosition)) {
-                return true;
-            }
-            if (leftBlock.isNull(leftPosition)) {
-                return false;
-            }
-            BigDecimal left = BIG_DECIMAL_TYPE.getBigDecimal(leftBlock, leftPosition);
-            BigDecimal right = BIG_DECIMAL_TYPE.getBigDecimal(rightBlock, rightPosition);
-
-            return !left.equals(right);
-        }
     }
 
     @ScalarOperator(XX_HASH_64)

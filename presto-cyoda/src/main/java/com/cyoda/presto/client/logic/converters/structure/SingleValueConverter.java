@@ -1,0 +1,79 @@
+package com.cyoda.presto.client.logic.converters.structure;
+
+import com.cyoda.presto.client.types.IDataType;
+import com.facebook.airlift.json.JsonCodec;
+import com.facebook.airlift.json.JsonObjectMapperProvider;
+import com.facebook.presto.common.block.BlockBuilder;
+import com.facebook.presto.common.type.Type;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.base.Suppliers;
+
+import javax.annotation.Nonnull;
+
+import java.util.List;
+import java.util.Map;
+import java.util.function.Supplier;
+
+import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT;
+
+public abstract class SingleValueConverter<T> extends AbstractValueConverter<T> {
+
+    public static final Supplier<ObjectMapper> OBJECT_MAPPER_SUPPLIER = Suppliers.memoize(
+            () -> new JsonObjectMapperProvider().get().enable(INDENT_OUTPUT))::get;
+
+    public SingleValueConverter(IDataType<T> dataType) {
+        super(dataType);
+    }
+
+    protected static String cleanUpJson(@Nonnull String json) {
+        String result;
+        // We get additional quotes from jackson, if the field is an Optional
+        if ( isSingleElementJson(json) || json.startsWith("\"")) {
+            result = json.substring(1, json.length() - 1);
+        } else {
+            result = json;
+        }
+        return result;
+    }
+
+    private static boolean isSingleElementJson(String json) {
+        if ( json.startsWith("{") ) {
+            try {
+                Map<String,?> map = OBJECT_MAPPER_SUPPLIER.get().reader().forType(Map.class).readValue(json);
+                return map.size() == 1;
+            } catch (JsonProcessingException e) {
+                return false;
+            }
+        } else return false;
+    }
+
+    @Override
+    public T fromCyodaNative(@Nonnull Object cyodaNative, String columnName) {
+        return fromCyodaNative(cyodaNative, columnName, false);
+    }
+    private T fromCyodaNative(@Nonnull Object cyodaNative, String columnName, boolean fromCollection) {
+        if (!fromCollection && cyodaNative instanceof List){
+            List<?> list = (List<?>) cyodaNative;
+            if (list.size() == 1)
+                return super.fromCyodaNative(list.get(0), columnName);
+        }
+        if (!getClazz().isAssignableFrom(cyodaNative.getClass())) {
+            LOG.info(String.format("Column \"%s\": type mismatch %s <-> %s. Trying to convert...",
+                    columnName, getClazz().getName(), cyodaNative.getClass().getName()));
+            return fromOtherCyodaType(cyodaNative, columnName);
+        }
+        return super.fromCyodaNative(cyodaNative, columnName);
+    }
+
+    public void writeCyodaNativeFromCollection(Type type, BlockBuilder builder, Object cyodaNative, String columnName){
+        writeValue(type, builder, fromCyodaNative(cyodaNative, columnName, true));
+    }
+
+    @Override
+    public String stringify(T value){
+        // Let Jackson do the work, so that we have consistent formatting
+        final String json = JsonCodec.jsonCodec(getClazz()).toJson(value);
+        return cleanUpJson(json);
+    }
+}

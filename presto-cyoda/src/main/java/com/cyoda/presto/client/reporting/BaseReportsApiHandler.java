@@ -25,12 +25,11 @@ import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.DataTypeValue;
 import com.cyoda.presto.client.types.TypesUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
+import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
 import com.facebook.presto.common.type.TypeSignature;
@@ -42,25 +41,15 @@ import org.springframework.hateoas.PagedModel;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.Timestamp;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
-import static com.cyoda.presto.client.types.DataType.*;
 import static java.util.Objects.requireNonNull;
 
 // TODO: The API calls to Cyoda need to have some check on API version. Sasha might be able to say how he did it for UI
@@ -135,17 +124,14 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         return new CyodaColumnHandle(
                 connectorId.toString(),
                 fieldDef.getFieldName(),
-                toType(fieldDef),
+                fieldDef.getDataType().toPrestoType(typeManager),
                 fieldDef.getDataType(),
                 fieldDef.getPos(),
-                getHandlerKey()
+                getHandlerKey(),
+                true
         );
     }
 
-
-    protected Type toType(ColumnDefinition fieldDef) {
-        return TypesUtil.toType(fieldDef,typeManager);
-    }
     protected Type toType(String fieldTypeString,TypeSignature parType, TypeSignature mapValueType) {
         return TypesUtil.toType(fieldTypeString,parType,mapValueType,typeManager);
     }
@@ -161,83 +147,13 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
     }
 
     @Override
-    public @Nullable
-    DataTypeValue<?> getValue(@Nullable T entity, CyodaColumnHandle columnHandle) {
-        if ( entity == null ) return null;
+    public void writeValue(@Nullable T entity, CyodaColumnHandle columnHandle, BlockBuilder blockBuilder) {
+        if ( entity == null ) {
+            blockBuilder.appendNull();
+            return;
+        }
         Object value = getFieldValueFromEntity(entity,columnHandle);
-        if ( value == null ) return null;
-        Object mappedField = mapFieldValue(value,columnHandle);
-        return DataTypeValue.ofAny(mappedField,columnHandle.getDataType().getJavaType());
-    }
-
-    // TODO: These belong in the PrestoValueConverter
-    protected @Nonnull Object mapFieldValue(@Nonnull final Object value, CyodaColumnHandle columnHandle) {
-        if (columnHandle.getDataType() == LIST) {
-            Type elementType = TypesUtil.getElementType(columnHandle.getColumnType());
-            return processList((List<?>) value, columnHandle, elementType);
-        }
-        if (columnHandle.getDataType() == ARRAY) {
-            Type elementType = TypesUtil.getElementType(columnHandle.getColumnType());
-            return processList(Arrays.stream(((Object[])value)).collect(Collectors.toList()), columnHandle, elementType)
-                    .toArray();
-        }
-
-        if ( value instanceof List && columnHandle.getDataType() != LIST && ((List<?>)value).size() == 1) {
-            return mapFieldValue(((List<?>)value).get(0),columnHandle);
-        }
-
-        if (columnHandle.getDataType() == UUID_TYPE && value instanceof String) {
-            return UUID.fromString((String) value);
-        }
-        if (columnHandle.getDataType() == DATE && value instanceof String) {
-            return toDate((String) value);
-        }
-        if (columnHandle.getDataType() == LOCAL_DATE_TIME && value instanceof String) {
-            return toLocalDateTime((String) value);
-        }
-        if (columnHandle.getDataType() == LOCAL_DATE && value instanceof String) {
-            return toLocalDate((String) value);
-        }
-        if (columnHandle.getDataType() == ZONED_DATE_TIME && value instanceof String) {
-            return toZonedDateTime((String) value);
-        }
-        if (columnHandle.getDataType() == BIG_DECIMAL && value instanceof Number && !(value instanceof BigDecimal)) {
-            return BigDecimal.valueOf(((Number) value).doubleValue());
-        }
-        return value;
-    }
-
-    private List<?> processList(List<?> value, CyodaColumnHandle columnHandle, Type elementType) {
-        return value.stream().map(it -> {
-            CyodaColumnHandle thisColumnHandle = new CyodaColumnHandle(
-                    columnHandle.getConnectorId(),
-                    columnHandle.getColumnName(),
-                    elementType,
-                    DataType.fromType(elementType),
-                    columnHandle.getOrdinalPosition(),
-                    columnHandle.getRequestHandlerKey(),
-                    columnHandle.getIsNullable()
-            );
-            return mapFieldValue(it, thisColumnHandle);
-        }).collect(Collectors.toList());
-    }
-
-    private ZonedDateTime toZonedDateTime(String str) {
-        return ZonedDateTime.parse(str, DateTimeFormatter.ISO_ZONED_DATE_TIME);
-    }
-
-    private Date toDate(String str) {
-        if (str == null) return null;
-        LocalDateTime localDateTime = toLocalDateTime(str);
-        return Timestamp.valueOf(localDateTime);
-    }
-
-    protected LocalDateTime toLocalDateTime(String str) {
-        return LocalDateTime.parse(str, DateTimeFormatter.ISO_DATE_TIME);
-    }
-
-    protected LocalDate toLocalDate(String str) {
-        return LocalDate.parse(str, DateTimeFormatter.ISO_DATE);
+        columnHandle.writeValue(blockBuilder, value);
     }
 
     protected abstract @Nullable Object getFieldValueFromEntity(@Nonnull T field, CyodaColumnHandle columnHandle);
