@@ -54,6 +54,10 @@ public class BigDecimalPrestoValueConverter extends BigDecimalTypeValueConverter
 
     @Override
     public Slice toSlice(@Nonnull BigDecimal value) {
+        if (value.scale() > SCALE){
+            throw new IllegalArgumentException(String.format("Value %s of a BigDecimal field has higher scale (%s) than maximum of %s",
+                    value, value.scale(), SCALE));
+        }
         BigDecimal rescaled = Decimals.rescale(value, DECIMAL_TYPE);
         return Decimals.encodeScaledValue(rescaled);
     }
