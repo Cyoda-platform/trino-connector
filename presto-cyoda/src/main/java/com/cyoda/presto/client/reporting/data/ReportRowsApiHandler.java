@@ -36,13 +36,10 @@ import com.cyoda.presto.client.reporting.groups.GroupingHandle;
 import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle;
-import com.cyoda.presto.client.types.TypesUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
-import com.facebook.presto.common.type.TypeSignature;
 import com.facebook.presto.spi.SchemaTableName;
 import com.facebook.presto.spi.TableNotFoundException;
 import com.google.common.base.Joiner;
@@ -174,18 +171,18 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         );
     }
 
-    private TypeSignature determinMapValueType(Type columnType) {
-        return TypesUtil.isMapType(columnType) ? TypesUtil.getValueType(columnType).getTypeSignature() : null;
-    }
-
-    @Nullable private TypeSignature determineParType(@Nonnull Type columnType) {
-        if (TypesUtil.isArrayType(columnType)  ) {
-            return TypesUtil.getElementType(columnType).getTypeSignature();
-        } else if (TypesUtil.isMapType(columnType) ) {
-            return TypesUtil.getKeyType(columnType).getTypeSignature();
-        }
-        return null;
-    }
+//    private TypeSignature determinMapValueType(Type columnType) {
+//        return TypesUtil.isMapType(columnType) ? TypesUtil.getValueType(columnType).getTypeSignature() : null;
+//    }
+//
+//    @Nullable private TypeSignature determineParType(@Nonnull Type columnType) {
+//        if (TypesUtil.isArrayType(columnType)  ) {
+//            return TypesUtil.getElementType(columnType).getTypeSignature();
+//        } else if (TypesUtil.isMapType(columnType) ) {
+//            return TypesUtil.getKeyType(columnType).getTypeSignature();
+//        }
+//        return null;
+//    }
 
     @Override
     public String getHandlerKey() {

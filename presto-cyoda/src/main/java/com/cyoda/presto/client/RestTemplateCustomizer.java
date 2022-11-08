@@ -38,6 +38,7 @@ import org.springframework.hateoas.client.Traverson;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
+import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
@@ -76,6 +77,11 @@ public class RestTemplateCustomizer {
     private final URI refreshUri;
 
     private static final List<HttpMessageConverter<?>> HAL_CONVERTERS = Traverson.getDefaultMessageConverters(MediaTypes.HAL_JSON);
+    static {
+        HAL_CONVERTERS.stream()
+                .filter(conv -> conv instanceof AbstractJackson2HttpMessageConverter)
+                .forEach(conv -> ((AbstractJackson2HttpMessageConverter)conv).getObjectMapper().configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true));
+    }
     @Inject
     public RestTemplateCustomizer(CyodaConfig config) {
         this.config = config;
