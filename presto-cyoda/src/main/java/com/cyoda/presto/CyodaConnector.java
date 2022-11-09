@@ -18,14 +18,14 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.handles.CyodaTransactionHandle;
-import com.facebook.airlift.bootstrap.LifeCycleManager;
-import com.facebook.airlift.log.Logger;
-import com.facebook.presto.spi.connector.Connector;
-import com.facebook.presto.spi.connector.ConnectorMetadata;
-import com.facebook.presto.spi.connector.ConnectorPageSourceProvider;
-import com.facebook.presto.spi.connector.ConnectorSplitManager;
-import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
-import com.facebook.presto.spi.transaction.IsolationLevel;
+import io.airlift.bootstrap.LifeCycleManager;
+import io.airlift.log.Logger;
+import io.trino.spi.connector.Connector;
+import io.trino.spi.connector.ConnectorMetadata;
+import io.trino.spi.connector.ConnectorPageSourceProvider;
+import io.trino.spi.connector.ConnectorSplitManager;
+import io.trino.spi.connector.ConnectorTransactionHandle;
+import io.trino.spi.transaction.IsolationLevel;
 
 import javax.inject.Inject;
 

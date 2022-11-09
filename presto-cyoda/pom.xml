@@ -19,19 +19,20 @@
 <project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xmlns="http://maven.apache.org/POM/4.0.0"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <parent>
-        <artifactId>presto-cyoda-root</artifactId>
-        <groupId>com.cyoda.presto</groupId>
-        <version>0.272</version>
-    </parent>
     <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>trino-cyoda-root</artifactId>
+        <groupId>com.cyoda.trino</groupId>
+        <version>402</version>
+    </parent>
 
-    <artifactId>presto-cyoda</artifactId>
-    <packaging>presto-plugin</packaging>
+    <artifactId>trino-cyoda</artifactId>
+    <packaging>trino-plugin</packaging>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
+        <enforcer.skip>true</enforcer.skip>
     </properties>
 
 
@@ -81,7 +82,7 @@
             <artifactId>jsr305</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.facebook.airlift</groupId>
+            <groupId>io.airlift</groupId>
             <artifactId>bootstrap</artifactId>
         </dependency>
 
@@ -91,17 +92,17 @@
         </dependency>
 
         <dependency>
-            <groupId>com.facebook.airlift</groupId>
+            <groupId>io.airlift</groupId>
             <artifactId>json</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.facebook.airlift</groupId>
+            <groupId>io.airlift</groupId>
             <artifactId>log</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.facebook.airlift</groupId>
+            <groupId>io.airlift</groupId>
             <artifactId>configuration</artifactId>
         </dependency>
 
@@ -130,30 +131,30 @@
             <artifactId>jackson-databind</artifactId>
         </dependency>
 
-        <!-- Presto SPI -->
+        <!-- Trino SPI -->
         <dependency>
-            <groupId>com.facebook.presto</groupId>
-            <artifactId>presto-spi</artifactId>
+            <groupId>io.trino</groupId>
+            <artifactId>trino-spi</artifactId>
             <scope>provided</scope>
         </dependency>
 
         <!-- in the example, this is test scope -->
         <dependency>
-            <groupId>com.facebook.presto</groupId>
-            <artifactId>presto-main</artifactId>
+            <groupId>io.trino</groupId>
+            <artifactId>trino-main</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>com.facebook.presto</groupId>
-            <artifactId>presto-common</artifactId>
-            <scope>provided</scope>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.trino</groupId>-->
+<!--            <artifactId>trino-common</artifactId>-->
+<!--            <scope>provided</scope>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>com.facebook.drift</groupId>
-            <artifactId>drift-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.airlift.drift</groupId>-->
+<!--            <artifactId>drift-api</artifactId>-->
+<!--            <scope>provided</scope>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>io.airlift</groupId>
@@ -161,11 +162,11 @@
             <scope>provided</scope>
         </dependency>
 
-        <dependency>
-            <groupId>io.airlift</groupId>
-            <artifactId>units</artifactId>
-            <scope>provided</scope>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.airlift</groupId>-->
+<!--            <artifactId>units</artifactId>-->
+<!--            <scope>provided</scope>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -183,14 +184,15 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+            <version>${mockito-core.version}</version>
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>com.facebook.presto</groupId>
-            <artifactId>presto-testng-services</artifactId>
-            <scope>test</scope>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.trino</groupId>-->
+<!--            <artifactId>trino-testng-services</artifactId>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>org.testng</groupId>
@@ -198,25 +200,28 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>com.facebook.airlift</groupId>
-            <artifactId>testing</artifactId>
-            <scope>test</scope>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>io.airlift</groupId>-->
+<!--            <artifactId>testing</artifactId>-->
+<!--            <scope>test</scope>-->
+<!--        </dependency>-->
 
         <dependency>
-            <groupId>com.facebook.airlift</groupId>
+            <groupId>io.airlift</groupId>
             <artifactId>http-server</artifactId>
+<!--            <scope>test</scope>-->
         </dependency>
 
         <dependency>
-            <groupId>com.facebook.airlift</groupId>
+            <groupId>io.airlift</groupId>
             <artifactId>node</artifactId>
+<!--            <scope>test</scope>-->
         </dependency>
 
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
+<!--            <scope>test</scope>-->
         </dependency>
     </dependencies>
 </project>

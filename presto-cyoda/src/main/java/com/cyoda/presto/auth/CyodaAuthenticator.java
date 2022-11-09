@@ -20,9 +20,9 @@ package com.cyoda.presto.auth;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.security.AccessDeniedException;
-import com.facebook.presto.spi.security.PasswordAuthenticator;
+import io.trino.spi.TrinoException;
+import io.trino.spi.security.AccessDeniedException;
+import io.trino.spi.security.PasswordAuthenticator;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.http.HttpEntity;
@@ -53,7 +53,7 @@ public class CyodaAuthenticator implements PasswordAuthenticator {
         try {
             this.loginUri = config.getServerUrl().toURI().resolve(config.getUserLoginEndpoint());
         } catch (URISyntaxException e) {
-            throw new PrestoException(CYODA_BOOTSTRAPPING_FAILURE,"Cannot resolve URI",e);
+            throw new TrinoException(CYODA_BOOTSTRAPPING_FAILURE,"Cannot resolve URI",e);
         }
 
     }

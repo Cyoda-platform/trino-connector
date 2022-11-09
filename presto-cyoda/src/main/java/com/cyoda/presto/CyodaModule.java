@@ -25,8 +25,8 @@ import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
-import com.facebook.presto.common.type.Type;
-import com.facebook.presto.common.type.TypeManager;
+import io.trino.spi.type.Type;
+import io.trino.spi.type.TypeManager;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.FromStringDeserializer;
 import com.google.inject.Binder;
@@ -36,11 +36,13 @@ import com.google.inject.multibindings.Multibinder;
 
 import javax.inject.Inject;
 
-import static com.facebook.airlift.configuration.ConfigBinder.configBinder;
-import static com.facebook.airlift.json.JsonBinder.jsonBinder;
-import static com.facebook.airlift.json.JsonCodec.listJsonCodec;
-import static com.facebook.airlift.json.JsonCodecBinder.jsonCodecBinder;
-import static com.facebook.presto.common.type.TypeSignature.parseTypeSignature;
+import java.util.Collections;
+
+import static io.airlift.configuration.ConfigBinder.configBinder;
+import static io.airlift.json.JsonBinder.jsonBinder;
+import static io.airlift.json.JsonCodec.listJsonCodec;
+import static io.airlift.json.JsonCodecBinder.jsonCodecBinder;
+import static io.trino.sql.analyzer.TypeSignatureTranslator.parseTypeSignature;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaModule implements Module {
@@ -78,26 +80,27 @@ public class CyodaModule implements Module {
 
         configBinder(binder).bindConfig(CyodaConfig.class);
 
-        jsonBinder(binder).addDeserializerBinding(Type.class).to(TypeDeserializer.class);
+//        jsonBinder(binder).addDeserializerBinding(Type.class).to(TypeDeserializer.class);
 
         binder.bind(RestTemplateCustomizer.class).in(Scopes.SINGLETON);
 
         jsonCodecBinder(binder).bindMapJsonCodec(String.class, listJsonCodec(CyodaTable.class));
     }
 
-    public static final class TypeDeserializer
-            extends FromStringDeserializer<Type> {
-        private final TypeManager typeManager;
-
-        @Inject
-        public TypeDeserializer(TypeManager typeManager) {
-            super(Type.class);
-            this.typeManager = requireNonNull(typeManager, "typeManager is null");
-        }
-
-        @Override
-        protected Type _deserialize(String value, DeserializationContext context) {
-            return typeManager.getType(parseTypeSignature(value));
-        }
-    }
+//    public static final class TypeDeserializer
+//            extends FromStringDeserializer<Type> {
+//        private final TypeManager typeManager;
+//
+//        @Inject
+//        public TypeDeserializer(TypeManager typeManager) {
+//            super(Type.class);
+//            this.typeManager = requireNonNull(typeManager, "typeManager is null");
+//        }
+//
+//        @Override
+//        protected Type _deserialize(String value, DeserializationContext context) {
+//            //TODO check if type params are not lost
+//            return typeManager.getType(parseTypeSignature(value, Collections.EMPTY_SET));
+//        }
+//    }
 }

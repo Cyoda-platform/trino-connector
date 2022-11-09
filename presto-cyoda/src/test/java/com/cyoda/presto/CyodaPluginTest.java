@@ -17,9 +17,9 @@
 
 package com.cyoda.presto;
 
-import com.facebook.presto.spi.Plugin;
-import com.facebook.presto.spi.connector.ConnectorFactory;
-import com.facebook.presto.testing.TestingConnectorContext;
+import io.trino.spi.Plugin;
+import io.trino.spi.connector.ConnectorFactory;
+import io.trino.testing.TestingConnectorContext;
 import com.google.common.collect.ImmutableMap;
 import org.testng.annotations.Test;
 

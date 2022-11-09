@@ -18,11 +18,11 @@
 //package com.cyoda.presto.client.types;
 //
 //import com.cyoda.presto.client.reporting.ColumnDefinition;
-//import com.facebook.presto.common.type.StandardTypes;
-//import com.facebook.presto.common.type.Type;
-//import com.facebook.presto.common.type.TypeManager;
-//import com.facebook.presto.common.type.TypeSignature;
-//import com.facebook.presto.common.type.TypeSignatureParameter;
+//import io.trino.spi.type.StandardTypes;
+//import io.trino.spi.type.Type;
+//import io.trino.spi.type.TypeManager;
+//import io.trino.spi.type.TypeSignature;
+//import io.trino.spi.type.TypeSignatureParameter;
 //import com.google.common.collect.ImmutableList;
 //
 //import java.util.List;

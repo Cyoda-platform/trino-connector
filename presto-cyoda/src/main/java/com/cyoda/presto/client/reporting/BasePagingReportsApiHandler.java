@@ -29,7 +29,7 @@ import com.cyoda.presto.client.paging.PagingHandle;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.common.type.TypeManager;
+import io.trino.spi.type.TypeManager;
 import reactor.core.publisher.Flux;
 
 import java.util.Collections;

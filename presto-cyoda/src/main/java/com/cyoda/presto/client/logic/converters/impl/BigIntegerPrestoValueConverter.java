@@ -26,9 +26,6 @@ import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import static com.facebook.presto.common.type.Decimals.decodeUnscaledValue;
-import static com.facebook.presto.common.type.Decimals.encodeUnscaledValue;
-
 public class BigIntegerPrestoValueConverter extends BigDecimalTypeValueConverter<BigInteger> {
 
     @Inject
@@ -48,14 +45,13 @@ public class BigIntegerPrestoValueConverter extends BigDecimalTypeValueConverter
 
     @Override
     public Slice toSlice(@Nonnull BigInteger value) {
-        // Taken from com.facebook.presto.hive.functions.type.DecimalUtils
-        return encodeUnscaledValue(value);
+        return (Slice) encodeDecimal(value);
     }
 
     @Nonnull
     @Override
     public BigInteger fromSlice(Slice value) {
-        return decodeUnscaledValue(value);
+        return decodeDecimal(value);
     }
 
     @Override

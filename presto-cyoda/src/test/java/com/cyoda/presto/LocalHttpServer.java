@@ -16,11 +16,11 @@
  */
 package com.cyoda.presto;
 
-import com.facebook.airlift.bootstrap.Bootstrap;
-import com.facebook.airlift.bootstrap.LifeCycleManager;
-import com.facebook.airlift.http.server.TheServlet;
-import com.facebook.airlift.http.server.testing.TestingHttpServerModule;
-import com.facebook.airlift.node.testing.TestingNodeModule;
+import io.airlift.bootstrap.Bootstrap;
+import io.airlift.bootstrap.LifeCycleManager;
+import io.airlift.http.server.TheServlet;
+import io.airlift.http.server.testing.TestingHttpServerModule;
+import io.airlift.node.testing.TestingNodeModule;
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Binder;
 import com.google.inject.Injector;
@@ -54,7 +54,7 @@ public class LocalHttpServer {
                 .initialize();
 
         lifeCycleManager = injector.getInstance(LifeCycleManager.class);
-        baseUri = injector.getInstance(com.facebook.airlift.http.server.testing.TestingHttpServer.class).getBaseUrl();
+        baseUri = injector.getInstance(io.airlift.http.server.testing.TestingHttpServer.class).getBaseUrl();
     }
 
     public void setResponseMapperProvider(ResponseMapperProvider provider) {

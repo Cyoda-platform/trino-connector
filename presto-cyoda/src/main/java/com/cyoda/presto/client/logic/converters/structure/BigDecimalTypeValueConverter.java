@@ -5,8 +5,12 @@ import com.cyoda.presto.client.types.IDataType;
 import com.cyoda.presto.client.util.DecimalUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.google.common.base.Preconditions;
+import io.airlift.slice.Slice;
+import io.trino.spi.type.Decimals;
+import io.trino.spi.type.Int128;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 public abstract class BigDecimalTypeValueConverter<T extends Comparable<? super T>> extends SliceComparableValueConverter<T>{
 
@@ -16,6 +20,14 @@ public abstract class BigDecimalTypeValueConverter<T extends Comparable<? super 
 
     protected abstract BigDecimal toBigDecimal(T value);
     protected abstract T fromBigDecimal(BigDecimal value);
+
+    public static Object encodeDecimal(BigInteger value){
+        return Decimals.valueOf(value);
+    }
+
+    public static BigInteger decodeDecimal(Object value){
+        return ((Int128)value).toBigInteger();
+    }
 
     @Override
     protected ColumnPredicate<T> newComparisonPredicate(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, T value) {

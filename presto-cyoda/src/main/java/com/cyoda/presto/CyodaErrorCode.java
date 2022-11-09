@@ -17,11 +17,11 @@
 
 package com.cyoda.presto;
 
-import com.facebook.presto.spi.ErrorCode;
-import com.facebook.presto.spi.ErrorCodeSupplier;
-import com.facebook.presto.spi.ErrorType;
+import io.trino.spi.ErrorCode;
+import io.trino.spi.ErrorCodeSupplier;
+import io.trino.spi.ErrorType;
 
-import static com.facebook.presto.spi.ErrorType.EXTERNAL;
+import static io.trino.spi.ErrorType.EXTERNAL;
 
 public enum CyodaErrorCode
         implements ErrorCodeSupplier

@@ -20,27 +20,24 @@ package com.cyoda.presto;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
-import com.cyoda.presto.handles.CyodaTableLayoutHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.common.predicate.TupleDomain;
-import com.facebook.presto.spi.ColumnHandle;
-import com.facebook.presto.spi.ColumnMetadata;
-import com.facebook.presto.spi.ConnectorSession;
-import com.facebook.presto.spi.ConnectorTableHandle;
-import com.facebook.presto.spi.ConnectorTableLayout;
-import com.facebook.presto.spi.ConnectorTableLayoutHandle;
-import com.facebook.presto.spi.ConnectorTableLayoutResult;
-import com.facebook.presto.spi.ConnectorTableMetadata;
-import com.facebook.presto.spi.Constraint;
-import com.facebook.presto.spi.SchemaTableName;
-import com.facebook.presto.spi.SchemaTablePrefix;
-import com.facebook.presto.spi.TableNotFoundException;
-import com.facebook.presto.spi.connector.ConnectorMetadata;
+import io.trino.spi.connector.TableColumnsMetadata;
+import io.trino.spi.predicate.TupleDomain;
+import io.trino.spi.connector.ColumnHandle;
+import io.trino.spi.connector.ColumnMetadata;
+import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.connector.ConnectorTableHandle;
+import io.trino.spi.connector.ConnectorTableMetadata;
+import io.trino.spi.connector.SchemaTableName;
+import io.trino.spi.connector.SchemaTablePrefix;
+import io.trino.spi.connector.TableNotFoundException;
+import io.trino.spi.connector.ConnectorMetadata;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import javax.inject.Inject;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -89,29 +86,29 @@ public class CyodaMetadata implements ConnectorMetadata {
         return new CyodaTableHandle(authContext, connectorId, tableName.getSchemaName(), tableName.getTableName(), Optional.empty(), handlerKey);
     }
 
-    @Override
-    public List<ConnectorTableLayoutResult> getTableLayouts(ConnectorSession session, ConnectorTableHandle table, Constraint<ColumnHandle> constraint, Optional<Set<ColumnHandle>> desiredColumns) {
-        CyodaTableHandle tableHandle = (desiredColumns.isPresent()) ?
-                ((CyodaTableHandle) table).withProjectedColumns(convertDesiredColumns(desiredColumns.orElse(Collections.emptySet()))) :
-                ((CyodaTableHandle) table);
-        TupleDomain<CyodaColumnHandle> summary = constraint.getSummary().transform(CyodaColumnHandle.class::cast);
-        ConnectorTableLayout layout = new ConnectorTableLayout(
-                new CyodaTableLayoutHandle(
-                        tableHandle,
-                        summary
-                )
-        );
-        return ImmutableList.of(new ConnectorTableLayoutResult(layout, constraint.getSummary()));
-    }
-
-    private List<CyodaColumnHandle> convertDesiredColumns(Set<ColumnHandle> desiredColumns) {
-        return desiredColumns.stream().map(CyodaColumnHandle.class::cast).collect(Collectors.toList());
-    }
-
-    @Override
-    public ConnectorTableLayout getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle handle) {
-        return new ConnectorTableLayout(handle);
-    }
+//    @Override
+//    public List<ConnectorTableLayoutResult> getTableLayouts(ConnectorSession session, ConnectorTableHandle table, Constraint<ColumnHandle> constraint, Optional<Set<ColumnHandle>> desiredColumns) {
+//        CyodaTableHandle tableHandle = (desiredColumns.isPresent()) ?
+//                ((CyodaTableHandle) table).withProjectedColumns(convertDesiredColumns(desiredColumns.orElse(Collections.emptySet()))) :
+//                ((CyodaTableHandle) table);
+//        TupleDomain<CyodaColumnHandle> summary = constraint.getSummary().transform(CyodaColumnHandle.class::cast);
+//        ConnectorTableLayout layout = new ConnectorTableLayout(
+//                new CyodaTableLayoutHandle(
+//                        tableHandle,
+//                        summary
+//                )
+//        );
+//        return ImmutableList.of(new ConnectorTableLayoutResult(layout, constraint.getSummary()));
+//    }
+//
+//    private List<CyodaColumnHandle> convertDesiredColumns(Set<ColumnHandle> desiredColumns) {
+//        return desiredColumns.stream().map(CyodaColumnHandle.class::cast).collect(Collectors.toList());
+//    }
+//
+//    @Override
+//    public ConnectorTableLayout getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle handle) {
+//        return new ConnectorTableLayout(handle);
+//    }
 
 
     private ConnectorTableMetadata getTableMetadata(AuthContext authContext, SchemaTableName tableName) {
@@ -121,6 +118,14 @@ public class CyodaMetadata implements ConnectorMetadata {
 
         CyodaTable table = client.getTable(authContext,tableName);
         return new ConnectorTableMetadata(tableName, table.getColumnsMetadata(),Collections.emptyMap(),table.getDescription());
+    }
+
+    private CyodaTable getTable(AuthContext authContext, SchemaTableName tableName) {
+        if (!client.getSchemaName().contains(tableName.getSchemaName())) {
+            return null;
+        }
+
+        return client.getTable(authContext,tableName);
     }
 
     @Override
@@ -173,12 +178,12 @@ public class CyodaMetadata implements ConnectorMetadata {
 
     private List<SchemaTableName> listTables(ConnectorSession session, SchemaTablePrefix prefix) {
         // List all tables if schema or table is null
-        if (prefix.getSchemaName() == null || prefix.getTableName() == null) {
-            return listTables(session, Optional.ofNullable(prefix.getSchemaName()));
+        if (!prefix.getSchema().isPresent() || !prefix.getTable().isPresent()) {
+            return listTables(session, prefix.getSchema());
         }
 
         // Make sure requested table exists, returning the single table of it does
-        SchemaTableName table = new SchemaTableName(prefix.getSchemaName(), prefix.getTableName());
+        SchemaTableName table = new SchemaTableName(prefix.getSchema().get(), prefix.getTable().get());
         if (getTableHandle(session, table) != null) {
             return ImmutableList.of(table);
         }
@@ -188,17 +193,16 @@ public class CyodaMetadata implements ConnectorMetadata {
     }
 
     @Override
-    public Map<SchemaTableName, List<ColumnMetadata>> listTableColumns(ConnectorSession session, SchemaTablePrefix prefix) {
+    public Iterator<TableColumnsMetadata> streamTableColumns(ConnectorSession session, SchemaTablePrefix prefix) {
         requireNonNull(prefix, "prefix is null");
-        ImmutableMap.Builder<SchemaTableName, List<ColumnMetadata>> columns = ImmutableMap.builder();
+        ImmutableList.Builder<TableColumnsMetadata> columns = ImmutableList.builder();
         for (SchemaTableName tableName : listTables(session, prefix)) {
-            ConnectorTableMetadata tableMetadata = getTableMetadata(AuthContext.fromSession(session,config), tableName);
+            CyodaTable tableMetadata = getTable(AuthContext.fromSession(session,config), tableName);
             // table can disappear during listing operation
             if (tableMetadata != null) {
-                columns.put(tableName, tableMetadata.getColumns());
+                columns.add(new TableColumnsMetadata(tableName, Optional.ofNullable(tableMetadata.getColumnsMetadata())));
             }
         }
-        return columns.build();
+        return columns.build().iterator();
     }
-
 }

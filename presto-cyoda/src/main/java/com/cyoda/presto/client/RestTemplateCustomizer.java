@@ -23,8 +23,8 @@ import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthPayload;
 import com.cyoda.presto.auth.RefreshContext;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.security.AccessDeniedException;
+import io.trino.spi.TrinoException;
+import io.trino.spi.security.AccessDeniedException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -104,7 +104,7 @@ public class RestTemplateCustomizer {
         try {
             this.refreshUri = config.getServerUrl().toURI().resolve(config.getRefreshTokenEndpoint());
         } catch (URISyntaxException e) {
-            throw new PrestoException(CYODA_BOOTSTRAPPING_FAILURE,"Cannot resolve URI",e);
+            throw new TrinoException(CYODA_BOOTSTRAPPING_FAILURE,"Cannot resolve URI",e);
         }
 
     }
@@ -204,7 +204,7 @@ public class RestTemplateCustomizer {
         requireNonNull(user, "user is null");
         requireNonNull(password, "password is null");
         if (user.contains(":")) {
-            throw new PrestoException(CYODA_AUTHENTICATION_ERROR,"[Cyoda] Illegal character ':' found in username");
+            throw new TrinoException(CYODA_AUTHENTICATION_ERROR,"[Cyoda] Illegal character ':' found in username");
         }
 
         String credential = Credentials.basic(user, password);

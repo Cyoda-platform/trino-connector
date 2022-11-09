@@ -19,9 +19,9 @@ package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.converters.structure.BigDecimalTypeValueConverter;
 import com.cyoda.presto.client.types.DataType;
-import com.facebook.presto.common.type.StandardTypes;
-import com.facebook.presto.common.type.Type;
-import com.facebook.presto.common.type.VarcharType;
+import io.trino.spi.type.StandardTypes;
+import io.trino.spi.type.Type;
+import io.trino.spi.type.VarcharType;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
@@ -32,7 +32,7 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.UUID;
 
-import static com.facebook.presto.common.block.Int128ArrayBlock.INT128_BYTES;
+import static io.trino.spi.block.Int128ArrayBlock.INT128_BYTES;
 import static io.airlift.slice.SizeOf.SIZE_OF_LONG;
 import static io.airlift.slice.Slices.wrappedLongArray;
 import static java.lang.String.format;

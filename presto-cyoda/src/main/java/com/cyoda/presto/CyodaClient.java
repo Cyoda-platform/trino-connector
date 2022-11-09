@@ -21,7 +21,7 @@ import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.spi.SchemaTableName;
+import io.trino.spi.connector.SchemaTableName;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;

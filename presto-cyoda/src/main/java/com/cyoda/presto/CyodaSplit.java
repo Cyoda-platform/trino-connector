@@ -19,11 +19,10 @@ package com.cyoda.presto;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
-import com.facebook.presto.common.predicate.TupleDomain;
-import com.facebook.presto.spi.ConnectorSplit;
-import com.facebook.presto.spi.HostAddress;
-import com.facebook.presto.spi.NodeProvider;
-import com.facebook.presto.spi.schedule.NodeSelectionStrategy;
+import io.trino.spi.connector.Constraint;
+import io.trino.spi.predicate.TupleDomain;
+import io.trino.spi.connector.ConnectorSplit;
+import io.trino.spi.HostAddress;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -32,20 +31,19 @@ import com.google.common.collect.ImmutableList;
 import java.net.URI;
 import java.util.List;
 
-import static com.facebook.presto.spi.schedule.NodeSelectionStrategy.NO_PREFERENCE;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaSplit implements ConnectorSplit {
     private final URI uri;
     private final List<HostAddress> addresses;
-    private final TupleDomain<CyodaColumnHandle> constraint;
+    private final Constraint constraint;
     private final CyodaTableHandle tableHandle;
 
     @JsonCreator
     public CyodaSplit(
             @JsonProperty("tableHandle") CyodaTableHandle tableHandle,
             @JsonProperty("uri") URI uri,
-            @JsonProperty("constraint") TupleDomain<CyodaColumnHandle> constraint) {
+            @JsonProperty("constraint") Constraint constraint) {
         this.tableHandle = requireNonNull(tableHandle, "tableHandle name is null");
         this.uri = requireNonNull(uri, "uri is null");
 
@@ -65,21 +63,15 @@ public class CyodaSplit implements ConnectorSplit {
     }
 
     @JsonProperty
-    public TupleDomain<CyodaColumnHandle> getConstraint() {
+    public Constraint getConstraint() {
         return constraint;
     }
 
     @Override
-    public NodeSelectionStrategy getNodeSelectionStrategy() {
-        return NO_PREFERENCE;
+    public boolean isRemotelyAccessible() {
+        return true;
     }
-
     public List<HostAddress> getAddresses() {
-        return addresses;
-    }
-
-    @Override
-    public List<HostAddress> getPreferredNodes(NodeProvider nodeProvider) {
         return addresses;
     }
 

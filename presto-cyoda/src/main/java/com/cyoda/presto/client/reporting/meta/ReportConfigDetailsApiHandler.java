@@ -32,12 +32,9 @@ import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.common.type.JsonType;
-import com.facebook.presto.common.type.StandardTypes;
-import com.facebook.presto.common.type.TypeManager;
-import com.facebook.presto.common.type.TypeSignature;
-import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
+import io.trino.spi.type.TypeManager;
+import io.trino.spi.TrinoException;
+import io.trino.spi.StandardErrorCode;
 import com.google.common.base.Joiner;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
@@ -330,7 +327,7 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
         try {
             uri = config.getServerUrl().toURI().resolve(REPORT_DETAILS_ENDPOINT);
         } catch (URISyntaxException e) {
-            throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, e);
+            throw new TrinoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, e);
         }
         final ImmutableList.Builder<TemplateVariable> builder = ImmutableList.builder();
         builder.add(TemplateVariable.pathVariable("id"));

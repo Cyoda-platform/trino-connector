@@ -19,9 +19,9 @@ package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.converters.structure.BigDecimalTypeValueConverter;
 import com.cyoda.presto.client.types.DataType;
-import com.facebook.presto.common.type.DecimalType;
-import com.facebook.presto.common.type.Decimals;
-import com.facebook.presto.common.type.TypeSignatureParameter;
+import io.trino.spi.type.DecimalType;
+import io.trino.spi.type.Decimals;
+import io.trino.spi.type.TypeSignatureParameter;
 import io.airlift.slice.Slice;
 
 import javax.annotation.Nonnull;
@@ -34,8 +34,8 @@ public class BigDecimalPrestoValueConverter extends BigDecimalTypeValueConverter
     private static final int SCALE = 18;
     private static final int PRECISION = Decimals.MAX_PRECISION;
     private static final DecimalType DECIMAL_TYPE = DecimalType.createDecimalType(PRECISION, SCALE);
-    public static final TypeSignatureParameter P_SC = TypeSignatureParameter.of(SCALE);
-    public static final TypeSignatureParameter P_PR = TypeSignatureParameter.of(PRECISION);
+    public static final TypeSignatureParameter P_SC = TypeSignatureParameter.numericParameter(SCALE);
+    public static final TypeSignatureParameter P_PR = TypeSignatureParameter.numericParameter(PRECISION);
 
     @Inject
     public BigDecimalPrestoValueConverter() {
@@ -59,13 +59,13 @@ public class BigDecimalPrestoValueConverter extends BigDecimalTypeValueConverter
                     value, value.scale(), SCALE));
         }
         BigDecimal rescaled = Decimals.rescale(value, DECIMAL_TYPE);
-        return Decimals.encodeScaledValue(rescaled);
+        return (Slice) encodeDecimal(rescaled.unscaledValue());
     }
 
     @Nonnull
     @Override
     public BigDecimal fromSlice(Slice value) {
-        return new BigDecimal(Decimals.decodeUnscaledValue(value), DECIMAL_TYPE.getScale(), new MathContext(DECIMAL_TYPE.getPrecision()));
+        return new BigDecimal(decodeDecimal(value), DECIMAL_TYPE.getScale(), new MathContext(DECIMAL_TYPE.getPrecision()));
     }
 
     @Override

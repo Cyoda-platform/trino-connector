@@ -17,24 +17,24 @@
 
 package com.cyoda.presto.client.logic;
 
-import com.cyoda.presto.client.types.BigDecimalType;
 import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.client.util.DecimalUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.facebook.presto.common.type.BigintType;
-import com.facebook.presto.common.type.BooleanType;
-import com.facebook.presto.common.type.DateType;
-import com.facebook.presto.common.type.DecimalType;
-import com.facebook.presto.common.type.DoubleType;
-import com.facebook.presto.common.type.IntegerType;
-import com.facebook.presto.common.type.RealType;
-import com.facebook.presto.common.type.SmallintType;
-import com.facebook.presto.common.type.TimestampType;
-import com.facebook.presto.common.type.TinyintType;
-import com.facebook.presto.common.type.Type;
-import com.facebook.presto.common.type.VarbinaryType;
-import com.facebook.presto.common.type.VarcharType;
+import io.trino.spi.type.BigintType;
+import io.trino.spi.type.BooleanType;
+import io.trino.spi.type.DateType;
+import io.trino.spi.type.DecimalType;
+import io.trino.spi.type.DoubleType;
+import io.trino.spi.type.IntegerType;
+import io.trino.spi.type.RealType;
+import io.trino.spi.type.SmallintType;
+import io.trino.spi.type.StandardTypes;
+import io.trino.spi.type.TimestampType;
+import io.trino.spi.type.TinyintType;
+import io.trino.spi.type.Type;
+import io.trino.spi.type.VarbinaryType;
+import io.trino.spi.type.VarcharType;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import org.testng.Assert;
@@ -126,10 +126,10 @@ public class NewComparisonColumnPredicateTest {
         stringCol = newCyodaColumnHandle("string", VarcharType.VARCHAR, DataType.STRING, pos++, true);
         binaryCol = newCyodaColumnHandle("binary", VarbinaryType.VARBINARY, DataType.BYTE_BUFFER, pos++, true);
 
-        bigDecimalCol = newCyodaColumnHandle("bigDecimal", BigDecimalType.BIG_DECIMAL_TYPE, DataType.BIG_DECIMAL, pos++, true);
+        bigDecimalCol = newCyodaColumnHandle("bigDecimal", DecimalType.createDecimalType(38, 18), DataType.BIG_DECIMAL, pos++, true);
 
         bigIntegerCol = newCyodaColumnHandle("bigInt", BigintType.BIGINT, DataType.BIG_INTEGER, pos++, true);
-        localDatetimeCol = newCyodaColumnHandle("localDatetime", TimestampType.TIMESTAMP, DataType.LOCAL_DATE_TIME, pos++, true);
+        localDatetimeCol = newCyodaColumnHandle("localDatetime", TimestampType.TIMESTAMP_MILLIS, DataType.LOCAL_DATE_TIME, pos++, true);
         dateCol = newCyodaColumnHandle("date", DateType.DATE, DataType.LOCAL_DATE, pos, true);
     }
 

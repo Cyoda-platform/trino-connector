@@ -23,9 +23,9 @@
 
     <!-- Remove parent to avoid any checks and packagings -->
 
-    <groupId>com.cyoda.presto</groupId>
-    <artifactId>presto-server-runtime</artifactId>
-    <version>0.272</version>
+    <groupId>com.cyoda.trino</groupId>
+    <artifactId>trino-server-runtime</artifactId>
+    <version>402</version>
 
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
@@ -34,46 +34,46 @@
     </properties>
     <dependencies>
         <dependency>
-            <groupId>com.facebook.presto</groupId>
-            <artifactId>presto-server</artifactId>
+            <groupId>io.trino</groupId>
+            <artifactId>trino-server</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>unpack-plugins</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>unpack-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <skip>false</skip>
-                            <!-- take care of all the plugin types -->
-                            <includeTypes>zip</includeTypes>
-                            <includeScope>provided</includeScope>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>unpack-launcher</id>
-                        <phase>prepare-package</phase>
-                        <goals>
-                            <goal>unpack-dependencies</goal>
-                        </goals>
-                        <configuration>
-                            <skip>false</skip>
-                            <includeArtifactIds>launcher</includeArtifactIds>
-                            <includeScope>provided</includeScope>
-                            <outputDirectory>${project.build.directory}/dependency/launcher</outputDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-dependency-plugin</artifactId>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>unpack-plugins</id>-->
+<!--                        <phase>prepare-package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>unpack-dependencies</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <skip>false</skip>-->
+<!--                            &lt;!&ndash; take care of all the plugin types &ndash;&gt;-->
+<!--                            <includeTypes>zip</includeTypes>-->
+<!--                            <includeScope>provided</includeScope>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                    <execution>-->
+<!--                        <id>unpack-launcher</id>-->
+<!--                        <phase>prepare-package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>unpack-dependencies</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <skip>false</skip>-->
+<!--                            <includeArtifactIds>launcher</includeArtifactIds>-->
+<!--                            <includeScope>provided</includeScope>-->
+<!--                            <outputDirectory>${project.build.directory}/dependency/launcher</outputDirectory>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -92,9 +92,9 @@
                                 <format>tar.gz</format>
                             </formats>
                             <descriptors>
-                                <descriptor>src/main/assembly/presto.xml</descriptor>
+                                <descriptor>src/main/assembly/trino.xml</descriptor>
                             </descriptors>
-                            <finalName>presto-server-${project.version}</finalName>
+                            <finalName>trino-server-${project.version}</finalName>
                             <appendAssemblyId>false</appendAssemblyId>
                         </configuration>
                     </execution>

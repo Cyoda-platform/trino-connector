@@ -31,7 +31,7 @@ import com.cyoda.presto.client.logic.converters.structure.ComparableValueConvert
 import com.cyoda.presto.client.logic.converters.structure.SingleValueConverter;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.client.types.IDataType;
-import com.facebook.presto.common.type.Type;
+import io.trino.spi.type.Type;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Arrays;

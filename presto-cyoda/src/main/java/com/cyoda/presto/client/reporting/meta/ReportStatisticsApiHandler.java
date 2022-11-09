@@ -32,9 +32,9 @@ import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.interactors.WrappedEntityModel;
-import com.facebook.presto.common.type.TypeManager;
-import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
+import io.trino.spi.type.TypeManager;
+import io.trino.spi.TrinoException;
+import io.trino.spi.StandardErrorCode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import org.joda.beans.MetaProperty;
@@ -173,7 +173,7 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Dist
         try {
             uri = config.getServerUrl().toURI().resolve(REPORT_ENDPOINT);
         } catch (URISyntaxException e) {
-            throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, e);
+            throw new TrinoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, e);
         }
         return UriTemplate.of(uri.toASCIIString()+ REPORT_STATS_TEMPLATE);
     }

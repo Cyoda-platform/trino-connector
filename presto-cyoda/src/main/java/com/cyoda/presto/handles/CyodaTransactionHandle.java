@@ -17,7 +17,7 @@
 
 package com.cyoda.presto.handles;
 
-import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
+import io.trino.spi.connector.ConnectorTransactionHandle;
 
 public enum CyodaTransactionHandle
         implements ConnectorTransactionHandle {

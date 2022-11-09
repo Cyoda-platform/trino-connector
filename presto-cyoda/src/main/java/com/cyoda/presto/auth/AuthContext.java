@@ -18,7 +18,7 @@
 package com.cyoda.presto.auth;
 
 import com.cyoda.presto.CyodaConfig;
-import com.facebook.presto.spi.ConnectorSession;
+import io.trino.spi.connector.ConnectorSession;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;

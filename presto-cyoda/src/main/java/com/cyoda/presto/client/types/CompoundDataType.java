@@ -4,10 +4,10 @@ import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.converters.PrestoConverterFactory;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
-import com.facebook.presto.common.type.Type;
-import com.facebook.presto.common.type.TypeManager;
-import com.facebook.presto.common.type.TypeSignature;
-import com.facebook.presto.common.type.TypeSignatureParameter;
+import io.trino.spi.type.Type;
+import io.trino.spi.type.TypeManager;
+import io.trino.spi.type.TypeSignature;
+import io.trino.spi.type.TypeSignatureParameter;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
@@ -100,7 +100,7 @@ public class CompoundDataType {
             List<TypeSignatureParameter> attrs = Arrays.stream(typeParams)
                     .map(DataType::getTypeString)
                     .map(TypeSignature::new)
-                    .map(TypeSignatureParameter::of)
+                    .map(TypeSignatureParameter::typeParameter)
                     .collect(Collectors.toList());
             return typeManager.getParameterizedType(mainType.getTypeString(), attrs);
         }

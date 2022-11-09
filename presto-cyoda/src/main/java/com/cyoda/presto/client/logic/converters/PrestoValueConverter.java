@@ -21,9 +21,9 @@ import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.types.IDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.common.block.BlockBuilder;
-import com.facebook.presto.common.predicate.DiscreteValues;
-import com.facebook.presto.common.type.Type;
+import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.predicate.DiscreteValues;
+import io.trino.spi.type.Type;
 
 public interface PrestoValueConverter<T> {
 

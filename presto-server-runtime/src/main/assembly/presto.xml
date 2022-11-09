@@ -17,7 +17,7 @@
 
 <assembly xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/ASSEMBLY/2.0.0"
           xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.0.0 http://maven.apache.org/xsd/assembly-2.0.0.xsd">
-    <id>presto-server</id>
+    <id>trino-server</id>
     <includeBaseDirectory>true</includeBaseDirectory>
 
     <files>
@@ -67,40 +67,40 @@
 
         <!-- plugins -->
         <fileSet>
-            <directory>${project.build.directory}/dependency/presto-cyoda-${project.version}</directory>
+            <directory>${project.build.directory}/dependency/trino-cyoda-${project.version}</directory>
             <outputDirectory>plugin/cyoda</outputDirectory>
         </fileSet>
 
         <fileSet>
-            <directory>${project.build.directory}/dependency/presto-resource-group-managers-${project.version}
+            <directory>${project.build.directory}/dependency/trino-resource-group-managers-${project.version}
             </directory>
             <outputDirectory>plugin/resource-group-managers</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/dependency/presto-password-authenticators-${project.version}
+            <directory>${project.build.directory}/dependency/trino-password-authenticators-${project.version}
             </directory>
             <outputDirectory>plugin/password-authenticators</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/dependency/presto-session-property-managers-${project.version}
+            <directory>${project.build.directory}/dependency/trino-session-property-managers-${project.version}
             </directory>
             <outputDirectory>plugin/session-property-managers</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/dependency/presto-node-ttl-fetchers-${project.version}</directory>
+            <directory>${project.build.directory}/dependency/trino-node-ttl-fetchers-${project.version}</directory>
             <outputDirectory>plugin/ttl-fetchers</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/dependency/presto-cluster-ttl-providers-${project.version}</directory>
+            <directory>${project.build.directory}/dependency/trino-cluster-ttl-providers-${project.version}</directory>
             <outputDirectory>plugin/cluster-ttl-providers</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/dependency/presto-function-namespace-managers-${project.version}
+            <directory>${project.build.directory}/dependency/trino-function-namespace-managers-${project.version}
             </directory>
             <outputDirectory>plugin/function-namespace-managers</outputDirectory>
         </fileSet>
         <fileSet>
-            <directory>${project.build.directory}/dependency/presto-jmx-${project.version}</directory>
+            <directory>${project.build.directory}/dependency/trino-jmx-${project.version}</directory>
             <outputDirectory>plugin/jmx</outputDirectory>
         </fileSet>
     </fileSets>
