@@ -89,9 +89,9 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
 
     private static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
             // TODO: Needs to be a Long
-            .add(new StandardColumnDefinition(0, ROW_REPORT_ROW_NUMBER_COLUMN, StandardTypes.BIGINT,LONG,null,null))
-            .add(new StandardColumnDefinition(0, ROW_REPORT_ID_COLUMN, StandardTypes.VARCHAR, STRING, null, null))
-            .add(new StandardColumnDefinition(0, ROW_GROUP_JSON_BASE64_VARIABLE, StandardTypes.VARCHAR, STRING, null, null))
+            .add(new StandardColumnDefinition(0, ROW_REPORT_ROW_NUMBER_COLUMN, LONG))
+            .add(new StandardColumnDefinition(0, ROW_REPORT_ID_COLUMN, STRING))
+            .add(new StandardColumnDefinition(0, ROW_GROUP_JSON_BASE64_VARIABLE, STRING))
             .add(GroupHeader.meta())
             .build();
     private final CyodaColumnHandle rowNumberColumn;

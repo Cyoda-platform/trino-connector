@@ -17,13 +17,15 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.CollectionConverter;
+import com.cyoda.presto.client.logic.converters.structure.SingleValueConverter;
+import com.cyoda.presto.client.types.DataType;
 
 import java.util.Set;
 
-public class SetPrestoValueConverter implements PrestoValueConverter<Set<?>> {
-    @Override
-    public Set<?> toObject(Object nativeValue) {
-        throw new UnsupportedOperationException("no can do");
+public class SetPrestoValueConverter<E> extends CollectionConverter<Set<E>,E> {
+    public SetPrestoValueConverter(String columnName, SingleValueConverter<E> elementConverter) {
+        super(columnName, DataType.SET, elementConverter);
     }
+
 }

@@ -33,7 +33,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import static com.cyoda.presto.client.logic.ColumnPredicateUtils.*;
 import static com.cyoda.presto.client.logic.PredicateBuilderDebugger.debug;
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.nCopies;
@@ -71,12 +70,12 @@ public class ColumnPredicateBuilder {
                     sqlConjunctsBuilder.add("FALSE");
                 } else {
                     if (domain.isOnlyNull()) { // values.isNone() && isNullAllowed
-                        conjunctsBuilder.addLeaf(newIsNullPredicateAny(columnHandle));
+                        conjunctsBuilder.addLeaf(ColumnPredicate.isNull(columnHandle));
                         sqlConjunctsBuilder.add(columnName + " IS NULL");
                     } else if (domain.getValues().isAll() && domain.isNullAllowed()) {
                         sqlConjunctsBuilder.add("TRUE");
                     } else if (domain.getValues().isAll() && !domain.isNullAllowed()) {
-                        conjunctsBuilder.addLeaf(newIsNotNullPredicateAny(columnHandle));
+                        conjunctsBuilder.addLeaf(ColumnPredicate.isNotNull(columnHandle));
                         sqlConjunctsBuilder.add(columnName + " IS NOT NULL");
                     } else if (domain.isSingleValue()) {
 
@@ -105,14 +104,14 @@ public class ColumnPredicateBuilder {
                                             if (!range.isLowUnbounded()) {
                                                 ColumnPredicate.ComparisonOp op = (range.isLowInclusive())
                                                         ? ColumnPredicate.ComparisonOp.GREATER_EQUAL : ColumnPredicate.ComparisonOp.GREATER;
-                                                ColumnPredicate<?> columnPredicate = newComparisonPredicateFromNative(columnHandle, op, range.getLowBoundedValue());
+                                                ColumnPredicate<?> columnPredicate = columnHandle.newComparisonPredicateFromNative(op, range.getLowBoundedValue());
                                                 rangeConjuncts.addLeaf(columnPredicate);
                                                 rangeConjunctsColumnNames.add(columnName);
                                             }
                                             if (!range.isHighUnbounded()) {
                                                 ColumnPredicate.ComparisonOp op = (range.isHighInclusive())
                                                         ? ColumnPredicate.ComparisonOp.LESS_EQUAL : ColumnPredicate.ComparisonOp.LESS;
-                                                ColumnPredicate<?> columnPredicate = newComparisonPredicateFromNative(columnHandle, op, range.getHighBoundedValue());
+                                                ColumnPredicate<?> columnPredicate = columnHandle.newComparisonPredicateFromNative(op, range.getHighBoundedValue());
                                                 rangeConjuncts.addLeaf(columnPredicate);
                                                 rangeConjunctsColumnNames.add(columnName);
                                             }
@@ -131,7 +130,7 @@ public class ColumnPredicateBuilder {
                                         disjunctsBuilder.addLeaf(equalsColumnPredicate);
                                         disjunctSql.add(columnName +" = ?");
                                     } else if (singleValues.size() > 1) {
-                                        disjunctsBuilder.addLeaf(newInListPredicateFromDiscrete(columnHandle, new DiscreteValues() {
+                                        disjunctsBuilder.addLeaf(columnHandle.newInListPredicateFromDiscrete(new DiscreteValues() {
                                             @Override
                                             public boolean isWhiteList() {
                                                 return true;
@@ -149,7 +148,7 @@ public class ColumnPredicateBuilder {
                                     checkState(disjuncts > 0, "[Cyoda] Expected that we have some disjuncts");
                                     // Add nullability disjuncts
                                     if (domain.isNullAllowed()) {
-                                        disjunctsBuilder.addLeaf(newIsNotNullPredicateAny(columnHandle));
+                                        disjunctsBuilder.addLeaf(ColumnPredicate.<Any>isNotNull(columnHandle));
                                         disjunctSql.add(columnName + " IS NULL");
                                     }
 
@@ -160,7 +159,7 @@ public class ColumnPredicateBuilder {
 
                                 discreteValues -> {
                                     boolean negate = !discreteValues.isWhiteList();
-                                    ColumnPredicate<?> columnPredicate = newInListPredicateFromDiscrete(columnHandle, discreteValues).negate(negate);
+                                    ColumnPredicate<?> columnPredicate = columnHandle.newInListPredicateFromDiscrete(discreteValues).negate(negate);
                                     conjunctsBuilder.addLeaf(columnPredicate);
 
                                     String values = Joiner.on(",").join(nCopies(discreteValues.getValues().size(), "?"));
@@ -192,6 +191,6 @@ public class ColumnPredicateBuilder {
 
 
     private static ColumnPredicate<?> createDumbEqualsPredicate(CyodaColumnHandle columnHandle, Object nativeValue) {
-        return newComparisonPredicateFromNative(columnHandle, ColumnPredicate.ComparisonOp.EQUAL, nativeValue);
+        return columnHandle.newComparisonPredicateFromNative(ColumnPredicate.ComparisonOp.EQUAL, nativeValue);
     }
 }

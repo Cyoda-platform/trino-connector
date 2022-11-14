@@ -17,17 +17,22 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.LongComparedTypeValueConverter;
+import com.cyoda.presto.client.types.DataType;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
+import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
-public class DatePrestoValueConverter implements ComparablePrestoValueConverter<Date> {
+public class DatePrestoValueConverter extends LongComparedTypeValueConverter<Date> {
 
-    @Override
-    public Class<Date> getClazz() {
-        return Date.class;
+    @Inject
+    public DatePrestoValueConverter() {
+        super(DataType.DATE);
     }
 
     @Override
@@ -52,8 +57,8 @@ public class DatePrestoValueConverter implements ComparablePrestoValueConverter<
     }
 
     @Override
-    public Date toObject(Object nativeValue) {
-        return fromLong((Long) nativeValue);
+    public Date fromOtherCyodaType(Object value, String columnName) {
+        LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateTimeFormatter.ISO_DATE_TIME);
+        return Timestamp.valueOf(localDateTime);
     }
-
 }

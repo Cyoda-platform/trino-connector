@@ -17,7 +17,12 @@
 
 package com.cyoda.presto.handles;
 
+import com.cyoda.presto.client.logic.ColumnPredicate;
+import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
+import com.facebook.presto.common.block.BlockBuilder;
+import com.facebook.presto.common.predicate.DiscreteValues;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ColumnMetadata;
@@ -25,6 +30,8 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -36,15 +43,17 @@ public class CyodaColumnHandle implements ColumnHandle {
     private final Type columnType;
     private final int ordinalPosition;
     private final String requestHandlerKey;
-    private final DataType dataType;
+    private final CompoundDataType dataType;
     private final boolean isNullable;
+
+    private transient PrestoValueConverter<?> converter = null;
 
     @JsonCreator
     public CyodaColumnHandle(
             @JsonProperty("connectorId") String connectorId,
             @JsonProperty("columnName") String columnName,
             @JsonProperty("columnType") Type columnType,
-            @JsonProperty("dataType") DataType dataType,
+            @JsonProperty("dataType") CompoundDataType dataType,
             @JsonProperty("ordinalPosition") int ordinalPosition,
             @JsonProperty("requestHandlerKey") String requestHandlerKey,
             @JsonProperty("isNullable") boolean isNullable
@@ -52,12 +61,13 @@ public class CyodaColumnHandle implements ColumnHandle {
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.columnName = requireNonNull(columnName, "columnName is null");
         this.columnType = requireNonNull(columnType, "columnType is null");
-        this.dataType = requireNonNull(dataType, "dataType is null");
+        this.dataType = dataType;
         this.ordinalPosition = ordinalPosition;
         this.requestHandlerKey = requireNonNull(requestHandlerKey, "requestHandlerKey is null");
         this.isNullable = isNullable;
     }
 
+    @Deprecated
     public CyodaColumnHandle(
             String connectorId,
             String columnName,
@@ -66,7 +76,29 @@ public class CyodaColumnHandle implements ColumnHandle {
             int ordinalPosition,
             String requestHandlerKey
     ) {
-        this(connectorId, columnName, columnType, dataType, ordinalPosition, requestHandlerKey, true);
+        this(connectorId, columnName, columnType, new CompoundDataType(columnName,dataType), ordinalPosition, requestHandlerKey, true);
+    }
+
+    public PrestoValueConverter<?> getConverter(){
+        if (converter == null)
+            converter = dataType.getConverter();
+        return converter;
+    }
+
+    public void writeValue(BlockBuilder blockBuilder, Object cyodaNative){
+        getConverter().writeCyodaNative(columnType, blockBuilder, cyodaNative, columnName);
+    }
+
+    public ColumnPredicate<?> newComparisonPredicateFromNative(ColumnPredicate.ComparisonOp op, Object nativeValue){
+        return getConverter().newComparisonPredicateFromNative(this, op, nativeValue);
+    }
+
+    public <T extends Comparable<T>> ColumnPredicate<T> newEqualsPredicateFromJava(T javaValue){
+        return getConverter().newComparisonPredicateFromJava(this, ColumnPredicate.ComparisonOp.EQUAL, javaValue);
+    }
+
+    public ColumnPredicate<?> newInListPredicateFromDiscrete(DiscreteValues discreteValues){
+        return getConverter().newInListPredicate(this, discreteValues);
     }
 
     @JsonProperty
@@ -85,7 +117,7 @@ public class CyodaColumnHandle implements ColumnHandle {
     }
 
     @JsonProperty
-    public DataType getDataType() {
+    public CompoundDataType getDataType(){
         return dataType;
     }
 

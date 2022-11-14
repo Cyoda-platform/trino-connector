@@ -18,25 +18,88 @@
 package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.ColumnPredicate;
-import com.cyoda.presto.client.logic.ColumnPredicateUtils;
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.ComparableValueConverter;
+import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.facebook.presto.common.predicate.DiscreteValues;
+import com.facebook.presto.common.block.BlockBuilder;
+import com.facebook.presto.common.type.Type;
 
-public class BooleanPrestoValueConverter implements ComparablePrestoValueConverter<Boolean> {
-    @Override
-    public Class<Boolean> getClazz() {
-        return Boolean.class;
+import javax.annotation.Nonnull;
+import javax.inject.Inject;
+import java.util.SortedSet;
+
+public class BooleanPrestoValueConverter extends ComparableValueConverter<Boolean> {
+
+    @Inject
+    public BooleanPrestoValueConverter() {
+        super(DataType.BOOLEAN);
     }
 
     @Override
-    public ColumnPredicate<Boolean> newInListPredicate(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
-        return ColumnPredicateUtils.newInListPredicate(columnHandle, discreteValues, Boolean.class);
+    public void writeValue(Type type, BlockBuilder builder, @Nonnull Boolean value) {
+        type.writeBoolean(builder, value);
     }
 
+    @Override
+    protected ColumnPredicate<Boolean> buildInListPredicate(CyodaColumnHandle column, SortedSet<Boolean> values) {
+        // IN (true, false) predicates can be simplified to IS NOT NULL.
+        if (values.size() > 1) {
+            return ColumnPredicate.isNotNull(column);
+        }
+        return super.buildInListPredicate(column, values);
+    }
 
     @Override
-    public Boolean toObject(Object nativeValue) {
+    protected ColumnPredicate<Boolean> newComparisonPredicate(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, Boolean value) {
+        // Create the comparison predicate. Range predicates on boolean values can
+        // always be converted to either an equality, an IS NOT NULL (filtering only
+        // null values), or NONE (filtering all values).
+        switch (op) {
+            case GREATER: {
+                // b > true  -> b NONE
+                // b > false -> b = true
+                if (value) {
+                    return ColumnPredicate.none(column);
+                } else {
+                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, true, null);
+                }
+            }
+            case GREATER_EQUAL: {
+                // b >= true  -> b = true
+                // b >= false -> b IS NOT NULL
+                if (value) {
+                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, true, null);
+                } else {
+                    return ColumnPredicate.isNotNull(column);
+                }
+            }
+            case EQUAL:
+                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, value, null);
+            case LESS: {
+                // b < true  -> b NONE
+                // b < false -> b = true
+                if (value) {
+                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, false, null);
+                } else {
+                    return ColumnPredicate.none(column);
+                }
+            }
+            case LESS_EQUAL: {
+                // b <= true  -> b IS NOT NULL
+                // b <= false -> b = false
+                if (value) {
+                    return ColumnPredicate.isNotNull(column);
+                } else {
+                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, false, null);
+                }
+            }
+            default:
+                throw unsupportedComparison(column, op);
+        }
+    }
+
+    @Override
+    public Boolean fromPrestoNative(Object nativeValue) {
         return (Boolean) nativeValue;
     }
 }

@@ -17,37 +17,41 @@
 
 package com.cyoda.presto.client.logic.converters;
 
+import com.cyoda.presto.client.logic.ColumnPredicate;
+import com.cyoda.presto.client.types.IDataType;
+import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.cyoda.presto.logging.SupplierLogger;
+import com.facebook.presto.common.block.BlockBuilder;
+import com.facebook.presto.common.predicate.DiscreteValues;
 import com.facebook.presto.common.type.Type;
-import io.airlift.slice.Slice;
-
-import javax.annotation.Nonnull;
 
 public interface PrestoValueConverter<T> {
-    /****** conversion to/from long *******/
-    default long toLong(@Nonnull T value) {
-        throw new UnsupportedOperationException("not implemented or supported for "+value.getClass().getName());
+
+    SupplierLogger LOG = SupplierLogger.get(PrestoValueConverter.class);
+    String stringify(T value);
+
+    default ColumnPredicate<?> newComparisonPredicateFromNative(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, Object nativeValue){
+        throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
+    }
+    default <C extends Comparable<C>> ColumnPredicate<C> newComparisonPredicateFromJava(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, C value){
+        throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
+    }
+    default ColumnPredicate<?> newInListPredicate(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
+        throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
     }
 
-    default @Nonnull T fromLong(long value) {
-        throw new UnsupportedOperationException("not implemented or supported");
+    default boolean areConsecutive(T a, T b){
+        return false;
     }
 
-    default long minValueOfIntType() {
-        throw new UnsupportedOperationException("not implemented or supported");
+    IDataType<T> getDataType();
+
+    Class<T> getClazz();
+
+    default T fromOtherCyodaType(Object value, String columnName){
+        throw new UnsupportedOperationException(String.format("Error with field \"%s\": Conversion operation from %s to %s is not supported",
+                columnName, value.getClass(), getClazz()));
     }
 
-    default long maxValueOfIntType() {
-        throw new UnsupportedOperationException("not implemented or supported");
-    }
-
-    /****** conversion to/from Slice *******/
-    default Slice toSlice(@Nonnull Type type, @Nonnull T value) {
-        throw new UnsupportedOperationException("not implemented or supported");
-    }
-
-    default @Nonnull T fromSlice(@Nonnull Type type, Slice value) {
-        throw new UnsupportedOperationException("not implemented or supported");
-    }
-
-    T toObject(Object nativeValue);
+    void writeCyodaNative(Type type, BlockBuilder builder, Object cyodaNative, String columnName);
 }

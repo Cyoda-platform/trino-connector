@@ -19,34 +19,20 @@ package com.cyoda.presto;
 
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
-import com.cyoda.presto.client.logic.converters.PrestoValueConverterProvider;
-import com.cyoda.presto.client.types.DataTypeValue;
-import com.cyoda.presto.client.types.SupportedDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.facebook.presto.common.Page;
 import com.facebook.presto.common.PageBuilder;
 import com.facebook.presto.common.block.BlockBuilder;
-import com.facebook.presto.common.type.ArrayType;
-import com.facebook.presto.common.type.MapType;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.spi.ConnectorPageSource;
 import com.facebook.presto.spi.PrestoException;
 import com.google.common.collect.ImmutableList;
-import io.airlift.slice.Slice;
-import io.airlift.slice.Slices;
 import reactor.core.scheduler.Schedulers;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_PAGING_ERROR;
@@ -189,107 +175,11 @@ public class CyodaFilteringPageSource<T>
 
     private void processNext(T item) {
         for (int i = 0; i < columnHandles.size(); i++) {
-            Type type = columnTypes.get(i);
             BlockBuilder blockBuilder = pageBuilder.getBlockBuilder(i);
             CyodaColumnHandle columnHandle = columnHandles.get(i);
-            DataTypeValue<?> supported = requestHandler.getValue(item, columnHandle);
-            if (supported == null || supported.isNull()) {
-                blockBuilder.appendNull();
-                continue;
-            }
-            writeObject(type, blockBuilder, supported);
+            requestHandler.writeValue(item, columnHandle, blockBuilder);
         }
     }
-
-    private void writeObject(Type type, BlockBuilder blockBuilder, DataTypeValue<?> supported) {
-        switch (supported.supportedDataType.getDataType()) {
-            case DOUBLE:
-                type.writeDouble(blockBuilder, supported.asDouble());
-                break;
-            case BOOLEAN:
-                type.writeBoolean(blockBuilder, supported.asBoolean());
-                break;
-            case BYTE:
-            case FLOAT:
-            case INTEGER:
-            case SHORT:
-            case LONG:
-            case YEAR:
-            case LOCAL_DATE:
-            case LOCAL_DATE_TIME:
-            case ZONED_DATE_TIME:
-            case LOCAL_TIME:
-            case DATE: {
-                PrestoValueConverter<Object> prestoValueConverter = getPrestoValueConverter(supported);
-                Long value = Optional.ofNullable(supported.value).map(prestoValueConverter::toLong)
-                        .orElseThrow(()->new IllegalArgumentException(supported.supportedDataType + " value is null "));
-                type.writeLong(blockBuilder, value);
-                break;
-            }
-            case SET: {
-                Type elementType = ((ArrayType) type).getElementType();
-                BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
-                Optional.ofNullable((Set<?>) supported.value).orElse(Collections.emptySet())
-                        .forEach(item -> writeObject(elementType, arrayBuilder, DataTypeValue.byType(item, elementType)));
-                blockBuilder.closeEntry();
-                break;
-            }
-            case LIST: {
-                Type elementType = ((ArrayType) type).getElementType();
-                BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
-                Optional.ofNullable((Collection<?>) supported.value).orElse(Collections.emptyList())
-                        .forEach(item -> writeObject(elementType,arrayBuilder, DataTypeValue.byType(item,elementType)));
-                blockBuilder.closeEntry();
-                break;
-            }
-            case ARRAY: {
-                Type elementType = ((ArrayType) type).getElementType();
-                BlockBuilder arrayBuilder = blockBuilder.beginBlockEntry();
-                Arrays.stream(Optional.ofNullable((Object[]) supported.value).orElse(new Object[0]))
-                        .forEach(item -> writeObject(elementType,arrayBuilder, DataTypeValue.byType(item,elementType)));
-                blockBuilder.closeEntry();
-                break;
-            }
-            case MAP: {
-
-                MapType mapType = (MapType) type;
-                Type keyType = mapType.getKeyType();
-                Type valueType = mapType.getValueType();
-                BlockBuilder mapBlockBuilder = blockBuilder.beginBlockEntry();
-                for (Map.Entry<?, ?> entry : Optional.ofNullable((Map<?, ?>) supported.value).orElse(Collections.emptyMap()).entrySet()) {
-                    writeObject(keyType,mapBlockBuilder, DataTypeValue.byType(entry.getKey(),keyType));
-                    writeObject(valueType,mapBlockBuilder, DataTypeValue.byType(entry.getValue(),valueType));
-                }
-                blockBuilder.closeEntry();
-                break;
-            }
-            case OBJECT:
-                Slice slice = supported.stringify().map(Slices::utf8Slice).orElse(EMPTY_SLICE);
-                type.writeSlice(blockBuilder, slice);
-                break;
-            case BIG_INTEGER:
-            case BIG_DECIMAL:
-            case CLASS:
-            case LOCALE:
-            case CHARACTER:
-            case YEAR_MONTH:
-            case STRING:
-            case UUID_TYPE:
-            default: {
-                PrestoValueConverter<Object> prestoValueConverter = getPrestoValueConverter(supported);
-                Slice value = Optional.ofNullable(supported.value).map(it->prestoValueConverter.toSlice(type,supported.value))
-                        .orElseThrow(() -> new IllegalArgumentException(supported.supportedDataType + " value is null "));
-                type.writeSlice(blockBuilder, value);
-                break;
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private <S> PrestoValueConverter<S> getPrestoValueConverter(DataTypeValue<?> supported) {
-        return PrestoValueConverterProvider.getPrestoValueConverter((SupportedDataType<S>) supported.supportedDataType);
-    }
-
 
     @Override
     public long getSystemMemoryUsage()

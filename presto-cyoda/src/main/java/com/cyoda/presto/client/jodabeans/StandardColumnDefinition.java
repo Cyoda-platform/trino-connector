@@ -18,8 +18,8 @@
 package com.cyoda.presto.client.jodabeans;
 
 import com.cyoda.presto.client.reporting.ColumnDefinition;
+import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.client.types.DataTypeValue;
 import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeSignature;
 import com.google.common.base.MoreObjects;
@@ -38,29 +38,27 @@ public class StandardColumnDefinition implements ColumnDefinition {
 
     private final int pos;
     private final String fieldName;
-    private final String fieldTypeString;
-    private final DataType dataType;
-    private final TypeSignature parType;
-    private final TypeSignature mapValueType;
+    private final CompoundDataType dataType;
 
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("pos", pos)
                 .add("fieldName", fieldName)
-                .add("fieldTypeString", fieldTypeString)
                 .add("dataType", dataType)
-                .add("parType", parType)
                 .toString();
     }
 
-    public StandardColumnDefinition(int pos, String fieldName, String fieldTypeString, DataType dateType, TypeSignature parType, TypeSignature mapValueType) {
+    public StandardColumnDefinition(int pos, String fieldName, CompoundDataType dateType) {
         this.pos = pos;
         this.fieldName = fieldName;
-        this.fieldTypeString = fieldTypeString;
         this.dataType = dateType;
-        this.parType = parType;
-        this.mapValueType = mapValueType;
+    }
+
+    public StandardColumnDefinition(int pos, String fieldName, DataType mainType, DataType... typeParams) {
+        this.pos = pos;
+        this.fieldName = fieldName;
+        this.dataType = new CompoundDataType(fieldName, mainType, typeParams);
     }
 
     @Override
@@ -74,23 +72,8 @@ public class StandardColumnDefinition implements ColumnDefinition {
     }
 
     @Override
-    public String getFieldTypeString() {
-        return fieldTypeString;
-    }
-
-    @Override
-    public DataType getDataType() {
+    public CompoundDataType getDataType() {
         return dataType;
-    }
-
-    @Override
-    public TypeSignature getParType() {
-        return parType;
-    }
-
-    @Override
-    public TypeSignature getMapValuetype() {
-        return mapValueType;
     }
 
     public static Builder builder() {
@@ -112,8 +95,7 @@ public class StandardColumnDefinition implements ColumnDefinition {
         }
         public Builder add(ColumnDefinition colDef) {
             StandardColumnDefinition thisColDef = new StandardColumnDefinition(
-                    pos,colDef.getFieldName(),colDef.getFieldTypeString(),colDef.getDataType(),
-                    colDef.getParType(),colDef.getMapValuetype()
+                    pos,colDef.getFieldName(),colDef.getDataType()
             );
             defsBuilder.add(thisColDef);
             pos += 1;
@@ -140,48 +122,9 @@ public class StandardColumnDefinition implements ColumnDefinition {
                         String key = keys[i];
                         MetaProperty<?> metaProperty = metaPropertyMap.get(key);
                         String fieldName = metaProperty.name();
-                        java.lang.reflect.Type genericType = metaProperty.propertyGenericType();
-                        if ( genericType instanceof ParameterizedType) {
-                            ParameterizedType myType = (ParameterizedType) genericType;
-                            if (Map.class.isAssignableFrom((Class<?>)myType.getRawType()) ) {
-                                return handleMap(pos+i, fieldName, myType);
-                            }
-                            if (List.class.isAssignableFrom((Class<?>)myType.getRawType()) ) {
-                                return handleCollection(myType, pos+i, fieldName, DataType.LIST);
-                            }
-                            if (Set.class.isAssignableFrom((Class<?>)myType.getRawType()) ) {
-                                return handleCollection(myType, pos+i, fieldName, DataType.SET);
-                            }
-                            throw new IllegalArgumentException("Not yet done");
-                        } else {
-                            DataType dataType = DataType.fromClass(metaProperty.propertyType()).orElse(DataType.OBJECT);
-                            String fieldTypeString = dataType.getTypeString();
-                            return (ColumnDefinition) new StandardColumnDefinition(pos+i,fieldName,fieldTypeString,dataType,null,null);
-                        }
+                        CompoundDataType dataType = CompoundDataType.of(metaProperty);
+                        return (ColumnDefinition) new StandardColumnDefinition(pos+i,fieldName,dataType);
                     }).collect(Collectors.toList());
-        }
-
-        private static StandardColumnDefinition handleCollection(ParameterizedType myType, int pos, String fieldName, DataType list) {
-            java.lang.reflect.Type valueType = myType.getActualTypeArguments()[0];
-            if (! (valueType instanceof Class) ) throw new UnsupportedOperationException("Not done yet");
-            DataType valueDataType = DataType.fromClass((Class<?>) valueType).orElse(DataType.OBJECT);
-            return new StandardColumnDefinition(pos, fieldName, StandardTypes.ARRAY, list,
-                    DataTypeValue.toPrestoTypeSignature(valueDataType), null);
-        }
-
-        private static StandardColumnDefinition handleMap(int pos, String fieldName, ParameterizedType myType) {
-            java.lang.reflect.Type keyType = myType.getActualTypeArguments()[0];
-            java.lang.reflect.Type valueType = myType.getActualTypeArguments()[1];
-            DataType keyDataType = DataType.fromClass((Class<?>)keyType).orElse(DataType.OBJECT);
-            DataType valueDataType = DataType.fromClass((Class<?>)valueType).orElse(DataType.OBJECT);
-            return new StandardColumnDefinition(
-                    pos,
-                    fieldName,
-                    StandardTypes.MAP,
-                    DataType.MAP,
-                    DataTypeValue.toPrestoTypeSignature(keyDataType),
-                    DataTypeValue.toPrestoTypeSignature(valueDataType)
-            );
         }
     }
 

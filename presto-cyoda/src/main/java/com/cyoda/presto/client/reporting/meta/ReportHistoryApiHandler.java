@@ -28,13 +28,11 @@ import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
+import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.common.type.StandardTypes;
 import com.facebook.presto.common.type.TypeManager;
-import com.facebook.presto.common.type.TypeSignature;
-import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.PrestoException;
 import com.facebook.presto.spi.StandardErrorCode;
 import com.google.common.base.MoreObjects;
@@ -83,16 +81,16 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
     private final CyodaColumnHandle reportIdColumn;
 
     enum ColumnDef implements ColumnDefinition {
-        ID(0, HISTORY_REPORT_ID_COLUMN, StandardTypes.VARCHAR, STRING, null),
-        REPORT_NAME(1,HISTORY_REPORT_NAME_VARIABLE, StandardTypes.VARCHAR, STRING, null),
-        CREATION_DATE(2, HISTORY_CREATE_TIME_COLUMN, StandardTypes.TIMESTAMP, LOCAL_DATE_TIME, null),
-        TYPE(3, HISTORY_TYPE_COLUMN, StandardTypes.VARCHAR, STRING, null),
-        STATUS(4, HISTORY_STATUS_NAME_COLUMN, StandardTypes.VARCHAR, STRING, null),
-        HIERARCHY_ENABLE(5, HISTORY_HIERARHY_ENABLE_COLUMN, StandardTypes.BOOLEAN, BOOLEAN, null),
+        ID(0, HISTORY_REPORT_ID_COLUMN, STRING),
+        REPORT_NAME(1,HISTORY_REPORT_NAME_VARIABLE, STRING),
+        CREATION_DATE(2, HISTORY_CREATE_TIME_COLUMN, LOCAL_DATE_TIME),
+        TYPE(3, HISTORY_TYPE_COLUMN, STRING),
+        STATUS(4, HISTORY_STATUS_NAME_COLUMN, STRING),
+        HIERARCHY_ENABLE(5, HISTORY_HIERARHY_ENABLE_COLUMN, BOOLEAN),
         // For Trino this can be a UUID, but Presto wants VARCHAR.
-        GROUPING_VERSION(6, HISTORY_GROUPING_VERSION_COLUMN, StandardTypes.VARCHAR, UUID_TYPE, null),
-        GROUPING_COLUMNS(7, HISTORY_GROUPING_COLUMNS_COLUMN, StandardTypes.ARRAY, LIST, VarcharType.VARCHAR.getTypeSignature()),
-        USER_NAME(8, HISTORY_USER_NAME_COLUMN, StandardTypes.VARCHAR,STRING,null);
+        GROUPING_VERSION(6, HISTORY_GROUPING_VERSION_COLUMN, UUID_TYPE),
+        GROUPING_COLUMNS(7, HISTORY_GROUPING_COLUMNS_COLUMN, LIST, STRING),
+        USER_NAME(8, HISTORY_USER_NAME_COLUMN, STRING);
 
 
         @Override
@@ -100,24 +98,18 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
             return MoreObjects.toStringHelper(this)
                     .add("pos", pos)
                     .add("fieldName", fieldName)
-                    .add("fieldTypeString", fieldTypeString)
                     .add("dataType", dataType)
-                    .add("parType", parType)
                     .toString();
         }
 
         private final int pos;
         private final String fieldName;
-        private final String fieldTypeString;
-        private final DataType dataType;
-        private final TypeSignature parType;
+        private final CompoundDataType dataType;
 
-        ColumnDef(int pos, String fieldName, String fieldTypeString, DataType dateType, TypeSignature parType) {
+        ColumnDef(int pos, String fieldName, DataType mainType, DataType... typeParams) {
             this.pos = pos;
             this.fieldName = fieldName;
-            this.fieldTypeString = fieldTypeString;
-            this.dataType = dateType;
-            this.parType = parType;
+            this.dataType = new CompoundDataType(fieldName, mainType, typeParams);
         }
 
         @Override
@@ -131,18 +123,8 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
         }
 
         @Override
-        public String getFieldTypeString() {
-            return fieldTypeString;
-        }
-
-        @Override
-        public DataType getDataType() {
+        public CompoundDataType getDataType() {
             return dataType;
-        }
-
-        @Override
-        public TypeSignature getParType() {
-            return parType;
         }
     }
 

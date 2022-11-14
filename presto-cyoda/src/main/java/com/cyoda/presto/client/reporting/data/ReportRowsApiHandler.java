@@ -27,10 +27,8 @@ import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.ColumnPredicateNode;
-import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
-import com.cyoda.presto.client.logic.converters.impl.UUIDPrestoValueConverter;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
@@ -38,39 +36,29 @@ import com.cyoda.presto.client.reporting.groups.GroupingHandle;
 import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle;
-import com.cyoda.presto.client.types.DataTypeValue;
-import com.cyoda.presto.client.types.TypesUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.common.type.StandardTypes;
-import com.facebook.presto.common.type.Type;
 import com.facebook.presto.common.type.TypeManager;
-import com.facebook.presto.common.type.TypeSignature;
-import com.facebook.presto.common.type.VarcharType;
 import com.facebook.presto.spi.SchemaTableName;
 import com.facebook.presto.spi.TableNotFoundException;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import io.airlift.slice.Slice;
 import reactor.core.publisher.Flux;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_ID_COLUMN;
 import static com.cyoda.presto.SizeListener.NOT_LISTENING;
@@ -162,7 +150,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
 
             ColumnsHolder columnsHolder = columnsHolderFunction.apply(authContext);
             List<ColumnDefinition> theColDefs = StandardColumnDefinition.builder()
-                    .add(new StandardColumnDefinition(0,ROW_REPORT_ROW_NUMBER_COLUMN, StandardTypes.BIGINT,LONG,null,null))
+                    .add(new StandardColumnDefinition(0,ROW_REPORT_ROW_NUMBER_COLUMN,LONG))
                     .add(newColumnDefinition(columnsHolder.reportIdColumn))
                     .add(newColumnDefinition(columnsHolder.groupingVersionColumn))
                     .add(newColumnDefinition(columnsHolder.groupJsonBase64Column))
@@ -175,30 +163,26 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
     }
 
     private StandardColumnDefinition newColumnDefinition(CyodaColumnHandle columnHandle) {
-        Type columnType = columnHandle.getColumnType();
         String columnName = columnHandle.getColumnName();
         return new StandardColumnDefinition(
                 columnHandle.getOrdinalPosition(),
                 columnName,
-                columnType.getTypeSignature().getBase(),
-                columnHandle.getDataType(),
-                determineParType(columnType),
-                determinMapValueType(columnType)
+                columnHandle.getDataType()
         );
     }
 
-    private TypeSignature determinMapValueType(Type columnType) {
-        return TypesUtil.isMapType(columnType) ? TypesUtil.getValueType(columnType).getTypeSignature() : null;
-    }
-
-    @Nullable private TypeSignature determineParType(@Nonnull Type columnType) {
-        if (TypesUtil.isArrayType(columnType)  ) {
-            return TypesUtil.getElementType(columnType).getTypeSignature();
-        } else if (TypesUtil.isMapType(columnType) ) {
-            return TypesUtil.getKeyType(columnType).getTypeSignature();
-        }
-        return null;
-    }
+//    private TypeSignature determinMapValueType(Type columnType) {
+//        return TypesUtil.isMapType(columnType) ? TypesUtil.getValueType(columnType).getTypeSignature() : null;
+//    }
+//
+//    @Nullable private TypeSignature determineParType(@Nonnull Type columnType) {
+//        if (TypesUtil.isArrayType(columnType)  ) {
+//            return TypesUtil.getElementType(columnType).getTypeSignature();
+//        } else if (TypesUtil.isMapType(columnType) ) {
+//            return TypesUtil.getKeyType(columnType).getTypeSignature();
+//        }
+//        return null;
+//    }
 
     @Override
     public String getHandlerKey() {
@@ -222,18 +206,14 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
 
     private CompoundPredicateNode getCompoundPredicateNodeForInternal(CyodaTableHandle tableHandle, ColumnPredicateNode<Any> predicates, GroupingHandle handle) {
         String reportId = handle.reportId;
-        String groupingVersion = handle.groupingVersion.toString(); // TODO: If Presto supports UUID, don't do a toString()
+        UUID groupingVersion = handle.groupingVersion;
         String groupValueJsonBase64 = handle.groupHeader.getGroupValuesJsonBase64();
-
-        Slice reportIdSlice = DataTypeValue.of(reportId).asSlice(VarcharType.VARCHAR);
-        Slice groupingVersionSlice = DataTypeValue.of(groupingVersion).asSlice(UUIDPrestoValueConverter.TYPE);
-        Slice groupingValueSlice = DataTypeValue.of(groupValueJsonBase64).asSlice(VarcharType.VARCHAR);
 
         ColumnsHolder columnsHolder = columnsHolderFunction.apply(tableHandle.getAuthPayload());
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
-        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.reportIdColumn, reportIdSlice,String.class));
-        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.groupingVersionColumn, groupingVersionSlice,String.class));
-        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.groupJsonBase64Column, groupingValueSlice,String.class));
+        builder.addLeaf(columnsHolder.reportIdColumn.newEqualsPredicateFromJava(reportId));
+        builder.addLeaf(columnsHolder.groupingVersionColumn.newEqualsPredicateFromJava(groupingVersion));
+        builder.addLeaf(columnsHolder.groupJsonBase64Column.newEqualsPredicateFromJava(groupValueJsonBase64));
         builder.addMember(predicates);
         return builder.build();
     }
@@ -254,11 +234,6 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
             return field.groupJsonBase64;
         }
         return ReportRowNavigator.getValue(columnHandle.getColumnName(),field.reportRow);
-    }
-
-    @Override
-    protected @Nonnull Object mapFieldValue(@Nonnull final Object value, CyodaColumnHandle columnHandle) {
-        return super.mapFieldValue(value,columnHandle);
     }
 
     @Override
@@ -294,13 +269,12 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         }
         log.debug("Cyoda report table found: %s",cyodaTable.getName());
         String reportConfigurationId = cyodaTable.getReportConfigurationId();
-        Slice reportConfigIdSlice = DataTypeValue.of(reportConfigurationId).asSlice(VarcharType.VARCHAR);
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
         builder.addMember(predicates);
 
         ColumnsHolder columnsHolder = columnsHolderFunction.apply(tableHandle.getAuthPayload());
 
-        builder.addLeaf(ColumnPredicateUtils.newEqualsPredicate(columnsHolder.reportConfigIdColumn, reportConfigIdSlice,String.class));
+        builder.addLeaf(columnsHolder.reportConfigIdColumn.newEqualsPredicateFromJava(reportConfigurationId));
         return builder.build();
     }
 
@@ -331,14 +305,15 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
             return groupTable.getColumns().stream()
                     .filter(it -> it.getColumnName().equals(HISTORY_REPORT_ID_COLUMN))
                     .findAny()
-                    .map(it -> new CyodaColumnHandle(  // Need to replace the column name with our local one.
-                            it.getConnectorId(),
-                            ROW_REPORT_ID_COLUMN,
-                            it.getColumnType(),
-                            it.getDataType(),
-                            it.getOrdinalPosition(),
-                            it.getRequestHandlerKey())
-                    ).orElseThrow(() -> new IllegalStateException(HISTORY_REPORT_ID_COLUMN + COLUMN_NOT_FOUND));
+                    //TODO can't see why, since HISTORY_REPORT_ID_COLUMN == ROW_REPORT_ID_COLUMN
+//                    .map(it -> new CyodaColumnHandle(  // Need to replace the column name with our local one.
+//                            it.getConnectorId(),
+//                            ROW_REPORT_ID_COLUMN,
+//                            it.getColumnType(),
+//                            it.getDataType(),
+//                            it.getOrdinalPosition(),
+//                            it.getRequestHandlerKey()))
+                    .orElseThrow(() -> new IllegalStateException(HISTORY_REPORT_ID_COLUMN + COLUMN_NOT_FOUND));
         }
 
         private CyodaColumnHandle setupGroupingVersionColumn(CyodaTable groupTable) {
@@ -356,15 +331,16 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         private CyodaColumnHandle setupGroupJsonBase64Column(CyodaTable groupTable) {
             return groupTable.getColumns().stream()
                     .filter(it -> it.getColumnName().equals(ROW_GROUP_JSON_BASE64_VARIABLE))
-                    .map(it -> new CyodaColumnHandle(
-                            it.getConnectorId(),
-                            it.getColumnName(),
-                            VarcharType.VARCHAR, // This is because Presto cannot deal with UUID, even if there is a UuidType.
-                            STRING,
-                            it.getOrdinalPosition(),
-                            it.getRequestHandlerKey(),
-                            it.getIsNullable())
-                    ).findAny()
+        //TODO should work without it since UUID.TYPE_STRING = StandardTypes.VARCHAR
+//                    .map(it -> new CyodaColumnHandle(
+//                            it.getConnectorId(),
+//                            it.getColumnName(),
+//                            VarcharType.VARCHAR, // This is because Presto cannot deal with UUID, even if there is a UuidType.
+//                            STRING,
+//                            it.getOrdinalPosition(),
+//                            it.getRequestHandlerKey(),
+//                            it.getIsNullable()))
+                    .findAny()
                     .orElseThrow(() -> new IllegalStateException(ROW_GROUP_JSON_BASE64_VARIABLE + COLUMN_NOT_FOUND));
         }
     }

@@ -17,20 +17,23 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.ComparablePrestoValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.LongComparedTypeValueConverter;
+import com.cyoda.presto.client.types.DataType;
 import com.facebook.presto.common.type.DateTimeEncoding;
 import com.facebook.presto.common.type.TimeZoneKey;
 
 import javax.annotation.Nonnull;
+import javax.inject.Inject;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 
-public class ZonedDateTimePrestoValueConverter implements ComparablePrestoValueConverter<ZonedDateTime> {
+public class ZonedDateTimePrestoValueConverter extends LongComparedTypeValueConverter<ZonedDateTime> {
 
-    @Override
-    public Class<ZonedDateTime> getClazz() {
-        return ZonedDateTime.class;
+    @Inject
+    public ZonedDateTimePrestoValueConverter() {
+        super(DataType.ZONED_DATE_TIME);
     }
 
     @Override
@@ -60,8 +63,7 @@ public class ZonedDateTimePrestoValueConverter implements ComparablePrestoValueC
     }
 
     @Override
-    public ZonedDateTime toObject(Object nativeValue) {
-        return fromLong((Long) nativeValue);
+    public ZonedDateTime fromOtherCyodaType(Object value, String columnName) {
+        return ZonedDateTime.parse((String) value, DateTimeFormatter.ISO_ZONED_DATE_TIME);
     }
-
 }

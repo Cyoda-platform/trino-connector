@@ -38,7 +38,7 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Colum
     }
 
     public static ColumnPredicateNode<Any> all(CompoundPredicateNode parent, CyodaColumnHandle handle) {
-        return new LeafPredicateNode<>(parent, ColumnPredicateUtils.<Any>all(handle));
+        return new LeafPredicateNode<>(parent, ColumnPredicate.<Any>all(handle));
     }
 
     @Override
@@ -92,8 +92,8 @@ public class LeafPredicateNode<T extends Comparable<? super T>> implements Colum
 
     @Nonnull
     @Override
-    public Optional<CyodaColumnHandle> getColumn() {
-        return Optional.ofNullable(columnPredicate.getColumn());
+    public Optional<String> getColumnName() {
+        return Optional.ofNullable(columnPredicate.getColumnName());
     }
 
     @Nonnull

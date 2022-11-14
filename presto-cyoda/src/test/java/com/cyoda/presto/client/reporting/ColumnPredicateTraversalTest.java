@@ -18,11 +18,12 @@
 package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.client.logic.ColumnPredicate;
-import com.cyoda.presto.client.logic.ColumnPredicateUtils;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
+import com.cyoda.presto.client.logic.converters.impl.StringPrestoValueConverter;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.facebook.presto.common.type.VarcharType;
+import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 import org.testng.annotations.Test;
 
@@ -38,6 +39,12 @@ import static org.mockito.Mockito.when;
 import static org.testng.Assert.*;
 
 public class ColumnPredicateTraversalTest {
+
+    private CyodaColumnHandle myHandle = new CyodaColumnHandle("connectorId", "myColumnName",
+            VarcharType.VARCHAR, DataType.STRING, 0, "handlerKey");
+    private CyodaColumnHandle theOtherHandle = new CyodaColumnHandle("connectorId", "theOtherColumnName",
+            VarcharType.VARCHAR, DataType.STRING, 1, "handlerKey");
+    private static StringPrestoValueConverter stringConverter = new StringPrestoValueConverter();
 
     @Test
     public void testOf() {
@@ -57,30 +64,24 @@ public class ColumnPredicateTraversalTest {
 
     @Test
     public void testAssembleFilterings_no_values() {
-
-        CyodaColumnHandle mockHandle1 = mock(CyodaColumnHandle.class);
-        when(mockHandle1.getColumnName()).thenReturn("myColumnName");
-        when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
-        when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
-
-        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(CompoundPredicateNode.empty(),String.class).assembleEqualsPredicateValuesFromAnd(mockHandle1);
+        
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(CompoundPredicateNode.empty(),String.class)
+                .assembleEqualsPredicateValuesFromAnd(myHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),0);
     }
 
+    private static ColumnPredicate<String> newEqualsPredicate(CyodaColumnHandle column, Slice slice){
+        return stringConverter.newComparisonPredicateFromNative(column, ColumnPredicate.ComparisonOp.EQUAL, slice);
+    } 
     @Test
     public void testAssembleFilterings_one_equals_value() {
 
-        CyodaColumnHandle mockHandle1 = mock(CyodaColumnHandle.class);
-        when(mockHandle1.getColumnName()).thenReturn("myColumnName");
-        when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
-        when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
-
-        ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> hello = newEqualsPredicate(myHandle, Slices.utf8Slice("hello"));
         Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(
                 builder(AND).addLeaf(hello).build(),
                 String.class
-        ).assembleEqualsPredicateValuesFromAnd(mockHandle1);
+        ).assembleEqualsPredicateValuesFromAnd(myHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
         String value = selectionSet.get().iterator().next();
@@ -91,16 +92,11 @@ public class ColumnPredicateTraversalTest {
     @Test
     public void testAssembleFilterings_list_value() {
 
-        CyodaColumnHandle mockHandle1 = mock(CyodaColumnHandle.class);
-        when(mockHandle1.getColumnName()).thenReturn("myColumnName");
-        when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
-        when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
-
-        ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> hello = newEqualsPredicate(myHandle, Slices.utf8Slice("hello"));
         Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(
                 builder(AND).addLeaf(hello).build(),
                 String.class
-        ).assembleEqualsPredicateValuesFromAnd(mockHandle1);
+        ).assembleEqualsPredicateValuesFromAnd(myHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
         String value = selectionSet.get().iterator().next();
@@ -110,19 +106,14 @@ public class ColumnPredicateTraversalTest {
     @Test
     public void testAssembleFilterings_two_different_values() {
 
-        CyodaColumnHandle mockHandle1 = mock(CyodaColumnHandle.class);
-        when(mockHandle1.getColumnName()).thenReturn("myColumnName");
-        when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
-        when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
-
-        ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> goodbye = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("goodbye"),String.class);
+        ColumnPredicate<String> hello = newEqualsPredicate(myHandle, Slices.utf8Slice("hello"));
+        ColumnPredicate<String> goodbye = newEqualsPredicate(myHandle, Slices.utf8Slice("goodbye"));
         Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(builder(AND)
                         .addMember(builder(AND).addLeaf(hello).build())
                         .addMember(builder(AND).addLeaf(goodbye).build())
                         .build(),
                 String.class
-        ).assembleEqualsPredicateValuesFromAnd(mockHandle1);
+        ).assembleEqualsPredicateValuesFromAnd(myHandle);
         // Cannot select something that is "hello" AND "goodbye"
         assertFalse(selectionSet.isPresent());
     }
@@ -130,13 +121,8 @@ public class ColumnPredicateTraversalTest {
     @Test
     public void testAssembleFilterings_two_same_values() {
 
-        CyodaColumnHandle mockHandle1 = mock(CyodaColumnHandle.class);
-        when(mockHandle1.getColumnName()).thenReturn("myColumnName");
-        when(mockHandle1.getDataType()).thenReturn(DataType.STRING);
-        when(mockHandle1.getColumnType()).thenReturn(VarcharType.VARCHAR);
-
-        ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> sameAsHello = ColumnPredicateUtils.newEqualsPredicate(mockHandle1, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> hello = newEqualsPredicate(myHandle, Slices.utf8Slice("hello"));
+        ColumnPredicate<String> sameAsHello = newEqualsPredicate(myHandle, Slices.utf8Slice("hello"));
         CompoundPredicateNode node = builder(AND)
                 .addMember(builder(AND).addLeaf(hello).build())
                 .addMember(builder(AND).addLeaf(sameAsHello).build())
@@ -145,7 +131,7 @@ public class ColumnPredicateTraversalTest {
         assertEquals(nodeCount,2);
         Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node,
                 String.class
-        ).assembleEqualsPredicateValuesFromAnd(mockHandle1);
+        ).assembleEqualsPredicateValuesFromAnd(myHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
         String value = selectionSet.get().iterator().next();
@@ -155,18 +141,8 @@ public class ColumnPredicateTraversalTest {
     @Test
     public void testAssembleFilterings_not_my_column() {
 
-        CyodaColumnHandle myMockHandle = mock(CyodaColumnHandle.class);
-        when(myMockHandle.getColumnName()).thenReturn("myColumnName");
-        when(myMockHandle.getDataType()).thenReturn(DataType.STRING);
-        when(myMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
-
-        CyodaColumnHandle theOtherMockHandle = mock(CyodaColumnHandle.class);
-        when(theOtherMockHandle.getColumnName()).thenReturn("theOtherColumnName");
-        when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
-        when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
-
-        ColumnPredicate<String> hello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> sameAsHello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
+        ColumnPredicate<String> hello = newEqualsPredicate(theOtherHandle, Slices.utf8Slice("hello"));
+        ColumnPredicate<String> sameAsHello = newEqualsPredicate(theOtherHandle, Slices.utf8Slice("hello"));
         CompoundPredicateNode node = builder(AND)
                 .addMember(builder(AND).addLeaf(hello).build())
                 .addMember(builder(AND).addLeaf(sameAsHello).build())
@@ -175,7 +151,7 @@ public class ColumnPredicateTraversalTest {
         assertEquals(nodeCount,2);
         Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node,
                 String.class
-        ).assembleEqualsPredicateValuesFromAnd(myMockHandle);
+        ).assembleEqualsPredicateValuesFromAnd(myHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),0);
     }
@@ -183,21 +159,11 @@ public class ColumnPredicateTraversalTest {
     @Test
     public void testAssembleFilterings_complex_tree_with_and_at_top() {
 
-        CyodaColumnHandle myMockHandle = mock(CyodaColumnHandle.class);
-        when(myMockHandle.getColumnName()).thenReturn("myColumnName");
-        when(myMockHandle.getDataType()).thenReturn(DataType.STRING);
-        when(myMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
+        ColumnPredicate<String> myHello = newEqualsPredicate(myHandle, Slices.utf8Slice("hello"));
+        ColumnPredicate<String> myGoodbye = newEqualsPredicate(myHandle, Slices.utf8Slice("goodBye"));
 
-        CyodaColumnHandle theOtherMockHandle = mock(CyodaColumnHandle.class);
-        when(theOtherMockHandle.getColumnName()).thenReturn("theOtherColumnName");
-        when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
-        when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
-
-        ColumnPredicate<String> myHello = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> myGoodbye = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"),String.class);
-
-        ColumnPredicate<String> notMyHello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
+        ColumnPredicate<String> notMyHello = newEqualsPredicate(theOtherHandle, Slices.utf8Slice("hello"));
+        ColumnPredicate<String> notMyGoodbye = newEqualsPredicate(theOtherHandle, Slices.utf8Slice("goodBye"));
         CompoundPredicateNode node = builder(AND)
                 .addMember(builder(AND).addLeaf(notMyHello).build())
                 .addMember(builder(AND).addLeaf(notMyGoodbye).build())
@@ -211,8 +177,8 @@ public class ColumnPredicateTraversalTest {
                 ).build();
         int nodeCount = node.countNodes();
         assertEquals(nodeCount,4);
-        assertThrows(IllegalArgumentException.class,()->PredicateTraversal.of(node,String.class).assembleEqualsPredicateValuesFromAnd(myMockHandle));
-        Set<ColumnPredicate<String>> columnPredicates = PredicateTraversal.of(node, String.class).parseFor(myMockHandle);
+        assertThrows(IllegalArgumentException.class,()->PredicateTraversal.of(node,String.class).assembleEqualsPredicateValuesFromAnd(myHandle));
+        Set<ColumnPredicate<String>> columnPredicates = PredicateTraversal.of(node, String.class).parseFor(myHandle);
         assertFalse(columnPredicates.isEmpty());
         assertEquals(columnPredicates.size(),2);
     }
@@ -220,19 +186,9 @@ public class ColumnPredicateTraversalTest {
     @Test
     public void testAssembleFilterings_complex_and_tree() {
 
-        CyodaColumnHandle myMockHandle = mock(CyodaColumnHandle.class);
-        when(myMockHandle.getColumnName()).thenReturn("myColumnName");
-        when(myMockHandle.getDataType()).thenReturn(DataType.STRING);
-        when(myMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
+        ColumnPredicate<String> myHello = newEqualsPredicate(myHandle, Slices.utf8Slice("hello"));
 
-        CyodaColumnHandle theOtherMockHandle = mock(CyodaColumnHandle.class);
-        when(theOtherMockHandle.getColumnName()).thenReturn("theOtherColumnName");
-        when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
-        when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
-
-        ColumnPredicate<String> myHello = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
-
-        ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
+        ColumnPredicate<String> notMyGoodbye = newEqualsPredicate(theOtherHandle, Slices.utf8Slice("goodBye"));
         CompoundPredicateNode node = builder(AND)
                 .addMember(builder(AND).addLeaf(myHello).build())
                 .addMember(builder(AND).addLeaf(notMyGoodbye).build())
@@ -244,7 +200,7 @@ public class ColumnPredicateTraversalTest {
         int nodeCount = node.countNodes();
         assertEquals(nodeCount,3);
         Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node, String.class)
-                .assembleEqualsPredicateValuesFromAnd(myMockHandle);
+                .assembleEqualsPredicateValuesFromAnd(myHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
     }
@@ -252,20 +208,10 @@ public class ColumnPredicateTraversalTest {
     @Test
     public void testAssembleFilterings_complex_and_tree_mutually_exclusive() {
 
-        CyodaColumnHandle myMockHandle = mock(CyodaColumnHandle.class);
-        when(myMockHandle.getColumnName()).thenReturn("myColumnName");
-        when(myMockHandle.getDataType()).thenReturn(DataType.STRING);
-        when(myMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
+        ColumnPredicate<String> myHello = newEqualsPredicate(myHandle, Slices.utf8Slice("hello"));
+        ColumnPredicate<String> myGoodbye = newEqualsPredicate(myHandle, Slices.utf8Slice("goodBye"));
 
-        CyodaColumnHandle theOtherMockHandle = mock(CyodaColumnHandle.class);
-        when(theOtherMockHandle.getColumnName()).thenReturn("theOtherColumnName");
-        when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
-        when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
-
-        ColumnPredicate<String> myHello = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> myGoodbye = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"),String.class);
-
-        ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
+        ColumnPredicate<String> notMyGoodbye = newEqualsPredicate(theOtherHandle, Slices.utf8Slice("goodBye"));
         CompoundPredicateNode node = builder(AND)
                 .addMember(builder(AND).addLeaf(myHello).build())
                 .addMember(builder(AND).addLeaf(notMyGoodbye).build())
@@ -279,26 +225,16 @@ public class ColumnPredicateTraversalTest {
         int nodeCount = node.countNodes();
         assertEquals(nodeCount,3);
         Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node, String.class)
-                .assembleEqualsPredicateValuesFromAnd(myMockHandle);
+                .assembleEqualsPredicateValuesFromAnd(myHandle);
         assertFalse(selectionSet.isPresent());
     }
 
     @Test
     public void testAssembleFilterings_complex_or_tree() {
 
-        CyodaColumnHandle myMockHandle = mock(CyodaColumnHandle.class);
-        when(myMockHandle.getColumnName()).thenReturn("myColumnName");
-        when(myMockHandle.getDataType()).thenReturn(DataType.STRING);
-        when(myMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
+        ColumnPredicate<String> myHello = newEqualsPredicate(myHandle, Slices.utf8Slice("hello"));
 
-        CyodaColumnHandle theOtherMockHandle = mock(CyodaColumnHandle.class);
-        when(theOtherMockHandle.getColumnName()).thenReturn("theOtherColumnName");
-        when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
-        when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
-
-        ColumnPredicate<String> myHello = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
-
-        ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
+        ColumnPredicate<String> notMyGoodbye = newEqualsPredicate(theOtherHandle, Slices.utf8Slice("goodBye"));
         CompoundPredicateNode node = builder(AND)
                 .addMember(builder(AND).addLeaf(myHello).build())
                 .addMember(builder(AND).addLeaf(notMyGoodbye).build())
@@ -311,7 +247,7 @@ public class ColumnPredicateTraversalTest {
                 ).build();
         int nodeCount = node.countNodes();
         assertEquals(nodeCount,3);
-        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node,String.class).assembleEqualsPredicateValuesFromAnd(myMockHandle);
+        Optional<SortedSet<String>> selectionSet = PredicateTraversal.of(node,String.class).assembleEqualsPredicateValuesFromAnd(myHandle);
         assertTrue(selectionSet.isPresent());
         assertEquals(selectionSet.get().size(),1);
     }
@@ -319,21 +255,11 @@ public class ColumnPredicateTraversalTest {
     @Test
     public void testAssembleFilterings_complex_tree_top_or() {
 
-        CyodaColumnHandle myMockHandle = mock(CyodaColumnHandle.class);
-        when(myMockHandle.getColumnName()).thenReturn("myColumnName");
-        when(myMockHandle.getDataType()).thenReturn(DataType.STRING);
-        when(myMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
+        ColumnPredicate<String> myHello = newEqualsPredicate(myHandle, Slices.utf8Slice("hello"));
+        ColumnPredicate<String> myGoodbye = newEqualsPredicate(myHandle, Slices.utf8Slice("goodBye"));
 
-        CyodaColumnHandle theOtherMockHandle = mock(CyodaColumnHandle.class);
-        when(theOtherMockHandle.getColumnName()).thenReturn("theOtherColumnName");
-        when(theOtherMockHandle.getDataType()).thenReturn(DataType.STRING);
-        when(theOtherMockHandle.getColumnType()).thenReturn(VarcharType.VARCHAR);
-
-        ColumnPredicate<String> myHello = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> myGoodbye = ColumnPredicateUtils.newEqualsPredicate(myMockHandle, Slices.utf8Slice("goodBye"),String.class);
-
-        ColumnPredicate<String> notMyHello = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("hello"),String.class);
-        ColumnPredicate<String> notMyGoodbye = ColumnPredicateUtils.newEqualsPredicate(theOtherMockHandle, Slices.utf8Slice("goodBye"),String.class);
+        ColumnPredicate<String> notMyHello = newEqualsPredicate(theOtherHandle, Slices.utf8Slice("hello"));
+        ColumnPredicate<String> notMyGoodbye = newEqualsPredicate(theOtherHandle, Slices.utf8Slice("goodBye"));
         CompoundPredicateNode node = builder(AND)
                 .addMember(builder(AND).addLeaf(notMyHello).build())
                 .addMember(builder(AND).addLeaf(notMyGoodbye).build())
@@ -347,8 +273,8 @@ public class ColumnPredicateTraversalTest {
                 ).build();
         int nodeCount = node.countNodes();
         assertEquals(nodeCount,4);
-        assertThrows(IllegalArgumentException.class,()->PredicateTraversal.of(node,String.class).assembleEqualsPredicateValuesFromAnd(myMockHandle));
-        Set<ColumnPredicate<String>> columnPredicates = PredicateTraversal.of(node, String.class).parseFor(myMockHandle);
+        assertThrows(IllegalArgumentException.class,()->PredicateTraversal.of(node,String.class).assembleEqualsPredicateValuesFromAnd(myHandle));
+        Set<ColumnPredicate<String>> columnPredicates = PredicateTraversal.of(node, String.class).parseFor(myHandle);
         assertFalse(columnPredicates.isEmpty());
         assertEquals(columnPredicates.size(),2);
     }
