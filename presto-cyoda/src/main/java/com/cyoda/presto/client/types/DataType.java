@@ -72,7 +72,7 @@ public enum DataType implements IDataType {
     DOUBLE          (Double.class,          StandardTypes.DOUBLE,       true, 0),
     INTEGER         (Integer.class,         StandardTypes.INTEGER,      true, 0),
     BIG_DECIMAL     (BigDecimal.class,      StandardTypes.DECIMAL,      true, 0,
-            BigDecimalPrestoValueConverter.P_PR, BigDecimalPrestoValueConverter.P_SC),
+            BigDecimalPrestoValueConverter.PRECISION, BigDecimalPrestoValueConverter.SCALE),
     BIG_INTEGER     (BigInteger.class,      StandardTypes.DECIMAL,      true, 0),
     BOOLEAN         (Boolean.class,         StandardTypes.BOOLEAN,      true, 0),
     LOCAL_DATE      (LocalDate.class,       StandardTypes.DATE,         true, 0),
@@ -86,7 +86,7 @@ public enum DataType implements IDataType {
     YEAR            (Year.class,            StandardTypes.INTEGER,      true, 0),
     YEAR_MONTH      (YearMonth.class,       StandardTypes.DATE,         true, 0),
     LOCAL_TIME      (LocalTime.class,       StandardTypes.TIME,         true, 0), // Unsure
-    UUID_TYPE       (UUID.class,            UUIDPrestoValueConverter.TYPE_STRING, true, 0),
+    UUID_TYPE       (UUID.class,            StandardTypes.UUID,         true, 0),
     BYTE_ARRAY      (byte[].class,          StandardTypes.VARBINARY,    false, 0),
     BYTE_BUFFER     (ByteBuffer.class,      StandardTypes.VARBINARY,    false, 0),
     CLASS           (Class.class,           StandardTypes.VARCHAR,      false, 0),
@@ -109,12 +109,12 @@ public enum DataType implements IDataType {
     private final List<TypeSignatureParameter> staticParams;
 
 
-    DataType(Class<?> javaType, String typeString, boolean comparable, int typeParametersCount, TypeSignatureParameter...staticParams) {
+    DataType(Class<?> javaType, String typeString, boolean comparable, int typeParametersCount, long...staticParams) {
         this.javaType = javaType;
         this.typeString = typeString;
         this.comparable = comparable;
         this.typeParametersCount = typeParametersCount;
-        this.staticParams = Arrays.asList(staticParams);
+        this.staticParams = Arrays.stream(staticParams).mapToObj(TypeSignatureParameter::numericParameter).collect(Collectors.toList());
     }
 
     public static <T> Class<T> getJType(IDataType<T> dataType){

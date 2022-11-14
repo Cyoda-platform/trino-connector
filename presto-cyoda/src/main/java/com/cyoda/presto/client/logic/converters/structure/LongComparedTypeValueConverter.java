@@ -5,6 +5,8 @@ import com.cyoda.presto.client.types.IDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.google.common.base.Preconditions;
 
+import java.time.Instant;
+
 public abstract class LongComparedTypeValueConverter<T extends Comparable<? super T>> extends LongWrittenTypeValueConverter<T>{
     public LongComparedTypeValueConverter(IDataType<T> dataType) {
         super(dataType);

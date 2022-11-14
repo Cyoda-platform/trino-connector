@@ -66,10 +66,10 @@
 //    @SqlType(BigDecimalType.BIG_DECIMAL)
 //    public static BigDecimal add(@SqlType(BigDecimalType.BIG_DECIMAL) Slice left, @SqlType(BigDecimalType.BIG_DECIMAL) Slice right)
 //    {
-//        return toBigDecimal(left).add(toBigDecimal(right));
+//        return toInt128(left).add(toInt128(right));
 //    }
 //
-//    private static BigDecimal toBigDecimal(Slice left) {
+//    private static BigDecimal toInt128(Slice left) {
 //        return converter.fromSlice(left);
 //    }
 //
@@ -77,14 +77,14 @@
 //    @SqlType(BigDecimalType.BIG_DECIMAL)
 //    public static BigDecimal subtract(@SqlType(BigDecimalType.BIG_DECIMAL) Slice left, @SqlType(BigDecimalType.BIG_DECIMAL) Slice right)
 //    {
-//        return toBigDecimal(left).subtract(toBigDecimal(right));
+//        return toInt128(left).subtract(toInt128(right));
 //    }
 //
 //    @ScalarOperator(MULTIPLY)
 //    @SqlType(BigDecimalType.BIG_DECIMAL)
 //    public static BigDecimal multiply(@SqlType(BigDecimalType.BIG_DECIMAL) Slice left, @SqlType(BigDecimalType.BIG_DECIMAL) Slice right)
 //    {
-//        return toBigDecimal(left).multiply(toBigDecimal(right));
+//        return toInt128(left).multiply(toInt128(right));
 //    }
 //
 //    @ScalarOperator(DIVIDE)
@@ -92,7 +92,7 @@
 //    public static BigDecimal divide(@SqlType(BigDecimalType.BIG_DECIMAL) Slice left, @SqlType(BigDecimalType.BIG_DECIMAL) Slice right)
 //    {
 //        try {
-//            return toBigDecimal(left).divide(toBigDecimal(right));
+//            return toInt128(left).divide(toInt128(right));
 //        }
 //        catch (ArithmeticException e) {
 //            throw new TrinoException(DIVISION_BY_ZERO, e);
@@ -104,7 +104,7 @@
 //    public static BigDecimal modulus(@SqlType(BigDecimalType.BIG_DECIMAL) Slice left, @SqlType(BigDecimalType.BIG_DECIMAL) Slice right)
 //    {
 //        try {
-//            return toBigDecimal(left).remainder(toBigDecimal(right));
+//            return toInt128(left).remainder(toInt128(right));
 //        }
 //        catch (ArithmeticException e) {
 //            throw new TrinoException(DIVISION_BY_ZERO, e);
@@ -115,7 +115,7 @@
 //    @SqlType(BigDecimalType.BIG_DECIMAL)
 //    public static BigDecimal negate(@SqlType(BigDecimalType.BIG_DECIMAL) Slice value)
 //    {
-//        return toBigDecimal(value).negate();
+//        return toInt128(value).negate();
 //    }
 //
 //    @SuppressWarnings("java:S1221")
@@ -183,7 +183,7 @@
 //    public static long castToInteger(@SqlType(BigDecimalType.BIG_DECIMAL) Slice value)
 //    {
 //        try {
-//            return toIntExact(toBigDecimal(value).toBigIntegerExact().longValue());
+//            return toIntExact(toInt128(value).toBigIntegerExact().longValue());
 //        }
 //        catch (ArithmeticException e) {
 //            throw new TrinoException(NUMERIC_VALUE_OUT_OF_RANGE, "Out of range for integer: " + value, e);
@@ -197,7 +197,7 @@
 //    {
 //        try {
 //
-//            return Shorts.checkedCast(toBigDecimal(value).toBigIntegerExact().longValue());
+//            return Shorts.checkedCast(toInt128(value).toBigIntegerExact().longValue());
 //        }
 //        catch (IllegalArgumentException e) {
 //            throw new TrinoException(NUMERIC_VALUE_OUT_OF_RANGE, "Out of range for smallint: " + value, e);
@@ -209,7 +209,7 @@
 //    public static long castToTinyint(@SqlType(BigDecimalType.BIG_DECIMAL) Slice value)
 //    {
 //        try {
-//            return SignedBytes.checkedCast(toBigDecimal(value).toBigIntegerExact().longValue());
+//            return SignedBytes.checkedCast(toInt128(value).toBigIntegerExact().longValue());
 //        }
 //        catch (IllegalArgumentException e) {
 //            throw new TrinoException(NUMERIC_VALUE_OUT_OF_RANGE, "Out of range for tinyint: " + value, e);
@@ -221,7 +221,7 @@
 //    public static long castToLong(@SqlType(BigDecimalType.BIG_DECIMAL) Slice value)
 //    {
 //        try {
-//            return toBigDecimal(value).setScale(0,HALF_UP).longValue();
+//            return toInt128(value).setScale(0,HALF_UP).longValue();
 //        }
 //        catch (ArithmeticException e) {
 //            throw new TrinoException(INVALID_CAST_ARGUMENT, format("Unable to cast %s to bigint", value), e);
@@ -232,14 +232,14 @@
 //    @SqlType(StandardTypes.REAL)
 //    public static long castToReal(@SqlType(BigDecimalType.BIG_DECIMAL) Slice value)
 //    {
-//        return floatToRawIntBits(((Double) toBigDecimal(value).doubleValue()).floatValue());
+//        return floatToRawIntBits(((Double) toInt128(value).doubleValue()).floatValue());
 //    }
 //
 //    @ScalarOperator(CAST)
 //    @SqlType(StandardTypes.DOUBLE)
 //    public static double castToDouble(@SqlType(BigDecimalType.BIG_DECIMAL) Slice value)
 //    {
-//        return (toBigDecimal(value).doubleValue());
+//        return (toInt128(value).doubleValue());
 //    }
 //
 //    @ScalarOperator(CAST)
@@ -254,7 +254,7 @@
 //    @SqlType(StandardTypes.BIGINT)
 //    public static long hashCode(@SqlType(BigDecimalType.BIG_DECIMAL) Slice value)
 //    {
-//        return AbstractLongType.hash(toBigDecimal(value).longValue());
+//        return AbstractLongType.hash(toInt128(value).longValue());
 //    }
 //
 //    @ScalarOperator(INDETERMINATE)
@@ -271,8 +271,8 @@
 //        float result;
 //        BigDecimal minFloat = BigDecimal.valueOf(Float.MIN_VALUE);
 //        BigDecimal maxFloat = BigDecimal.valueOf(Float.MAX_VALUE);
-//        BigDecimal bd = toBigDecimal(value);
-//        if (toBigDecimal(value).compareTo(minFloat) <= 0) {
+//        BigDecimal bd = toInt128(value);
+//        if (toInt128(value).compareTo(minFloat) <= 0) {
 //            result = Float.MIN_VALUE;
 //        }
 //        else if (bd.compareTo(maxFloat) >= 0) {
@@ -292,21 +292,21 @@
 //    @SqlType(StandardTypes.INTEGER)
 //    public static long saturatedFloorCastToInteger(@SqlType(BigDecimalType.BIG_DECIMAL) Slice value)
 //    {
-//        return saturatedFloorCastToLong(toBigDecimal(value), Integer.MIN_VALUE, MIN_INTEGER_AS_BIG_DECIMAL, Integer.MAX_VALUE, MAX_INTEGER_PLUS_ONE_AS_BIG_DECIMAL);
+//        return saturatedFloorCastToLong(toInt128(value), Integer.MIN_VALUE, MIN_INTEGER_AS_BIG_DECIMAL, Integer.MAX_VALUE, MAX_INTEGER_PLUS_ONE_AS_BIG_DECIMAL);
 //    }
 //
 //    @ScalarOperator(SATURATED_FLOOR_CAST)
 //    @SqlType(StandardTypes.SMALLINT)
 //    public static long saturatedFloorCastToSmallint(@SqlType(BigDecimalType.BIG_DECIMAL) Slice value)
 //    {
-//        return saturatedFloorCastToLong(toBigDecimal(value), Short.MIN_VALUE, MIN_SHORT_AS_BIG_DECIMAL, Short.MAX_VALUE, MAX_SHORT_PLUS_ONE_AS_BIG_DECIMAL);
+//        return saturatedFloorCastToLong(toInt128(value), Short.MIN_VALUE, MIN_SHORT_AS_BIG_DECIMAL, Short.MAX_VALUE, MAX_SHORT_PLUS_ONE_AS_BIG_DECIMAL);
 //    }
 //
 //    @ScalarOperator(SATURATED_FLOOR_CAST)
 //    @SqlType(StandardTypes.TINYINT)
 //    public static long saturatedFloorCastToTinyint(@SqlType(BigDecimalType.BIG_DECIMAL) Slice value)
 //    {
-//        return saturatedFloorCastToLong(toBigDecimal(value), Byte.MIN_VALUE, MIN_BYTE_AS_BIG_DECIMAL, Byte.MAX_VALUE, MAX_BYTE_PLUS_ONE_AS_BIG_DECIMAL);
+//        return saturatedFloorCastToLong(toInt128(value), Byte.MIN_VALUE, MIN_BYTE_AS_BIG_DECIMAL, Byte.MAX_VALUE, MAX_BYTE_PLUS_ONE_AS_BIG_DECIMAL);
 //    }
 //
 //    private static long saturatedFloorCastToLong(BigDecimal value, long minValue, BigDecimal minValueAsBigDecimal, long maxValue, BigDecimal maxValuePlusOneAsBigDecimal)
@@ -324,6 +324,6 @@
 //    @SqlType(StandardTypes.BIGINT)
 //    public static long xxHash64(@SqlType(BigDecimalType.BIG_DECIMAL) Slice value)
 //    {
-//        return XxHash64.hash(toBigDecimal(value).longValue());
+//        return XxHash64.hash(toInt128(value).longValue());
 //    }
 //}

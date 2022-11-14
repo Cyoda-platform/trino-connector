@@ -2,42 +2,43 @@ package com.cyoda.presto.client.logic.converters.structure;
 
 import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.types.IDataType;
-import com.cyoda.presto.client.util.DecimalUtil;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.google.common.base.Preconditions;
-import io.airlift.slice.Slice;
+import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.type.Decimals;
 import io.trino.spi.type.Int128;
+import io.trino.spi.type.Type;
 
-import java.math.BigDecimal;
+import javax.annotation.Nonnull;
 import java.math.BigInteger;
 
-public abstract class BigDecimalTypeValueConverter<T extends Comparable<? super T>> extends SliceComparableValueConverter<T>{
+public abstract class LongDecimalTypeValueConverter<T extends Comparable<? super T>> extends ComparableValueConverter<T>{
 
-    public BigDecimalTypeValueConverter(IDataType<T> dataType) {
+    public LongDecimalTypeValueConverter(IDataType<T> dataType) {
         super(dataType);
     }
 
-    protected abstract BigDecimal toBigDecimal(T value);
-    protected abstract T fromBigDecimal(BigDecimal value);
+    protected abstract Int128 toInt128(T value);
+    protected abstract T fromInt128(Int128 value);
 
-    public static Object encodeDecimal(BigInteger value){
-        return Decimals.valueOf(value);
+    @Override
+    public void writeValue(Type type, BlockBuilder builder, @Nonnull T value) {
+        type.writeObject(builder, toInt128(value));
     }
 
-    public static BigInteger decodeDecimal(Object value){
-        return ((Int128)value).toBigInteger();
+    @Override
+    public T fromPrestoNative(Object nativeValue) {
+        return fromInt128((Int128) nativeValue);
     }
 
     @Override
     protected ColumnPredicate<T> newComparisonPredicate(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, T value) {
-        BigDecimal bdValue = toBigDecimal(value);
-        BigDecimal minValue = DecimalUtil.minValue(bdValue.precision(), bdValue.scale());
-        BigDecimal maxValue = DecimalUtil.maxValue(bdValue.precision(), bdValue.scale());
+        BigInteger bdValue = toInt128(value).toBigInteger();
+        BigInteger minValue = Decimals.MIN_UNSCALED_DECIMAL.toBigInteger();
+        BigInteger maxValue = Decimals.MAX_UNSCALED_DECIMAL.toBigInteger();
         Preconditions.checkArgument(bdValue.compareTo(maxValue) <= 0 && bdValue.compareTo(minValue) >= 0,
                 "Decimal value out of range for %s column: %s",
                 column.getDataType(), bdValue);
-        BigDecimal smallestValue = DecimalUtil.smallestValue(bdValue.scale());
 
         if (op == ColumnPredicate.ComparisonOp.LESS_EQUAL) {
             if (bdValue.equals(maxValue)) {
@@ -48,17 +49,17 @@ public abstract class BigDecimalTypeValueConverter<T extends Comparable<? super 
                 // is ignored.
                 return ColumnPredicate.isNotNull(column);
             }
-            bdValue = bdValue.add(smallestValue);
+            bdValue = bdValue.add(BigInteger.ONE);
             op = ColumnPredicate.ComparisonOp.LESS;
         } else if (op == ColumnPredicate.ComparisonOp.GREATER) {
             if (bdValue.equals(maxValue)) {
                 return ColumnPredicate.none(column);
             }
-            bdValue = bdValue.add(smallestValue);
+            bdValue = bdValue.add(BigInteger.ONE);
             op = ColumnPredicate.ComparisonOp.GREATER_EQUAL;
         }
 
-        T wrapped = fromBigDecimal(bdValue);
+        T wrapped = fromInt128(Int128.valueOf(bdValue));
 
         switch (op) {
             case GREATER_EQUAL:

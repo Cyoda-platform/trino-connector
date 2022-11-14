@@ -18,6 +18,7 @@
 package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.converters.structure.LongComparedTypeValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.TimestampTypeValueConverter;
 import com.cyoda.presto.client.types.DataType;
 
 import javax.annotation.Nonnull;
@@ -26,9 +27,10 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
 import java.util.Date;
 
-public class DatePrestoValueConverter extends LongComparedTypeValueConverter<Date> {
+public class DatePrestoValueConverter extends TimestampTypeValueConverter<Date> {
 
     @Inject
     public DatePrestoValueConverter() {
@@ -36,29 +38,18 @@ public class DatePrestoValueConverter extends LongComparedTypeValueConverter<Dat
     }
 
     @Override
-    public long toLong(@Nonnull Date value) {
-        return value.toInstant().toEpochMilli();
-    }
-
-    @Nonnull
-    @Override
-    public Date fromLong(long value) {
-        return Date.from(Instant.ofEpochMilli(value));
-    }
-
-    @Override
-    public long minValueOfIntType() {
-        return Long.MIN_VALUE;
-    }
-
-    @Override
-    public long maxValueOfIntType() {
-        return Long.MAX_VALUE;
-    }
-
-    @Override
     public Date fromOtherCyodaType(Object value, String columnName) {
         LocalDateTime localDateTime = LocalDateTime.parse((String) value, DateTimeFormatter.ISO_DATE_TIME);
         return Timestamp.valueOf(localDateTime);
+    }
+
+    @Override
+    protected Instant toInstant(Date value) {
+        return value.toInstant();
+    }
+
+    @Override
+    protected Date fromInstant(Instant value) {
+        return Date.from(value);
     }
 }
