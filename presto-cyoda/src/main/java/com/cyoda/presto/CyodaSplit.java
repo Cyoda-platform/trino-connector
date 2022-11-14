@@ -17,9 +17,8 @@
 
 package com.cyoda.presto;
 
-import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
-import io.trino.spi.connector.Constraint;
+import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.HostAddress;
@@ -36,14 +35,14 @@ import static java.util.Objects.requireNonNull;
 public class CyodaSplit implements ConnectorSplit {
     private final URI uri;
     private final List<HostAddress> addresses;
-    private final Constraint constraint;
+    private final TupleDomain<ColumnHandle> constraint;
     private final CyodaTableHandle tableHandle;
 
     @JsonCreator
     public CyodaSplit(
             @JsonProperty("tableHandle") CyodaTableHandle tableHandle,
             @JsonProperty("uri") URI uri,
-            @JsonProperty("constraint") Constraint constraint) {
+            @JsonProperty("constraint") TupleDomain<ColumnHandle> constraint) {
         this.tableHandle = requireNonNull(tableHandle, "tableHandle name is null");
         this.uri = requireNonNull(uri, "uri is null");
 
@@ -63,7 +62,7 @@ public class CyodaSplit implements ConnectorSplit {
     }
 
     @JsonProperty
-    public Constraint getConstraint() {
+    public TupleDomain<ColumnHandle> getConstraint() {
         return constraint;
     }
 

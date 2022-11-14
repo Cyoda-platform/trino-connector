@@ -80,27 +80,27 @@ public class CyodaModule implements Module {
 
         configBinder(binder).bindConfig(CyodaConfig.class);
 
-//        jsonBinder(binder).addDeserializerBinding(Type.class).to(TypeDeserializer.class);
+        jsonBinder(binder).addDeserializerBinding(Type.class).to(TypeDeserializer.class);
 
         binder.bind(RestTemplateCustomizer.class).in(Scopes.SINGLETON);
 
         jsonCodecBinder(binder).bindMapJsonCodec(String.class, listJsonCodec(CyodaTable.class));
     }
 
-//    public static final class TypeDeserializer
-//            extends FromStringDeserializer<Type> {
-//        private final TypeManager typeManager;
-//
-//        @Inject
-//        public TypeDeserializer(TypeManager typeManager) {
-//            super(Type.class);
-//            this.typeManager = requireNonNull(typeManager, "typeManager is null");
-//        }
-//
-//        @Override
-//        protected Type _deserialize(String value, DeserializationContext context) {
-//            //TODO check if type params are not lost
-//            return typeManager.getType(parseTypeSignature(value, Collections.EMPTY_SET));
-//        }
-//    }
+    public static final class TypeDeserializer
+            extends FromStringDeserializer<Type> {
+        private final TypeManager typeManager;
+
+        @Inject
+        public TypeDeserializer(TypeManager typeManager) {
+            super(Type.class);
+            this.typeManager = requireNonNull(typeManager, "typeManager is null");
+        }
+
+        @Override
+        protected Type _deserialize(String value, DeserializationContext context) {
+            //TODO check if type params are not lost
+            return typeManager.getType(parseTypeSignature(value, Collections.EMPTY_SET));
+        }
+    }
 }

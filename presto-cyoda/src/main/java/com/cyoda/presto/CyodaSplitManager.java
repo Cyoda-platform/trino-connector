@@ -63,7 +63,7 @@ public class CyodaSplitManager implements ConnectorSplitManager {
         checkState(table != null, "Table %s.%s no longer exists", tableHandle.getSchemaName(), tableHandle.getTableName());
         List<ConnectorSplit> splits = new ArrayList<>();
         for (URI uri : table.getSources()) {
-            splits.add(new CyodaSplit(tableHandle, uri, constraint));
+            splits.add(new CyodaSplit(tableHandle, uri, constraint.getSummary()));
         }
         Collections.shuffle(splits);
 

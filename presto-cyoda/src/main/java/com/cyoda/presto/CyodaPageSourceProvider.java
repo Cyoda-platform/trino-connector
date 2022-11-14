@@ -32,6 +32,7 @@ import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import com.google.common.base.Preconditions;
+import io.trino.spi.predicate.TupleDomain;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -63,8 +64,8 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
             DynamicFilter dynamicFilter
     ) {
         requireNonNull(split, "split is null");
-        Constraint constraint = ((CyodaSplit) split).getConstraint();
-        CompoundPredicateNode predicates = ColumnPredicateBuilder.setupConstraintPredicates(constraint.getSummary());
+        TupleDomain<ColumnHandle> constraint = ((CyodaSplit) split).getConstraint();
+        CompoundPredicateNode predicates = ColumnPredicateBuilder.setupConstraintPredicates(constraint);
         String requestHandlerKey = ((CyodaSplit) split).getTableHandle().getRequestHandlerKey();
         ApiRequestHandler<?> requestHandler = Optional.ofNullable(client.getRequestHandlerProvider().getHandler(requestHandlerKey))
                 .orElseThrow(() -> new IllegalArgumentException("Handler " + requestHandlerKey + " not found"));
