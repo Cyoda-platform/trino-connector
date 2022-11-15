@@ -23,6 +23,7 @@ import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.type.Int128;
 import io.trino.spi.type.Type;
 import io.airlift.slice.Slice;
+import io.trino.spi.type.UuidType;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -61,12 +62,12 @@ public class UUIDPrestoValueConverter extends LongDecimalTypeValueConverter<UUID
 
     @Override
     public void writeValue(Type type, BlockBuilder builder, @Nonnull UUID value) {
-        type.writeSlice(builder, javaUuidToPrestoUuid(value));
+        type.writeSlice(builder, UuidType.javaUuidToTrinoUuid(value));
     }
 
     @Override
     public UUID fromPrestoNative(Object nativeValue) {
-        return prestoUuidToJavaUuid((Slice) nativeValue);
+        return UuidType.trinoUuidToJavaUuid((Slice) nativeValue);
     }
 
     //    public Slice toSliceForPresto(@Nonnull UUID value) {
@@ -96,22 +97,22 @@ public class UUIDPrestoValueConverter extends LongDecimalTypeValueConverter<UUID
 //                .array();
 //    }
 //
-    public static Slice javaUuidToPrestoUuid(UUID uuid)
-    {
-        return wrappedLongArray(
-                uuid.getMostSignificantBits(),
-                uuid.getLeastSignificantBits());
-    }
-
-    public static UUID prestoUuidToJavaUuid(Slice uuid)
-    {
-        if (uuid.length() != INT128_BYTES) {
-            throw new IllegalStateException(format("Expected value to be exactly %d bytes but was %d", INT128_BYTES, uuid.length()));
-        }
-        return new UUID(
-                uuid.getLong(0),
-                uuid.getLong(SIZE_OF_LONG));
-    }
+//    public static Slice javaUuidToPrestoUuid(UUID uuid)
+//    {
+//        return wrappedLongArray(
+//                uuid.getMostSignificantBits(),
+//                uuid.getLeastSignificantBits());
+//    }
+//
+//    public static UUID prestoUuidToJavaUuid(Slice uuid)
+//    {
+//        if (uuid.length() != INT128_BYTES) {
+//            throw new IllegalStateException(format("Expected value to be exactly %d bytes but was %d", INT128_BYTES, uuid.length()));
+//        }
+//        return new UUID(
+//                uuid.getLong(0),
+//                uuid.getLong(SIZE_OF_LONG));
+//    }
 
     public static BigInteger convertToBigInteger(UUID id)
     {
