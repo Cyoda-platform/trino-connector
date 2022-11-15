@@ -17,8 +17,8 @@
 
 package com.cyoda.presto.logging;
 
-import com.facebook.presto.spi.ErrorCode;
-import com.facebook.presto.spi.eventlistener.QueryFailureInfo;
+import io.trino.spi.ErrorCode;
+import io.trino.spi.eventlistener.QueryFailureInfo;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

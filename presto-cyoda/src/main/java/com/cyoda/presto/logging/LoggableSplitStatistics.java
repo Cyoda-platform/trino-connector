@@ -17,7 +17,7 @@
 
 package com.cyoda.presto.logging;
 
-import com.facebook.presto.spi.eventlistener.SplitStatistics;
+import io.trino.spi.eventlistener.SplitStatistics;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

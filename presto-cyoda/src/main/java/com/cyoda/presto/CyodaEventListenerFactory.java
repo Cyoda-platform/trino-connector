@@ -18,9 +18,9 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.airlift.log.Logger;
-import com.facebook.presto.spi.eventlistener.EventListener;
-import com.facebook.presto.spi.eventlistener.EventListenerFactory;
+import io.airlift.log.Logger;
+import io.trino.spi.eventlistener.EventListener;
+import io.trino.spi.eventlistener.EventListenerFactory;
 
 import java.util.Map;
 

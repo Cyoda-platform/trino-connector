@@ -21,14 +21,14 @@ import com.cyoda.presto.logging.LoggableQueryFailureInfo;
 import com.cyoda.presto.logging.LoggableQueryStatistics;
 import com.cyoda.presto.logging.LoggableSplitStatistics;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.airlift.json.JsonObjectMapperProvider;
-import com.facebook.airlift.log.Logger;
-import com.facebook.presto.spi.eventlistener.EventListener;
-import com.facebook.presto.spi.eventlistener.QueryCompletedEvent;
-import com.facebook.presto.spi.eventlistener.QueryContext;
-import com.facebook.presto.spi.eventlistener.QueryCreatedEvent;
-import com.facebook.presto.spi.eventlistener.QueryMetadata;
-import com.facebook.presto.spi.eventlistener.SplitCompletedEvent;
+import io.airlift.json.ObjectMapperProvider;
+import io.airlift.log.Logger;
+import io.trino.spi.eventlistener.EventListener;
+import io.trino.spi.eventlistener.QueryCompletedEvent;
+import io.trino.spi.eventlistener.QueryContext;
+import io.trino.spi.eventlistener.QueryCreatedEvent;
+import io.trino.spi.eventlistener.QueryMetadata;
+import io.trino.spi.eventlistener.SplitCompletedEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Suppliers;
@@ -45,7 +45,7 @@ public class CyodaEventListener implements EventListener {
 
     @SuppressWarnings("FunctionalExpressionCanBeFolded")
     public static final Supplier<ObjectMapper> OBJECT_MAPPER_SUPPLIER = Suppliers.memoize(
-            () -> new JsonObjectMapperProvider().get().enable(INDENT_OUTPUT))::get;
+            () -> new ObjectMapperProvider().get().enable(INDENT_OUTPUT))::get;
 
     static final String QUERY_CONTEXT_LOGGING_FLAG = "log-context";
     static final String QUERY_META_LOGGING_FLAG = "log-meta";

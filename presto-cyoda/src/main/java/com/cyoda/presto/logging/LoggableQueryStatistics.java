@@ -17,149 +17,144 @@
 
 package com.cyoda.presto.logging;
 
-import com.facebook.presto.common.RuntimeStats;
-import com.facebook.presto.spi.eventlistener.QueryStatistics;
+import io.trino.spi.eventlistener.QueryStatistics;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.time.Duration;
 
 public class LoggableQueryStatistics {
     private final Duration cpuTime;
-    private final Duration retriedCpuTime;
+    private final Duration failedCpuTime;
     private final Duration wallTime;
-    private final Duration waitingForPrerequisitesTime;
+//    private final Duration waitingForPrerequisitesTime;
     private final Duration queuedTime;
     private final Duration waitingForResourcesTime;
-    private final Duration semanticAnalyzingTime;
-    private final Duration columnAccessPermissionCheckingTime;
-    private final Duration dispatchingTime;
+//    private final Duration semanticAnalyzingTime;
+//    private final Duration columnAccessPermissionCheckingTime;
+//    private final Duration dispatchingTime;
     private final Duration planningTime;
     private final Duration analysisTime;
     private final Duration executionTime;
 
-    private final int peakRunningTasks;
+//    private final int peakRunningTasks;
     private final long peakUserMemoryBytes;
     // peak of user + system memory
-    private final long peakTotalNonRevocableMemoryBytes;
+//    private final long peakTotalNonRevocableMemoryBytes;
     private final long peakTaskUserMemory;
     private final long peakTaskTotalMemory;
-    private final long peakNodeTotalMemory;
+//    private final long peakNodeTotalMemory;
     private final long totalBytes;
     private final long totalRows;
     private final long outputBytes;
     private final long outputRows;
     private final long writtenOutputBytes;
     private final long writtenOutputRows;
-    private final long writtenIntermediateBytes;
-    private final long spilledBytes;
+//    private final long writtenIntermediateBytes;
+//    private final long spilledBytes;
 
     private final double cumulativeMemory;
-    private final double cumulativeTotalMemory;
+//    private final double cumulativeTotalMemory;
 
     private final int completedSplits;
     private final boolean complete;
-    private final RuntimeStats runtimeStats;
 
     public static LoggableQueryStatistics from(QueryStatistics stats) {
         return new LoggableQueryStatistics(
                 stats.getCpuTime(),
-                stats.getRetriedCpuTime(),
+                stats.getFailedCpuTime(),
                 stats.getWallTime(),
-                stats.getWaitingForPrerequisitesTime(),
+//                stats.getWaitingForPrerequisitesTime(),
                 stats.getQueuedTime(),
-                stats.getWaitingForResourcesTime(),
-                stats.getSemanticAnalyzingTime(),
-                stats.getColumnAccessPermissionCheckingTime(),
-                stats.getDispatchingTime(),
-                stats.getPlanningTime(),
+                stats.getResourceWaitingTime().orElse(null),
+//                stats.getSemanticAnalyzingTime(),
+//                stats.getColumnAccessPermissionCheckingTime(),
+//                stats.getDispatchingTime(),
+                stats.getPlanningTime().orElse(null),
                 stats.getAnalysisTime().orElse(null),
-                stats.getExecutionTime(),
-                stats.getPeakRunningTasks(),
+                stats.getExecutionTime().orElse(null),
+//                stats.getPeakRunningTasks(),
                 stats.getPeakUserMemoryBytes(),
-                stats.getPeakTotalNonRevocableMemoryBytes(),
+//                stats.getPeakTotalNonRevocableMemoryBytes(),
                 stats.getPeakTaskUserMemory(),
                 stats.getPeakTaskTotalMemory(),
-                stats.getPeakNodeTotalMemory(),
+//                stats.getPeakNodeTotalMemory(),
                 stats.getTotalBytes(),
                 stats.getTotalRows(),
                 stats.getOutputBytes(),
                 stats.getOutputRows(),
-                stats.getWrittenOutputBytes(),
-                stats.getWrittenOutputRows(),
-                stats.getWrittenIntermediateBytes(),
-                stats.getSpilledBytes(),
+                stats.getWrittenBytes(),
+                stats.getWrittenRows(),
+//                stats.getWrittenIntermediateBytes(),
+//                stats.getSpilledBytes(),
                 stats.getCumulativeMemory(),
-                stats.getCumulativeTotalMemory(),
+//                stats.getCumulativeTotalMemory(),
                 stats.getCompletedSplits(),
-                stats.isComplete(),
-                stats.getRuntimeStats()
+                stats.isComplete()
         );
     }
     
     public LoggableQueryStatistics(
              Duration cpuTime,
-             Duration retriedCpuTime,
+             Duration failedCpuTime,
              Duration wallTime,
-             Duration waitingForPrerequisitesTime,
+//             Duration waitingForPrerequisitesTime,
              Duration queuedTime,
              Duration waitingForResourcesTime,
-             Duration semanticAnalyzingTime,
-             Duration columnAccessPermissionCheckingTime,
-             Duration dispatchingTime,
+//             Duration semanticAnalyzingTime,
+//             Duration columnAccessPermissionCheckingTime,
+//             Duration dispatchingTime,
              Duration planningTime,
              Duration analysisTime,
              Duration executionTime,
-             int peakRunningTasks,
+//             int peakRunningTasks,
              long peakUserMemoryBytes,
-             long peakTotalNonRevocableMemoryBytes,
+//             long peakTotalNonRevocableMemoryBytes,
              long peakTaskUserMemory,
              long peakTaskTotalMemory,
-             long peakNodeTotalMemory,
+//             long peakNodeTotalMemory,
              long totalBytes,
              long totalRows,
              long outputBytes,
              long outputRows,
              long writtenOutputBytes,
              long writtenOutputRows,
-             long writtenIntermediateBytes,
-             long spilledBytes,
+//             long writtenIntermediateBytes,
+//             long spilledBytes,
              double cumulativeMemory,
-             double cumulativeTotalMemory,
+//             double cumulativeTotalMemory,
              int completedSplits,
-             boolean complete,
-             RuntimeStats runtimeStats
+             boolean complete
     ) {
         this.cpuTime = cpuTime;
-        this.retriedCpuTime = retriedCpuTime;
+        this.failedCpuTime = failedCpuTime;
         this.wallTime = wallTime;
-        this.waitingForPrerequisitesTime = waitingForPrerequisitesTime;
+//        this.waitingForPrerequisitesTime = waitingForPrerequisitesTime;
         this.queuedTime = queuedTime;
         this.waitingForResourcesTime = waitingForResourcesTime;
-        this.semanticAnalyzingTime = semanticAnalyzingTime;
-        this.columnAccessPermissionCheckingTime = columnAccessPermissionCheckingTime;
-        this.dispatchingTime = dispatchingTime;
+//        this.semanticAnalyzingTime = semanticAnalyzingTime;
+//        this.columnAccessPermissionCheckingTime = columnAccessPermissionCheckingTime;
+//        this.dispatchingTime = dispatchingTime;
         this.planningTime = planningTime;
         this.analysisTime = analysisTime;
         this.executionTime = executionTime;
-        this.peakRunningTasks = peakRunningTasks;
+//        this.peakRunningTasks = peakRunningTasks;
         this.peakUserMemoryBytes = peakUserMemoryBytes;
-        this.peakTotalNonRevocableMemoryBytes = peakTotalNonRevocableMemoryBytes;
+//        this.peakTotalNonRevocableMemoryBytes = peakTotalNonRevocableMemoryBytes;
         this.peakTaskUserMemory = peakTaskUserMemory;
         this.peakTaskTotalMemory = peakTaskTotalMemory;
-        this.peakNodeTotalMemory = peakNodeTotalMemory;
+//        this.peakNodeTotalMemory = peakNodeTotalMemory;
         this.totalBytes = totalBytes;
         this.totalRows = totalRows;
         this.outputBytes = outputBytes;
         this.outputRows = outputRows;
         this.writtenOutputBytes = writtenOutputBytes;
         this.writtenOutputRows = writtenOutputRows;
-        this.writtenIntermediateBytes = writtenIntermediateBytes;
-        this.spilledBytes = spilledBytes;
+//        this.writtenIntermediateBytes = writtenIntermediateBytes;
+//        this.spilledBytes = spilledBytes;
         this.cumulativeMemory = cumulativeMemory;
-        this.cumulativeTotalMemory = cumulativeTotalMemory;
+//        this.cumulativeTotalMemory = cumulativeTotalMemory;
         this.completedSplits = completedSplits;
         this.complete = complete;
-        this.runtimeStats = runtimeStats;
     }
 
     @JsonProperty
@@ -168,8 +163,8 @@ public class LoggableQueryStatistics {
     }
 
     @JsonProperty
-    public Duration getRetriedCpuTime() {
-        return retriedCpuTime;
+    public Duration getFailedCpuTime() {
+        return failedCpuTime;
     }
 
     @JsonProperty
@@ -177,10 +172,10 @@ public class LoggableQueryStatistics {
         return wallTime;
     }
 
-    @JsonProperty
-    public Duration getWaitingForPrerequisitesTime() {
-        return waitingForPrerequisitesTime;
-    }
+//    @JsonProperty
+//    public Duration getWaitingForPrerequisitesTime() {
+//        return waitingForPrerequisitesTime;
+//    }
 
     @JsonProperty
     public Duration getQueuedTime() {
@@ -192,20 +187,20 @@ public class LoggableQueryStatistics {
         return waitingForResourcesTime;
     }
 
-    @JsonProperty
-    public Duration getSemanticAnalyzingTime() {
-        return semanticAnalyzingTime;
-    }
-
-    @JsonProperty
-    public Duration getColumnAccessPermissionCheckingTime() {
-        return columnAccessPermissionCheckingTime;
-    }
-
-    @JsonProperty
-    public Duration getDispatchingTime() {
-        return dispatchingTime;
-    }
+//    @JsonProperty
+//    public Duration getSemanticAnalyzingTime() {
+//        return semanticAnalyzingTime;
+//    }
+//
+//    @JsonProperty
+//    public Duration getColumnAccessPermissionCheckingTime() {
+//        return columnAccessPermissionCheckingTime;
+//    }
+//
+//    @JsonProperty
+//    public Duration getDispatchingTime() {
+//        return dispatchingTime;
+//    }
 
     @JsonProperty
     public Duration getPlanningTime() {
@@ -221,21 +216,21 @@ public class LoggableQueryStatistics {
     public Duration getExecutionTime() {
         return executionTime;
     }
-
-    @JsonProperty
-    public int getPeakRunningTasks() {
-        return peakRunningTasks;
-    }
+//
+//    @JsonProperty
+//    public int getPeakRunningTasks() {
+//        return peakRunningTasks;
+//    }
 
     @JsonProperty
     public long getPeakUserMemoryBytes() {
         return peakUserMemoryBytes;
     }
-
-    @JsonProperty
-    public long getPeakTotalNonRevocableMemoryBytes() {
-        return peakTotalNonRevocableMemoryBytes;
-    }
+//
+//    @JsonProperty
+//    public long getPeakTotalNonRevocableMemoryBytes() {
+//        return peakTotalNonRevocableMemoryBytes;
+//    }
 
     @JsonProperty
     public long getPeakTaskUserMemory() {
@@ -246,11 +241,11 @@ public class LoggableQueryStatistics {
     public long getPeakTaskTotalMemory() {
         return peakTaskTotalMemory;
     }
-
-    @JsonProperty
-    public long getPeakNodeTotalMemory() {
-        return peakNodeTotalMemory;
-    }
+//
+//    @JsonProperty
+//    public long getPeakNodeTotalMemory() {
+//        return peakNodeTotalMemory;
+//    }
 
     @JsonProperty
     public long getTotalBytes() {
@@ -281,26 +276,26 @@ public class LoggableQueryStatistics {
     public long getWrittenOutputRows() {
         return writtenOutputRows;
     }
-
-    @JsonProperty
-    public long getWrittenIntermediateBytes() {
-        return writtenIntermediateBytes;
-    }
-
-    @JsonProperty
-    public long getSpilledBytes() {
-        return spilledBytes;
-    }
+//
+//    @JsonProperty
+//    public long getWrittenIntermediateBytes() {
+//        return writtenIntermediateBytes;
+//    }
+//
+//    @JsonProperty
+//    public long getSpilledBytes() {
+//        return spilledBytes;
+//    }
 
     @JsonProperty
     public double getCumulativeMemory() {
         return cumulativeMemory;
     }
-
-    @JsonProperty
-    public double getCumulativeTotalMemory() {
-        return cumulativeTotalMemory;
-    }
+//
+//    @JsonProperty
+//    public double getCumulativeTotalMemory() {
+//        return cumulativeTotalMemory;
+//    }
 
     @JsonProperty
     public int getCompletedSplits() {
@@ -312,9 +307,4 @@ public class LoggableQueryStatistics {
         return complete;
     }
 
-    // Not logging this
-    // @JsonProperty
-    public RuntimeStats getRuntimeStats() {
-        return runtimeStats;
-    }
 }

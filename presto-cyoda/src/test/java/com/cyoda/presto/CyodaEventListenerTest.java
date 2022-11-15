@@ -18,13 +18,13 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.spi.eventlistener.QueryCompletedEvent;
-import com.facebook.presto.spi.eventlistener.QueryCreatedEvent;
-import com.facebook.presto.spi.eventlistener.QueryFailureInfo;
-import com.facebook.presto.spi.eventlistener.QueryMetadata;
-import com.facebook.presto.spi.eventlistener.QueryStatistics;
-import com.facebook.presto.spi.eventlistener.SplitCompletedEvent;
-import com.facebook.presto.spi.eventlistener.SplitStatistics;
+import io.trino.spi.eventlistener.QueryCompletedEvent;
+import io.trino.spi.eventlistener.QueryCreatedEvent;
+import io.trino.spi.eventlistener.QueryFailureInfo;
+import io.trino.spi.eventlistener.QueryMetadata;
+import io.trino.spi.eventlistener.QueryStatistics;
+import io.trino.spi.eventlistener.SplitCompletedEvent;
+import io.trino.spi.eventlistener.SplitStatistics;
 import com.google.common.collect.ImmutableMap;
 import org.jeasy.random.EasyRandom;
 import org.jeasy.random.EasyRandomParameters;
@@ -159,7 +159,7 @@ public class CyodaEventListenerTest {
         Map<String,String> config = setupConfig(false,false,false,false);
 
         QueryCompletedEvent mockQueryCompletedEvent = mock(QueryCompletedEvent.class);
-        when(mockQueryCompletedEvent.getFailedTasks()).thenReturn(Collections.singletonList("Failed!"));
+//        when(mockQueryCompletedEvent.getFailedTasks()).thenReturn(Collections.singletonList("Failed!"));
         QueryMetadata mockMetaData = mock(QueryMetadata.class);
         when(mockMetaData.getQueryId()).thenReturn("my-query-id");
         when(mockQueryCompletedEvent.getMetadata()).thenReturn(mockMetaData);
@@ -183,7 +183,7 @@ public class CyodaEventListenerTest {
         Map<String,String> config = setupConfig(false,false,false,false);
 
         QueryCompletedEvent mockQueryCompletedEvent = mock(QueryCompletedEvent.class);
-        when(mockQueryCompletedEvent.getFailedTasks()).thenReturn(Collections.emptyList());
+//        when(mockQueryCompletedEvent.getFailedTasks()).thenReturn(Collections.emptyList());
         QueryMetadata mockMetaData = mock(QueryMetadata.class);
         when(mockMetaData.getQueryId()).thenReturn("my-query-id");
         when(mockQueryCompletedEvent.getMetadata()).thenReturn(mockMetaData);
@@ -206,7 +206,7 @@ public class CyodaEventListenerTest {
         Map<String,String> config = setupConfig(true,true,true,true);
 
         QueryCompletedEvent mockQueryCompletedEvent = mock(QueryCompletedEvent.class);
-        when(mockQueryCompletedEvent.getFailedTasks()).thenReturn(Collections.emptyList());
+//        when(mockQueryCompletedEvent.getFailedTasks()).thenReturn(Collections.emptyList());
         QueryMetadata mockMetaData = mock(QueryMetadata.class);
         when(mockMetaData.getQueryId()).thenReturn("my-query-id");
         when(mockQueryCompletedEvent.getMetadata()).thenReturn(mockMetaData);
@@ -230,7 +230,7 @@ public class CyodaEventListenerTest {
         Map<String,String> config = setupConfig(true,true,true,true);
 
         QueryCompletedEvent mockQueryCompletedEvent = mock(QueryCompletedEvent.class);
-        when(mockQueryCompletedEvent.getFailedTasks()).thenReturn(Collections.singletonList("Failed!"));
+//        when(mockQueryCompletedEvent.getFailedTasks()).thenReturn(Collections.singletonList("Failed!"));
         QueryMetadata mockMetaData = mock(QueryMetadata.class);
         when(mockMetaData.getQueryId()).thenReturn("my-query-id");
         when(mockQueryCompletedEvent.getMetadata()).thenReturn(mockMetaData);
