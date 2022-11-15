@@ -39,6 +39,10 @@ public class SupplierLogger {
         return new SupplierLogger(Logger.get(name));
     }
 
+    public boolean isDebugEnabled() {
+        return logger.isDebugEnabled();
+    }
+
     public void debug(String message)
     {
         logger.debug(message);
@@ -87,6 +91,9 @@ public class SupplierLogger {
     public void warn(String message)
     {
         logger.warn(message);
+    }
+    public void warn(String format, Object... args) {
+        logger.warn(format,args);
     }
     public void warn(Throwable exception, String message)
     {

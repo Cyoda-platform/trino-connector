@@ -28,6 +28,7 @@ import io.trino.spi.type.Type;
 import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
 import io.trino.spi.security.PasswordAuthenticatorFactory;
+import io.trino.spi.eventlistener.EventListenerFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -38,6 +39,11 @@ public class CyodaPlugin implements Plugin {
     @Override
     public Iterable<ConnectorFactory> getConnectorFactories() {
         return ImmutableList.of(new CyodaConnectorFactory());
+    }
+
+    @Override
+    public Iterable<EventListenerFactory> getEventListenerFactories() {
+        return ImmutableList.of(new CyodaEventListenerFactory());
     }
 
 //    private static final List<Type> OUR_TYPES = ImmutableList.<Type>builder()
