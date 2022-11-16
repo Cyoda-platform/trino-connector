@@ -23,7 +23,7 @@
 
     <!-- Remove parent to avoid any checks and packagings -->
     <groupId>com.cyoda.trino</groupId>
-    <artifactId>trino-cli-runtime</artifactId>
+    <artifactId>presto-cli-runtime</artifactId>
     <version>402</version>
 
     <properties>

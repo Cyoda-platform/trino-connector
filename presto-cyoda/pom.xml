@@ -21,12 +21,12 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <artifactId>trino-cyoda-root</artifactId>
+        <artifactId>presto-cyoda-root</artifactId>
         <groupId>com.cyoda.trino</groupId>
         <version>402</version>
     </parent>
 
-    <artifactId>trino-cyoda</artifactId>
+    <artifactId>presto-cyoda</artifactId>
     <packaging>trino-plugin</packaging>
 
     <properties>

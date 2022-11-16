@@ -24,7 +24,7 @@
     <!-- Remove parent to avoid any checks and packagings -->
 
     <groupId>com.cyoda.trino</groupId>
-    <artifactId>trino-server-runtime</artifactId>
+    <artifactId>presto-server-runtime</artifactId>
     <version>402</version>
 
     <properties>

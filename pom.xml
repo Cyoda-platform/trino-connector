@@ -26,14 +26,14 @@
     </parent>
 
     <groupId>com.cyoda.trino</groupId>
-    <artifactId>trino-cyoda-root</artifactId>
+    <artifactId>presto-cyoda-root</artifactId>
     <description>Trino - Cyoda HTTP Connector</description>
     <packaging>pom</packaging>
 
     <modules>
-        <module>trino-cyoda</module>
-        <module>trino-server-runtime</module>
-        <module>trino-cli-runtime</module>
+        <module>presto-cyoda</module>
+        <module>presto-server-runtime</module>
+        <module>presto-cli-runtime</module>
     </modules>
 
     <properties>
