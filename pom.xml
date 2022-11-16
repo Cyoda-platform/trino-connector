@@ -30,12 +30,6 @@
     <description>Trino - Cyoda HTTP Connector</description>
     <packaging>pom</packaging>
 
-    <modules>
-        <module>presto-cyoda</module>
-        <module>presto-server-runtime</module>
-        <module>presto-cli-runtime</module>
-    </modules>
-
     <properties>
         <!--suppress UnresolvedMavenProperty -->
         <air.main.basedir>${project.parent.basedir}</air.main.basedir>
@@ -74,6 +68,12 @@
         <!-- Needed to override what parent pom sets -->
         <dep.objenesis.version>3.1</dep.objenesis.version>
     </properties>
+
+    <modules>
+        <module>presto-cyoda</module>
+        <module>presto-server-runtime</module>
+        <module>presto-cli-runtime</module>
+    </modules>
 
     <dependencyManagement>
 
