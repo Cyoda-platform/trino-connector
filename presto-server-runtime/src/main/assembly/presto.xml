@@ -67,7 +67,7 @@
 
         <!-- plugins -->
         <fileSet>
-            <directory>${project.build.directory}/dependency/trino-cyoda-${project.version}</directory>
+            <directory>${project.build.directory}/dependency/presto-cyoda-${project.version}</directory>
             <outputDirectory>plugin/cyoda</outputDirectory>
         </fileSet>
 
