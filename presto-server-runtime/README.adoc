@@ -1,11 +1,11 @@
-== How to run the Presto server locally
+== How to run the Trino server locally
 
-This module mimics the presto-server module, so that we can run the Presto server from the IDE without actually checking out the Presto project.
+The dependencies in the `pom.xml` have been adjusted to exclude all other plugins and has only the `trino-cyoda` plugin as a dependency.
 
-It configures only the cyoda-presto plugin, so startup is quicker, too.
-:-)
+IMPORTANT: You need to run the maven goal to package the `trino-cyoda` module before running this, so that our connector zipfile is unpacked in the right location (Note the _Run Maven Goal_ in the screenshot).
 
-image::doc/image-2022-04-22-07-25-01-924.png[]
+
+image::doc/Screenshot 2022-11-15 at 6.26.31 PM.png[]
 
 .JVM args to pass to the runtime config
 [source,shell script]
@@ -16,9 +16,16 @@ image::doc/image-2022-04-22-07-25-01-924.png[]
 -XX:+UseGCOverheadLimit
 -XX:+ExplicitGCInvokesConcurrent
 -Xmx2G
--Dconfig=etc/config.properties
 -Dlog.levels-file=etc/log.properties
 -Djdk.attach.allowAttachSelf=true
+-Dconfig=etc/config.properties
+-Dcyoda.presto.server.url=http://localhost:8082
 ----
 
-If you are running on an ARM CPU, you need to add `-Dos.arch=x86_64`
+This has been tested to also work on Apple M1 with an ARM-based CPU.
+
+== TL;DR
+.Important things that were adjusted to get this working
+. remove all other trino plugins by exclusions in the `trino-server` dependency
+. add an antrun task to the trino-cyoda module in the packaging phase to unpack the zip file into `target/plugin`
+. adjust `etc/config.properties` to set `plugin.dir=../presto-cyoda/target/plugin`
