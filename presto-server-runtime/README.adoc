@@ -24,6 +24,17 @@ image::doc/Screenshot 2022-11-15 at 6.26.31 PM.png[]
 
 This has been tested to also work on Apple M1 with an ARM-based CPU.
 
+== Running under Windows
+In the run configuration, replace
+
+`io.trino.server.TrinoServer`
+
+by
+
+`com.cyoda.trino.server.TrinoDevTestingServerForWindows`
+
+This should allow you to run Trino locally on a Windows PC for local dev/testing of our trino connector
+
 == TL;DR
 .Important things that were adjusted to get this working
 . remove all other trino plugins by exclusions in the `trino-server` dependency
