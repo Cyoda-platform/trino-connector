@@ -45,8 +45,10 @@ public class CyodaEventListenerTest {
     EasyRandom easyRandom = new EasyRandom(
             new EasyRandomParameters()
                     .randomize(Optional.class,() -> Optional.of(baseRandom.nextObject(String.class)))
-                    .randomize(named("analysisTime").and(ofType(Optional.class)).and(inClass(QueryStatistics.class)),
+                    .randomize(ofType(Optional.class).and(inClass(QueryStatistics.class)),
                             ()->Optional.of(baseRandom.nextObject(Duration.class)))
+                    .randomize(named("planNodeStatsAndCosts").and(ofType(Optional.class)).and(inClass(QueryStatistics.class)),
+                            ()->Optional.of(baseRandom.nextObject(String.class)))
                     .randomize(ofType(Optional.class).and(inClass(SplitStatistics.class)),
                             ()->Optional.of(baseRandom.nextObject(Duration.class)))
     );
