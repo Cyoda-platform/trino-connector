@@ -30,12 +30,6 @@
     <description>Trino - Cyoda HTTP Connector</description>
     <packaging>pom</packaging>
 
-    <modules>
-        <module>presto-cyoda</module>
-        <module>presto-server-runtime</module>
-        <module>presto-cli-runtime</module>
-    </modules>
-
     <properties>
         <!--suppress UnresolvedMavenProperty -->
         <air.main.basedir>${project.parent.basedir}</air.main.basedir>
@@ -59,6 +53,7 @@
 
 
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+        <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
         <maven-failsafe-plugin.version>3.0.0-M4</maven-failsafe-plugin.version>
         <maven-surefire-plugin.version>3.0.0-M4</maven-surefire-plugin.version>
         <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
@@ -73,6 +68,12 @@
         <!-- Needed to override what parent pom sets -->
         <dep.objenesis.version>3.1</dep.objenesis.version>
     </properties>
+
+    <modules>
+        <module>presto-cyoda</module>
+        <module>presto-server-runtime</module>
+        <module>presto-cli-runtime</module>
+    </modules>
 
     <dependencyManagement>
 

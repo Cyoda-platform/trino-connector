@@ -10,6 +10,9 @@ http-request.log-*.log.gz
 node_modules/
 dist/
 
+# Intellij Project files
+*.iml
+
 # Compiled Java class files
 *.class
 
