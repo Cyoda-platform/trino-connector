@@ -3,7 +3,7 @@ package com.cyoda.presto.client.logic.converters.structure;
 import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.types.IDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.facebook.presto.common.predicate.DiscreteValues;
+import io.trino.spi.predicate.DiscreteValues;
 
 import java.util.SortedSet;
 import java.util.TreeSet;

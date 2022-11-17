@@ -19,7 +19,7 @@ package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.CyodaTable;
 import com.cyoda.presto.auth.AuthContext;
-import com.facebook.presto.spi.SchemaTableName;
+import io.trino.spi.connector.SchemaTableName;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
 

@@ -20,21 +20,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <parent>
-        <groupId>com.facebook.presto</groupId>
-        <artifactId>presto-root</artifactId>
-        <version>0.272</version>
+        <groupId>io.trino</groupId>
+        <artifactId>trino-root</artifactId>
+        <version>402</version>
     </parent>
 
-    <groupId>com.cyoda.presto</groupId>
+    <groupId>com.cyoda.trino</groupId>
     <artifactId>presto-cyoda-root</artifactId>
-    <description>Presto - Cyoda HTTP Connector</description>
+    <description>Trino - Cyoda HTTP Connector</description>
     <packaging>pom</packaging>
-
-    <modules>
-        <module>presto-cyoda</module>
-        <module>presto-server-runtime</module>
-        <module>presto-cli-runtime</module>
-    </modules>
 
     <properties>
         <!--suppress UnresolvedMavenProperty -->
@@ -45,6 +39,7 @@
         <air.check.skip-license>true</air.check.skip-license>
         <air.check.skip-checkstyle>true</air.check.skip-checkstyle>
         <air.check.skip-modernizer>true</air.check.skip-modernizer>
+        <air.check.fail-dependency>false</air.check.fail-dependency>
         <air.check.fail-duplicate-finder>false</air.check.fail-duplicate-finder>
 
         <spring.version>5.3.20</spring.version>
@@ -52,12 +47,13 @@
         <joda-beans-maven-plugin.version>1.3.1</joda-beans-maven-plugin.version>
 
         <mockito-core.version>4.8.1</mockito-core.version>
-        <jackson-core.version>2.10.0</jackson-core.version>
+        <jackson-core.version>2.13.2</jackson-core.version>
         <jjwt.version>0.9.0</jjwt.version>
         <json-path.version>2.6.0</json-path.version>
 
 
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
+        <maven-antrun-plugin.version>3.1.0</maven-antrun-plugin.version>
         <maven-failsafe-plugin.version>3.0.0-M4</maven-failsafe-plugin.version>
         <maven-surefire-plugin.version>3.0.0-M4</maven-surefire-plugin.version>
         <jacoco-maven-plugin.version>0.8.7</jacoco-maven-plugin.version>
@@ -72,6 +68,12 @@
         <!-- Needed to override what parent pom sets -->
         <dep.objenesis.version>3.1</dep.objenesis.version>
     </properties>
+
+    <modules>
+        <module>presto-cyoda</module>
+        <module>presto-server-runtime</module>
+        <module>presto-cli-runtime</module>
+    </modules>
 
     <dependencyManagement>
 
@@ -213,6 +215,10 @@
                         <groupId>org.objenesis</groupId>
                         <artifactId>objenesis</artifactId>
                     </exclusion>
+                    <exclusion>
+                        <groupId>net.bytebuddy</groupId>
+                        <artifactId>byte-buddy</artifactId>
+                    </exclusion>
                 </exclusions>
             </dependency>
 
@@ -280,6 +286,47 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <configuration>
+                    <rules>
+                        <compound implementation="com.github.ferstl.maven.pomenforcers.CompoundPedanticEnforcer">
+<!--                            <enforcers>POM_SECTION_ORDER,MODULE_ORDER,DEPENDENCY_MANAGEMENT_ORDER,DEPENDENCY_ORDER,DEPENDENCY_ELEMENT</enforcers>-->
+                            <enforcers>POM_SECTION_ORDER</enforcers>
+                            <pomSectionPriorities>modelVersion,parent,groupId,artifactId,version,name,description,packaging,url,inceptionYear,licenses,scm,properties,modules</pomSectionPriorities>
+                            <dependenciesGroupIdPriorities>io.trino,io.airlift</dependenciesGroupIdPriorities>
+                            <dependenciesOrderBy>scope,groupId,artifactId</dependenciesOrderBy>
+                            <dependenciesScopePriorities>compile,runtime,provided,test</dependenciesScopePriorities>
+                            <dependencyManagementOrderBy>groupId,artifactId</dependencyManagementOrderBy>
+                            <dependencyManagementGroupIdPriorities>io.trino,io.airlift</dependencyManagementGroupIdPriorities>
+                            <dependencyElementOrdering>groupId,artifactId,type,version</dependencyElementOrdering>
+                        </compound>
+                        <requireUpperBoundDeps>
+                            <excludes combine.children="append">
+                                <!-- TODO: fix this in Airlift resolver -->
+                                <exclude>org.codehaus.plexus:plexus-utils</exclude>
+                                <exclude>com.google.guava:guava</exclude>
+                                <exclude>com.fasterxml.jackson.core:jackson-core</exclude>
+                                <exclude>com.google.j2objc:j2objc-annotations</exclude>
+                            </excludes>
+                        </requireUpperBoundDeps>
+                        <bannedDependencies>
+                            <excludes combine.children="append">
+                                <!-- We don't use log4j2, additionally versions < 2.15.0 are vulnerable to the RCE Log4Shell (CVE-2021-44228) -->
+                                <exclude>org.apache.logging.log4j:log4j-core</exclude>
+                            </excludes>
+                        </bannedDependencies>
+                    </rules>
+                </configuration>
+                <dependencies>
+                    <dependency>
+                        <groupId>com.github.ferstl</groupId>
+                        <artifactId>pedantic-pom-enforcers</artifactId>
+                        <version>2.0.0</version>
+                    </dependency>
+                </dependencies>
             </plugin>
         </plugins>
     </build>

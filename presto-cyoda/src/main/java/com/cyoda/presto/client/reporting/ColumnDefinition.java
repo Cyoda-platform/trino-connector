@@ -19,7 +19,7 @@ package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.facebook.presto.common.type.TypeSignature;
+import io.trino.spi.type.TypeSignature;
 
 public interface ColumnDefinition {
     int getPos();

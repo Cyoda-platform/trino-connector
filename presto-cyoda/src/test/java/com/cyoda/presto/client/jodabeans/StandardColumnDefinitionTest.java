@@ -20,7 +20,7 @@ package com.cyoda.presto.client.jodabeans;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.service.api.beans.GroupHeader;
-import com.facebook.presto.common.type.StandardTypes;
+import io.trino.spi.type.StandardTypes;
 import org.testng.annotations.Test;
 
 import java.util.List;

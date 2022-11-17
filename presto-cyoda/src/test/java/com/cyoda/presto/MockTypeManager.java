@@ -17,11 +17,13 @@
 
 package com.cyoda.presto;
 
-import com.facebook.presto.common.type.Type;
-import com.facebook.presto.common.type.TypeManager;
-import com.facebook.presto.common.type.TypeSignature;
-import com.facebook.presto.common.type.TypeSignatureParameter;
-import com.facebook.presto.common.type.VarcharType;
+import io.trino.spi.type.Type;
+import io.trino.spi.type.TypeId;
+import io.trino.spi.type.TypeManager;
+import io.trino.spi.type.TypeOperators;
+import io.trino.spi.type.TypeSignature;
+import io.trino.spi.type.TypeSignatureParameter;
+import io.trino.spi.type.VarcharType;
 
 import java.util.List;
 
@@ -32,12 +34,23 @@ public class MockTypeManager implements TypeManager {
     }
 
     @Override
+    public Type fromSqlType(String type) {
+        return null;
+    }
+
+    @Override
+    public Type getType(TypeId id) {
+        return null;
+    }
+
+    @Override
     public Type getParameterizedType(String baseTypeName, List<TypeSignatureParameter> typeParameters) {
         return VarcharType.VARCHAR;
     }
 
     @Override
-    public boolean canCoerce(Type actualType, Type expectedType) {
-        return false;
+    public TypeOperators getTypeOperators() {
+        return null;
     }
+
 }

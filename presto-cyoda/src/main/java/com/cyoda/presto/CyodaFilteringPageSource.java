@@ -22,17 +22,20 @@ import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.common.Page;
-import com.facebook.presto.common.PageBuilder;
-import com.facebook.presto.common.block.BlockBuilder;
-import com.facebook.presto.common.type.Type;
-import com.facebook.presto.spi.ConnectorPageSource;
-import com.facebook.presto.spi.PrestoException;
+import io.trino.spi.Page;
+import io.trino.spi.PageBuilder;
+import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.metrics.Metrics;
+import io.trino.spi.type.Type;
+import io.trino.spi.connector.ConnectorPageSource;
+import io.trino.spi.TrinoException;
 import com.google.common.collect.ImmutableList;
 import reactor.core.scheduler.Schedulers;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.OptionalLong;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_PAGING_ERROR;
@@ -99,9 +102,9 @@ public class CyodaFilteringPageSource<T>
     }
 
     @Override
-    public long getCompletedPositions()
+    public OptionalLong getCompletedPositions()
     {
-        return completedPositions;
+        return OptionalLong.of(completedPositions);
     }
 
     @Override
@@ -165,11 +168,16 @@ public class CyodaFilteringPageSource<T>
             return page;
         } catch (Exception e) {
             finished = true;
-            throw new PrestoException(CYODA_PAGING_ERROR,"Failure getting next page: " + e.getMessage(), e);
+            throw new TrinoException(CYODA_PAGING_ERROR,"Failure getting next page: " + e.getMessage(), e);
         } finally {
             readTimeNanos += System.nanoTime() - start;
             LOG.debug("Read time %.2f msec",()-> (double) readTimeNanos / 1.0E6);
         }
+    }
+
+    @Override
+    public long getMemoryUsage() {
+        return 0;
     }
 
 
@@ -179,12 +187,6 @@ public class CyodaFilteringPageSource<T>
             CyodaColumnHandle columnHandle = columnHandles.get(i);
             requestHandler.writeValue(item, columnHandle, blockBuilder);
         }
-    }
-
-    @Override
-    public long getSystemMemoryUsage()
-    {
-        return 0;
     }
 
     @Override

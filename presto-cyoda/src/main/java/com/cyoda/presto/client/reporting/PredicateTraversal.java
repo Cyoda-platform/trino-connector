@@ -24,7 +24,7 @@ import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
 import com.cyoda.presto.client.logic.LeafPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.facebook.presto.spi.PrestoException;
+import io.trino.spi.TrinoException;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -276,7 +276,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
                 }
             }
             default:
-                throw new PrestoException(
+                throw new TrinoException(
                         CyodaErrorCode.CYODA_PUSHDOWN_UNSUPPORTED_EXPRESSION,
                         type + " is not supported here");
         }

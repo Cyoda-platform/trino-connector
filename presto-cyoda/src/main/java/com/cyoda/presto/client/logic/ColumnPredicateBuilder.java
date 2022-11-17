@@ -19,12 +19,13 @@ package com.cyoda.presto.client.logic;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.common.predicate.DiscreteValues;
-import com.facebook.presto.common.predicate.Domain;
-import com.facebook.presto.common.predicate.Range;
-import com.facebook.presto.common.predicate.TupleDomain;
-import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
+import io.trino.spi.connector.ColumnHandle;
+import io.trino.spi.predicate.DiscreteValues;
+import io.trino.spi.predicate.Domain;
+import io.trino.spi.predicate.Range;
+import io.trino.spi.predicate.TupleDomain;
+import io.trino.spi.TrinoException;
+import io.trino.spi.StandardErrorCode;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 
@@ -48,7 +49,7 @@ public class ColumnPredicateBuilder {
     }
 
     @SuppressWarnings("java:S3252") // Silly warning
-    public static CompoundPredicateNode setupConstraintPredicates(TupleDomain<CyodaColumnHandle> constraintSummary) {
+    public static CompoundPredicateNode setupConstraintPredicates(TupleDomain<ColumnHandle> constraintSummary) {
 
         LOG.debug("Taken from PredicateBuilderDebugger: %s",() -> debug(constraintSummary));
 
@@ -58,10 +59,10 @@ public class ColumnPredicateBuilder {
         if (constraintSummary.isNone()) return CompoundPredicateNode.empty(null);
 
         if (!constraintSummary.isAll()) {
-            List<TupleDomain.ColumnDomain<CyodaColumnHandle>> columnDomains = constraintSummary.getColumnDomains()
+            List<TupleDomain.ColumnDomain<ColumnHandle>> columnDomains = constraintSummary.getColumnDomains()
                     .orElse(Collections.emptyList());
-            for (TupleDomain.ColumnDomain<CyodaColumnHandle> columnDomain : columnDomains) {
-                CyodaColumnHandle columnHandle = columnDomain.getColumn();
+            for (TupleDomain.ColumnDomain<ColumnHandle> columnDomain : columnDomains) {
+                CyodaColumnHandle columnHandle = (CyodaColumnHandle) columnDomain.getColumn();
                 String columnName = columnHandle.getColumnName();
                 Domain domain = columnDomain.getDomain();
 
@@ -132,8 +133,13 @@ public class ColumnPredicateBuilder {
                                     } else if (singleValues.size() > 1) {
                                         disjunctsBuilder.addLeaf(columnHandle.newInListPredicateFromDiscrete(new DiscreteValues() {
                                             @Override
-                                            public boolean isWhiteList() {
+                                            public boolean isInclusive() {
                                                 return true;
+                                            }
+
+                                            @Override
+                                            public int getValuesCount() {
+                                                return singleValues.size();
                                             }
 
                                             @Override
@@ -158,12 +164,12 @@ public class ColumnPredicateBuilder {
                                 },
 
                                 discreteValues -> {
-                                    boolean negate = !discreteValues.isWhiteList();
+                                    boolean negate = !discreteValues.isInclusive();
                                     ColumnPredicate<?> columnPredicate = columnHandle.newInListPredicateFromDiscrete(discreteValues).negate(negate);
                                     conjunctsBuilder.addLeaf(columnPredicate);
 
                                     String values = Joiner.on(",").join(nCopies(discreteValues.getValues().size(), "?"));
-                                    String predicateString = columnName + (discreteValues.isWhiteList() ? "" : " NOT") + " IN (" + values + ")";
+                                    String predicateString = columnName + (discreteValues.isInclusive() ? "" : " NOT") + " IN (" + values + ")";
                                     if (domain.isNullAllowed()) {
                                         predicateString = "(" + columnPredicate + " OR " + columnName + " IS NULL)";
                                     }
@@ -173,7 +179,7 @@ public class ColumnPredicateBuilder {
                                 },
 
                                 allOrNone -> {
-                                    throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Case should not be reachable");
+                                    throw new TrinoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Case should not be reachable");
                                 });
                         LOG.debug("Have established %d disjuncts", count);
                     }

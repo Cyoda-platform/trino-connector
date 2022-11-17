@@ -1,9 +1,9 @@
 package com.cyoda.presto.client.logic.converters.structure;
 
 import com.cyoda.presto.client.types.DataType;
-import com.facebook.presto.common.block.BlockBuilder;
-import com.facebook.presto.common.type.ArrayType;
-import com.facebook.presto.common.type.Type;
+import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.type.ArrayType;
+import io.trino.spi.type.Type;
 
 import java.util.Collection;
 import java.util.Iterator;

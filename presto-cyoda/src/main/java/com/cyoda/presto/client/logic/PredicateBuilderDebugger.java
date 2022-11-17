@@ -18,11 +18,12 @@
 package com.cyoda.presto.client.logic;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.facebook.presto.common.predicate.Domain;
-import com.facebook.presto.common.predicate.Range;
-import com.facebook.presto.common.predicate.TupleDomain;
-import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
+import io.trino.spi.connector.ColumnHandle;
+import io.trino.spi.predicate.Domain;
+import io.trino.spi.predicate.Range;
+import io.trino.spi.predicate.TupleDomain;
+import io.trino.spi.TrinoException;
+import io.trino.spi.StandardErrorCode;
 import com.google.common.base.Joiner;
 
 import java.util.ArrayList;
@@ -36,15 +37,15 @@ import static java.util.Collections.nCopies;
 
 /**
  * This mimics the code in
- * com.facebook.presto.raptor.systemtables.PreparedStatementBuilder and returns the SQL string generated.
+ * io.trino.raptor.systemtables.PreparedStatementBuilder and returns the SQL string generated.
  *
  */
 public class PredicateBuilderDebugger {
 
     private PredicateBuilderDebugger() {}
 
-    static String debug(TupleDomain<CyodaColumnHandle> constraintSummary) {
-        List<TupleDomain.ColumnDomain<CyodaColumnHandle>> columnDomains = constraintSummary.getColumnDomains()
+    static String debug(TupleDomain<ColumnHandle> constraintSummary) {
+        List<TupleDomain.ColumnDomain<ColumnHandle>> columnDomains = constraintSummary.getColumnDomains()
                 .orElse(Collections.emptyList());
         List<Object> conjuncts = columnDomains.stream().map(PredicateBuilderDebugger::debug).collect(Collectors.toList());
         StringBuilder where = new StringBuilder("WHERE ");
@@ -52,11 +53,11 @@ public class PredicateBuilderDebugger {
     }
 
     private static String debug(
-            TupleDomain.ColumnDomain<CyodaColumnHandle> columnDomain) {
+            TupleDomain.ColumnDomain<ColumnHandle> columnDomain) {
         Domain domain = columnDomain.getDomain();
-        CyodaColumnHandle columnHandle = columnDomain.getColumn();
+        ColumnHandle columnHandle = columnDomain.getColumn();
 
-        String columnName = columnHandle.getColumnName();
+        String columnName = ((CyodaColumnHandle)columnHandle).getColumnName();
         if (domain.getValues().isAll()) {
             return domain.isNullAllowed() ? "TRUE" : columnName + " IS NOT NULL";
         }
@@ -107,7 +108,7 @@ public class PredicateBuilderDebugger {
 
                 discreteValues -> {
                     String values = Joiner.on(",").join(nCopies(discreteValues.getValues().size(), "?"));
-                    String predicate = columnName + (discreteValues.isWhiteList() ? "" : " NOT") + " IN (" + values + ")";
+                    String predicate = columnName + (discreteValues.isInclusive() ? "" : " NOT") + " IN (" + values + ")";
                     if (domain.isNullAllowed()) {
                         predicate = "(" + predicate + " OR " + columnName + " IS NULL)";
                     }
@@ -115,7 +116,7 @@ public class PredicateBuilderDebugger {
                 },
 
                 allOrNone -> {
-                    throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Case should not be reachable");
+                    throw new TrinoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Case should not be reachable");
                 });
     }
 

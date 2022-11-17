@@ -18,8 +18,8 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.CyodaClient.CyodaAuthenticationType;
-import com.facebook.airlift.configuration.Config;
-import com.facebook.airlift.configuration.ConfigurationFactory;
+import io.airlift.configuration.Config;
+import io.airlift.configuration.ConfigurationFactory;
 import com.google.common.net.HostAndPort;
 
 import javax.validation.constraints.NotNull;

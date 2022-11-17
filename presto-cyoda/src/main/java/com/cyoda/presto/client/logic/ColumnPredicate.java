@@ -19,8 +19,8 @@ package com.cyoda.presto.client.logic;
 
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
+import io.trino.spi.TrinoException;
+import io.trino.spi.StandardErrorCode;
 import com.google.common.base.Joiner;
 import com.google.common.base.Objects;
 import com.google.common.base.Preconditions;
@@ -300,7 +300,7 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
                 }
             }
             default:
-                throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, String.format("unknown predicate type %s", this));
+                throw new TrinoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, String.format("unknown predicate type %s", this));
         }
     }
 
@@ -353,7 +353,7 @@ public class ColumnPredicate<T extends Comparable<? super T>> {
             case NOT_IN_LIST:
                 return new ColumnPredicate<>(PredicateType.IN_LIST, column, lower, upper);
             default:
-                throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Type" + type + " cannot be negated");
+                throw new TrinoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, "Type" + type + " cannot be negated");
         }
     }
 

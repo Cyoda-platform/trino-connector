@@ -18,7 +18,7 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.facebook.presto.spi.ColumnMetadata;
+import io.trino.spi.connector.ColumnMetadata;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;

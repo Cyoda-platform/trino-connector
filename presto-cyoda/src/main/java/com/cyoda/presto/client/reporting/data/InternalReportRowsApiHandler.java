@@ -34,10 +34,10 @@ import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.GroupHeader;
 import com.cyoda.service.api.beans.ReportRow;
-import com.facebook.presto.common.type.StandardTypes;
-import com.facebook.presto.common.type.TypeManager;
-import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
+import io.trino.spi.type.StandardTypes;
+import io.trino.spi.type.TypeManager;
+import io.trino.spi.TrinoException;
+import io.trino.spi.StandardErrorCode;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -254,7 +254,7 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
         try {
             uri = config.getServerUrl().toURI().resolve(REPORT_ENDPOINT);
         } catch (URISyntaxException e) {
-            throw new PrestoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, e);
+            throw new TrinoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, e);
         }
         final ImmutableList.Builder<TemplateVariable> builder = ImmutableList.builder();
         builder.add(

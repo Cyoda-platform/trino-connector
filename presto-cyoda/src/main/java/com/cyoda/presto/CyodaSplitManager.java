@@ -17,17 +17,16 @@
 
 package com.cyoda.presto;
 
-import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
-import com.cyoda.presto.handles.CyodaTableLayoutHandle;
-import com.facebook.presto.common.predicate.TupleDomain;
-import com.facebook.presto.spi.ConnectorSession;
-import com.facebook.presto.spi.ConnectorSplit;
-import com.facebook.presto.spi.ConnectorSplitSource;
-import com.facebook.presto.spi.ConnectorTableLayoutHandle;
-import com.facebook.presto.spi.FixedSplitSource;
-import com.facebook.presto.spi.connector.ConnectorSplitManager;
-import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
+import io.trino.spi.connector.ConnectorTableHandle;
+import io.trino.spi.connector.Constraint;
+import io.trino.spi.connector.DynamicFilter;
+import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.connector.ConnectorSplit;
+import io.trino.spi.connector.ConnectorSplitSource;
+import io.trino.spi.connector.FixedSplitSource;
+import io.trino.spi.connector.ConnectorSplitManager;
+import io.trino.spi.connector.ConnectorTransactionHandle;
 import com.google.common.base.Preconditions;
 
 import javax.inject.Inject;
@@ -54,20 +53,17 @@ public class CyodaSplitManager implements ConnectorSplitManager {
     public ConnectorSplitSource getSplits(
             ConnectorTransactionHandle handle,
             ConnectorSession session,
-            ConnectorTableLayoutHandle layout,
-            SplitSchedulingContext splitSchedulingContext) {
-        CyodaTableLayoutHandle layoutHandle = (CyodaTableLayoutHandle) layout;
-        CyodaTableHandle tableHandle = layoutHandle.getTable();
-        Preconditions.checkArgument(layoutHandle.getTable().getConnectorId().equals(connectorId),"This split manager is meant for connector id "+connectorId);
+            ConnectorTableHandle connectorTableHandle,
+            DynamicFilter dynamicFilter,
+            Constraint constraint) {
+        CyodaTableHandle tableHandle = (CyodaTableHandle) connectorTableHandle;
+        Preconditions.checkArgument(tableHandle.getConnectorId().equals(connectorId),"This split manager is meant for connector id "+connectorId);
         CyodaTable table = cyodaClient.getTable(tableHandle);
         // this can happen if table is removed during a query
         checkState(table != null, "Table %s.%s no longer exists", tableHandle.getSchemaName(), tableHandle.getTableName());
-
-        TupleDomain<CyodaColumnHandle> constraint = layoutHandle.getConstraint();
-
         List<ConnectorSplit> splits = new ArrayList<>();
         for (URI uri : table.getSources()) {
-            splits.add(new CyodaSplit(tableHandle, uri, constraint));
+            splits.add(new CyodaSplit(tableHandle, uri, constraint.getSummary()));
         }
         Collections.shuffle(splits);
 

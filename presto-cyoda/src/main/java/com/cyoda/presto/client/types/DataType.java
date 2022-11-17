@@ -22,21 +22,21 @@ import com.cyoda.presto.client.logic.converters.impl.BigDecimalPrestoValueConver
 import com.cyoda.presto.client.logic.converters.impl.UUIDPrestoValueConverter;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.common.type.BigintType;
-import com.facebook.presto.common.type.BooleanType;
-import com.facebook.presto.common.type.DateType;
-import com.facebook.presto.common.type.DoubleType;
-import com.facebook.presto.common.type.IntegerType;
-import com.facebook.presto.common.type.JsonType;
-import com.facebook.presto.common.type.RealType;
-import com.facebook.presto.common.type.SmallintType;
-import com.facebook.presto.common.type.StandardTypes;
-import com.facebook.presto.common.type.TimestampType;
-import com.facebook.presto.common.type.TinyintType;
-import com.facebook.presto.common.type.Type;
-import com.facebook.presto.common.type.TypeSignature;
-import com.facebook.presto.common.type.TypeSignatureParameter;
-import com.facebook.presto.common.type.VarcharType;
+import io.trino.spi.type.BigintType;
+import io.trino.spi.type.BooleanType;
+import io.trino.spi.type.DateType;
+import io.trino.spi.type.DoubleType;
+import io.trino.spi.type.IntegerType;
+import io.trino.type.JsonType;
+import io.trino.spi.type.RealType;
+import io.trino.spi.type.SmallintType;
+import io.trino.spi.type.StandardTypes;
+import io.trino.spi.type.TimestampType;
+import io.trino.spi.type.TinyintType;
+import io.trino.spi.type.Type;
+import io.trino.spi.type.TypeSignature;
+import io.trino.spi.type.TypeSignatureParameter;
+import io.trino.spi.type.VarcharType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 
@@ -64,7 +64,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
- * This might help to figure out what the correct presto type is: com.facebook.presto.client.FixJsonDataUtils
+ * This might help to figure out what the correct presto type is: io.trino.client.FixJsonDataUtils
  */
 public enum DataType implements IDataType {
     STRING          (String.class,          StandardTypes.VARCHAR,      true, 0),
@@ -72,7 +72,7 @@ public enum DataType implements IDataType {
     DOUBLE          (Double.class,          StandardTypes.DOUBLE,       true, 0),
     INTEGER         (Integer.class,         StandardTypes.INTEGER,      true, 0),
     BIG_DECIMAL     (BigDecimal.class,      StandardTypes.DECIMAL,      true, 0,
-            BigDecimalPrestoValueConverter.P_PR, BigDecimalPrestoValueConverter.P_SC),
+            BigDecimalPrestoValueConverter.PRECISION, BigDecimalPrestoValueConverter.SCALE),
     BIG_INTEGER     (BigInteger.class,      StandardTypes.DECIMAL,      true, 0),
     BOOLEAN         (Boolean.class,         StandardTypes.BOOLEAN,      true, 0),
     LOCAL_DATE      (LocalDate.class,       StandardTypes.DATE,         true, 0),
@@ -86,7 +86,7 @@ public enum DataType implements IDataType {
     YEAR            (Year.class,            StandardTypes.INTEGER,      true, 0),
     YEAR_MONTH      (YearMonth.class,       StandardTypes.DATE,         true, 0),
     LOCAL_TIME      (LocalTime.class,       StandardTypes.TIME,         true, 0), // Unsure
-    UUID_TYPE       (UUID.class,            UUIDPrestoValueConverter.TYPE_STRING, true, 0),
+    UUID_TYPE       (UUID.class,            StandardTypes.UUID,         true, 0),
     BYTE_ARRAY      (byte[].class,          StandardTypes.VARBINARY,    false, 0),
     BYTE_BUFFER     (ByteBuffer.class,      StandardTypes.VARBINARY,    false, 0),
     CLASS           (Class.class,           StandardTypes.VARCHAR,      false, 0),
@@ -109,12 +109,12 @@ public enum DataType implements IDataType {
     private final List<TypeSignatureParameter> staticParams;
 
 
-    DataType(Class<?> javaType, String typeString, boolean comparable, int typeParametersCount, TypeSignatureParameter...staticParams) {
+    DataType(Class<?> javaType, String typeString, boolean comparable, int typeParametersCount, long...staticParams) {
         this.javaType = javaType;
         this.typeString = typeString;
         this.comparable = comparable;
         this.typeParametersCount = typeParametersCount;
-        this.staticParams = Arrays.asList(staticParams);
+        this.staticParams = Arrays.stream(staticParams).mapToObj(TypeSignatureParameter::numericParameter).collect(Collectors.toList());
     }
 
     public static <T> Class<T> getJType(IDataType<T> dataType){
@@ -132,7 +132,7 @@ public enum DataType implements IDataType {
             case DOUBLE: return DoubleType.DOUBLE.getTypeSignature();
             case STRING: return VarcharType.VARCHAR.getTypeSignature();
             case DATE: return DateType.DATE.getTypeSignature();
-            case LOCAL_DATE_TIME: return TimestampType.TIMESTAMP.getTypeSignature();
+            case LOCAL_DATE_TIME: return TimestampType.TIMESTAMP_MILLIS.getTypeSignature();
             case LOCAL_DATE: return BigintType.BIGINT.getTypeSignature();
             case YEAR: return VarcharType.VARCHAR.getTypeSignature();
             case OBJECT: return JsonType.JSON.getTypeSignature();
@@ -227,22 +227,22 @@ public enum DataType implements IDataType {
     }
 
 
-    public static DataType fromType(Type type) {
-        if ( type.getTypeSignature().getBase().equals(VarcharType.VARCHAR.getTypeSignature().getBase())) {
-            return STRING;
-        }
-        if ( type.getTypeSignature().getBase().equals(IntegerType.INTEGER.getTypeSignature().getBase())) {
-            return INTEGER;
-        }
-        if ( type.getTypeSignature().getBase().equals(JsonType.JSON.getTypeSignature().getBase())) {
-            return OBJECT;
-        }
-        if ( type.getTypeSignature().getBase().equals(BigDecimalType.BIG_DECIMAL_TYPE.getTypeSignature().getBase())) {
-            return BIG_DECIMAL;
-        }
-        throw new UnsupportedOperationException("Mapping of "+type+" to DataType not yet implemented");
-    }
-
+//    public static DataType fromType(Type type) {
+//        if ( type.getTypeSignature().getBase().equals(VarcharType.VARCHAR.getTypeSignature().getBase())) {
+//            return STRING;
+//        }
+//        if ( type.getTypeSignature().getBase().equals(IntegerType.INTEGER.getTypeSignature().getBase())) {
+//            return INTEGER;
+//        }
+//        if ( type.getTypeSignature().getBase().equals(JsonType.JSON.getTypeSignature().getBase())) {
+//            return OBJECT;
+//        }
+//        if ( type.getTypeSignature().getBase().equals(BigDecimalType.BIG_DECIMAL_TYPE.getTypeSignature().getBase())) {
+//            return BIG_DECIMAL;
+//        }
+//        throw new UnsupportedOperationException("Mapping of "+type+" to DataType not yet implemented");
+//    }
+//
 
 //    public static final Set<String> supportedPrestoTypes = ImmutableSet.copyOf(
 //            Arrays.stream(DataType.values())

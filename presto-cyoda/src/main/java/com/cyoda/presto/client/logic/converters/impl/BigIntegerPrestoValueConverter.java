@@ -17,19 +17,14 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.structure.BigDecimalTypeValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.LongDecimalTypeValueConverter;
 import com.cyoda.presto.client.types.DataType;
-import io.airlift.slice.Slice;
+import io.trino.spi.type.Int128;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import static com.facebook.presto.common.type.Decimals.decodeUnscaledValue;
-import static com.facebook.presto.common.type.Decimals.encodeUnscaledValue;
-
-public class BigIntegerPrestoValueConverter extends BigDecimalTypeValueConverter<BigInteger> {
+public class BigIntegerPrestoValueConverter extends LongDecimalTypeValueConverter<BigInteger> {
 
     @Inject
     public BigIntegerPrestoValueConverter() {
@@ -37,25 +32,13 @@ public class BigIntegerPrestoValueConverter extends BigDecimalTypeValueConverter
     }
 
     @Override
-    protected BigDecimal toBigDecimal(BigInteger value) {
-        return new BigDecimal(value);
+    protected Int128 toInt128(BigInteger value) {
+        return Int128.valueOf(value);
     }
 
     @Override
-    protected BigInteger fromBigDecimal(BigDecimal value) {
-        return value.toBigIntegerExact();
-    }
-
-    @Override
-    public Slice toSlice(@Nonnull BigInteger value) {
-        // Taken from com.facebook.presto.hive.functions.type.DecimalUtils
-        return encodeUnscaledValue(value);
-    }
-
-    @Nonnull
-    @Override
-    public BigInteger fromSlice(Slice value) {
-        return decodeUnscaledValue(value);
+    protected BigInteger fromInt128(Int128 value) {
+        return value.toBigInteger();
     }
 
     @Override

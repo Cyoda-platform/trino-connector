@@ -18,8 +18,8 @@
 package com.cyoda.presto.client.logic.converters.structure;
 
 import com.cyoda.presto.client.types.IDataType;
-import com.facebook.presto.common.block.BlockBuilder;
-import com.facebook.presto.common.type.Type;
+import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.type.Type;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;

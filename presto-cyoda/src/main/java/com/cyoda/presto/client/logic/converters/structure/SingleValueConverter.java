@@ -1,10 +1,10 @@
 package com.cyoda.presto.client.logic.converters.structure;
 
 import com.cyoda.presto.client.types.IDataType;
-import com.facebook.airlift.json.JsonCodec;
-import com.facebook.airlift.json.JsonObjectMapperProvider;
-import com.facebook.presto.common.block.BlockBuilder;
-import com.facebook.presto.common.type.Type;
+import io.airlift.json.JsonCodec;
+import io.airlift.json.ObjectMapperProvider;
+import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.type.Type;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Suppliers;
@@ -20,7 +20,7 @@ import static com.fasterxml.jackson.databind.SerializationFeature.INDENT_OUTPUT;
 public abstract class SingleValueConverter<T> extends AbstractValueConverter<T> {
 
     public static final Supplier<ObjectMapper> OBJECT_MAPPER_SUPPLIER = Suppliers.memoize(
-            () -> new JsonObjectMapperProvider().get().enable(INDENT_OUTPUT))::get;
+            () -> new ObjectMapperProvider().get().enable(INDENT_OUTPUT))::get;
 
     public SingleValueConverter(IDataType<T> dataType) {
         super(dataType);

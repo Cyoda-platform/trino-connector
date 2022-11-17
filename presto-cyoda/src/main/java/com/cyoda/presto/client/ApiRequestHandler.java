@@ -23,8 +23,8 @@ import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
-import com.facebook.presto.common.block.BlockBuilder;
-import com.facebook.presto.spi.SchemaTableName;
+import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.connector.SchemaTableName;
 import reactor.core.publisher.Flux;
 
 import javax.annotation.Nullable;

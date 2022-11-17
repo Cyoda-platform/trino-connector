@@ -17,25 +17,24 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.structure.BigDecimalTypeValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.LongDecimalTypeValueConverter;
 import com.cyoda.presto.client.types.DataType;
-import com.facebook.presto.common.type.DecimalType;
-import com.facebook.presto.common.type.Decimals;
-import com.facebook.presto.common.type.TypeSignatureParameter;
-import io.airlift.slice.Slice;
+import io.trino.spi.type.DecimalType;
+import io.trino.spi.type.Decimals;
+import io.trino.spi.type.Int128;
+import io.trino.spi.type.TypeSignatureParameter;
 
-import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.math.MathContext;
 
-public class BigDecimalPrestoValueConverter extends BigDecimalTypeValueConverter<BigDecimal> {
+public class BigDecimalPrestoValueConverter extends LongDecimalTypeValueConverter<BigDecimal> {
 
-    private static final int SCALE = 18;
-    private static final int PRECISION = Decimals.MAX_PRECISION;
+    public static final int SCALE = 18;
+    public static final int PRECISION = Decimals.MAX_PRECISION;
     private static final DecimalType DECIMAL_TYPE = DecimalType.createDecimalType(PRECISION, SCALE);
-    public static final TypeSignatureParameter P_SC = TypeSignatureParameter.of(SCALE);
-    public static final TypeSignatureParameter P_PR = TypeSignatureParameter.of(PRECISION);
+    public static final TypeSignatureParameter P_SC = TypeSignatureParameter.numericParameter(SCALE);
+    public static final TypeSignatureParameter P_PR = TypeSignatureParameter.numericParameter(PRECISION);
 
     @Inject
     public BigDecimalPrestoValueConverter() {
@@ -43,29 +42,18 @@ public class BigDecimalPrestoValueConverter extends BigDecimalTypeValueConverter
     }
 
     @Override
-    protected BigDecimal toBigDecimal(BigDecimal value) {
-        return value;
-    }
-
-    @Override
-    protected BigDecimal fromBigDecimal(BigDecimal value) {
-        return value;
-    }
-
-    @Override
-    public Slice toSlice(@Nonnull BigDecimal value) {
+    protected Int128 toInt128(BigDecimal value) {
         if (value.scale() > SCALE){
             throw new IllegalArgumentException(String.format("Value %s of a BigDecimal field has higher scale (%s) than maximum of %s",
                     value, value.scale(), SCALE));
         }
         BigDecimal rescaled = Decimals.rescale(value, DECIMAL_TYPE);
-        return Decimals.encodeScaledValue(rescaled);
+        return Int128.valueOf(rescaled.unscaledValue());
     }
 
-    @Nonnull
     @Override
-    public BigDecimal fromSlice(Slice value) {
-        return new BigDecimal(Decimals.decodeUnscaledValue(value), DECIMAL_TYPE.getScale(), new MathContext(DECIMAL_TYPE.getPrecision()));
+    protected BigDecimal fromInt128(Int128 value) {
+        return new BigDecimal(value.toBigInteger(), DECIMAL_TYPE.getScale(), new MathContext(DECIMAL_TYPE.getPrecision()));
     }
 
     @Override

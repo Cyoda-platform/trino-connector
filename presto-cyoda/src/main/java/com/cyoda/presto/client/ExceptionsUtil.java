@@ -17,8 +17,8 @@
 
 package com.cyoda.presto.client;
 
-import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.StandardErrorCode;
+import io.trino.spi.TrinoException;
+import io.trino.spi.StandardErrorCode;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
 
@@ -35,13 +35,13 @@ public class ExceptionsUtil {
     @SuppressWarnings("SameParameterValue")
     public static RuntimeException requestFailedException(Object me, String task, HttpClientErrorException e, URI uri) {
         if (HttpStatus.UNAUTHORIZED.equals(e.getStatusCode())) {
-            return new PrestoException(StandardErrorCode.PERMISSION_DENIED, "Authentication failed : " + e.getStatusText());
+            return new TrinoException(StandardErrorCode.PERMISSION_DENIED, "Authentication failed : " + e.getStatusText());
         }
         if (HttpStatus.TOO_MANY_REQUESTS.equals(e.getStatusCode())) {
-            return new PrestoException(CYODA_TOO_MANY_REQUESTS, "Request throttled : " + e.getStatusText());
+            return new TrinoException(CYODA_TOO_MANY_REQUESTS, "Request throttled : " + e.getStatusText());
         }
 
-        return new PrestoException(CYODA_API_ERROR,
+        return new TrinoException(CYODA_API_ERROR,
                 format("[Cyoda] Error %s at %s returned an invalid response: %s [Error: %s]",
                         task, uri.toASCIIString(), asString(me,e), e.getResponseBodyAsString()),
                 e

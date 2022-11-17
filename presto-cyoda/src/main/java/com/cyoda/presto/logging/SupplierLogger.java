@@ -17,7 +17,7 @@
 
 package com.cyoda.presto.logging;
 
-import com.facebook.airlift.log.Logger;
+import io.airlift.log.Logger;
 
 import java.util.Arrays;
 import java.util.function.Supplier;

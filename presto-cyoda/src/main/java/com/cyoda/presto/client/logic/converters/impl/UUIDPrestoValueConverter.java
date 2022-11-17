@@ -17,32 +17,30 @@
 
 package com.cyoda.presto.client.logic.converters.impl;
 
-import com.cyoda.presto.client.logic.converters.structure.BigDecimalTypeValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.LongDecimalTypeValueConverter;
 import com.cyoda.presto.client.types.DataType;
-import com.facebook.presto.common.type.StandardTypes;
-import com.facebook.presto.common.type.Type;
-import com.facebook.presto.common.type.VarcharType;
+import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.type.Int128;
+import io.trino.spi.type.Type;
 import io.airlift.slice.Slice;
-import io.airlift.slice.Slices;
+import io.trino.spi.type.UuidType;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
-import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.UUID;
 
-import static com.facebook.presto.common.block.Int128ArrayBlock.INT128_BYTES;
+import static io.trino.spi.block.Int128ArrayBlock.INT128_BYTES;
 import static io.airlift.slice.SizeOf.SIZE_OF_LONG;
 import static io.airlift.slice.Slices.wrappedLongArray;
 import static java.lang.String.format;
 
-public class UUIDPrestoValueConverter extends BigDecimalTypeValueConverter<UUID> {
+public class UUIDPrestoValueConverter extends LongDecimalTypeValueConverter<UUID> {
 
-    public static final String TYPE_STRING = StandardTypes.VARCHAR; // For Presto
+//    public static final String TYPE_STRING = StandardTypes.VARCHAR; // For Presto
     //public static final String TYPE_STRING = StandardTypes.UUID; // For Trino
 
-    public static final Type TYPE = VarcharType.VARCHAR; // For Presto
+//    public static final Type TYPE = VarcharType.VARCHAR; // For Presto
     //public static final Type TYPE = UuidType.UUID; // For Trino
 
     private static final BigInteger B = BigInteger.ONE.shiftLeft(64); // 2^64
@@ -54,69 +52,67 @@ public class UUIDPrestoValueConverter extends BigDecimalTypeValueConverter<UUID>
     }
 
     @Override
-    protected BigDecimal toBigDecimal(UUID value) {
-        return new BigDecimal(convertToBigInteger(value));
+    protected Int128 toInt128(UUID value) {
+        return Int128.valueOf(convertToBigInteger(value));
     }
     @Override
-    protected UUID fromBigDecimal(BigDecimal value) {
-        return convertFromBigInteger(value.toBigIntegerExact());
-    }
-
-    public Slice toSliceForPresto(@Nonnull UUID value) {
-        return Slices.utf8Slice(value.toString());
-    }
-    public Slice toSliceForTrino(@Nonnull UUID value) {
-        return javaUuidToPrestoUuid(value);
+    protected UUID fromInt128(Int128 value) {
+        return convertFromBigInteger(value.toBigInteger());
     }
 
     @Override
-    public Slice toSlice(@Nonnull UUID value) {
-        return toSliceForPresto(value);
-    }
-    public UUID fromSliceForPresto(Slice value) {
-        return UUID.fromString(value.toStringUtf8());
-    }
-    public UUID fromSliceForTrino(Slice value) {
-        return prestoUuidToJavaUuid(value);
+    public void writeValue(Type type, BlockBuilder builder, @Nonnull UUID value) {
+        type.writeSlice(builder, UuidType.javaUuidToTrinoUuid(value));
     }
 
-    @Nonnull
     @Override
-    public UUID fromSlice(Slice value) {
-        return fromSliceForPresto(value);
+    public UUID fromPrestoNative(Object nativeValue) {
+        return UuidType.trinoUuidToJavaUuid((Slice) nativeValue);
     }
 
+    //    public Slice toSliceForPresto(@Nonnull UUID value) {
+//        return Slices.utf8Slice(value.toString());
+//    }
+//    public Slice toSliceForTrino(@Nonnull UUID value) {
+//        return javaUuidToPrestoUuid(value);
+//    }
+//    public UUID fromSliceForPresto(Slice value) {
+//        return UUID.fromString(value.toStringUtf8());
+//    }
+//    public UUID fromSliceForTrino(Slice value) {
+//        return prestoUuidToJavaUuid(value);
+//    }
     @Override
     public UUID fromOtherCyodaType(Object value, String columnName) {
         return UUID.fromString((String) value);
     }
-
-    // This is only useful for Trino. Presto can only handle Strings for UUID
-
-    public static byte[] uuidToBytes(UUID uuid)
-    {
-        return ByteBuffer.allocate(16)
-                .putLong(uuid.getMostSignificantBits())
-                .putLong(uuid.getLeastSignificantBits())
-                .array();
-    }
-
-    public static Slice javaUuidToPrestoUuid(UUID uuid)
-    {
-        return wrappedLongArray(
-                uuid.getMostSignificantBits(),
-                uuid.getLeastSignificantBits());
-    }
-
-    public static UUID prestoUuidToJavaUuid(Slice uuid)
-    {
-        if (uuid.length() != INT128_BYTES) {
-            throw new IllegalStateException(format("Expected value to be exactly %d bytes but was %d", INT128_BYTES, uuid.length()));
-        }
-        return new UUID(
-                uuid.getLong(0),
-                uuid.getLong(SIZE_OF_LONG));
-    }
+//
+//    // This is only useful for Trino. Presto can only handle Strings for UUID
+//
+//    public static byte[] uuidToBytes(UUID uuid)
+//    {
+//        return ByteBuffer.allocate(16)
+//                .putLong(uuid.getMostSignificantBits())
+//                .putLong(uuid.getLeastSignificantBits())
+//                .array();
+//    }
+//
+//    public static Slice javaUuidToPrestoUuid(UUID uuid)
+//    {
+//        return wrappedLongArray(
+//                uuid.getMostSignificantBits(),
+//                uuid.getLeastSignificantBits());
+//    }
+//
+//    public static UUID prestoUuidToJavaUuid(Slice uuid)
+//    {
+//        if (uuid.length() != INT128_BYTES) {
+//            throw new IllegalStateException(format("Expected value to be exactly %d bytes but was %d", INT128_BYTES, uuid.length()));
+//        }
+//        return new UUID(
+//                uuid.getLong(0),
+//                uuid.getLong(SIZE_OF_LONG));
+//    }
 
     public static BigInteger convertToBigInteger(UUID id)
     {

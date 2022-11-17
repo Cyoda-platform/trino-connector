@@ -17,18 +17,13 @@
 
 package com.cyoda.presto;
 
-import com.facebook.airlift.bootstrap.Bootstrap;
-import com.facebook.airlift.json.JsonModule;
-import com.facebook.presto.common.type.TypeManager;
-import com.facebook.presto.spi.ConnectorHandleResolver;
-import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.connector.Connector;
-import com.facebook.presto.spi.connector.ConnectorContext;
-import com.facebook.presto.spi.connector.ConnectorFactory;
-import com.facebook.presto.spi.function.FunctionMetadataManager;
-import com.facebook.presto.spi.function.StandardFunctionResolution;
-import com.facebook.presto.spi.relation.DeterminismEvaluator;
-import com.facebook.presto.spi.relation.RowExpressionService;
+import io.airlift.bootstrap.Bootstrap;
+import io.airlift.json.JsonModule;
+import io.trino.spi.type.TypeManager;
+import io.trino.spi.TrinoException;
+import io.trino.spi.connector.Connector;
+import io.trino.spi.connector.ConnectorContext;
+import io.trino.spi.connector.ConnectorFactory;
 import com.google.inject.Injector;
 
 import java.util.Map;
@@ -46,11 +41,6 @@ public class CyodaConnectorFactory implements ConnectorFactory {
     }
 
     @Override
-    public ConnectorHandleResolver getHandleResolver() {
-        return new CyodaHandleResolver();
-    }
-
-    @Override
     public Connector create(String catalogName, Map<String, String> requiredConfig, ConnectorContext context) {
         requireNonNull(requiredConfig, "requiredConfig is null");
         try {
@@ -60,10 +50,6 @@ public class CyodaConnectorFactory implements ConnectorFactory {
                     new CyodaModule(catalogName, context.getTypeManager()),
                     binder -> {
                         binder.bind(TypeManager.class).toInstance(context.getTypeManager());
-                        binder.bind(FunctionMetadataManager.class).toInstance(context.getFunctionMetadataManager());
-                        binder.bind(RowExpressionService.class).toInstance(context.getRowExpressionService());
-                        binder.bind(StandardFunctionResolution.class).toInstance(context.getStandardFunctionResolution());
-                        binder.bind(DeterminismEvaluator.class).toInstance(context.getRowExpressionService().getDeterminismEvaluator());
                     });
 
             //noinspection UnstableApiUsage
@@ -75,7 +61,7 @@ public class CyodaConnectorFactory implements ConnectorFactory {
             return injector.getInstance(CyodaConnector.class);
         } catch (Exception e) {
             throwIfUnchecked(e);
-            throw new PrestoException(CYODA_BOOTSTRAPPING_FAILURE,"Cannot create Connection",e);
+            throw new TrinoException(CYODA_BOOTSTRAPPING_FAILURE,"Cannot create Connection",e);
         }
     }
 }

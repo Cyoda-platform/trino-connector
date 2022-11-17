@@ -18,17 +18,17 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.auth.CyodaAuthenticatorFactory;
-import com.cyoda.presto.client.types.BigDecimalDistinctFromOperator;
-import com.cyoda.presto.client.types.BigDecimalOperators;
-import com.cyoda.presto.client.types.BigDecimalType;
-import com.cyoda.presto.client.types.BigIntegerDistinctFromOperator;
-import com.cyoda.presto.client.types.BigIntegerOperators;
-import com.cyoda.presto.client.types.BigIntegerType;
-import com.facebook.presto.common.type.Type;
-import com.facebook.presto.spi.Plugin;
-import com.facebook.presto.spi.connector.ConnectorFactory;
-import com.facebook.presto.spi.eventlistener.EventListenerFactory;
-import com.facebook.presto.spi.security.PasswordAuthenticatorFactory;
+//import com.cyoda.presto.client.types.BigDecimalDistinctFromOperator;
+//import com.cyoda.presto.client.types.BigDecimalOperators;
+//import com.cyoda.presto.client.types.BigDecimalType;
+//import com.cyoda.presto.client.types.BigIntegerDistinctFromOperator;
+//import com.cyoda.presto.client.types.BigIntegerOperators;
+//import com.cyoda.presto.client.types.BigIntegerType;
+import io.trino.spi.type.Type;
+import io.trino.spi.Plugin;
+import io.trino.spi.connector.ConnectorFactory;
+import io.trino.spi.security.PasswordAuthenticatorFactory;
+import io.trino.spi.eventlistener.EventListenerFactory;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 
@@ -46,27 +46,27 @@ public class CyodaPlugin implements Plugin {
         return ImmutableList.of(new CyodaEventListenerFactory());
     }
 
-    private static final List<Type> OUR_TYPES = ImmutableList.<Type>builder()
-            .add(BigDecimalType.BIG_DECIMAL_TYPE)
-            .add(BigIntegerType.BIG_INTEGER_TYPE)
-            .build();
-
-    @Override
-    public Iterable<Type> getTypes() {
-        return OUR_TYPES;
-    }
-
-    private static final Set<Class<?>> OUR_FUNCTIONS = ImmutableSet.<Class<?>>builder()
-            .add(BigDecimalOperators.class)
-            .add(BigDecimalDistinctFromOperator.class)
-            .add(BigIntegerOperators.class)
-            .add(BigIntegerDistinctFromOperator.class)
-            .build();
-
-    @Override
-    public Set<Class<?>> getFunctions() {
-        return OUR_FUNCTIONS;
-    }
+//    private static final List<Type> OUR_TYPES = ImmutableList.<Type>builder()
+//            .add(BigDecimalType.BIG_DECIMAL_TYPE)
+//            .add(BigIntegerType.BIG_INTEGER_TYPE)
+//            .build();
+//
+//    @Override
+//    public Iterable<Type> getTypes() {
+//        return OUR_TYPES;
+//    }
+//
+//    private static final Set<Class<?>> OUR_FUNCTIONS = ImmutableSet.<Class<?>>builder()
+//            .add(BigDecimalOperators.class)
+//            .add(BigDecimalDistinctFromOperator.class)
+//            .add(BigIntegerOperators.class)
+//            .add(BigIntegerDistinctFromOperator.class)
+//            .build();
+//
+//    @Override
+//    public Set<Class<?>> getFunctions() {
+//        return OUR_FUNCTIONS;
+//    }
 
     @Override
     public Iterable<PasswordAuthenticatorFactory> getPasswordAuthenticatorFactories() {

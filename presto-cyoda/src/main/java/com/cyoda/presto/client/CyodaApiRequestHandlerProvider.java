@@ -18,8 +18,8 @@
 package com.cyoda.presto.client;
 
 import com.cyoda.presto.auth.AuthContext;
-import com.facebook.presto.spi.PrestoException;
-import com.facebook.presto.spi.SchemaTableName;
+import io.trino.spi.TrinoException;
+import io.trino.spi.connector.SchemaTableName;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.base.Objects;
@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.facebook.presto.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
+import static io.trino.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaApiRequestHandlerProvider {
@@ -62,7 +62,7 @@ public class CyodaApiRequestHandlerProvider {
     }
     private ApiRequestHandler<?> getHandlerForTable(AuthContextSchemaTableName value) {
         return handlers.values().stream().filter(h -> h.hasTable(value.authContext, value.schemaTableName)).findAny().orElseThrow(
-                () -> new PrestoException(GENERIC_INTERNAL_ERROR, "[Cyoda]:" + this.getClass().getSimpleName() +
+                () -> new TrinoException(GENERIC_INTERNAL_ERROR, "[Cyoda]:" + this.getClass().getSimpleName() +
                         ":unexpected error trying to get the Handler for table " + value.schemaTableName)
         );
     }

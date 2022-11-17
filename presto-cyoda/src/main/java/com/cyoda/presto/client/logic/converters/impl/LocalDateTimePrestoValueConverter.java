@@ -18,6 +18,7 @@
 package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.converters.structure.LongComparedTypeValueConverter;
+import com.cyoda.presto.client.logic.converters.structure.TimestampTypeValueConverter;
 import com.cyoda.presto.client.types.DataType;
 
 import javax.annotation.Nonnull;
@@ -28,7 +29,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
-public class LocalDateTimePrestoValueConverter extends LongComparedTypeValueConverter<LocalDateTime> {
+public class LocalDateTimePrestoValueConverter extends TimestampTypeValueConverter<LocalDateTime> {
 
     public static final ZoneId UTC = ZoneId.of("UTC");
 
@@ -38,25 +39,15 @@ public class LocalDateTimePrestoValueConverter extends LongComparedTypeValueConv
     }
 
     @Override
-    public long toLong(@Nonnull LocalDateTime value) {
-        return value.toInstant(ZoneOffset.UTC).toEpochMilli();
-    }
-
-    @Nonnull
-    @Override
-    public LocalDateTime fromLong(long value) {
-        return LocalDateTime.ofInstant(Instant.ofEpochMilli(value), UTC);
+    protected Instant toInstant(LocalDateTime value) {
+        return value.toInstant(ZoneOffset.UTC);
     }
 
     @Override
-    public long minValueOfIntType() {
-        return Long.MIN_VALUE;
+    protected LocalDateTime fromInstant(Instant value) {
+        return LocalDateTime.ofInstant(value, UTC);
     }
 
-    @Override
-    public long maxValueOfIntType() {
-        return Long.MAX_VALUE;
-    }
 
     @Override
     public LocalDateTime fromOtherCyodaType(Object value, String columnName) {

@@ -22,21 +22,21 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Remove parent to avoid any checks and packagings -->
-    <groupId>com.cyoda.presto</groupId>
+    <groupId>com.cyoda.trino</groupId>
     <artifactId>presto-cli-runtime</artifactId>
-    <version>0.272</version>
+    <version>402</version>
 
     <properties>
         <!--suppress UnresolvedMavenProperty -->
         <air.main.basedir>${project.parent.basedir}</air.main.basedir>
-        <main-class>com.facebook.presto.cli.Presto</main-class>
+        <main-class>io.trino.cli.Trino</main-class>
         <sonar.skip>true</sonar.skip>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>com.facebook.presto</groupId>
-            <artifactId>presto-cli</artifactId>
+            <groupId>io.trino</groupId>
+            <artifactId>trino-cli</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

@@ -19,8 +19,8 @@ package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.converters.structure.LongComparedTypeValueConverter;
 import com.cyoda.presto.client.types.DataType;
-import com.facebook.presto.common.type.DateTimeEncoding;
-import com.facebook.presto.common.type.TimeZoneKey;
+import io.trino.spi.type.DateTimeEncoding;
+import io.trino.spi.type.TimeZoneKey;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;

@@ -26,12 +26,12 @@ import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 import com.cyoda.presto.handles.CyodaTableHandle;
-import com.facebook.presto.common.Page;
-import com.facebook.presto.common.predicate.TupleDomain;
-import com.facebook.presto.common.type.TimestampType;
-import com.facebook.presto.common.type.TypeManager;
-import com.facebook.presto.common.type.TypeSignature;
-import com.facebook.presto.common.type.VarcharType;
+import io.trino.spi.Page;
+import io.trino.spi.predicate.TupleDomain;
+import io.trino.spi.type.TimestampType;
+import io.trino.spi.type.TypeManager;
+import io.trino.spi.type.TypeSignature;
+import io.trino.spi.type.VarcharType;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Resources;
 import org.testng.annotations.AfterClass;
@@ -62,9 +62,9 @@ public class TestCyodaRecordSet {
     private CyodaApiRequestHandlerProvider setupHandlerProvider(CyodaConfig mockCyodaConfig) {
         TypeManager mockTypeManager = mock(TypeManager.class);
         TypeSignature varcharTypeSig = new TypeSignature(VarcharType.VARCHAR.getTypeSignature().getBase());
-        TypeSignature localDateTimeSig = new TypeSignature(TimestampType.TIMESTAMP.getTypeSignature().getBase());
+        TypeSignature localDateTimeSig = new TypeSignature(TimestampType.TIMESTAMP_MILLIS.getTypeSignature().getBase());
         when(mockTypeManager.getType(varcharTypeSig)).thenReturn(VarcharType.VARCHAR);
-        when(mockTypeManager.getType(localDateTimeSig)).thenReturn(TimestampType.TIMESTAMP);
+        when(mockTypeManager.getType(localDateTimeSig)).thenReturn(TimestampType.TIMESTAMP_MILLIS);
 
         RestTemplateCustomizer restTemplateCustomizer = new RestTemplateCustomizer(mockCyodaConfig);
         @SuppressWarnings("rawtypes")

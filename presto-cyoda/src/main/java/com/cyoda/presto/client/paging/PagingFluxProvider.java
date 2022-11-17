@@ -18,7 +18,7 @@
 package com.cyoda.presto.client.paging;
 
 import com.cyoda.presto.logging.SupplierLogger;
-import com.facebook.presto.spi.PrestoException;
+import io.trino.spi.TrinoException;
 import org.springframework.hateoas.PagedModel;
 import reactor.core.publisher.Flux;
 
@@ -66,7 +66,7 @@ public class PagingFluxProvider<T> {
             // If reading against data that may be deleted/added during calls (i.e. StaticEntities)
             // then it's better to use a huge page size and slurp this in all at once without paging.
             PagedModel.PageMetadata pageMeta = pagingHandle.getPageMeta()
-                    .orElseThrow(() -> new PrestoException(CYODA_API_ERROR, "No paging data attached to HATEOAS response. Cannot iterate"));
+                    .orElseThrow(() -> new TrinoException(CYODA_API_ERROR, "No paging data attached to HATEOAS response. Cannot iterate"));
             long maxPages = pageMeta.getTotalPages();
             long maxEntries = pageMeta.getTotalElements();
             long metaPageSize = pageMeta.getSize();
