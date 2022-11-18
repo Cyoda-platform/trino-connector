@@ -128,7 +128,8 @@ public class ValueHolder<T> {
         if (converter instanceof LongWrittenTypeValueConverter){
             long l = ((LongWrittenTypeValueConverter<C>) converter).toLong((C) exampleValue);
             converted = ((LongWrittenTypeValueConverter<C>) converter).fromLong(l);
-            assertEquals(exampleValue, converted, String.valueOf(converter.getDataType()));
+            System.out.println(exampleValue + " -> " + converted);
+            assertEquals(exampleValue.toString(), converted.toString(), String.valueOf(converter.getDataType()));
             return true;
         }
         return false;
