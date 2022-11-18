@@ -27,7 +27,6 @@ import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
-import com.cyoda.presto.client.reporting.data.ReportRowNavigator;
 import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
@@ -238,7 +237,7 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
             CompoundDataType dataType = CompoundDataType.of(colParType, columnName);
             CyodaColumnHandle columnHandle = new CyodaColumnHandle(
                     connectorId.toString(),
-                    ReportRowNavigator.removeClassNamesFromPath(columnName),
+                    removeClassNamesFromPath(columnName),
                     dataType.toPrestoType(typeManager),
                     dataType,
                     position.getAndIncrement(),
@@ -357,6 +356,10 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
 
     private static final List<String> COLTYPE_IDENTIFIERS = Arrays.stream(ReportColumnType.values()).map(ReportColumnType::getColType).collect(Collectors.toList());
     private static final String COLTYPE_SUMMARY = Joiner.on(", ").join(COLTYPE_IDENTIFIERS);
+
+    private static String removeClassNamesFromPath(String source){
+        return source.replaceAll("@[^.]+", "");
+    }
 
     enum ReportColumnType {
         COLUMN("ReportSimpleColumn"),

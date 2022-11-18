@@ -66,7 +66,6 @@ import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinit
 import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_REPORT_CONFIG_ID_COLUMN;
 import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_VERSION_COLUMN;
 import static com.cyoda.presto.client.types.DataType.LONG;
-import static com.cyoda.presto.client.types.DataType.STRING;
 
 public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         implements ApiRequestHandler<RowHandle> {
@@ -171,18 +170,6 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         );
     }
 
-//    private TypeSignature determinMapValueType(Type columnType) {
-//        return TypesUtil.isMapType(columnType) ? TypesUtil.getValueType(columnType).getTypeSignature() : null;
-//    }
-//
-//    @Nullable private TypeSignature determineParType(@Nonnull Type columnType) {
-//        if (TypesUtil.isArrayType(columnType)  ) {
-//            return TypesUtil.getElementType(columnType).getTypeSignature();
-//        } else if (TypesUtil.isMapType(columnType) ) {
-//            return TypesUtil.getKeyType(columnType).getTypeSignature();
-//        }
-//        return null;
-//    }
 
     @Override
     public String getHandlerKey() {
@@ -233,7 +220,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         if ( ROW_GROUP_JSON_BASE64_VARIABLE.equals(columnHandle.getColumnName()) ) {
             return field.groupJsonBase64;
         }
-        return ReportRowNavigator.getValue(columnHandle.getColumnName(),field.reportRow);
+        return columnHandle.getValue(field.reportRow);
     }
 
     @Override
@@ -305,14 +292,6 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
             return groupTable.getColumns().stream()
                     .filter(it -> it.getColumnName().equals(HISTORY_REPORT_ID_COLUMN))
                     .findAny()
-                    //TODO can't see why, since HISTORY_REPORT_ID_COLUMN == ROW_REPORT_ID_COLUMN
-//                    .map(it -> new CyodaColumnHandle(  // Need to replace the column name with our local one.
-//                            it.getConnectorId(),
-//                            ROW_REPORT_ID_COLUMN,
-//                            it.getColumnType(),
-//                            it.getDataType(),
-//                            it.getOrdinalPosition(),
-//                            it.getRequestHandlerKey()))
                     .orElseThrow(() -> new IllegalStateException(HISTORY_REPORT_ID_COLUMN + COLUMN_NOT_FOUND));
         }
 
@@ -331,15 +310,6 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
         private CyodaColumnHandle setupGroupJsonBase64Column(CyodaTable groupTable) {
             return groupTable.getColumns().stream()
                     .filter(it -> it.getColumnName().equals(ROW_GROUP_JSON_BASE64_VARIABLE))
-        //TODO should work without it since UUID.TYPE_STRING = StandardTypes.VARCHAR
-//                    .map(it -> new CyodaColumnHandle(
-//                            it.getConnectorId(),
-//                            it.getColumnName(),
-//                            VarcharType.VARCHAR, // This is because Presto cannot deal with UUID, even if there is a UuidType.
-//                            STRING,
-//                            it.getOrdinalPosition(),
-//                            it.getRequestHandlerKey(),
-//                            it.getIsNullable()))
                     .findAny()
                     .orElseThrow(() -> new IllegalStateException(ROW_GROUP_JSON_BASE64_VARIABLE + COLUMN_NOT_FOUND));
         }

@@ -19,19 +19,19 @@ package com.cyoda.presto.handles;
 
 import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.logic.converters.PrestoValueConverter;
+import com.cyoda.presto.client.reporting.data.RowValueGrabber;
 import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
-import io.trino.spi.block.BlockBuilder;
-import io.trino.spi.predicate.DiscreteValues;
-import io.trino.spi.type.Type;
-import io.trino.spi.connector.ColumnHandle;
-import io.trino.spi.connector.ColumnMetadata;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.connector.ColumnHandle;
+import io.trino.spi.connector.ColumnMetadata;
+import io.trino.spi.predicate.DiscreteValues;
+import io.trino.spi.type.Type;
 
-import java.util.Collections;
-import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 import static com.google.common.base.MoreObjects.toStringHelper;
@@ -47,6 +47,8 @@ public class CyodaColumnHandle implements ColumnHandle {
     private final boolean isNullable;
 
     private transient PrestoValueConverter<?> converter = null;
+
+    private transient RowValueGrabber grabber = null;
 
     @JsonCreator
     public CyodaColumnHandle(
@@ -87,6 +89,21 @@ public class CyodaColumnHandle implements ColumnHandle {
 
     public void writeValue(BlockBuilder blockBuilder, Object cyodaNative){
         getConverter().writeCyodaNative(columnType, blockBuilder, cyodaNative, columnName);
+    }
+
+    public Object getValue(Map<String, Object> row){
+        Object result = row.get(columnName);
+        if (result != null) {
+            return result;
+        } else {
+            return grabRowValue(row);
+        }
+    }
+    private Object grabRowValue(Object source){
+        if (grabber == null){ // not sure if thread safety needed here (probably not)
+            grabber = new RowValueGrabber(columnName);
+        }
+        return grabber.grab(source);
     }
 
     public ColumnPredicate<?> newComparisonPredicateFromNative(ColumnPredicate.ComparisonOp op, Object nativeValue){
@@ -163,4 +180,5 @@ public class CyodaColumnHandle implements ColumnHandle {
                 .add("ordinalPosition", ordinalPosition)
                 .toString();
     }
+
 }
