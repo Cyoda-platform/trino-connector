@@ -12,7 +12,7 @@ public class PrestoValueConverterTest {
         }
     }
 
-    //TODO skipped this for now @Test
+    @Test
     public void testConversions(){
         for (ValueHolder<?> valueHolder : ValueHolder.MAP.values()){
             if (!valueHolder.testSliceConversions() && !valueHolder.testLongConversions()){
