@@ -21,6 +21,7 @@ public class RowValueGrabber {
                 String key = next.substring(1, next.length() - 1);
                 //TODO maps are not supported for now
                 if ("*".equals(key)) {
+                    listDimensions++;
                     lastNode.next = new FlatListNode();
                 } else {
                     lastNode.next = new ListItemNode(Integer.parseInt(key));
@@ -69,7 +70,6 @@ public class RowValueGrabber {
     private class FlatListNode extends RowGrabberNode{
         @Override
         public Object grab(Object source) {
-            listDimensions++;
             if (next == null) return source;
             return ((List)source).stream().map(next::grab).collect(Collectors.toList());
         }
