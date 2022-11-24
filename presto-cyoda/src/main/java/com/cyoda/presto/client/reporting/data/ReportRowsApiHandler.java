@@ -72,12 +72,13 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowHandle>
 
     private static final SupplierLogger LOG = SupplierLogger.get(ReportRowsApiHandler.class);
 
-    static final String ROW_REPORT_ROW_NUMBER_COLUMN = "rowNum";
-    static final String ROW_REPORT_ID_COLUMN = "reportId";
-    static final String ROW_GROUPING_VERSION_COLUMN = "groupingVersion";
-    static final String ROW_GROUP_JSON_BASE64_VARIABLE = "groupValuesJsonBase64";
+    public static final String ROW_REPORT_ROW_NUMBER_COLUMN = "rowNum";
+    public static final String ROW_REPORT_ID_COLUMN = "reportId";
+    public static final String ROW_GROUPING_VERSION_COLUMN = "groupingVersion";
+    public static final String ROW_GROUP_JSON_BASE64_VARIABLE = "groupValuesJsonBase64";
 
     // These are also reserved words for column names coming from reports.
+    // TODO This validation needs to be moved to platform
     private static final List<String> RESERVED_COLUMN_NAMES = ImmutableList.<String>builder()
             .add(ROW_REPORT_ID_COLUMN)
             .add(ROW_GROUPING_VERSION_COLUMN)

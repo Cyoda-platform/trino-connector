@@ -27,6 +27,7 @@ import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
+import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
@@ -80,70 +81,20 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
     private final CyodaColumnHandle reportNameColumn;
     private final CyodaColumnHandle reportIdColumn;
 
-    enum ColumnDef implements ColumnDefinition {
-        ID(0, HISTORY_REPORT_ID_COLUMN, STRING),
-        REPORT_NAME(1,HISTORY_REPORT_NAME_VARIABLE, STRING),
-        CREATION_DATE(2, HISTORY_CREATE_TIME_COLUMN, LOCAL_DATE_TIME),
-        TYPE(3, HISTORY_TYPE_COLUMN, STRING),
-        STATUS(4, HISTORY_STATUS_NAME_COLUMN, STRING),
-        HIERARCHY_ENABLE(5, HISTORY_HIERARHY_ENABLE_COLUMN, BOOLEAN),
-        // For Trino this can be a UUID, but Presto wants VARCHAR.
-        GROUPING_VERSION(6, HISTORY_GROUPING_VERSION_COLUMN, UUID_TYPE),
-        GROUPING_COLUMNS(7, HISTORY_GROUPING_COLUMNS_COLUMN, LIST, STRING),
-        USER_NAME(8, HISTORY_USER_NAME_COLUMN, STRING);
-
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("pos", pos)
-                    .add("fieldName", fieldName)
-                    .add("dataType", dataType)
-                    .toString();
-        }
-
-        private final int pos;
-        private final String fieldName;
-        private final CompoundDataType dataType;
-
-        ColumnDef(int pos, String fieldName, DataType mainType, DataType... typeParams) {
-            this.pos = pos;
-            this.fieldName = fieldName;
-            this.dataType = new CompoundDataType(fieldName, mainType, typeParams);
-        }
-
-        @Override
-        public int getPos() {
-            return pos;
-        }
-
-        @Override
-        public String getFieldName() {
-            return fieldName;
-        }
-
-        @Override
-        public CompoundDataType getDataType() {
-            return dataType;
-        }
-    }
-
-    public static final List<String> selectedFields = ImmutableList.copyOf(
-            Arrays.stream(ColumnDef.values()).map(ColumnDef::getFieldName).collect(Collectors.toList())
-    );
+    public static final List<String> selectedFields = REPORT_HISTORIES.getFieldList();
 
     @Inject
     public ReportHistoryApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                    RestTemplateCustomizer restTemplateCustomizer) {
         super(connectorId, config, typeManager, REPORT_HISTORY_ENDPOINT,restTemplateCustomizer,LOG);
-        this.typeColumn = createColumnHandle(ColumnDef.TYPE);
-        this.reportNameColumn = createColumnHandle(ColumnDef.REPORT_NAME);
-        this.reportIdColumn = createColumnHandle(ColumnDef.ID);
+        this.typeColumn = createColumnHandle(CyodaStaticReportTable.ReportHistoryColumnDef.TYPE);
+        this.reportNameColumn = createColumnHandle(CyodaStaticReportTable.ReportHistoryColumnDef.REPORT_NAME);
+        this.reportIdColumn = createColumnHandle(CyodaStaticReportTable.ReportHistoryColumnDef.ID);
     }
 
     @Override
     protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
-        return Collections.singletonMap(asTableDefinitionHandle(REPORT_HISTORIES.name()),ImmutableList.copyOf(ColumnDef.values()));
+        return REPORT_HISTORIES.getFieldDefs();
     }
 
     @Override

@@ -23,18 +23,14 @@ import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
-import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.cyoda.service.api.beans.GroupHeader;
 import com.cyoda.service.api.beans.ReportRow;
-import io.trino.spi.type.StandardTypes;
 import io.trino.spi.type.TypeManager;
 import io.trino.spi.TrinoException;
 import io.trino.spi.StandardErrorCode;
@@ -55,11 +51,7 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayDeque;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -71,12 +63,10 @@ import java.util.stream.Collectors;
 
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
+import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_GROUPS;
 import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_ROWS;
 import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.*;
-import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_REPORT_CONFIG_ID_COLUMN;
 import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_VERSION_COLUMN;
-import static com.cyoda.presto.client.types.DataType.LONG;
-import static com.cyoda.presto.client.types.DataType.STRING;
 
 public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<RowHandle>
         implements PagingApiRequestHandler<RowHandle> {
@@ -87,13 +77,6 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
             "}/group_rows/{" +
             ROW_GROUP_JSON_BASE64_VARIABLE + "}";
 
-    private static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
-            // TODO: Needs to be a Long
-            .add(new StandardColumnDefinition(0, ROW_REPORT_ROW_NUMBER_COLUMN, LONG))
-            .add(new StandardColumnDefinition(0, ROW_REPORT_ID_COLUMN, STRING))
-            .add(new StandardColumnDefinition(0, ROW_GROUP_JSON_BASE64_VARIABLE, STRING))
-            .add(GroupHeader.meta())
-            .build();
     private final CyodaColumnHandle rowNumberColumn;
     private final CyodaColumnHandle rowIdColumn;
     private final CyodaColumnHandle groupingVersionColumn;
@@ -103,24 +86,17 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
     public InternalReportRowsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                           RestTemplateCustomizer restTemplateCustomizer) {
         super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer,LOG);
-        this.rowNumberColumn = getColumnByName(ROW_REPORT_ROW_NUMBER_COLUMN);
-        this.rowIdColumn = getColumnByName(ROW_REPORT_ID_COLUMN);
-        this.groupJsonBase64Column = getColumnByName(ROW_GROUP_JSON_BASE64_VARIABLE);
+        this.rowNumberColumn = createColumnHandle(REPORT_ROWS.getColumnNN(ROW_REPORT_ROW_NUMBER_COLUMN));
+        this.rowIdColumn = createColumnHandle(REPORT_ROWS.getColumnNN(ROW_REPORT_ID_COLUMN));
+        this.groupJsonBase64Column = createColumnHandle(REPORT_ROWS.getColumnNN(ROW_GROUP_JSON_BASE64_VARIABLE));
 
-        this.groupingVersionColumn = getColumnByName(ReportGroupsApiHandler.COLUMN_DEFS,GROUPING_VERSION_COLUMN);
+        this.groupingVersionColumn = createColumnHandle(REPORT_GROUPS.getColumnNN(GROUPING_VERSION_COLUMN));
 
-    }
-
-    private CyodaColumnHandle getColumnByName(String columnName) {
-        return createColumnHandle(COLUMN_DEFS.stream()
-                .filter(it -> it.getFieldName().equals(columnName))
-                .findAny()
-                .orElseThrow(() -> new IllegalStateException("Should not happen")));
     }
 
     @Override
     protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
-        return Collections.singletonMap(asTableDefinitionHandle(REPORT_ROWS.name()), COLUMN_DEFS);
+        return REPORT_ROWS.getFieldDefs();
     }
 
     @Override

@@ -75,9 +75,6 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Dist
 
     private final ReportHistoryApiHandler reportHistoryApiHandler;
 
-    private static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
-            .add(DistributedReportInfoView.meta())
-            .build();
 
     @Inject
     public ReportStatisticsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
@@ -88,7 +85,7 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Dist
 
     @Override
     protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
-        return Collections.singletonMap(asTableDefinitionHandle(REPORT_STATS.name()),COLUMN_DEFS);
+        return REPORT_STATS.getFieldDefs();
     }
 
     @Override

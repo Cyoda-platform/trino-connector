@@ -94,48 +94,6 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
 
     public static final String REPORT_DETAILS_ENDPOINT = REPORT_DEFS_ENDPOINT + "/";
 
-    enum ColumnDef implements ColumnDefinition {
-        ID(0, REPORT_ID_COLUMN, STRING),
-        REPORT_NAME(1, REPORT_NAME_COLUMN, STRING),
-        REPORT_COLUMNS(2, REPORT_COLUMNS_COLUMN, LIST, OBJECT),
-        REPORT_JSON(3, REPORT_JSON_COLUMN, STRING);
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("pos", pos)
-                    .add("fieldName", fieldName)
-                    .add("dataType", dataType)
-                    .toString();
-        }
-
-        private final int pos;
-        private final String fieldName;
-        private final CompoundDataType dataType;
-
-        ColumnDef(int pos, String fieldName, DataType dateType, DataType... parType) {
-            this.pos = pos;
-            this.fieldName = fieldName;
-            this.dataType = new CompoundDataType(fieldName, dateType, parType);
-        }
-
-        @Override
-        public int getPos() {
-            return pos;
-        }
-
-        @Override
-        public String getFieldName() {
-            return fieldName;
-        }
-
-        @Override
-        public CompoundDataType getDataType() {
-            return dataType;
-        }
-
-    }
-
     @Inject
     public ReportConfigDetailsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                          RestTemplateCustomizer restTemplateCustomizer) {
@@ -146,7 +104,7 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
 
     @Override
     protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
-        return Collections.singletonMap(asTableDefinitionHandle(REPORT_DETAILS.name()), ImmutableList.copyOf(ColumnDef.values()));
+        return REPORT_DETAILS.getFieldDefs();
     }
 
     @Override

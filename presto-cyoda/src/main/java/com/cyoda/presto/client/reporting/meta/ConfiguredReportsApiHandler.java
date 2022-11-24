@@ -27,6 +27,7 @@ import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
+import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
@@ -78,65 +79,21 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
     public static final String REPORT_DEFS_ENDPOINT = "/api/platform-api/reporting/definitions";
     private final CyodaColumnHandle typeColumn;
 
-    enum ColumnDef implements ColumnDefinition {
-        ID              (0, REPORT_ID_COLUMN, STRING),
-        NAME            (1, REPORT_NAME_COLUMN, STRING),
-        TABLE_NAME      (2, REPORT_TABLE_NAME_COLUMN, STRING),
-        DESCRIPTION     (3, REPORT_DESCRIPTION_COLUMN, STRING),
-        TYPE            (4, REPORT_TYPE_COLUMN, STRING),
-        USER_ID         (5, REPORT_USER_ID_COLUMN, STRING),
-        CREATION_DATE   (6, REPORT_CREATION_DATE_COLUMN, LOCAL_DATE_TIME);
 
-        private final int pos;
-        private final String fieldName;
-        private final CompoundDataType dataType;
-
-        ColumnDef(int pos, String fieldName, DataType dateType) {
-            this.pos = pos;
-            this.fieldName = fieldName;
-            this.dataType = new CompoundDataType(fieldName,dateType);
-        }
-
-        @Override
-        public int getPos() {
-            return pos;
-        }
-
-        @Override
-        public String getFieldName() {
-            return fieldName;
-        }
-
-        @Override
-        public CompoundDataType getDataType() {
-            return dataType;
-        }
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("pos", pos)
-                    .add("fieldName", fieldName)
-                    .add("dataType", dataType)
-                    .toString();
-        }
-    }
-    public static final List<String> selectedFields = ImmutableList.copyOf(
-            Arrays.stream(ColumnDef.values()).map(ColumnDef::getFieldName).collect(Collectors.toList())
-    );
+    public static final List<String> selectedFields = REPORTS.getFieldList();
 
 
     @Inject
     public ConfiguredReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                        RestTemplateCustomizer restTemplateCustomizer) {
         super(connectorId, config, typeManager, REPORT_DEFS_ENDPOINT,restTemplateCustomizer,LOG);
-        this.typeColumn = createColumnHandle(ColumnDef.TYPE);
+        this.typeColumn = createColumnHandle(CyodaStaticReportTable.ReportsColumnDef.TYPE);
 
     }
 
     @Override
     protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
-        return Collections.singletonMap(asTableDefinitionHandle(REPORTS.name()),ImmutableList.copyOf(ColumnDef.values()));
+        return REPORTS.getFieldDefs();
     }
 
     @Override

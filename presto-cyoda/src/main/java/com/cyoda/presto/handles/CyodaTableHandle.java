@@ -112,18 +112,18 @@ public class CyodaTableHandle implements ConnectorTableHandle {
         return Joiner.on(":").join(connectorId, schemaName, requestHandlerKey);
     }
 
-    public CyodaTableHandle withProjectedColumns(List<CyodaColumnHandle> newProjectedColumns) {
-        return new CyodaTableHandle(authContext,connectorId, schemaName, tableName, Optional.of(newProjectedColumns), requestHandlerKey);
-    }
-
-    public CyodaTableHandle withSessionConfig(ConnectorSession session, CyodaConfig config) {
-        return new CyodaTableHandle(
-                AuthContext.fromSession(session,config),
-                this.connectorId,
-                this.getSchemaName(),
-                this.getTableName(),
-                this.getProjectedColumns(),
-                this.requestHandlerKey
-        );
-    }
+//    public CyodaTableHandle withProjectedColumns(List<CyodaColumnHandle> newProjectedColumns) {
+//        return new CyodaTableHandle(authContext,connectorId, schemaName, tableName, Optional.of(newProjectedColumns), requestHandlerKey);
+//    }
+//
+//    public CyodaTableHandle withSessionConfig(ConnectorSession session, CyodaConfig config) {
+//        return new CyodaTableHandle(
+//                AuthContext.fromSession(session,config),
+//                this.connectorId,
+//                this.getSchemaName(),
+//                this.getTableName(),
+//                this.getProjectedColumns(),
+//                this.requestHandlerKey
+//        );
+//    }
 }
