@@ -17,16 +17,22 @@
 
 package com.cyoda.presto.handles;
 
-import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.auth.AuthContext;
-import io.trino.spi.connector.ConnectorSession;
+import io.trino.spi.connector.ColumnMetadata;
 import io.trino.spi.connector.ConnectorTableHandle;
+import io.trino.spi.connector.ConnectorTableMetadata;
 import io.trino.spi.connector.SchemaTableName;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Joiner;
 
+import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -36,24 +42,40 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     private final String connectorId;
     private final String schemaName;
     private final String tableName;
-    private final Optional<List<CyodaColumnHandle>> projectedColumns;
+    private final Map<String,CyodaColumnHandle> columnHandleMap;
     private final String requestHandlerKey;
-    private final AuthContext authContext;
+    private final String reportConfigId;
+    private final String description;
+    private final URI uri;
+
+    private final transient List<ColumnMetadata> columnMetadata;
+    private final transient ConnectorTableMetadata metadata;
 
     @JsonCreator
     public CyodaTableHandle(
-            @JsonProperty("authPayload") AuthContext authContext,
             @JsonProperty("connectorId") String connectorId,
             @JsonProperty("schemaName") String schemaName,
             @JsonProperty("tableName") String tableName,
-            @JsonProperty("projectedColumns") Optional<List<CyodaColumnHandle>> projectedColumns,
-            @JsonProperty("requestHandlerKey") String requestHandlerKey
-    ) {
-        this.authContext = requireNonNull(authContext,"authPayload is null");
+            @JsonProperty("projectedColumns") List<CyodaColumnHandle> projectedColumns,
+            @JsonProperty("requestHandlerKey") String requestHandlerKey,
+            @JsonProperty("reportConfigId") String reportConfigId,
+            @JsonProperty("description") String description,
+            @JsonProperty("uri") URI uri) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.schemaName = requireNonNull(schemaName, "schemaName is null");
         this.tableName = requireNonNull(tableName, "tableName is null");
-        this.projectedColumns = requireNonNull(projectedColumns, "projectedColumns is null");
+        this.reportConfigId = reportConfigId;
+        this.description = description;
+        this.uri = uri;
+        columnHandleMap = new HashMap<>();
+        columnMetadata = new ArrayList<>();
+        for (CyodaColumnHandle columnHandle : projectedColumns) {
+            columnHandleMap.put(columnHandle.getColumnName(), columnHandle);
+            columnMetadata.add(columnHandle.getColumnMetadata());
+        }
+        metadata = new ConnectorTableMetadata(
+                new SchemaTableName(schemaName, tableName),
+                columnMetadata, Collections.emptyMap(), Optional.ofNullable(description));
         this.requestHandlerKey = requireNonNull(requestHandlerKey, "requestHandlerKey is null");
     }
 
@@ -73,18 +95,43 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     }
 
     @JsonProperty
-    public Optional<List<CyodaColumnHandle>> getProjectedColumns() {
-        return projectedColumns;
+    public List<CyodaColumnHandle> getProjectedColumns() {
+        return columnHandleMap.values().stream().toList();
+    }
+
+    public List<ColumnMetadata> getColumnMetadata() {
+        return columnMetadata;
+    }
+
+    public ConnectorTableMetadata getMetadata() {
+        return metadata;
+    }
+
+    public Map<String, CyodaColumnHandle> getColumnHandleMap() {
+        return columnHandleMap;
+    }
+
+    public CyodaColumnHandle getColumn(String name){
+        return Optional.ofNullable(columnHandleMap.get(name)).orElseThrow(
+                () -> new NoSuchElementException(String.format(
+                        "Metadata of table \"%s\" does not contain field with name %s",
+                        tableName, name)));
     }
 
     @JsonProperty
     public String getRequestHandlerKey() {
         return requestHandlerKey;
     }
-
     @JsonProperty
-    public AuthContext getAuthPayload() {
-        return authContext;
+    public String getReportConfigId() {
+        return reportConfigId;
+    }
+    @JsonProperty
+    public String getDescription() {
+        return description;
+    }
+    public URI getUri() {
+        return uri;
     }
 
     public SchemaTableName toSchemaTableName() {
@@ -112,18 +159,4 @@ public class CyodaTableHandle implements ConnectorTableHandle {
         return Joiner.on(":").join(connectorId, schemaName, requestHandlerKey);
     }
 
-//    public CyodaTableHandle withProjectedColumns(List<CyodaColumnHandle> newProjectedColumns) {
-//        return new CyodaTableHandle(authContext,connectorId, schemaName, tableName, Optional.of(newProjectedColumns), requestHandlerKey);
-//    }
-//
-//    public CyodaTableHandle withSessionConfig(ConnectorSession session, CyodaConfig config) {
-//        return new CyodaTableHandle(
-//                AuthContext.fromSession(session,config),
-//                this.connectorId,
-//                this.getSchemaName(),
-//                this.getTableName(),
-//                this.getProjectedColumns(),
-//                this.requestHandlerKey
-//        );
-//    }
 }

@@ -19,38 +19,27 @@ package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
-import com.cyoda.presto.CyodaTable;
 import com.cyoda.presto.SizeListener;
-import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
+import com.google.common.base.Preconditions;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.type.TypeManager;
-import io.trino.spi.connector.SchemaTableName;
-import com.google.common.base.Preconditions;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import org.springframework.hateoas.PagedModel;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
 // TODO: The API calls to Cyoda need to have some check on API version. Sasha might be able to say how he did it for UI
-public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder implements ApiRequestHandler<T> {
+public abstract class BaseReportsApiHandler<T> implements ApiRequestHandler<T> {
 
     public static final String REPORT_ENDPOINT = "/api/platform-api/reporting/report";
     public static final String PAGE_REQUEST_PARAMETER = "page";
@@ -68,10 +57,8 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
     protected BaseReportsApiHandler(CyodaConnectorId connectorId,
                                     CyodaConfig config,
                                     TypeManager typeManager,
-                                    String endpoint,
                                     RestTemplateCustomizer restTemplateCustomizer,
                                     SupplierLogger log) {
-        super(endpoint);
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.config = requireNonNull(config, "config is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
@@ -79,108 +66,48 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
         this.log = log;
     }
 
-    protected CyodaColumnHandle getColumnByName(List<ColumnDefinition> columnDefinitions, String columnName) {
-        Optional<ColumnDefinition> found = columnDefinitions.stream()
-                .filter(it -> it.getFieldName().equals(columnName))
-                .findAny();
-        return createColumnHandle(found.orElseThrow(() -> new IllegalStateException("Should not happen")));
-    }
-
-    protected Map<SchemaTableName, CyodaTable> setupTableMap(String endpoint, Map<TableDefinitionHandle, List<ColumnDefinition>> fieldDefs) {
-        final URI uri;
-        try {
-            uri = config.getServerUrl().toURI().resolve(endpoint);
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Bad endpoint: "+endpoint,e);
-        }
-        List<URI> sources = Collections.singletonList(uri);
-        Map<TableDefinitionHandle,List<CyodaColumnHandle>> cyodaColumnHandles = createCyodaColumnHandles(fieldDefs);
-        return cyodaColumnHandles.entrySet().stream().collect(Collectors.toMap(
-                entry-> new SchemaTableName(config.getSchemaName(), entry.getKey().tableName),
-                entry -> new CyodaTable(
-                        entry.getKey().tableName,
-                        cyodaColumnHandles.get(entry.getKey()),
-                        entry.getKey().reportConfigurationId,
-                        entry.getKey().description,
-                        sources
-                )
-        ));
-    }
-
-    protected Map<TableDefinitionHandle,List<CyodaColumnHandle>> createCyodaColumnHandles(Map<TableDefinitionHandle, List<ColumnDefinition>> fieldDefs) {
-        return ImmutableMap.copyOf(
-                fieldDefs.entrySet().stream()
-                        .collect(Collectors.toMap(Map.Entry::getKey, it->
-                                it.getValue().stream()
-                                        .map(fieldDef -> createColumnHandle(fieldDef)).collect(Collectors.toList())
-                        ))
-        );
-    }
-
-    protected CyodaColumnHandle createColumnHandle(ColumnDefinition fieldDef) {
-        return new CyodaColumnHandle(
-                connectorId.toString(),
-                fieldDef.getFieldName(),
-                fieldDef.getDataType().toPrestoType(typeManager),
-                fieldDef.getDataType(),
-                fieldDef.getPos(),
-                getHandlerKey(),
-                true
-        );
-    }
-
-//    protected Type toType(String fieldTypeString,TypeSignature parType, TypeSignature mapValueType) {
-//        return TypesUtil.toType(fieldTypeString,parType,mapValueType,typeManager);
-//    }
-
-    @Override
-    public boolean hasTable(AuthContext authContext, SchemaTableName tableName) {
-        return lookupTableMap(authContext).containsKey(tableName) || refreshTableMap(authContext).containsKey(tableName);
-    }
-
-    @Override
-    public List<CyodaTable> getTables(AuthContext authContext) {
-        return ImmutableList.copyOf(refreshTableMap(authContext).values());
-    }
-
     @Override
     public void writeValue(@Nullable T entity, CyodaColumnHandle columnHandle, BlockBuilder blockBuilder) {
-        if ( entity == null ) {
+        if (entity == null) {
             blockBuilder.appendNull();
             return;
         }
-        Object value = getFieldValueFromEntity(entity,columnHandle);
+        Object value = getFieldValueFromEntity(entity, columnHandle);
         columnHandle.writeValue(blockBuilder, value);
     }
 
     protected abstract @Nullable Object getFieldValueFromEntity(@Nonnull T field, CyodaColumnHandle columnHandle);
 
+    protected int getPageSize(){
+        return config.getRequestPageSize();
+    }
+
     protected static String toReportName(@Nonnull String reportConfigId) {
-        Preconditions.checkNotNull(reportConfigId,"reportConfigId is null");
+        Preconditions.checkNotNull(reportConfigId, "reportConfigId is null");
         int start = reportConfigId.lastIndexOf('-');
         if (start < 0) {
-            throw new IllegalArgumentException("report ID "+reportConfigId+" has incompatible format." +
+            throw new IllegalArgumentException("report ID " + reportConfigId + " has incompatible format." +
                     " It should be <Tenant>-<EntityTypee>-<ReportName>");
         }
         String reportName = reportConfigId.substring(start + 1);
-        Preconditions.checkArgument(!reportName.isEmpty(),"report ID '%s' has incompatible format." +
-                " It should be <Tenant>-<EntityTypee>-<ReportName>",reportConfigId);
+        Preconditions.checkArgument(!reportName.isEmpty(), "report ID '%s' has incompatible format." +
+                " It should be <Tenant>-<EntityTypee>-<ReportName>", reportConfigId);
         return reportName;
     }
 
     public static @Nonnull String reportNameToTableName(@Nonnull String reportName) {
-        Preconditions.checkNotNull(reportName,"reportName is null");
-        Preconditions.checkArgument(!reportName.isEmpty(),"reportName is empty");
+        Preconditions.checkNotNull(reportName, "reportName is null");
+        Preconditions.checkArgument(!reportName.isEmpty(), "reportName is empty");
         String result = reportName
                 //.replace(" ", "")
                 //.replaceAll("[$\\-&%§@*#, ']", "_") // Let's not allow complicated things.
                 //.replaceAll("([a-z])([A-Z]+)", "$1_$2")
                 .toUpperCase(Locale.ROOT);
-        Preconditions.checkArgument(!result.isEmpty(),"generated tableName is empty");
+        Preconditions.checkArgument(!result.isEmpty(), "generated tableName is empty");
         return result;
     }
 
-    protected <S> void  publishSize(SizeListener listener, PagedModel<S> pagedModel) {
+    protected <S> void publishSize(SizeListener listener, PagedModel<S> pagedModel) {
         PagedModel.PageMetadata pageMetadata = Optional.ofNullable(pagedModel)
                 .map(PagedModel::getMetadata)
                 .orElse(PagedModel.empty().getMetadata());
@@ -190,7 +117,7 @@ public abstract class BaseReportsApiHandler<T> extends AbstractTableHolder imple
     protected static void logCreation(int pageSize, CyodaTableHandle tableHandle, CompoundPredicateNode predicates, SupplierLogger logger) {
         logger.debug("building responseIterator for %s with pageSize %s and predicates %s",
                 tableHandle::getTableName,
-                ()-> pageSize,
+                () -> pageSize,
                 predicates::toString
         );
     }

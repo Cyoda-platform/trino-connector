@@ -19,12 +19,16 @@ package com.cyoda.presto;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
 import com.cyoda.presto.client.RestTemplateCustomizer;
+import com.cyoda.presto.client.reporting.data.InternalReportRowsApiHandler;
 import com.cyoda.presto.client.reporting.data.ReportRowsApiHandler;
+import com.cyoda.presto.client.reporting.groups.InternalReportGroupsApiHandler;
 import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
+import com.cyoda.presto.client.reporting.metaproviders.DynamicReportMetadataProvider;
+import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -62,19 +66,21 @@ public class CyodaModule implements Module {
         binder.bind(CyodaConnector.class).in(Scopes.SINGLETON);
         binder.bind(CyodaConnectorId.class).toInstance(new CyodaConnectorId(connectorId));
         binder.bind(CyodaMetadata.class).in(Scopes.SINGLETON);
-        binder.bind(CyodaClient.class).in(Scopes.SINGLETON);
         binder.bind(CyodaSplitManager.class).in(Scopes.SINGLETON);
         binder.bind(CyodaPageSourceProvider.class).in(Scopes.SINGLETON);
 
-        @SuppressWarnings({"squid:S3740", "rawtypes"})
-        Multibinder<ApiRequestHandler> shapeBinder =
-                Multibinder.newSetBinder(binder, ApiRequestHandler.class);
-        shapeBinder.addBinding().to(ConfiguredReportsApiHandler.class);
-        shapeBinder.addBinding().to(ReportHistoryApiHandler.class);
-        shapeBinder.addBinding().to(ReportConfigDetailsApiHandler.class);
-        shapeBinder.addBinding().to(ReportStatisticsApiHandler.class);
-        shapeBinder.addBinding().to(ReportGroupsApiHandler.class);
-        shapeBinder.addBinding().to(ReportRowsApiHandler.class);
+        binder.bind(StaticReportMetadataProvider.class).in(Scopes.SINGLETON);
+        binder.bind(DynamicReportMetadataProvider.class).in(Scopes.SINGLETON);
+
+        binder.bind(ConfiguredReportsApiHandler.class).in(Scopes.SINGLETON);
+        binder.bind(ReportConfigDetailsApiHandler.class).in(Scopes.SINGLETON);
+        binder.bind(ReportStatisticsApiHandler.class).in(Scopes.SINGLETON);
+        binder.bind(ReportHistoryApiHandler.class).in(Scopes.SINGLETON);
+        binder.bind(ReportGroupsApiHandler.class).in(Scopes.SINGLETON);
+        binder.bind(ReportRowsApiHandler.class).in(Scopes.SINGLETON);
+
+        binder.bind(InternalReportGroupsApiHandler.class).in(Scopes.SINGLETON);
+        binder.bind(InternalReportRowsApiHandler.class).in(Scopes.SINGLETON);
 
         binder.bind(CyodaApiRequestHandlerProvider.class).in(Scopes.SINGLETON);
 
@@ -84,7 +90,6 @@ public class CyodaModule implements Module {
 
         binder.bind(RestTemplateCustomizer.class).in(Scopes.SINGLETON);
 
-        jsonCodecBinder(binder).bindMapJsonCodec(String.class, listJsonCodec(CyodaTable.class));
     }
 
     public static final class TypeDeserializer

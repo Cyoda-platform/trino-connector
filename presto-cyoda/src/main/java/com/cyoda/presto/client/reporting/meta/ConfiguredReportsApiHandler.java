@@ -26,20 +26,15 @@ import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
-import com.cyoda.presto.client.reporting.ColumnDefinition;
-import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
-import com.cyoda.presto.client.types.CompoundDataType;
-import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import io.trino.spi.type.TypeManager;
-import io.trino.spi.TrinoException;
-import io.trino.spi.StandardErrorCode;
-import com.google.common.base.Joiner;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.trino.spi.StandardErrorCode;
+import io.trino.spi.TrinoException;
+import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.TemplateVariable;
@@ -54,22 +49,17 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.SortedSet;
-import java.util.stream.Collectors;
 
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
-import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
-import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORTS;
-import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.*;
+import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_NAME_COLUMN;
+import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_TABLE_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler.HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER;
-import static com.cyoda.presto.client.types.DataType.LOCAL_DATE_TIME;
-import static com.cyoda.presto.client.types.DataType.STRING;
+import static com.cyoda.presto.client.reporting.metaproviders.StaticReportTable.REPORTS;
 
 public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<GridConfigFieldsView>
         implements PagingApiRequestHandler<GridConfigFieldsView> {
@@ -85,20 +75,11 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
 
     @Inject
     public ConfiguredReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
-                                       RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager, REPORT_DEFS_ENDPOINT,restTemplateCustomizer,LOG);
-        this.typeColumn = createColumnHandle(CyodaStaticReportTable.ReportsColumnDef.TYPE);
+                                       RestTemplateCustomizer restTemplateCustomizer,
+                                       StaticReportMetadataProvider staticReportMetadataProvider) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, LOG);
+        this.typeColumn = staticReportMetadataProvider.getReports().getTypeColumn();
 
-    }
-
-    @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
-        return REPORTS.getFieldDefs();
-    }
-
-    @Override
-    public String getHandlerKey() {
-        return REPORTS.name();
     }
 
 
@@ -107,7 +88,6 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
             AuthContext authContext,
             int page,
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns,
             CompoundPredicateNode predicates,
             SizeListener listener
     ) {
@@ -115,14 +95,14 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
 
 
-        PredicateTraversal<String> traversal = PredicateTraversal.of(predicates,String.class);
+        PredicateTraversal<String> traversal = PredicateTraversal.of(predicates, String.class);
 
-        List<String> columnsWithFilter = Collections.singletonList(REPORT_TYPE_COLUMN);
-        LOG.debug("Columns with Filter: %s",() -> Joiner.on(", ").join(columnsWithFilter));
+//        List<String> columnsWithFilter = Collections.singletonList(REPORT_TYPE_COLUMN);
+//        LOG.debug("Columns with Filter: %s",() -> Joiner.on(", ").join(columnsWithFilter));
 
         UriTemplate uriTemplate = setupUriTemplate();
 
-         ImmutableMap.Builder<String, Object> expansionBuilder = ImmutableMap.<String, Object>builder()
+        ImmutableMap.Builder<String, Object> expansionBuilder = ImmutableMap.<String, Object>builder()
                 .put(PAGE_REQUEST_PARAMETER, page)
                 .put(SIZE_REQUEST_PARAMETER, size)
                 .put(FIELDS_REQUEST_PARAMETER, selectedFields);
@@ -141,13 +121,14 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
         traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(authContext));
 
         TypeReferences.PagedModelType<GridConfigFieldsView> typeReference
-                = new TypeReferences.PagedModelType<GridConfigFieldsView>() {};
+                = new TypeReferences.PagedModelType<GridConfigFieldsView>() {
+        };
         try {
             final PagedModel<GridConfigFieldsView> gridConfigFieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
             addReportAndTableName(gridConfigFieldsViews);
-            publishSize(listener,gridConfigFieldsViews);
+            publishSize(listener, gridConfigFieldsViews);
             return Optional.ofNullable(gridConfigFieldsViews);
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);
@@ -155,14 +136,14 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
     }
 
     private void addReportAndTableName(PagedModel<GridConfigFieldsView> gridConfigFieldsViews) {
-        if ( gridConfigFieldsViews == null ) return;
+        if (gridConfigFieldsViews == null) return;
         Collection<GridConfigFieldsView> content = gridConfigFieldsViews.getContent();
-        content.forEach( it -> {
+        content.forEach(it -> {
             String id = it.getGridConfigFields().get("id");
             String repName = toReportName(id);
-            it.addField(REPORT_NAME_COLUMN,repName);
+            it.addField(REPORT_NAME_COLUMN, repName);
             String tableName = reportNameToTableName(id).toLowerCase();
-            it.addField(REPORT_TABLE_NAME_COLUMN,tableName);
+            it.addField(REPORT_TABLE_NAME_COLUMN, tableName);
         });
     }
 

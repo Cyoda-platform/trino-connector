@@ -17,7 +17,6 @@
 
 package com.cyoda.presto;
 
-import com.cyoda.presto.CyodaClient.CyodaAuthenticationType;
 import io.airlift.configuration.Config;
 import io.airlift.configuration.ConfigurationFactory;
 import com.google.common.net.HostAndPort;
@@ -299,5 +298,11 @@ public class CyodaConfig {
     }
     public String getAnonymousUserName() {
         return anonymousUserName;
+    }
+
+    public enum CyodaAuthenticationType {
+        NONE,
+        BASIC,
+        JWT
     }
 }

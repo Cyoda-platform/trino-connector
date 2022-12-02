@@ -17,82 +17,48 @@
 
 package com.cyoda.presto.client;
 
-import com.cyoda.presto.auth.AuthContext;
-import io.trino.spi.TrinoException;
-import io.trino.spi.connector.SchemaTableName;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.google.common.base.Objects;
+import com.cyoda.presto.client.reporting.data.ReportRowsApiHandler;
+import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
+import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
+import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
+import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
+import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
+import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
+import com.google.common.collect.ImmutableMap;
 
 import javax.inject.Inject;
-import java.time.Duration;
-import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 
-import static io.trino.spi.StandardErrorCode.GENERIC_INTERNAL_ERROR;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaApiRequestHandlerProvider {
 
-    private final Map<String, ApiRequestHandler<?>> handlers;
+    private final Map<StaticReportTable, ApiRequestHandler<?>> handlers;
 
-    LoadingCache<AuthContextSchemaTableName, ApiRequestHandler<?>> handlerCache = Caffeine.newBuilder()
-            .maximumSize(100)
-            .expireAfterWrite(Duration.ofMinutes(5))
-            .refreshAfterWrite(Duration.ofMinutes(1))
-            .build(this::getHandlerForTable);
 
-    @SuppressWarnings({"unchecked", "squid:S3740", "rawtypes"})
+    @SuppressWarnings({"squid:S3740"})
     @Inject
-    public CyodaApiRequestHandlerProvider(Set<ApiRequestHandler> handlerList) {
-        handlers = handlerList.stream().collect(Collectors.toMap(ApiRequestHandler::getHandlerKey, x -> x));
+    public CyodaApiRequestHandlerProvider(ConfiguredReportsApiHandler configuredReportsApiHandler,
+                                          ReportConfigDetailsApiHandler reportConfigDetailsApiHandler,
+                                          ReportStatisticsApiHandler reportStatisticsApiHandler,
+                                          ReportHistoryApiHandler reportHistoryApiHandler,
+                                          ReportGroupsApiHandler reportGroupsApiHandler,
+                                          ReportRowsApiHandler reportRowsApiHandler) {
+        handlers = ImmutableMap.<StaticReportTable, ApiRequestHandler<?>>builder()
+                .put(StaticReportTable.REPORTS, configuredReportsApiHandler)
+                .put(StaticReportTable.REPORT_DETAILS, reportConfigDetailsApiHandler)
+                .put(StaticReportTable.REPORT_STATS, reportStatisticsApiHandler)
+                .put(StaticReportTable.REPORT_HISTORIES, reportHistoryApiHandler)
+                .put(StaticReportTable.REPORT_GROUPS, reportGroupsApiHandler)
+                .put(StaticReportTable.REPORT_ROWS, reportRowsApiHandler)
+                .build();
+
     }
 
     @SuppressWarnings({"java:S1452"})
     public ApiRequestHandler<?> getHandler(String type) {
         requireNonNull(type, "type is null");
-        return handlers.get(type);
+        return handlers.get(StaticReportTable.valueOf(type));
     }
 
-    @SuppressWarnings({"squid:S1452"})
-    public ApiRequestHandler<?> getHandler(AuthContext authContext, SchemaTableName tableName) {
-        return handlerCache.get(new AuthContextSchemaTableName(authContext,tableName));
-    }
-    private ApiRequestHandler<?> getHandlerForTable(AuthContextSchemaTableName value) {
-        return handlers.values().stream().filter(h -> h.hasTable(value.authContext, value.schemaTableName)).findAny().orElseThrow(
-                () -> new TrinoException(GENERIC_INTERNAL_ERROR, "[Cyoda]:" + this.getClass().getSimpleName() +
-                        ":unexpected error trying to get the Handler for table " + value.schemaTableName)
-        );
-    }
-
-    @SuppressWarnings({"squid:S1452"})
-    public Collection<ApiRequestHandler<?>> getHandlers() {
-        return handlers.values();
-    }
-
-
-    static class AuthContextSchemaTableName {
-        private final AuthContext authContext;
-        private final SchemaTableName schemaTableName;
-
-        AuthContextSchemaTableName(AuthContext authContext, SchemaTableName schemaTableName) {
-            this.authContext = authContext;
-            this.schemaTableName = schemaTableName;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            AuthContextSchemaTableName that = (AuthContextSchemaTableName) o;
-            return Objects.equal(authContext, that.authContext) && Objects.equal(schemaTableName, that.schemaTableName);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hashCode(authContext, schemaTableName);
-        }
-    }
 }

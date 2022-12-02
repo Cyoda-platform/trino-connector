@@ -40,13 +40,11 @@ import static java.util.Objects.requireNonNull;
 
 public class CyodaSplitManager implements ConnectorSplitManager {
     private final String connectorId;
-    private final CyodaClient cyodaClient;
 
 
     @Inject
-    public CyodaSplitManager(CyodaConnectorId connectorId, CyodaClient exampleClient) {
+    public CyodaSplitManager(CyodaConnectorId connectorId) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
-        this.cyodaClient = requireNonNull(exampleClient, "client is null");
     }
 
     @Override
@@ -58,15 +56,7 @@ public class CyodaSplitManager implements ConnectorSplitManager {
             Constraint constraint) {
         CyodaTableHandle tableHandle = (CyodaTableHandle) connectorTableHandle;
         Preconditions.checkArgument(tableHandle.getConnectorId().equals(connectorId),"This split manager is meant for connector id "+connectorId);
-        CyodaTable table = cyodaClient.getTable(tableHandle);
-        // this can happen if table is removed during a query
-        checkState(table != null, "Table %s.%s no longer exists", tableHandle.getSchemaName(), tableHandle.getTableName());
-        List<ConnectorSplit> splits = new ArrayList<>();
-        for (URI uri : table.getSources()) {
-            splits.add(new CyodaSplit(tableHandle, uri, constraint.getSummary()));
-        }
-        Collections.shuffle(splits);
 
-        return new FixedSplitSource(splits);
+        return new FixedSplitSource(Collections.singletonList(new CyodaSplit(tableHandle, constraint.getSummary())));
     }
 }

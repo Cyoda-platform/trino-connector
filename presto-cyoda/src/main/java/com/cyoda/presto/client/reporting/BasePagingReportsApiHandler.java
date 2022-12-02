@@ -26,27 +26,26 @@ import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.paging.PagingFluxProvider;
 import com.cyoda.presto.client.paging.PagingHandle;
-import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.type.TypeManager;
 import reactor.core.publisher.Flux;
 
-import java.util.Collections;
-import java.util.List;
 import java.util.function.Function;
 
 public abstract class BasePagingReportsApiHandler<T> extends BaseReportsApiHandler<T> implements PagingApiRequestHandler<T> {
 
-    protected BasePagingReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager, String endpoint, RestTemplateCustomizer restTemplateCustomizer, SupplierLogger log) {
-        super(connectorId, config, typeManager, endpoint, restTemplateCustomizer, log);
+    protected BasePagingReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager, RestTemplateCustomizer restTemplateCustomizer, SupplierLogger log) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, log);
     }
 
-    public Flux<T>  asFlux(AuthContext authContext, int pageSize, CyodaTableHandle tableHandle, CompoundPredicateNode predicates, SizeListener listener) {
+    public Flux<T> asFlux(AuthContext authContext, CyodaTableHandle tableHandle, CompoundPredicateNode predicates, SizeListener listener) {
+        int pageSize = getPageSize();
         logCreation(pageSize, tableHandle, predicates, log);
-        List<CyodaColumnHandle> projectedColumns = tableHandle.getProjectedColumns().orElse(Collections.emptyList());
         Function<Integer, PagingHandle<T>> pagingHandleGetter = page -> new PagingHandle<>(authContext, this, page, pageSize,
-                projectedColumns, predicates,listener);
+                predicates, listener);
         return new PagingFluxProvider<>(pagingHandleGetter).generate(0);
-    };
+    }
+
+    ;
 }

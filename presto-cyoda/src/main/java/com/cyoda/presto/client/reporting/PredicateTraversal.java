@@ -24,10 +24,10 @@ import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
 import com.cyoda.presto.client.logic.LeafPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import io.trino.spi.TrinoException;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import io.trino.spi.TrinoException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -51,10 +51,10 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
         this.conjunctions = node;
     }
 
-    public static @Nonnull <T extends Comparable<? super T>> PredicateTraversal<T> of(@Nonnull CompoundPredicateNode predicateNodes,Class<T> clazz){
-        Preconditions.checkNotNull(predicateNodes,"conjunctions is null");
-        Preconditions.checkArgument(predicateNodes.getConnective()==Connective.AND || predicateNodes.isEmpty(),"Not a conjunction");
-        return new PredicateTraversal<>(predicateNodes,clazz);
+    public static @Nonnull <T extends Comparable<? super T>> PredicateTraversal<T> of(@Nonnull CompoundPredicateNode predicateNodes, Class<T> clazz) {
+        Preconditions.checkNotNull(predicateNodes, "conjunctions is null");
+        Preconditions.checkArgument(predicateNodes.getConnective() == Connective.AND || predicateNodes.isEmpty(), "Not a conjunction");
+        return new PredicateTraversal<>(predicateNodes, clazz);
     }
 
     /**
@@ -76,11 +76,11 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
 
     public Optional<SortedSet<T>> assembleEqualsPredicateValuesFromAnd(CyodaColumnHandle columnHandle) {
         List<Optional<SortedSet<T>>> results = this.parseFor(columnHandle).stream().map(this::getResult).collect(Collectors.toList());
-        Preconditions.checkArgument(results.size()==1,"Embedded OR conditions in predicate. Not a pure AND predicate");
+        Preconditions.checkArgument(results.size() == 1, "Embedded OR conditions in predicate. Not a pure AND predicate");
         return results.get(0);
     }
 
-    private  Optional<SortedSet<T>> getResult(ColumnPredicate<T> tColumnPredicate) {
+    private Optional<SortedSet<T>> getResult(ColumnPredicate<T> tColumnPredicate) {
         switch (tColumnPredicate.getType()) {
             case NONE:
                 return Optional.empty();
@@ -106,11 +106,11 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
      */
     public Set<ColumnPredicate<T>> parseFor(CyodaColumnHandle columnHandle) {
         Set<ColumnPredicate<T>> columnPredicates = parseForInternal(columnHandle);
-        if ( columnPredicates.size() <= 1 ) return columnPredicates;
+        if (columnPredicates.size() <= 1) return columnPredicates;
         Optional<ColumnPredicate<T>> allPredicate = columnPredicates.stream()
                 .filter(it -> it.getType() == ColumnPredicate.PredicateType.ALL)
                 .findAny();
-        if ( allPredicate.isPresent() ) return Collections.singleton(allPredicate.get());
+        if (allPredicate.isPresent()) return Collections.singleton(allPredicate.get());
 
         // remove redundancies
         ImmutableSet.Builder<ColumnPredicate<T>> resultBuilder = ImmutableSet.builder();
@@ -123,6 +123,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
         return resultBuilder.build();
 
     }
+
     private Set<ColumnPredicate<T>> parseForInternal(CyodaColumnHandle columnHandle) {
 
         if (this.conjunctions.isEmpty()) return Collections.singleton(ColumnPredicate.all(columnHandle));
@@ -140,7 +141,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
         Deque<CompoundPredicateNode> disjunctionsQueue = new ArrayDeque<>();
 
         conjunctionQueue.add(root);
-        while(!conjunctionQueue.isEmpty()) {
+        while (!conjunctionQueue.isEmpty()) {
             CompoundPredicateNode node = conjunctionQueue.pop();
             Collection<ColumnPredicateNode<?>> members = node.getMembers().orElse(Collections.emptyList());
             ImmutableList.Builder<ColumnPredicateNode<?>> newMembersBuilder = ImmutableList.builder();
@@ -150,22 +151,22 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
                     switch (connective) {
                         case OR:
                             disjunctionsQueue.add((CompoundPredicateNode) member);
-                            while(!disjunctionsQueue.isEmpty()) {
+                            while (!disjunctionsQueue.isEmpty()) {
                                 CompoundPredicateNode disjunct = disjunctionsQueue.pop();
                                 Collection<ColumnPredicateNode<?>> disjunctMembers = disjunct.getMembers().orElse(Collections.emptyList());
                                 disjunctMembers.forEach(thisNode -> {
-                                   if ( thisNode instanceof LeafPredicateNode ) {
-                                       resultBuilder.add(((LeafPredicateNode) thisNode).forceGet());
-                                   } else {
-                                       Connective thisConnective = thisNode.getConnective();
-                                       switch (thisConnective) {
-                                           case OR:
-                                               disjunctionsQueue.add((CompoundPredicateNode) thisNode);
-                                           case AND:
-                                               conjunctionQueue.add((CompoundPredicateNode) thisNode);
-                                           default: // ignore
-                                       }
-                                   }
+                                    if (thisNode instanceof LeafPredicateNode) {
+                                        resultBuilder.add(((LeafPredicateNode) thisNode).forceGet());
+                                    } else {
+                                        Connective thisConnective = thisNode.getConnective();
+                                        switch (thisConnective) {
+                                            case OR:
+                                                disjunctionsQueue.add((CompoundPredicateNode) thisNode);
+                                            case AND:
+                                                conjunctionQueue.add((CompoundPredicateNode) thisNode);
+                                            default: // ignore
+                                        }
+                                    }
                                 });
                             }
                             break;
@@ -178,7 +179,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
                 }
             });
             ImmutableList<ColumnPredicateNode<?>> newMembers = newMembersBuilder.build();
-            if ( newMembers.size() > members.size() ) {
+            if (newMembers.size() > members.size()) {
                 node.newMembers(newMembers);
                 conjunctionQueue.add(node);
             }
@@ -186,7 +187,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
 
 
         // If there is nothing left, there is nothing to filter.
-        if ( root.getMembers().isPresent() && root.getMembers().get().isEmpty()) {
+        if (root.getMembers().isPresent() && root.getMembers().get().isEmpty()) {
             resultBuilder.add(ColumnPredicate.all(columnHandle));
             return resultBuilder.build();
         }
@@ -195,7 +196,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
 
         // Now we have a tree with only conjunctions. Merge them into the leaf queue
         nextCompoundQueue.add(root);
-        while(!nextCompoundQueue.isEmpty()) {
+        while (!nextCompoundQueue.isEmpty()) {
             CompoundPredicateNode node = nextCompoundQueue.pop();
             Collection<ColumnPredicateNode<?>> members = node.getMembers().orElse(Collections.emptyList());
             members.forEach(member -> {
@@ -209,7 +210,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
         }
 
         // If there is nothing left, there is nothing to filter.
-        if ( leafQueue.isEmpty() ) {
+        if (leafQueue.isEmpty()) {
             resultBuilder.add(ColumnPredicate.all(columnHandle));
             return resultBuilder.build();
         }
@@ -221,7 +222,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
             fromDeque = fromDeque.merge(predicate.forceGet());
         }
         // If there is nothing left, filter everything.
-        if ( fromDeque.getType() == ColumnPredicate.PredicateType.NONE ) {
+        if (fromDeque.getType() == ColumnPredicate.PredicateType.NONE) {
             resultBuilder.add(ColumnPredicate.none(columnHandle));
         } else {
             resultBuilder.add(fromDeque);
@@ -235,7 +236,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
         // Remove from the conjunctions all leaf nodes that are not for this columnName.
         final Deque<CompoundPredicateNode> cleanerQueue = new ArrayDeque<>();
         cleanerQueue.add(root);
-        while(!cleanerQueue.isEmpty()) {
+        while (!cleanerQueue.isEmpty()) {
             CompoundPredicateNode node = cleanerQueue.pop();
             Collection<ColumnPredicateNode<?>> members = node.getMembers().orElse(Collections.emptyList());
             ImmutableList.Builder<ColumnPredicateNode<?>> cleanMembers = ImmutableList.builder();
@@ -254,7 +255,7 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
     }
 
     private @Nonnull Stream<T> extractFilterValues(@Nullable ColumnPredicate<T> predicate) {
-        if (predicate == null ) return Stream.empty();
+        if (predicate == null) return Stream.empty();
         ColumnPredicate.PredicateType type = predicate.getType();
         switch (type) {
             case IN_LIST: {
@@ -264,9 +265,9 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
                 return Stream.of(predicate.getLower());
             }
             case RANGE: {
-                if ( predicate.getUpper() == null ) {
+                if (predicate.getUpper() == null) {
                     return Stream.of(predicate.getLower());
-                } else if ( predicate.getLower() == null ) {
+                } else if (predicate.getLower() == null) {
                     return Stream.of(predicate.getUpper());
                 } else {
                     return Stream.of(

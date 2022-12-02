@@ -29,7 +29,6 @@ import io.trino.spi.type.DoubleType;
 import io.trino.spi.type.IntegerType;
 import io.trino.spi.type.RealType;
 import io.trino.spi.type.SmallintType;
-import io.trino.spi.type.StandardTypes;
 import io.trino.spi.type.TimestampType;
 import io.trino.spi.type.TinyintType;
 import io.trino.spi.type.Type;
@@ -134,7 +133,7 @@ public class NewComparisonColumnPredicateTest {
     }
 
     private static CyodaColumnHandle newCyodaColumnHandle(String name, Type type, DataType dataType, int pos, boolean nullable){
-        return new CyodaColumnHandle(CONNECTOR_ID, name, type, new CompoundDataType(name, dataType), pos, REQUEST_HANDLER_KEY, nullable);
+        return new CyodaColumnHandle(name, type, new CompoundDataType(name, dataType), pos, nullable);
     }
 
     private <T extends Comparable<T>> void testMerge(ColumnPredicate<T> a,

@@ -32,8 +32,8 @@ import static org.testng.Assert.*;
 public class ReportRowNavigatorTest {
     
     private static Object testGetValue(String path, Map<String, Object> map){
-        CyodaColumnHandle handle = new CyodaColumnHandle("connectorId", path,
-                VarcharType.VARCHAR, DataType.STRING, 0, "handlerKey");
+        CyodaColumnHandle handle = new CyodaColumnHandle(path,
+                VarcharType.VARCHAR, DataType.STRING, 0);
         return handle.getValue(map);
     }
 

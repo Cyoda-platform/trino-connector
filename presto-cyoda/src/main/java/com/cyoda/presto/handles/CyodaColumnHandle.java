@@ -38,47 +38,39 @@ import static com.google.common.base.MoreObjects.toStringHelper;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaColumnHandle implements ColumnHandle {
-    private final String connectorId;
     private final String columnName;
     private final Type columnType;
     private final int ordinalPosition;
-    private final String requestHandlerKey;
     private final CompoundDataType dataType;
     private final boolean isNullable;
 
     private transient PrestoValueConverter<?> converter = null;
 
-    private transient RowValueGrabber grabber = null;
+    private transient volatile RowValueGrabber grabber = null;
 
     @JsonCreator
     public CyodaColumnHandle(
-            @JsonProperty("connectorId") String connectorId,
             @JsonProperty("columnName") String columnName,
             @JsonProperty("columnType") Type columnType,
             @JsonProperty("dataType") CompoundDataType dataType,
             @JsonProperty("ordinalPosition") int ordinalPosition,
-            @JsonProperty("requestHandlerKey") String requestHandlerKey,
             @JsonProperty("isNullable") boolean isNullable
     ) {
-        this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.columnName = requireNonNull(columnName, "columnName is null");
         this.columnType = requireNonNull(columnType, "columnType is null");
         this.dataType = dataType;
         this.ordinalPosition = ordinalPosition;
-        this.requestHandlerKey = requireNonNull(requestHandlerKey, "requestHandlerKey is null");
         this.isNullable = isNullable;
     }
 
     @Deprecated
     public CyodaColumnHandle(
-            String connectorId,
             String columnName,
             Type columnType,
             DataType dataType,
-            int ordinalPosition,
-            String requestHandlerKey
+            int ordinalPosition
     ) {
-        this(connectorId, columnName, columnType, new CompoundDataType(columnName,dataType), ordinalPosition, requestHandlerKey, true);
+        this(columnName, columnType, new CompoundDataType(columnName,dataType), ordinalPosition, true);
     }
 
     public PrestoValueConverter<?> getConverter(){
@@ -100,8 +92,12 @@ public class CyodaColumnHandle implements ColumnHandle {
         }
     }
     private Object grabRowValue(Object source){
-        if (grabber == null){ // not sure if thread safety needed here (probably not)
-            grabber = new RowValueGrabber(columnName);
+        if (grabber == null){
+            synchronized (this){
+                if (grabber == null){
+                    grabber = new RowValueGrabber(columnName);
+                }
+            }
         }
         return grabber.grab(source);
     }
@@ -116,11 +112,6 @@ public class CyodaColumnHandle implements ColumnHandle {
 
     public ColumnPredicate<?> newInListPredicateFromDiscrete(DiscreteValues discreteValues){
         return getConverter().newInListPredicate(this, discreteValues);
-    }
-
-    @JsonProperty
-    public String getConnectorId() {
-        return connectorId;
     }
 
     @JsonProperty
@@ -144,11 +135,6 @@ public class CyodaColumnHandle implements ColumnHandle {
     }
 
     @JsonProperty
-    public String getRequestHandlerKey() {
-        return requestHandlerKey;
-    }
-
-    @JsonProperty
     public boolean getIsNullable() {
         return isNullable;
     }
@@ -163,18 +149,17 @@ public class CyodaColumnHandle implements ColumnHandle {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CyodaColumnHandle that = (CyodaColumnHandle) o;
-        return ordinalPosition == that.ordinalPosition && connectorId.equals(that.connectorId) && columnName.equals(that.columnName) && columnType.equals(that.columnType) && requestHandlerKey.equals(that.requestHandlerKey);
+        return ordinalPosition == that.ordinalPosition && columnName.equals(that.columnName) && columnType.equals(that.columnType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(connectorId, columnName, columnType, ordinalPosition, requestHandlerKey);
+        return Objects.hash(columnName, columnType, ordinalPosition);
     }
 
     @Override
     public String toString() {
         return toStringHelper(this)
-                .add("connectorId", connectorId)
                 .add("columnName", columnName)
                 .add("columnType", columnType)
                 .add("ordinalPosition", ordinalPosition)

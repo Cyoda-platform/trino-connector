@@ -26,19 +26,15 @@ import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
-import com.cyoda.presto.client.reporting.ColumnDefinition;
-import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
-import com.cyoda.presto.client.types.CompoundDataType;
-import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import io.trino.spi.type.TypeManager;
-import io.trino.spi.TrinoException;
-import io.trino.spi.StandardErrorCode;
-import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.trino.spi.StandardErrorCode;
+import io.trino.spi.TrinoException;
+import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.TemplateVariable;
@@ -53,19 +49,14 @@ import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.SortedSet;
-import java.util.stream.Collectors;
 
-import static com.cyoda.core.model.reports.ReportHistoryFieldsView.*;
+import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_ID_COLUMN;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
-import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
-import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_HISTORIES;
-import static com.cyoda.presto.client.types.DataType.*;
+import static com.cyoda.presto.client.reporting.metaproviders.StaticReportTable.REPORT_HISTORIES;
 
 public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportHistoryFieldsView>
         implements PagingApiRequestHandler<ReportHistoryFieldsView> {
@@ -85,21 +76,12 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
 
     @Inject
     public ReportHistoryApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
-                                   RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager, REPORT_HISTORY_ENDPOINT,restTemplateCustomizer,LOG);
-        this.typeColumn = createColumnHandle(CyodaStaticReportTable.ReportHistoryColumnDef.TYPE);
-        this.reportNameColumn = createColumnHandle(CyodaStaticReportTable.ReportHistoryColumnDef.REPORT_NAME);
-        this.reportIdColumn = createColumnHandle(CyodaStaticReportTable.ReportHistoryColumnDef.ID);
-    }
-
-    @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
-        return REPORT_HISTORIES.getFieldDefs();
-    }
-
-    @Override
-    public String getHandlerKey() {
-        return REPORT_HISTORIES.name();
+                                   RestTemplateCustomizer restTemplateCustomizer,
+                                   StaticReportMetadataProvider staticMetaProvider) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, LOG);
+        this.typeColumn = staticMetaProvider.getReportHistory().getTypeColumn();
+        this.reportNameColumn = staticMetaProvider.getReportHistory().getReportNameColumn();
+        this.reportIdColumn = staticMetaProvider.getReportHistory().getReportIdColumn();
     }
 
 
@@ -108,14 +90,13 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
             AuthContext authContext,
             int page,
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns,
             CompoundPredicateNode predicates,
             SizeListener listener
     ) {
 
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
 
-        PredicateTraversal<String> traversal = PredicateTraversal.of(predicates,String.class);
+        PredicateTraversal<String> traversal = PredicateTraversal.of(predicates, String.class);
 
         UriTemplate uriTemplate = setupUriTemplate();
 
@@ -127,7 +108,7 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
 
         // TODO: Add the other selection possibilities from the report history endpoint.
         Optional<SortedSet<String>> filterByType = traversal.assembleEqualsPredicateValuesFromAnd(this.typeColumn);
-        LOG.debug("selecting by types:",()->filterByType.map(it-> String.join(",", it)).orElse("EMPTY"));
+        LOG.debug("selecting by types:", () -> filterByType.map(it -> String.join(",", it)).orElse("EMPTY"));
 
         // If the optional is empty, it means the predicates are such that everything must be filtered.
         if (!filterByType.isPresent()) return Optional.empty();
@@ -137,10 +118,10 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
         }
 
         Optional<SortedSet<String>> reportNames = traversal.assembleEqualsPredicateValuesFromAnd(this.reportNameColumn);
-        LOG.debug("selecting by report names:",()->reportNames.map(it-> String.join(",", it)).orElse("EMPTY"));
+        LOG.debug("selecting by report names:", () -> reportNames.map(it -> String.join(",", it)).orElse("EMPTY"));
         if (!reportNames.isPresent()) return Optional.empty();
         if (!reportNames.get().isEmpty()) {
-            if (reportNames.get().size() == 1 ) {
+            if (reportNames.get().size() == 1) {
                 expansionBuilder.put(HISTORY_REPORT_NAME_REQUEST_PARAMETER, reportNames.get().iterator().next());
             } else {
                 expansionBuilder.put(HISTORY_REPORT_NAMES_REQUEST_PARAMETER, reportNames.get());
@@ -148,7 +129,7 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
         }
 
         Optional<SortedSet<String>> reportIds = traversal.assembleEqualsPredicateValuesFromAnd(this.reportIdColumn);
-        LOG.debug("selecting by report ids:",()->reportNames.map(it-> String.join(",", it)).orElse("EMPTY"));
+        LOG.debug("selecting by report ids:", () -> reportNames.map(it -> String.join(",", it)).orElse("EMPTY"));
         if (!reportIds.isPresent()) return Optional.empty();
         expansionBuilder.put(HISTORY_REPORT_IDS_REQUEST_PARAMETER, reportIds.get());
 
@@ -159,13 +140,13 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
 
         TypeReferences.PagedModelType<ReportHistoryFieldsView> typeReference =
                 new TypeReferences.PagedModelType<ReportHistoryFieldsView>() {
-        };
+                };
 
         try {
             final PagedModel<ReportHistoryFieldsView> fieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
-            publishSize(listener,fieldsViews);
+            publishSize(listener, fieldsViews);
             return Optional.ofNullable(fieldsViews);
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);
@@ -204,7 +185,7 @@ public class ReportHistoryApiHandler extends BasePagingReportsApiHandler<ReportH
         Map<String, Object> fields = entity.getReportHistoryFields();
 
         String columnName = columnHandle.getColumnName();
-        if ( HISTORY_REPORT_ID_COLUMN.equals(columnName)) {
+        if (HISTORY_REPORT_ID_COLUMN.equals(columnName)) {
             columnName = "id";
         }
         return fields.get(columnName);

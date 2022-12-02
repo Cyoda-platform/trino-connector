@@ -26,17 +26,17 @@ import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
-import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
+import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.ReportRow;
-import io.trino.spi.type.TypeManager;
-import io.trino.spi.TrinoException;
-import io.trino.spi.StandardErrorCode;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.trino.spi.StandardErrorCode;
+import io.trino.spi.TrinoException;
+import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.TemplateVariable;
@@ -53,7 +53,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
@@ -62,11 +61,10 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
-import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
-import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_GROUPS;
-import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_ROWS;
-import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.*;
-import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_VERSION_COLUMN;
+import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_GROUPING_VERSION_COLUMN;
+import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_GROUP_JSON_BASE64_VARIABLE;
+import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_REPORT_ID_COLUMN;
+import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_REPORT_ROW_NUMBER_COLUMN;
 
 public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<RowHandle>
         implements PagingApiRequestHandler<RowHandle> {
@@ -78,57 +76,46 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
             ROW_GROUP_JSON_BASE64_VARIABLE + "}";
 
     private final CyodaColumnHandle rowNumberColumn;
-    private final CyodaColumnHandle rowIdColumn;
+    private final CyodaColumnHandle reportIdColumn;
     private final CyodaColumnHandle groupingVersionColumn;
     private final CyodaColumnHandle groupJsonBase64Column;
 
     @Inject
     public InternalReportRowsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
-                                          RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer,LOG);
-        this.rowNumberColumn = createColumnHandle(REPORT_ROWS.getColumnNN(ROW_REPORT_ROW_NUMBER_COLUMN));
-        this.rowIdColumn = createColumnHandle(REPORT_ROWS.getColumnNN(ROW_REPORT_ID_COLUMN));
-        this.groupJsonBase64Column = createColumnHandle(REPORT_ROWS.getColumnNN(ROW_GROUP_JSON_BASE64_VARIABLE));
-
-        this.groupingVersionColumn = createColumnHandle(REPORT_GROUPS.getColumnNN(GROUPING_VERSION_COLUMN));
+                                        RestTemplateCustomizer restTemplateCustomizer, StaticReportMetadataProvider staticMetaProvider) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, LOG);
+        this.rowNumberColumn = staticMetaProvider.getReportRows().getRowNumberColumn();
+        this.reportIdColumn = staticMetaProvider.getReportRows().getReportIdColumn();
+        this.groupJsonBase64Column = staticMetaProvider.getReportRows().getGroupJsonBase64Column();
+        this.groupingVersionColumn = staticMetaProvider.getReportRows().getGroupingVersionColumn();
 
     }
 
-    @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
-        return REPORT_ROWS.getFieldDefs();
-    }
-
-    @Override
-    public String getHandlerKey() {
-        return this.getClass().getName();
-    }
 
     @Override
     public Optional<PagedModel<RowHandle>> retrievePage(
             AuthContext authContext,
             int page,
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns,
             CompoundPredicateNode predicates,
             SizeListener listener
     ) {
 
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
 
-        PredicateTraversal<Long> longPredicateTraversal = PredicateTraversal.of(predicates,Long.class);
-        PredicateTraversal<String> stringPredicateTraversal = PredicateTraversal.of(predicates,String.class);
-        PredicateTraversal<UUID> uuidPredicateTraversal = PredicateTraversal.of(predicates,UUID.class);
+        PredicateTraversal<Long> longPredicateTraversal = PredicateTraversal.of(predicates, Long.class);
+        PredicateTraversal<String> stringPredicateTraversal = PredicateTraversal.of(predicates, String.class);
+        PredicateTraversal<UUID> uuidPredicateTraversal = PredicateTraversal.of(predicates, UUID.class);
 
 
         UriTemplate uriTemplate = setupUriTemplate();
 
         Set<ColumnPredicate<Long>> columnPredicates = longPredicateTraversal.parseFor(this.rowNumberColumn);
 
-        Preconditions.checkArgument(!columnPredicates.isEmpty(),"Bug in Traversal");
+        Preconditions.checkArgument(!columnPredicates.isEmpty(), "Bug in Traversal");
 
-        return columnPredicates.stream().flatMap(it->RowNumHandle.from(it,page,size).stream())
-                .map( it-> exchange(
+        return columnPredicates.stream().flatMap(it -> RowNumHandle.from(it, page, size).stream())
+                .map(it -> exchange(
                         authContext,
                         page,
                         pageSize,
@@ -137,13 +124,13 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
                         uuidPredicateTraversal,
                         uriTemplate,
                         it)
-                ).reduce(Optional.of(PagedModel.empty()),(result,rowHandles) ->
-                        Optional.of(merge(result.get(),rowHandles.orElse(null)))
+                ).reduce(Optional.of(PagedModel.empty()), (result, rowHandles) ->
+                        Optional.of(merge(result.get(), rowHandles.orElse(null)))
                 );
     }
 
-    private @Nonnull PagedModel<RowHandle> merge(@Nonnull PagedModel<RowHandle> result, @Nullable  PagedModel<RowHandle> response) {
-        if ( response == null ) return result;
+    private @Nonnull PagedModel<RowHandle> merge(@Nonnull PagedModel<RowHandle> result, @Nullable PagedModel<RowHandle> response) {
+        if (response == null) return result;
         ImmutableList.Builder<RowHandle> builder = ImmutableList.builder();
         builder.addAll(result.getContent());
         builder.addAll(response.getContent());
@@ -151,7 +138,7 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
 
         PagedModel.PageMetadata resultMetadata = result.getMetadata();
         PagedModel.PageMetadata responseMetadata = Optional.ofNullable(response.getMetadata()).orElseThrow(
-                ()->new IllegalArgumentException("No pageMeta attached to response. Cannot continue")
+                () -> new IllegalArgumentException("No pageMeta attached to response. Cannot continue")
         );
 
         long totalElements = Optional.ofNullable(resultMetadata).map(PagedModel.PageMetadata::getTotalElements).orElse(0L)
@@ -160,7 +147,7 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
                 Optional.ofNullable(resultMetadata).map(PagedModel.PageMetadata::getSize).orElse(responseMetadata.getSize()),
                 Optional.ofNullable(resultMetadata).map(PagedModel.PageMetadata::getNumber).orElse(responseMetadata.getNumber()),
                 totalElements);
-        return PagedModel.of(content,meta);
+        return PagedModel.of(content, meta);
     }
 
     private Optional<PagedModel<RowHandle>> exchange(AuthContext authContext, int page, int pageSize, SizeListener listener, PredicateTraversal<String> stringPredicateTraversal, PredicateTraversal<UUID> uuidPredicateTraversal, UriTemplate uriTemplate, RowNumHandle rowNumHandle) {
@@ -169,7 +156,7 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
                 .put(SIZE_REQUEST_PARAMETER, rowNumHandle.size);
 
 
-        String reportId = mixinColumn(expansionBuilder, stringPredicateTraversal, this.rowIdColumn);
+        String reportId = mixinColumn(expansionBuilder, stringPredicateTraversal, this.reportIdColumn);
         UUID groupingVersion = mixinColumn(expansionBuilder, uuidPredicateTraversal, this.groupingVersionColumn);
         String groupJsonString = mixinColumn(expansionBuilder, stringPredicateTraversal, this.groupJsonBase64Column);
 
@@ -179,13 +166,14 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
         traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(authContext));
 
         TypeReferences.PagedModelType<ReportRow> typeReference =
-                new TypeReferences.PagedModelType<ReportRow>() {};
+                new TypeReferences.PagedModelType<ReportRow>() {
+                };
 
         try {
             final PagedModel<ReportRow> fieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
-            publishSize(listener,fieldsViews);
+            publishSize(listener, fieldsViews);
             return Optional.ofNullable(fieldsViews)
                     .map(item -> {
                         AtomicLong rowNum = new AtomicLong(rowNumHandle.offset);
@@ -205,18 +193,19 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
 
 
     private <T extends Comparable<? super T>> T mixinColumn(ImmutableMap.Builder<String, Object> expansionBuilder,
-                               PredicateTraversal<T> traversal,CyodaColumnHandle columnHandle
+                                                            PredicateTraversal<T> traversal, CyodaColumnHandle columnHandle
     ) {
         String columnName = columnHandle.getColumnName();
         Optional<SortedSet<T>> values = traversal.assembleEqualsPredicateValuesFromAnd(columnHandle);
-        LOG.debug("selecting values for %s : %s",()->columnName, ()->values.map(it-> String.join(",", it.toString())).orElse("EMPTY"));
+        LOG.debug("selecting values for %s : %s", () -> columnName, () -> values.map(it -> String.join(",", it.toString())).orElse("EMPTY"));
 
         Preconditions.checkArgument(values.isPresent());
 
         Set<T> theValues = values
-                .orElseThrow(()->new IllegalArgumentException("No consistent result found for column " + columnName + " in predicates"));
+                .orElseThrow(() -> new IllegalArgumentException("No consistent result found for column " + columnName + " in predicates"));
 
-        if ( theValues.size() > 1 ) throw new IllegalStateException("Predicates should only have one element for " + columnName);
+        if (theValues.size() > 1)
+            throw new IllegalStateException("Predicates should only have one element for " + columnName);
         if (!theValues.isEmpty()) {
             T result = theValues.iterator().next();
             expansionBuilder.put(columnName, result);
@@ -224,6 +213,7 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
         }
         throw new IllegalArgumentException("no result found for column " + columnName + " in predicates");
     }
+
     private UriTemplate setupUriTemplate() {
 
         URI uri;
@@ -239,28 +229,27 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
         );
 
         TemplateVariables vars = new TemplateVariables(builder.build());
-        return UriTemplate.of(uri.toASCIIString()+ REPORT_ROWS_TEMPLATE)
+        return UriTemplate.of(uri.toASCIIString() + REPORT_ROWS_TEMPLATE)
                 .with(vars);
     }
 
     @Nullable
     @Override
     protected Object getFieldValueFromEntity(@Nonnull RowHandle field, CyodaColumnHandle columnHandle) {
-        if ( ROW_REPORT_ROW_NUMBER_COLUMN.equals(columnHandle.getColumnName()) ) {
+        if (ROW_REPORT_ROW_NUMBER_COLUMN.equals(columnHandle.getColumnName())) {
             return field.rowNum;
         }
-        if ( ROW_REPORT_ID_COLUMN.equals(columnHandle.getColumnName()) ) {
+        if (ROW_REPORT_ID_COLUMN.equals(columnHandle.getColumnName())) {
             return field.reportId;
         }
-        if ( ROW_GROUPING_VERSION_COLUMN.equals(columnHandle.getColumnName()) ) {
+        if (ROW_GROUPING_VERSION_COLUMN.equals(columnHandle.getColumnName())) {
             return field.groupingVersion;
         }
-        if ( ROW_GROUP_JSON_BASE64_VARIABLE.equals(columnHandle.getColumnName()) ) {
+        if (ROW_GROUP_JSON_BASE64_VARIABLE.equals(columnHandle.getColumnName())) {
             return field.groupJsonBase64;
         }
         return field.reportRow.get(columnHandle.getColumnName());
     }
-
 
 
 }
