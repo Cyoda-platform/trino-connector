@@ -96,6 +96,8 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
     // TODO This validation needs to be moved to platform
     private static final List<String> RESERVED_COLUMN_NAMES = StaticReportTable.REPORT_ROWS.getFieldList();
 
+    private final UriTemplate uriTemplate;
+
 
     @Inject
     public ReportConfigDetailsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
@@ -103,6 +105,7 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
         super(connectorId, config, typeManager,
                 restTemplateCustomizer, LOG);
         this.configuredReportsApiHandler = configuredReportsApiHandler;
+        uriTemplate = setupUriTemplate();
     }
 
 
@@ -115,49 +118,50 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
             SizeListener listener
     ) {
 
-        UriTemplate uriTemplate = setupUriTemplate();
-
         PagedModel<GridConfigFieldsView> reportDefinitionModel = configuredReportsApiHandler.retrievePage(
                 authContext, page, pageSize, predicates, listener).orElse(PagedModel.empty());
         // TODO: There is a bug, where the API returns one more than the page size, so use limit as long as this bug persists
-        Set<String> ids = reportDefinitionModel.getContent().stream().limit(pageSize).map(it -> it.getGridConfigFields().get(REPORT_ID_COLUMN)).collect(Collectors.toSet());
+        Set<String> ids = reportDefinitionModel.getContent().stream().limit(pageSize).map(GridConfigFieldsView::getId).collect(Collectors.toSet());
 
-        List<ReportDefinitionHandle> reportDefinitionHandles = getReportDefinitionHandles(authContext, uriTemplate, ids);
+        List<ReportDefinitionHandle> reportDefinitionHandles = getReportDefinitionHandles(authContext, ids);
         PagedModel<ReportDefinitionHandle> reportDefs = PagedModel.of(reportDefinitionHandles, reportDefinitionModel.getMetadata());
         publishSize(listener, reportDefs);
         return Optional.of(reportDefs);
     }
 
-    private List<ReportDefinitionHandle> getReportDefinitionHandles(AuthContext authContext, UriTemplate uriTemplate, @Nonnull Set<String> ids) {
+    private List<ReportDefinitionHandle> getReportDefinitionHandles(AuthContext authContext, @Nonnull Set<String> ids) {
 
         if (ids.isEmpty()) return Collections.emptyList();
         ImmutableList.Builder<ReportDefinitionHandle> builder = ImmutableList.builder();
-        ids.forEach(reportConfigId -> {
-            URI templatedUri = uriTemplate.expand(Collections.singletonMap(REPORT_ID_COLUMN, reportConfigId));
-
-            Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-            traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(authContext));
-            String reportName = toReportName(reportConfigId);
-
-            try {
-                String jsonResult = Optional.ofNullable(traverson
-                                .follow()
-                                .toEntity(String.class)).map(ResponseEntity::getBody)
-                        .orElseThrow(() -> new IllegalArgumentException("No body found at " + templatedUri));
-
-                DocumentContext parse = JsonPath.parse(jsonResult, JSONPATHA_CONFIG);
-                List<CyodaColumnHandle> cols = extractColumns(reportName, parse);
-                String description = parse.read("$.content.description", String.class);
-
-                builder.add(new ReportDefinitionHandle(reportConfigId, reportName, description, cols, jsonResult));
-            } catch (HttpClientErrorException e) {
-                throw requestFailedException(this, "retrieveCollection", e, templatedUri);
-            }
-        });
+        ids.forEach(id -> builder.add(getReportDefSingleHandle(authContext, id)));
         List<ReportDefinitionHandle> result = builder.build();
         LOG.debug("Got %s report definitions", result.size());
         return result;
 
+    }
+
+    public ReportDefinitionHandle getReportDefSingleHandle(AuthContext authContext,
+                                                         String reportConfigId) {
+        URI templatedUri = uriTemplate.expand(Collections.singletonMap(REPORT_ID_COLUMN, reportConfigId));
+
+        Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
+        traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(authContext));
+        String reportName = toReportName(reportConfigId);
+
+        try {
+            String jsonResult = Optional.ofNullable(traverson
+                            .follow()
+                            .toEntity(String.class)).map(ResponseEntity::getBody)
+                    .orElseThrow(() -> new IllegalArgumentException("No body found at " + templatedUri));
+
+            DocumentContext parse = JsonPath.parse(jsonResult, JSONPATHA_CONFIG);
+            List<CyodaColumnHandle> cols = extractColumns(reportName, parse);
+            String description = parse.read("$.content.description", String.class);
+
+            return new ReportDefinitionHandle(reportConfigId, reportName, description, cols, jsonResult);
+        } catch (HttpClientErrorException e) {
+            throw requestFailedException(this, "retrieveCollection", e, templatedUri);
+        }
     }
 
     private List<CyodaColumnHandle> extractColumns(String reportName, DocumentContext context) {

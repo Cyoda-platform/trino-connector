@@ -60,18 +60,7 @@ public class AuthContext {
             Preconditions.checkArgument(principal instanceof JWTPrinciple, "principle is not an instance of %s but %s", JWTPrinciple.class.getName(), principal.getClass().getName());
             return ((JWTPrinciple) principal).getAuthPayload();
         } else {
-            return new AuthContext(
-                    config.getAnonymousUserId(),
-                    new AuthPayload(
-                        null,
-                        null,
-                        null,
-                        null,
-                        config.getAnonymousToken(),
-                        config.getAnonymousRefreshToken(),
-                        config.getAnonymousUserName()
-                    )
-            );
+            return config.getAnonymousAuth();
         }
     }
 

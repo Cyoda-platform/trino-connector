@@ -150,7 +150,12 @@ public class InternalReportRowsApiHandler extends BasePagingReportsApiHandler<Ro
         return PagedModel.of(content, meta);
     }
 
-    private Optional<PagedModel<RowHandle>> exchange(AuthContext authContext, int page, int pageSize, SizeListener listener, PredicateTraversal<String> stringPredicateTraversal, PredicateTraversal<UUID> uuidPredicateTraversal, UriTemplate uriTemplate, RowNumHandle rowNumHandle) {
+    private Optional<PagedModel<RowHandle>> exchange(AuthContext authContext,
+                                                     int page, int pageSize, SizeListener listener,
+                                                     PredicateTraversal<String> stringPredicateTraversal,
+                                                     PredicateTraversal<UUID> uuidPredicateTraversal,
+                                                     UriTemplate uriTemplate,
+                                                     RowNumHandle rowNumHandle) {
         ImmutableMap.Builder<String, Object> expansionBuilder = ImmutableMap.<String, Object>builder()
                 .put(PAGE_REQUEST_PARAMETER, rowNumHandle.page)
                 .put(SIZE_REQUEST_PARAMETER, rowNumHandle.size);

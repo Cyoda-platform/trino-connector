@@ -17,6 +17,8 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.auth.AuthContext;
+import com.cyoda.presto.auth.AuthPayload;
 import io.airlift.configuration.Config;
 import io.airlift.configuration.ConfigurationFactory;
 import com.google.common.net.HostAndPort;
@@ -62,6 +64,26 @@ public class CyodaConfig {
 
     public CyodaConfig() {
         setDefaults();
+    }
+
+    public AuthContext getAnonymousAuth() {
+        return new AuthContext(
+                getAnonymousUserId(),
+                new AuthPayload(
+                        null,
+                        null,
+                        null,
+                        null,
+                        getAnonymousToken(),
+                        getAnonymousRefreshToken(),
+                        getAnonymousUserName()
+                )
+        );
+    }
+
+    public AuthContext getTechnicalAuth() {
+        //TODO for now it is just same anonymous auth
+        return getAnonymousAuth();
     }
 
     private void setDefaults() {

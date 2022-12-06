@@ -60,6 +60,7 @@ import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPO
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_TABLE_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_TYPE_COLUMN;
+import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_UPDATE_DATE_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_USER_ID_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler.REPORT_HISTORY_ENDPOINT;
 import static com.cyoda.presto.client.types.DataType.BOOLEAN;
@@ -137,7 +138,8 @@ public enum StaticReportTable implements TableDefinition {
         DESCRIPTION(3, REPORT_DESCRIPTION_COLUMN, STRING),
         TYPE(4, REPORT_TYPE_COLUMN, STRING),
         USER_ID(5, REPORT_USER_ID_COLUMN, STRING),
-        CREATION_DATE(6, REPORT_CREATION_DATE_COLUMN, LOCAL_DATE_TIME);
+        CREATION_DATE(6, REPORT_CREATION_DATE_COLUMN, LOCAL_DATE_TIME),
+        UPDATE_DATE(7, REPORT_UPDATE_DATE_COLUMN, LOCAL_DATE_TIME);
 
         private final int pos;
         private final String fieldName;

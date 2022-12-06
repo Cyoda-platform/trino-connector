@@ -139,7 +139,7 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
         if (gridConfigFieldsViews == null) return;
         Collection<GridConfigFieldsView> content = gridConfigFieldsViews.getContent();
         content.forEach(it -> {
-            String id = it.getGridConfigFields().get("id");
+            String id = it.getId();
             String repName = toReportName(id);
             it.addField(REPORT_NAME_COLUMN, repName);
             String tableName = reportNameToTableName(id).toLowerCase();
