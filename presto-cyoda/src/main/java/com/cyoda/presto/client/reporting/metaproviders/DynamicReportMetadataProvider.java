@@ -12,6 +12,7 @@ import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.DummyTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -74,17 +75,34 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     }
 
     private CyodaTableHandle getTableHandleFromCyoda(String configId) {
-        AuthContext authContext = auth.getTechnicalAuth();
-        ReportDefinitionHandle definitionHandle = reportConfigDetailsApiHandler.getReportDefSingleHandle(authContext, configId);
-        String reportName = definitionHandle.getReportName();
-        String reportConfigId = definitionHandle.getReportConfigId();
-        String tableName = BaseReportsApiHandler.reportNameToTableName(reportConfigId);
+        String tableName = BaseReportsApiHandler.reportNameToTableName(configId);
+        ReportDefinitionHandle definitionHandle = null;
+        try {
+            AuthContext authContext = auth.getTechnicalAuth();
+            definitionHandle = reportConfigDetailsApiHandler.getReportDefSingleHandle(authContext, configId);
 
-        List<CyodaColumnHandle> columns = new ArrayList<>(List.copyOf(staticReportMetadataProvider.getReportRows().getTableHandle().getProjectedColumns()));
-        columns.addAll(definitionHandle.getColumns());
-        return new CyodaTableHandle(connectorId.toString(), config.getSchemaName(), tableName,
-                columns, StaticReportTable.REPORT_ROWS.name(), reportConfigId, definitionHandle.getDescription(),
-                getUri(StaticReportTable.REPORT_ROWS));
+            List<CyodaColumnHandle> columns = new ArrayList<>(List.copyOf(staticReportMetadataProvider.getReportRows().getTableHandle().getProjectedColumns()));
+            columns.addAll(definitionHandle.getColumns());
+            return new CyodaTableHandle(connectorId.toString(), config.getSchemaName(), tableName,
+                    columns, StaticReportTable.REPORT_ROWS.name(), configId, definitionHandle.getDescription(),
+                    getUri(StaticReportTable.REPORT_ROWS));
+        } catch (Exception e) {
+            Map<String, String> errorDetail = new HashMap<>();
+            errorDetail.put("Error Message", e.getMessage());
+            errorDetail.put("Stack Trace", getStackTrace(e));
+            if (definitionHandle != null)
+                errorDetail.put("Definition Handle", definitionHandle.toString());
+            return new DummyTableHandle(connectorId.toString(), config.getSchemaName(),
+                    "!FAIL--" + tableName, errorDetail);
+        }
+    }
+    private static String getStackTrace(Exception e){
+        StringBuilder sb = new StringBuilder();
+        for (StackTraceElement stackTraceElement : e.getStackTrace()) {
+            sb.append("\n");
+            sb.append(stackTraceElement);
+        }
+        return sb.toString();
     }
 
     protected Map<String, CyodaTableHandle> tableByUserCacheLoad(AuthContext authContext) {

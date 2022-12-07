@@ -17,8 +17,14 @@
 
 package com.cyoda.presto.handles;
 
+import com.cyoda.presto.CyodaFilteringPageSource;
 import com.cyoda.presto.auth.AuthContext;
+import com.cyoda.presto.client.ApiRequestHandler;
+import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
+import com.cyoda.presto.client.logic.CompoundPredicateNode;
+import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ColumnMetadata;
+import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.ConnectorTableMetadata;
 import io.trino.spi.connector.SchemaTableName;
@@ -116,6 +122,17 @@ public class CyodaTableHandle implements ConnectorTableHandle {
                 () -> new NoSuchElementException(String.format(
                         "Metadata of table \"%s\" does not contain field with name %s",
                         tableName, name)));
+    }
+
+    public ConnectorPageSource getPageSource(AuthContext authContext,
+                                             CyodaApiRequestHandlerProvider handlerProvider,
+                                             List<CyodaColumnHandle> cyodaColumns,
+                                             CompoundPredicateNode predicates){
+        String requestHandlerKey = getRequestHandlerKey();
+        ApiRequestHandler<?> requestHandler = Optional.ofNullable(handlerProvider.getHandler(requestHandlerKey))
+                .orElseThrow(() -> new IllegalArgumentException("Handler " + requestHandlerKey + " not found"));
+        return new CyodaFilteringPageSource<>(authContext,
+                requestHandler, this, cyodaColumns, predicates);
     }
 
     @JsonProperty
