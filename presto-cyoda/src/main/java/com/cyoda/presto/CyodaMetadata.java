@@ -17,8 +17,7 @@
 
 package com.cyoda.presto;
 
-import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.reporting.metaproviders.TableMetadataProvider;
+import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.reporting.metaproviders.DynamicReportMetadataProvider;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
@@ -52,6 +51,7 @@ public class CyodaMetadata implements ConnectorMetadata {
 
     private final String connectorId;
     private final CyodaConfig config;
+    private final AuthService auth;
     private final StaticReportMetadataProvider staticMetadataProvider;
     private final DynamicReportMetadataProvider dynamicReportMetadataProvider;
 
@@ -59,10 +59,12 @@ public class CyodaMetadata implements ConnectorMetadata {
     public CyodaMetadata(
             CyodaConnectorId connectorId,
             CyodaConfig config,
+            AuthService auth,
             StaticReportMetadataProvider staticMetadataProvider,
             DynamicReportMetadataProvider dynamicReportMetadataProvider) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
         this.config = requireNonNull(config,"confif is null");
+        this.auth = auth;
         this.staticMetadataProvider = staticMetadataProvider;
         this.dynamicReportMetadataProvider = dynamicReportMetadataProvider;
     }
@@ -82,7 +84,7 @@ public class CyodaMetadata implements ConnectorMetadata {
         if (staticMetadataProvider.contains(tableName.getTableName())){
             return staticMetadataProvider.getTableHandle(tableName.getTableName());
         } else {
-            return dynamicReportMetadataProvider.getTableHandle(AuthContext.fromSession(session,config), tableName.getTableName());
+            return dynamicReportMetadataProvider.getTableHandle(auth.fromSession(session), tableName.getTableName());
         }
     }
 
@@ -140,7 +142,7 @@ public class CyodaMetadata implements ConnectorMetadata {
         for (String tableName : staticMetadataProvider.getTableList()) {
             builder.add(new SchemaTableName(config.getSchemaName(), tableName));
         }
-        for (String tableName : dynamicReportMetadataProvider.getTableList(AuthContext.fromSession(session,config))) {
+        for (String tableName : dynamicReportMetadataProvider.getTableList(auth.fromSession(session))) {
             builder.add(new SchemaTableName(config.getSchemaName(), tableName));
         }
         return builder.build();

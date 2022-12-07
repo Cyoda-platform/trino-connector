@@ -4,6 +4,7 @@ import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.auth.AuthContext;
+import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
@@ -24,13 +25,11 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.function.BiFunction;
 
 import static com.cyoda.presto.SizeListener.NOT_LISTENING;
 
@@ -38,6 +37,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     private static final SupplierLogger LOG = SupplierLogger.get(DynamicReportMetadataProvider.class);
 
 
+    private final AuthService auth;
     private final ConfiguredReportsApiHandler configuredReportsApiHandler;
     private ReportConfigDetailsApiHandler reportConfigDetailsApiHandler;
     private final StaticReportMetadataProvider staticReportMetadataProvider;
@@ -49,11 +49,13 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     private final LoadingCache<TableMetaCacheKey, CyodaTableHandle> tableMetaCache;
 
     @Inject
-    public DynamicReportMetadataProvider(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
+    public DynamicReportMetadataProvider(CyodaConnectorId connectorId, CyodaConfig config,
+                                         TypeManager typeManager, AuthService auth,
                                          StaticReportMetadataProvider staticReportMetadataProvider,
                                          ConfiguredReportsApiHandler configuredReportsApiHandler,
                                          ReportConfigDetailsApiHandler reportConfigDetailsApiHandler) {
             super(typeManager, config, connectorId);
+        this.auth = auth;
         this.staticReportMetadataProvider = staticReportMetadataProvider;
         this.configuredReportsApiHandler = configuredReportsApiHandler;
         this.reportConfigDetailsApiHandler = reportConfigDetailsApiHandler;
@@ -72,7 +74,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     }
 
     private CyodaTableHandle getTableHandleFromCyoda(String configId) {
-        AuthContext authContext = config.getTechnicalAuth();
+        AuthContext authContext = auth.getTechnicalAuth();
         ReportDefinitionHandle definitionHandle = reportConfigDetailsApiHandler.getReportDefSingleHandle(authContext, configId);
         String reportName = definitionHandle.getReportName();
         String reportConfigId = definitionHandle.getReportConfigId();

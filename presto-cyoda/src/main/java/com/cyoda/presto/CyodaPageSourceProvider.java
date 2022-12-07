@@ -17,7 +17,7 @@
 
 package com.cyoda.presto;
 
-import com.cyoda.presto.auth.AuthContext;
+import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
 import com.cyoda.presto.client.logic.ColumnPredicateBuilder;
@@ -46,15 +46,15 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
 
     private final String connectorId;
     private final CyodaApiRequestHandlerProvider handlerProvider;
-    private final CyodaConfig config;
+    private final AuthService auth;
 
     @Inject
     public CyodaPageSourceProvider(CyodaConnectorId connectorId,
                                    CyodaApiRequestHandlerProvider handlerProvider,
-                                   CyodaConfig config) {
+                                   AuthService auth) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
         this.handlerProvider = requireNonNull(handlerProvider, "handlerProvider is null");
-        this.config = requireNonNull(config,"config is null");
+        this.auth = auth;
     }
 
     @Override
@@ -75,7 +75,7 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
                 .orElseThrow(() -> new IllegalArgumentException("Handler " + requestHandlerKey + " not found"));
         Preconditions.checkArgument(connectorId.equals(cyodaTableHandle.getConnectorId()),"tableHandle not for this connectorId");
         List<CyodaColumnHandle> cyodaColumns = columns.stream().map(CyodaColumnHandle.class::cast).collect(Collectors.toList());
-        return new CyodaFilteringPageSource<>(AuthContext.fromSession(session, config),
+        return new CyodaFilteringPageSource<>(auth.fromSession(session),
                 requestHandler, cyodaTableHandle, cyodaColumns, predicates);
     }
 }

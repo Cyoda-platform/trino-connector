@@ -17,16 +17,10 @@
 
 package com.cyoda.presto.auth;
 
-import com.cyoda.presto.CyodaConfig;
-import io.trino.spi.connector.ConnectorSession;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
-
-import javax.annotation.Nonnull;
-import java.security.Principal;
 
 public class AuthContext {
     // This is the key, and determines equality.
@@ -50,18 +44,6 @@ public class AuthContext {
     @JsonProperty
     public AuthPayload getPayload() {
         return payload;
-    }
-
-    public static @Nonnull
-    AuthContext fromSession(@Nonnull ConnectorSession session, @Nonnull CyodaConfig config) {
-        if ( !config.isAnonymousLogin() ) {
-            Principal principal = session.getIdentity().getPrincipal()
-                    .orElseThrow(() -> new IllegalArgumentException("principle is missing"));
-            Preconditions.checkArgument(principal instanceof JWTPrinciple, "principle is not an instance of %s but %s", JWTPrinciple.class.getName(), principal.getClass().getName());
-            return ((JWTPrinciple) principal).getAuthPayload();
-        } else {
-            return config.getAnonymousAuth();
-        }
     }
 
     @Override

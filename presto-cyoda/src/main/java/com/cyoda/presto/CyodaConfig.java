@@ -66,25 +66,6 @@ public class CyodaConfig {
         setDefaults();
     }
 
-    public AuthContext getAnonymousAuth() {
-        return new AuthContext(
-                getAnonymousUserId(),
-                new AuthPayload(
-                        null,
-                        null,
-                        null,
-                        null,
-                        getAnonymousToken(),
-                        getAnonymousRefreshToken(),
-                        getAnonymousUserName()
-                )
-        );
-    }
-
-    public AuthContext getTechnicalAuth() {
-        //TODO for now it is just same anonymous auth
-        return getAnonymousAuth();
-    }
 
     private void setDefaults() {
         timeUnit = DEFAULT_TIME_UNIT;
