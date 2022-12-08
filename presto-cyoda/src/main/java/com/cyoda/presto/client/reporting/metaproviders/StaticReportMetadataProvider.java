@@ -199,6 +199,8 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
             reportIdColumn = getTableHandle().getColumn(ROW_REPORT_ID_COLUMN);
             groupingVersionColumn = getTableHandle().getColumn(GROUPING_VERSION_COLUMN);
             groupJsonBase64Column = getTableHandle().getColumn(ROW_GROUP_JSON_BASE64_VARIABLE);
+            //we don't need this as a static table
+            metadataMap.remove(StaticReportTable.REPORT_ROWS.getTableName());
         }
 
         public CyodaColumnHandle getRowNumberColumn() {
