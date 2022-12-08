@@ -28,6 +28,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
@@ -42,7 +43,9 @@ public class CyodaSplit implements ConnectorSplit {
             @JsonProperty("tableHandle") CyodaTableHandle tableHandle,
             @JsonProperty("constraint") TupleDomain<ColumnHandle> constraint) {
         this.tableHandle = requireNonNull(tableHandle, "tableHandle name is null");
-        addresses = ImmutableList.of(HostAddress.fromUri(tableHandle.getUri()));
+        addresses = tableHandle.getUri() == null ?
+                Collections.emptyList() :
+                ImmutableList.of(HostAddress.fromUri(tableHandle.getUri()));
         this.constraint = requireNonNull(constraint, "constraint name is null");
     }
 
