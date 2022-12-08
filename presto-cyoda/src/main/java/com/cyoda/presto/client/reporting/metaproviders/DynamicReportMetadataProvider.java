@@ -126,7 +126,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
 
     public CyodaTableHandle getTableHandle(AuthContext authContext, String tableName) {
         Map<String, CyodaTableHandle> map = tableByUserCache.get(authContext);
-        return Optional.ofNullable(map.get(tableName)).orElseThrow(
+        return Optional.ofNullable(map.get(tableName.toUpperCase())).orElseThrow(
                 () -> new NoSuchElementException(String.format(
                         "Metadata provider %s does not contain table with name %s, existing keys: %s",
                         this.getClass().getSimpleName(), tableName, Arrays.toString(map.keySet().toArray())))
