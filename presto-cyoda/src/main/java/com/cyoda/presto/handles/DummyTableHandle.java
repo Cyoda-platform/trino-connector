@@ -38,10 +38,9 @@ public class DummyTableHandle extends CyodaTableHandle {
                 0, true)).collect(Collectors.toList());
     }
 
-
     @JsonProperty
-    public String getContent(String field) {
-        return content.get(field);
+    public Map<String, String> getContent() {
+        return content;
     }
 
     @Override

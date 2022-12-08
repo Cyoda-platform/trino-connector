@@ -50,7 +50,7 @@ public class DummyPageSource implements ConnectorPageSource
         for (int i = 0; i < columnHandles.size(); i++) {
             CyodaColumnHandle columnHandle = columnHandles.get(i);
             BlockBuilder blockBuilder = pageBuilder.getBlockBuilder(i);
-            columnHandle.writeValue(blockBuilder, tableHandle.getContent(columnHandle.getColumnName()));
+            columnHandle.writeValue(blockBuilder, tableHandle.getContent().get(columnHandle.getColumnName()));
         }
 
         pageBuilder.declarePosition();
