@@ -6,12 +6,11 @@ import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.type.VarcharType;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -21,7 +20,11 @@ public class DummyTableHandle extends CyodaTableHandle {
 
     private final Map<String, String> content;
 
-    public DummyTableHandle(String connectorId, String schemaName, String tableName, Map<String, String> content) {
+    @JsonCreator
+    public DummyTableHandle(@JsonProperty("connectorId") String connectorId,
+                            @JsonProperty("schemaName") String schemaName,
+                            @JsonProperty("tableName") String tableName,
+                            @JsonProperty("content") Map<String, String> content) {
         super(connectorId, schemaName, tableName,
                 createDummyFields(content.keySet()),
                 "NULL", null, null, null);
@@ -36,6 +39,7 @@ public class DummyTableHandle extends CyodaTableHandle {
     }
 
 
+    @JsonProperty
     public String getContent(String field) {
         return content.get(field);
     }
