@@ -102,7 +102,7 @@ public abstract class BaseReportsApiHandler<T> implements ApiRequestHandler<T> {
                 //.replace(" ", "")
                 //.replaceAll("[$\\-&%§@*#, ']", "_") // Let's not allow complicated things.
                 //.replaceAll("([a-z])([A-Z]+)", "$1_$2")
-                .toUpperCase(Locale.ROOT);
+                .toLowerCase(Locale.ROOT);
         Preconditions.checkArgument(!result.isEmpty(), "generated tableName is empty");
         return result;
     }

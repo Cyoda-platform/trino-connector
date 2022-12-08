@@ -30,6 +30,7 @@ import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -102,7 +103,7 @@ public enum StaticReportTable implements TableDefinition {
 
     @Override
     public String getTableName() {
-        return name();
+        return name().toLowerCase(Locale.ROOT);
     }
 
 

@@ -80,7 +80,7 @@ public class CyodaMetadata implements ConnectorMetadata {
         if (!listSchemaNames(session).contains(tableName.getSchemaName())) {
             return null;
         }
-        String tableKey = tableName.getTableName().toUpperCase();
+        String tableKey = tableName.getTableName();
         if (staticMetadataProvider.contains(tableKey)){
             return staticMetadataProvider.getTableHandle(tableKey);
         } else {
