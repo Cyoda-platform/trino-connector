@@ -31,6 +31,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.cyoda.presto.SizeListener.NOT_LISTENING;
 
@@ -119,7 +122,18 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
             result.put(tableHandle.getTableName(), tableHandle);
         }).blockLast();
         // If there are duplicates, last write wins.
+        result.putAll(
+                Stream.iterate(1, x->x<3000, x->x+1)
+                        .map(this::createTestDummyTable)
+                        .collect(Collectors.toMap(DummyTableHandle::getTableName, Function.identity()))
+        );
         return ImmutableMap.copyOf(result);
+    }
+
+    private DummyTableHandle createTestDummyTable(int number){
+        String name = "Dummy Table " + number;
+        return new DummyTableHandle(connectorId.toString(), config.getSchemaName(),
+                name, ImmutableMap.of("NAME", name));
     }
 
     public CyodaTableHandle getTableHandle(AuthContext authContext, String tableName) {
