@@ -80,11 +80,11 @@ public class CyodaMetadata implements ConnectorMetadata {
         if (!listSchemaNames(session).contains(tableName.getSchemaName())) {
             return null;
         }
-
-        if (staticMetadataProvider.contains(tableName.getTableName())){
-            return staticMetadataProvider.getTableHandle(tableName.getTableName());
+        String tableKey = tableName.getTableName().toUpperCase();
+        if (staticMetadataProvider.contains(tableKey)){
+            return staticMetadataProvider.getTableHandle(tableKey);
         } else {
-            return dynamicReportMetadataProvider.getTableHandle(auth.fromSession(session), tableName.getTableName());
+            return dynamicReportMetadataProvider.getTableHandle(auth.fromSession(session), tableKey);
         }
     }
 
