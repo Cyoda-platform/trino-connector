@@ -95,7 +95,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
             if (definitionHandle != null)
                 errorDetail.put("Definition Handle", definitionHandle.toString());
             return new DummyTableHandle(connectorId.toString(), config.getSchemaName(),
-                    "!FAIL--" + tableName, errorDetail);
+                    "!fail-" + tableName, errorDetail);
         }
     }
     private static String getStackTrace(Exception e){
