@@ -26,6 +26,8 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -126,8 +128,8 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
         Map<String, CyodaTableHandle> map = tableByUserCache.get(authContext);
         return Optional.ofNullable(map.get(tableName)).orElseThrow(
                 () -> new NoSuchElementException(String.format(
-                        "Metadata provider %s does not contain table with name %s",
-                        this.getClass().getSimpleName(), tableName))
+                        "Metadata provider %s does not contain table with name %s, existing keys: %s",
+                        this.getClass().getSimpleName(), tableName, Arrays.toString(map.keySet().toArray())))
         );
     }
 
