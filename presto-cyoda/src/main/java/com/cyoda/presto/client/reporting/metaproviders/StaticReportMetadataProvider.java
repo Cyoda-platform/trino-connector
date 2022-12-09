@@ -8,7 +8,6 @@ import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.type.TypeManager;
 
 import javax.inject.Inject;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -115,6 +114,7 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
 
     public class Reports extends StaticTableMetadata {
         private final CyodaColumnHandle typeColumn;
+
         public Reports() {
             super(StaticReportTable.REPORTS);
             typeColumn = getTableHandle().getColumn(StaticReportTable.ReportsColumnDef.TYPE.getFieldName());
@@ -136,7 +136,7 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
         private final CyodaColumnHandle reportNameColumn;
         private final CyodaColumnHandle reportIdColumn;
 
-        public ReportHistory(){
+        public ReportHistory() {
             super(StaticReportTable.REPORT_HISTORIES);
             typeColumn = getTableHandle().getColumn(StaticReportTable.ReportHistoryColumnDef.TYPE.getFieldName());
             reportNameColumn = getTableHandle().getColumn(StaticReportTable.ReportHistoryColumnDef.REPORT_NAME.getFieldName());
@@ -193,6 +193,7 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
         private final CyodaColumnHandle reportIdColumn;
         private final CyodaColumnHandle groupingVersionColumn;
         private final CyodaColumnHandle groupJsonBase64Column;
+
         protected ReportRows() {
             super(StaticReportTable.REPORT_ROWS);
             rowNumberColumn = getTableHandle().getColumn(ROW_REPORT_ROW_NUMBER_COLUMN);

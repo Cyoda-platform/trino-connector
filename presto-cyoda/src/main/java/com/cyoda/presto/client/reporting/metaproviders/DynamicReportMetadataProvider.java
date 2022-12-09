@@ -27,7 +27,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,7 +47,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     /**
      * TableName -> TableMetadata
      */
-    private final LoadingCache<AuthContext,Map<String, CyodaTableHandle>> tableByUserCache;
+    private final LoadingCache<AuthContext, Map<String, CyodaTableHandle>> tableByUserCache;
     private final LoadingCache<TableMetaCacheKey, CyodaTableHandle> tableMetaCache;
 
     @Inject
@@ -57,7 +56,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
                                          StaticReportMetadataProvider staticReportMetadataProvider,
                                          ConfiguredReportsApiHandler configuredReportsApiHandler,
                                          ReportConfigDetailsApiHandler reportConfigDetailsApiHandler) {
-            super(typeManager, config, connectorId);
+        super(typeManager, config, connectorId);
         this.auth = auth;
         this.staticReportMetadataProvider = staticReportMetadataProvider;
         this.configuredReportsApiHandler = configuredReportsApiHandler;
@@ -98,7 +97,8 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
                     "!fail-" + tableName, errorDetail);
         }
     }
-    private static String getStackTrace(Exception e){
+
+    private static String getStackTrace(Exception e) {
         StringBuilder sb = new StringBuilder();
         for (StackTraceElement stackTraceElement : e.getStackTrace()) {
             sb.append("\n");
@@ -148,14 +148,15 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
             this.createDate = createDate;
             this.lastUpdateDate = lastUpdateDate;
         }
-        public static TableMetaCacheKey of(GridConfigFieldsView view){
+
+        public static TableMetaCacheKey of(GridConfigFieldsView view) {
             return new TableMetaCacheKey(
                     view.getId(),
                     parseDate(view.getCreationDate()),
                     parseDate(view.getUpdateDate()));
         }
 
-        private static long parseDate(String value){
+        private static long parseDate(String value) {
             if (value == null || "null".equals(value)) return 0;
             LocalDateTime localDateTime = LocalDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME);
             return Timestamp.valueOf(localDateTime).getTime();
@@ -163,8 +164,9 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
 
         @Override
         public int hashCode() {
-            return configId.hashCode() + (int)lastUpdateDate;
+            return configId.hashCode() + (int) lastUpdateDate;
         }
+
         @Override
         public boolean equals(Object obj) {
             if (obj == null) return false;
@@ -174,9 +176,10 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
                     && lastUpdateDate == other.lastUpdateDate
                     && createDate == other.createDate;
         }
+
         @Override
         public String toString() {
-            return configId + "(" + lastUpdateDate  + ")";
+            return configId + "(" + lastUpdateDate + ")";
         }
     }
 

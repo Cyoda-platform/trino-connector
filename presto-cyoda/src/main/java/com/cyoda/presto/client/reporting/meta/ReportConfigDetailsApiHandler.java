@@ -141,7 +141,7 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
     }
 
     public ReportDefinitionHandle getReportDefSingleHandle(AuthContext authContext,
-                                                         String reportConfigId) {
+                                                           String reportConfigId) {
         URI templatedUri = uriTemplate.expand(Collections.singletonMap(REPORT_ID_COLUMN, reportConfigId));
 
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
