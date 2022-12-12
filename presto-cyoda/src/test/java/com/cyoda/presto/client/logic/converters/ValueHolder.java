@@ -43,6 +43,8 @@ import java.time.LocalTime;
 import java.time.Year;
 import java.time.YearMonth;
 import java.time.ZonedDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalUnit;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
@@ -77,7 +79,7 @@ public class ValueHolder<T> {
         new ValueHolder<>(new ListPrestoValueConverter<>("strList",new StringPrestoValueConverter()),
                 ImmutableList.of("hello","goodbye"));
         new ValueHolder<>(new LocalDatePrestoValueConverter(), LocalDate.now());
-        new ValueHolder<>(new LocalDateTimePrestoValueConverter(), LocalDateTime.now());
+        new ValueHolder<>(new LocalDateTimePrestoValueConverter(), LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS));
         new ValueHolder<>(new LocalePrestoValueConverter(), Locale.CANADA);
         new ValueHolder<>(new LocalTimePrestoValueConverter(), LocalTime.now());
         new ValueHolder<>(new LongPrestoValueConverter(), random.longValue());
@@ -97,7 +99,7 @@ public class ValueHolder<T> {
         new ValueHolder<>(new UUIDPrestoValueConverter(), uuid);
         new ValueHolder<>(new YearMonthPrestoValueConverter(), YearMonth.now());
         new ValueHolder<>(new YearPrestoValueConverter(), Year.now());
-        new ValueHolder<>(new ZonedDateTimePrestoValueConverter(), ZonedDateTime.now());
+        new ValueHolder<>(new ZonedDateTimePrestoValueConverter(), ZonedDateTime.now().truncatedTo(ChronoUnit.MILLIS));
     }
 
     public ValueHolder(PrestoValueConverter<T> converter, T exampleValue) {
@@ -128,7 +130,8 @@ public class ValueHolder<T> {
         if (converter instanceof LongWrittenTypeValueConverter){
             long l = ((LongWrittenTypeValueConverter<C>) converter).toLong((C) exampleValue);
             converted = ((LongWrittenTypeValueConverter<C>) converter).fromLong(l);
-            assertEquals(exampleValue, converted, String.valueOf(converter.getDataType()));
+            System.out.println(exampleValue + " -> " + converted);
+            assertEquals(exampleValue.toString(), converted.toString(), String.valueOf(converter.getDataType()));
             return true;
         }
         return false;

@@ -30,6 +30,7 @@ public class ReportDefinitionHandle {
     public static final String REPORT_DESCRIPTION_COLUMN = "description";
     public static final String REPORT_USER_ID_COLUMN = "userId";
     public static final String REPORT_CREATION_DATE_COLUMN = "creationDate";
+    public static final String REPORT_UPDATE_DATE_COLUMN = "lastUpdateDate";
 
     public static final String REPORT_COLUMNS_COLUMN = "columns";
     public static final String REPORT_JSON_COLUMN = "json";

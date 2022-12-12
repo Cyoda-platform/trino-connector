@@ -17,10 +17,9 @@
 
 package com.cyoda.presto;
 
-import com.cyoda.presto.CyodaClient.CyodaAuthenticationType;
+import com.google.common.net.HostAndPort;
 import io.airlift.configuration.Config;
 import io.airlift.configuration.ConfigurationFactory;
-import com.google.common.net.HostAndPort;
 
 import javax.validation.constraints.NotNull;
 import java.net.URL;
@@ -64,6 +63,7 @@ public class CyodaConfig {
     public CyodaConfig() {
         setDefaults();
     }
+
 
     private void setDefaults() {
         timeUnit = DEFAULT_TIME_UNIT;
@@ -238,6 +238,7 @@ public class CyodaConfig {
         this.requestPageSize = requestPageSize;
         return this;
     }
+
     public int getRequestPageSize() {
         return requestPageSize;
     }
@@ -247,6 +248,7 @@ public class CyodaConfig {
         this.userLoginEndpoint = userLoginEndpoint;
         return this;
     }
+
     public String getUserLoginEndpoint() {
         return userLoginEndpoint;
     }
@@ -256,6 +258,7 @@ public class CyodaConfig {
         this.refreshTokenEndpoint = refreshTokenEndpoint;
         return this;
     }
+
     public String getRefreshTokenEndpoint() {
         return refreshTokenEndpoint;
     }
@@ -265,6 +268,7 @@ public class CyodaConfig {
     public void setAnonymousLogin(boolean anonymousLogin) {
         this.anonymousLogin = anonymousLogin;
     }
+
     public boolean isAnonymousLogin() {
         return anonymousLogin;
     }
@@ -273,6 +277,7 @@ public class CyodaConfig {
     public void setAnonymousUserId(String anonymousUserId) {
         this.anonymousUserId = anonymousUserId;
     }
+
     public String getAnonymousUserId() {
         return anonymousUserId;
     }
@@ -281,6 +286,7 @@ public class CyodaConfig {
     public void setAnonymousToken(String anonymousToken) {
         this.anonymousToken = anonymousToken;
     }
+
     public String getAnonymousToken() {
         return anonymousToken;
     }
@@ -289,6 +295,7 @@ public class CyodaConfig {
     public void setAnonymousRefreshToken(String anonymousRefreshToken) {
         this.anonymousRefreshToken = anonymousRefreshToken;
     }
+
     public String getAnonymousRefreshToken() {
         return anonymousRefreshToken;
     }
@@ -297,7 +304,14 @@ public class CyodaConfig {
     public void setAnonymousUserName(String anonymousUserName) {
         this.anonymousUserName = anonymousUserName;
     }
+
     public String getAnonymousUserName() {
         return anonymousUserName;
+    }
+
+    public enum CyodaAuthenticationType {
+        NONE,
+        BASIC,
+        JWT
     }
 }

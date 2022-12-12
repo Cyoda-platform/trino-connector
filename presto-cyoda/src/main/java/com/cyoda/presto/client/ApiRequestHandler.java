@@ -17,31 +17,23 @@
 
 package com.cyoda.presto.client;
 
-import com.cyoda.presto.CyodaTable;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.block.BlockBuilder;
-import io.trino.spi.connector.SchemaTableName;
 import reactor.core.publisher.Flux;
 
 import javax.annotation.Nullable;
-import java.util.List;
 
 public interface ApiRequestHandler<T> {
-    String getHandlerKey();
-
-    boolean hasTable(AuthContext authContext, SchemaTableName tableName);
-
-    List<CyodaTable> getTables(AuthContext authContext);
 
     @SuppressWarnings("java:S1452")
     void writeValue(@Nullable T entity, CyodaColumnHandle field, BlockBuilder blockBuilder);
 
-    default Flux<T> asFlux(AuthContext authContext, int pageSize, CyodaTableHandle tableHandle,
-                   CompoundPredicateNode predicates, SizeListener listener) {
+    default Flux<T> asFlux(AuthContext authContext, CyodaTableHandle tableHandle,
+                           CompoundPredicateNode predicates, SizeListener listener) {
         throw new UnsupportedOperationException("not yet implemented");
     }
 }

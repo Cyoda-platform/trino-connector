@@ -17,6 +17,7 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
@@ -25,7 +26,6 @@ import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.Page;
 import io.trino.spi.PageBuilder;
 import io.trino.spi.block.BlockBuilder;
-import io.trino.spi.metrics.Metrics;
 import io.trino.spi.type.Type;
 import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.TrinoException;
@@ -35,12 +35,10 @@ import reactor.core.scheduler.Schedulers;
 import java.util.Iterator;
 import java.util.List;
 import java.util.OptionalLong;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_PAGING_ERROR;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static io.airlift.slice.Slices.EMPTY_SLICE;
 import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("UnstableApiUsage")
@@ -65,14 +63,14 @@ public class CyodaFilteringPageSource<T>
     private final AtomicInteger pages;
 
     public CyodaFilteringPageSource(
+            AuthContext authContext,
             ApiRequestHandler<T> requestHandler,
             CyodaTableHandle tableHandle,
             List<CyodaColumnHandle> columnHandles,
-            CyodaClient cyodaClient, CompoundPredicateNode predicates
+            CompoundPredicateNode predicates
     ) {
         requireNonNull(requestHandler, "requestHandler is null");
         this.columnHandles = ImmutableList.copyOf(requireNonNull(columnHandles, "columnHandles is null"));
-        requireNonNull(cyodaClient, "Cyoda client is null");
         this.requestHandler = requireNonNull(requestHandler, "requestHandler is null");
         this.finished = false;
         List<CyodaColumnHandle> handles = columnHandles.stream()
@@ -86,8 +84,7 @@ public class CyodaFilteringPageSource<T>
         this.pageBuilder = new PageBuilder(this.columnTypes);
 
         this.responseIterable = requestHandler.asFlux(
-                        tableHandle.getAuthPayload(),
-                        cyodaClient.getRequestPageSize(),
+                        authContext,
                         tableHandle,
                         predicates,
                         SizeListener.NOT_LISTENING)

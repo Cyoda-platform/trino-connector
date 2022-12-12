@@ -35,15 +35,14 @@ import static com.cyoda.presto.client.logic.CompoundPredicateNode.builder;
 import static com.cyoda.presto.client.logic.Connective.AND;
 import static com.cyoda.presto.client.logic.Connective.OR;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 import static org.testng.Assert.*;
 
 public class ColumnPredicateTraversalTest {
 
-    private CyodaColumnHandle myHandle = new CyodaColumnHandle("connectorId", "myColumnName",
-            VarcharType.VARCHAR, DataType.STRING, 0, "handlerKey");
-    private CyodaColumnHandle theOtherHandle = new CyodaColumnHandle("connectorId", "theOtherColumnName",
-            VarcharType.VARCHAR, DataType.STRING, 1, "handlerKey");
+    private CyodaColumnHandle myHandle = new CyodaColumnHandle("myColumnName",
+            VarcharType.VARCHAR, DataType.STRING, 0);
+    private CyodaColumnHandle theOtherHandle = new CyodaColumnHandle("theOtherColumnName",
+            VarcharType.VARCHAR, DataType.STRING, 1);
     private static StringPrestoValueConverter stringConverter = new StringPrestoValueConverter();
 
     @Test

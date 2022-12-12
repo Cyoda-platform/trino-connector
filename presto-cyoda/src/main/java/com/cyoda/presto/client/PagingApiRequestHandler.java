@@ -20,10 +20,8 @@ package com.cyoda.presto.client;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.handles.CyodaColumnHandle;
 import org.springframework.hateoas.PagedModel;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface PagingApiRequestHandler<T> extends ApiRequestHandler<T> {
@@ -32,7 +30,7 @@ public interface PagingApiRequestHandler<T> extends ApiRequestHandler<T> {
             AuthContext authContext,
             int page,
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns, CompoundPredicateNode predicates,
+            CompoundPredicateNode predicates,
             SizeListener listener);
 
 }

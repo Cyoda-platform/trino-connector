@@ -23,8 +23,17 @@ import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.ColumnPredicateBuilder;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.client.reporting.CyodaStaticReportTable;
+import com.cyoda.presto.client.reporting.data.ReportRowsApiHandler;
+import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
+import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
+import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
+import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
+import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
+import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
+import com.cyoda.presto.client.types.CompoundDataType;
+import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.Page;
 import io.trino.spi.predicate.TupleDomain;
@@ -46,7 +55,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.mockito.Mockito.mock;
@@ -56,7 +64,7 @@ import static org.testng.Assert.*;
 @SuppressWarnings("UnstableApiUsage")
 public class TestCyodaRecordSet {
     CyodaConnectorId connectorId = new CyodaConnectorId("conn-id-1");
-    String requestHandlerKey = CyodaStaticReportTable.REPORTS.name();
+    String requestHandlerKey = StaticReportTable.REPORTS.name();
     private LocalHttpServer ourHttpServer;
 
     private CyodaApiRequestHandlerProvider setupHandlerProvider(CyodaConfig mockCyodaConfig) {
@@ -67,12 +75,20 @@ public class TestCyodaRecordSet {
         when(mockTypeManager.getType(localDateTimeSig)).thenReturn(TimestampType.TIMESTAMP_MILLIS);
 
         RestTemplateCustomizer restTemplateCustomizer = new RestTemplateCustomizer(mockCyodaConfig);
-        @SuppressWarnings("rawtypes")
-        Set<ApiRequestHandler> handlers = Collections.singleton(
-                new ConfiguredReportsApiHandler(connectorId, mockCyodaConfig, mockTypeManager, restTemplateCustomizer)
-        );
+        StaticReportMetadataProvider staticReportMetadataProvider = mock(StaticReportMetadataProvider.class);
+        StaticReportMetadataProvider.Reports reports = mock(StaticReportMetadataProvider.Reports.class);
+        when(reports.getTypeColumn()).thenReturn(new CyodaColumnHandle("type", VarcharType.VARCHAR, new CompoundDataType("", DataType.STRING),2, true));
+        when(staticReportMetadataProvider.getReports()).thenReturn(reports);
 
-        return new CyodaApiRequestHandlerProvider(handlers);
+        ConfiguredReportsApiHandler reportsApiHandler = new ConfiguredReportsApiHandler(connectorId, mockCyodaConfig, mockTypeManager, restTemplateCustomizer, staticReportMetadataProvider);
+
+        return new CyodaApiRequestHandlerProvider(
+                reportsApiHandler,
+                mock(ReportConfigDetailsApiHandler.class),
+                mock(ReportStatisticsApiHandler.class),
+                mock(ReportHistoryApiHandler.class),
+                mock(ReportGroupsApiHandler.class),
+                mock(ReportRowsApiHandler.class));
     }
 
     private void setupReponseMapper() {
@@ -107,28 +123,25 @@ public class TestCyodaRecordSet {
         CyodaConfig testCyodaConfig = createCyodaConfig();
 
         CyodaApiRequestHandlerProvider handlerProvider = setupHandlerProvider(testCyodaConfig);
-        CyodaClient client = new CyodaClient(connectorId, testCyodaConfig, handlerProvider);
 
         ApiRequestHandler<GridConfigFieldsView> apiHandler =
                 (ApiRequestHandler<GridConfigFieldsView>) handlerProvider.getHandler(requestHandlerKey);
         AuthContext authContext = mock(AuthContext.class);
-        List<CyodaTable> tables = apiHandler.getTables(authContext);
-        assertTrue(apiHandler instanceof ConfiguredReportsApiHandler);
-        assertEquals(tables.size(), 1); // There is only one table for that.
+
 
         setupReponseMapper();
 
-        CyodaTableHandle tableHandle = new CyodaTableHandle(authContext,connectorId.toString(), "schema", "table", Optional.empty(), requestHandlerKey);
+        CyodaTableHandle tableHandle = new CyodaTableHandle(connectorId.toString(), "schema", "table", Collections.emptyList(), requestHandlerKey, null, null, null);
         CompoundPredicateNode predicates = ColumnPredicateBuilder.setupConstraintPredicates(TupleDomain.all());
         CyodaFilteringPageSource<GridConfigFieldsView> pageSource =
-                new CyodaFilteringPageSource<>(apiHandler, tableHandle, tables.get(0).getColumns(), client, predicates);
+                new CyodaFilteringPageSource<>(authContext, apiHandler, tableHandle, tableHandle.getProjectedColumns(), predicates);
 
         assertNotNull(pageSource);
         int total = 0;
         while (!pageSource.isFinished()) {
             Page page = pageSource.getNextPage();
             assertNotNull(page);
-            assertEquals(page.getChannelCount(), tables.get(0).getColumns().size());
+            assertEquals(page.getChannelCount(), tableHandle.getProjectedColumns().size());
             total += page.getPositionCount();
         }
         // The source shall only read up to the page size, even if there are more elements.

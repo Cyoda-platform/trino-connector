@@ -65,22 +65,22 @@ public class RowNumHandle {
     private static RowNumHandle createRowNumHandle(ColumnPredicate<Long> columnPredicate, long page, long size, boolean isEqualsPredicate, boolean isRangePredicate) {
         long minRownum = columnPredicate.getLower() != null ?
                 Optional.ofNullable(columnPredicate.getLower())
-                        .orElseThrow(()->new IllegalArgumentException("columnPredicate lower value is null")) : 1;
+                        .orElseThrow(() -> new IllegalArgumentException("columnPredicate lower value is null")) : 1;
         long maxRownum = columnPredicate.getUpper() != null ? Optional.ofNullable(columnPredicate.getUpper())
-                .orElseThrow(()->new IllegalArgumentException("columnPredicate lower value is null")) : Long.MAX_VALUE;
+                .orElseThrow(() -> new IllegalArgumentException("columnPredicate lower value is null")) : Long.MAX_VALUE;
 
-        long theSize = isEqualsPredicate ? 1 : Math.min(size,maxRownum-minRownum);
+        long theSize = isEqualsPredicate ? 1 : Math.min(size, maxRownum - minRownum);
         long thePage;
         long offset;
         if (isEqualsPredicate) {
-            thePage = minRownum-1;
-            offset = thePage*theSize;
+            thePage = minRownum - 1;
+            offset = thePage * theSize;
         } else if (isRangePredicate) {
-            thePage = (minRownum-1)/theSize + page;
-            offset = (minRownum-1)+page*theSize;
+            thePage = (minRownum - 1) / theSize + page;
+            offset = (minRownum - 1) + page * theSize;
         } else {
-            thePage = (minRownum-1)/theSize + page;
-            offset = (minRownum-1)+page*theSize;
+            thePage = (minRownum - 1) / theSize + page;
+            offset = (minRownum - 1) + page * theSize;
         }
         return new RowNumHandle(isEqualsPredicate, isRangePredicate, minRownum, maxRownum, theSize, thePage, offset);
     }
@@ -93,16 +93,16 @@ public class RowNumHandle {
             long totalElements = Math.min(this.maxRowNum - this.minRowNum, apiMeta.getTotalElements());
             metadata = new PagedModel.PageMetadata(this.size, page, totalElements);
         } else {
-            metadata = Optional.ofNullable(item.getMetadata()).orElseThrow(()->new IllegalArgumentException("apiMeta has no PageMetadata. API is broken"));
+            metadata = Optional.ofNullable(item.getMetadata()).orElseThrow(() -> new IllegalArgumentException("apiMeta has no PageMetadata. API is broken"));
         }
         return metadata;
     }
 
     public boolean isInRowWindow(long rowNum) {
-        if ( this.hasRowNumEquals ) {
+        if (this.hasRowNumEquals) {
             return rowNum == this.minRowNum;
         } else if (this.hasRowNumRange) {
-            return rowNum >=this.minRowNum && rowNum < this.maxRowNum;
+            return rowNum >= this.minRowNum && rowNum < this.maxRowNum;
         } else {
             return true;
         }

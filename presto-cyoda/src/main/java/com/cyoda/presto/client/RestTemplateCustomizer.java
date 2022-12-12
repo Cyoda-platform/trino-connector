@@ -17,7 +17,6 @@
 
 package com.cyoda.presto.client;
 
-import com.cyoda.presto.CyodaClient;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthPayload;
@@ -67,7 +66,7 @@ import static java.util.Objects.requireNonNull;
 @SuppressWarnings("UnstableApiUsage")
 public class RestTemplateCustomizer {
 
-    private static final SupplierLogger LOG = SupplierLogger.get(CyodaClient.class);
+    private static final SupplierLogger LOG = SupplierLogger.get(RestTemplateCustomizer.class);
     public static final Duration TOKEN_EXPIRY_OFFSET = Duration.ofSeconds(10);
 
     private final CyodaConfig config;

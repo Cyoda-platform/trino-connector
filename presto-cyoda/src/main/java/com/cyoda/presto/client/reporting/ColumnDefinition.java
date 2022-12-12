@@ -18,8 +18,6 @@
 package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.client.types.CompoundDataType;
-import com.cyoda.presto.client.types.DataType;
-import io.trino.spi.type.TypeSignature;
 
 public interface ColumnDefinition {
     int getPos();

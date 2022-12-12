@@ -17,13 +17,15 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.auth.AuthContext;
+import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.ApiRequestHandler;
+import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
 import com.cyoda.presto.client.logic.ColumnPredicateBuilder;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.connector.ConnectorTableHandle;
-import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorPageSource;
@@ -44,14 +46,16 @@ import static java.util.Objects.requireNonNull;
 public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
 
     private final String connectorId;
-    private final CyodaClient client;
-    private final CyodaConfig config;
+    private final CyodaApiRequestHandlerProvider handlerProvider;
+    private final AuthService auth;
 
     @Inject
-    public CyodaPageSourceProvider(CyodaConnectorId connectorId, CyodaClient client, CyodaConfig config) {
+    public CyodaPageSourceProvider(CyodaConnectorId connectorId,
+                                   CyodaApiRequestHandlerProvider handlerProvider,
+                                   AuthService auth) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
-        this.client = requireNonNull(client, "client is null");
-        this.config = requireNonNull(config,"config is null");
+        this.handlerProvider = requireNonNull(handlerProvider, "handlerProvider is null");
+        this.auth = auth;
     }
 
     @Override
@@ -66,13 +70,11 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
         requireNonNull(split, "split is null");
         TupleDomain<ColumnHandle> constraint = ((CyodaSplit) split).getConstraint();
         CompoundPredicateNode predicates = ColumnPredicateBuilder.setupConstraintPredicates(constraint);
-        String requestHandlerKey = ((CyodaSplit) split).getTableHandle().getRequestHandlerKey();
-        ApiRequestHandler<?> requestHandler = Optional.ofNullable(client.getRequestHandlerProvider().getHandler(requestHandlerKey))
-                .orElseThrow(() -> new IllegalArgumentException("Handler " + requestHandlerKey + " not found"));
-//        CyodaTableHandle tableHandle = ((CyodaSplit) split).getTableHandle().withSessionConfig(session,config);
         CyodaTableHandle cyodaTableHandle = (CyodaTableHandle) tableHandle;
         Preconditions.checkArgument(connectorId.equals(cyodaTableHandle.getConnectorId()),"tableHandle not for this connectorId");
         List<CyodaColumnHandle> cyodaColumns = columns.stream().map(CyodaColumnHandle.class::cast).collect(Collectors.toList());
-        return new CyodaFilteringPageSource<>(requestHandler, cyodaTableHandle, cyodaColumns, client, predicates);
+        AuthContext authContext = auth.fromSession(session);
+        return cyodaTableHandle.getPageSource(authContext, handlerProvider, cyodaColumns, predicates);
+
     }
 }

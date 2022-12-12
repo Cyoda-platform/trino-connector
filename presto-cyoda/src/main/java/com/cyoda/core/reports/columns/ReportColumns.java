@@ -43,6 +43,7 @@ public class ReportColumns {
         this.columns = columns;
     }
 
+    @JsonProperty("columns")
     public List<ReportColumn> getColumns() {
         return columns;
     }

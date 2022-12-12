@@ -28,12 +28,12 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 
 public class CyodaSplit implements ConnectorSplit {
-    private final URI uri;
     private final List<HostAddress> addresses;
     private final TupleDomain<ColumnHandle> constraint;
     private final CyodaTableHandle tableHandle;
@@ -41,12 +41,11 @@ public class CyodaSplit implements ConnectorSplit {
     @JsonCreator
     public CyodaSplit(
             @JsonProperty("tableHandle") CyodaTableHandle tableHandle,
-            @JsonProperty("uri") URI uri,
             @JsonProperty("constraint") TupleDomain<ColumnHandle> constraint) {
         this.tableHandle = requireNonNull(tableHandle, "tableHandle name is null");
-        this.uri = requireNonNull(uri, "uri is null");
-
-        addresses = ImmutableList.of(HostAddress.fromUri(uri));
+        addresses = tableHandle.getUri() == null ?
+                Collections.emptyList() :
+                ImmutableList.of(HostAddress.fromUri(tableHandle.getUri()));
         this.constraint = requireNonNull(constraint, "constraint name is null");
     }
 
@@ -54,11 +53,6 @@ public class CyodaSplit implements ConnectorSplit {
     @JsonProperty
     public CyodaTableHandle getTableHandle() {
         return tableHandle;
-    }
-
-    @JsonProperty
-    public URI getUri() {
-        return uri;
     }
 
     @JsonProperty
@@ -82,7 +76,6 @@ public class CyodaSplit implements ConnectorSplit {
     @Override
     public String toString() {
         return MoreObjects.toStringHelper(this)
-                .add("uri", uri)
                 .add("addresses", addresses)
                 .add("constraint", constraint)
                 .add("tableHandle", tableHandle)

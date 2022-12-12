@@ -24,98 +24,68 @@ import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.ApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.ColumnPredicateNode;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.logic.Connective;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
-import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
+import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.cyoda.service.api.beans.GroupHeader;
-import io.trino.spi.type.StandardTypes;
 import io.trino.spi.type.TypeManager;
-import io.airlift.slice.Slice;
 import org.joda.beans.MetaProperty;
 import reactor.core.publisher.Flux;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Inject;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
-import java.util.function.Function;
 
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_ID_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_NAME_VARIABLE;
-import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
-import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_GROUPS;
-import static com.cyoda.presto.client.types.DataType.STRING;
-import static com.cyoda.presto.client.types.DataType.UUID_TYPE;
 
 public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle>
         implements ApiRequestHandler<GroupingHandle> {
 
     private static final SupplierLogger LOG = SupplierLogger.get(ReportGroupsApiHandler.class);
-
-    public static final String COLUMN_NOT_FOUND = " Column not found!";
     private final ReportStatisticsApiHandler statisticsApiHandler;
     private final InternalReportGroupsApiHandler reportGroupsHandler;
-    private final Function<AuthContext, ColumnsHolder> columnsHolderFunction;
+    private final CyodaColumnHandle reportIdColumn;
+    private final CyodaColumnHandle groupingVersionColumn;
+    private final CyodaColumnHandle reportConfigurationIdColumn;
 
 
     public static final String GROUPING_VERSION_COLUMN = "groupingVersion";
     public static final String GROUPING_PARENT_COLUMN = "group_json";
     public static final String GROUPING_REPORT_CONFIG_ID_COLUMN = HISTORY_REPORT_NAME_VARIABLE;
 
-    public static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
-            .add(new StandardColumnDefinition(0, HISTORY_REPORT_ID_COLUMN, STRING))
-            .add(new StandardColumnDefinition(0, GROUPING_VERSION_COLUMN, UUID_TYPE))
-            .add(new StandardColumnDefinition(0, GROUPING_REPORT_CONFIG_ID_COLUMN, STRING))
-            .add(GroupHeader.meta())
-            .build();
-
 
     @Inject
     public ReportGroupsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
-                                  RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager, REPORT_ENDPOINT,restTemplateCustomizer,LOG);
-        this.statisticsApiHandler = new ReportStatisticsApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
-        this.reportGroupsHandler = new InternalReportGroupsApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
-
-        columnsHolderFunction = columnsHolderFunction(reportGroupsHandler,statisticsApiHandler);
+                                  RestTemplateCustomizer restTemplateCustomizer,
+                                  StaticReportMetadataProvider staticMetaProvider,
+                                  ReportStatisticsApiHandler reportStatisticsApiHandler,
+                                  InternalReportGroupsApiHandler internalReportGroupsApiHandler) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, LOG);
+        this.statisticsApiHandler = reportStatisticsApiHandler;
+        this.reportGroupsHandler = internalReportGroupsApiHandler;
+        reportIdColumn = staticMetaProvider.getReportGroups().getReportIdColumn();
+        groupingVersionColumn = staticMetaProvider.getReportGroups().getGroupingVersionColumn();
+        reportConfigurationIdColumn = staticMetaProvider.getReportGroups().getReportConfigIdColumn();
     }
 
-    private Function<AuthContext, ColumnsHolder> columnsHolderFunction(InternalReportGroupsApiHandler reportGroupsHandler,
-                                                                       ReportStatisticsApiHandler statisticsApiHandler) {
-        return authPayload -> new ColumnsHolder(authPayload,reportGroupsHandler,statisticsApiHandler);
-    }
 
-    @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
-        return Collections.singletonMap(asTableDefinitionHandle(REPORT_GROUPS.name()), COLUMN_DEFS);
-    }
-
-    @Override
-    public String getHandlerKey() {
-        return REPORT_GROUPS.name();
-    }
-
-    private CompoundPredicateNode getCompoundPredicateNode(CyodaTableHandle tableHandle, ColumnPredicateNode<Any> predicates, DistributedReportInfoView stats) {
+    private CompoundPredicateNode getCompoundPredicateNode(ColumnPredicateNode<Any> predicates, DistributedReportInfoView stats) {
         String reportId = stats.getId();
         UUID groupingVersion = stats.getGroupingVersion();
         String reportConfigId = stats.getConfigName();
 
-        ColumnsHolder columnsHolder = columnsHolderFunction.apply(tableHandle.getAuthPayload());
         CompoundPredicateNode.Builder builder = CompoundPredicateNode.builder(Connective.AND);
-        builder.addLeaf(columnsHolder.reportIdColumn.newEqualsPredicateFromJava(reportId));
-        builder.addLeaf(columnsHolder.groupingVersionColumn.newEqualsPredicateFromJava(groupingVersion));
-        builder.addLeaf(columnsHolder.reportConfigurationIdColumn.newEqualsPredicateFromJava(reportConfigId));
+        builder.addLeaf(reportIdColumn.newEqualsPredicateFromJava(reportId));
+        builder.addLeaf(groupingVersionColumn.newEqualsPredicateFromJava(groupingVersion));
+        builder.addLeaf(reportConfigurationIdColumn.newEqualsPredicateFromJava(reportConfigId));
         builder.addMember(predicates);
 
         return builder.build();
@@ -129,78 +99,37 @@ public class ReportGroupsApiHandler extends BaseReportsApiHandler<GroupingHandle
             @Nonnull DistributedReportInfoView stats,
             SizeListener listener
     ) {
-        if (stats.getGroupsCount() == 0 ) return Flux.empty();
-        CompoundPredicateNode thesePredicates = getCompoundPredicateNode(tableHandle, predicates, stats);
-        return reportGroupsHandler.asFlux(authContext,pageSize, tableHandle, thesePredicates,listener);
+        if (stats.getGroupsCount() == 0) return Flux.empty();
+        CompoundPredicateNode thesePredicates = getCompoundPredicateNode(predicates, stats);
+        return reportGroupsHandler.asFlux(authContext, tableHandle, thesePredicates, listener);
     }
 
     @Nullable
     @Override
     protected Object getFieldValueFromEntity(@Nonnull GroupingHandle field, CyodaColumnHandle columnHandle) {
-        if ( HISTORY_REPORT_ID_COLUMN.equals(columnHandle.getColumnName()) ) {
+        if (HISTORY_REPORT_ID_COLUMN.equals(columnHandle.getColumnName())) {
             return field.reportId;
         }
-        if ( GROUPING_VERSION_COLUMN.equals(columnHandle.getColumnName()) ) {
+        if (GROUPING_VERSION_COLUMN.equals(columnHandle.getColumnName())) {
             return field.groupingVersion;
         }
-        if ( HISTORY_REPORT_NAME_VARIABLE.equals(columnHandle.getColumnName()) ) {
+        if (HISTORY_REPORT_NAME_VARIABLE.equals(columnHandle.getColumnName())) {
             return field.reportConfigId;
         }
         MetaProperty<?> metaProperty = field.groupHeader.metaBean().metaPropertyMap().get(columnHandle.getColumnName());
-        if ( metaProperty == null ) {
-            throw new IllegalArgumentException(columnHandle.getColumnName()+" is not defined on ReportDefinitionsView");
+        if (metaProperty == null) {
+            throw new IllegalArgumentException(columnHandle.getColumnName() + " is not defined on ReportDefinitionsView");
         }
         return field.groupHeader.metaBean().metaProperty(columnHandle.getColumnName()).get(field.groupHeader);
     }
 
     @Override
-    public Flux<GroupingHandle> asFlux(AuthContext authContext, int pageSize, CyodaTableHandle tableHandle, CompoundPredicateNode predicates, SizeListener listener) {
+    public Flux<GroupingHandle> asFlux(AuthContext authContext, CyodaTableHandle tableHandle, CompoundPredicateNode predicates, SizeListener listener) {
+        int pageSize = getPageSize();
         logCreation(pageSize, tableHandle, predicates, LOG);
         Flux<DistributedReportInfoView> statsFlux = statisticsApiHandler
-                .asFlux(authContext, pageSize, tableHandle, predicates, listener);
-        return statsFlux.flatMap(stats -> internalFlux(authContext,pageSize,tableHandle,predicates,stats,listener));
-    }
-
-    static class ColumnsHolder {
-        private final CyodaColumnHandle reportIdColumn;
-        private final CyodaColumnHandle groupingVersionColumn;
-        private final CyodaColumnHandle reportConfigurationIdColumn;
-
-        ColumnsHolder(AuthContext authContext, InternalReportGroupsApiHandler reportGroupsHandler, ReportStatisticsApiHandler statisticsApiHandler) {
-            this.reportIdColumn = setupReportIdColumn(authContext, reportGroupsHandler);
-            this.groupingVersionColumn = setupGroupingVersionColumn(authContext, reportGroupsHandler);
-            this.reportConfigurationIdColumn = setupReportConfigIdColumn(authContext, statisticsApiHandler);
-        }
-
-        private CyodaColumnHandle setupReportConfigIdColumn(AuthContext authContext, ReportStatisticsApiHandler statisticsApiHandler) {
-            return statisticsApiHandler.getTables(authContext).get(0).getColumns().stream()
-                    .filter(it -> it.getColumnName().equals(HISTORY_REPORT_NAME_VARIABLE))
-                    .findAny()
-                    .orElseThrow(() -> new IllegalStateException(HISTORY_REPORT_NAME_VARIABLE + COLUMN_NOT_FOUND));
-        }
-
-        private CyodaColumnHandle setupGroupingVersionColumn(AuthContext authContext, InternalReportGroupsApiHandler reportGroupsHandler) {
-            return reportGroupsHandler.getTables(authContext).get(0).getColumns().stream()
-                    .filter(it -> it.getColumnName().equals(GROUPING_VERSION_COLUMN))
-                    //TODO should work without it since UUID.TYPE_STRING = StandardTypes.VARCHAR
-//                    .map(it -> new CyodaColumnHandle(
-//                            it.getConnectorId(),
-//                            it.getColumnName(),
-//                            VarcharType.VARCHAR,
-//                            UUID_TYPE,
-//                            it.getOrdinalPosition(),
-//                            it.getRequestHandlerKey(),
-//                            it.getIsNullable()))
-                    .findAny()
-                    .orElseThrow(() -> new IllegalStateException(GROUPING_VERSION_COLUMN + COLUMN_NOT_FOUND));
-        }
-
-        private CyodaColumnHandle setupReportIdColumn(AuthContext authContext, InternalReportGroupsApiHandler reportGroupsHandler) {
-            return reportGroupsHandler.getTables(authContext).get(0).getColumns().stream()
-                    .filter(it -> it.getColumnName().equals(HISTORY_REPORT_ID_COLUMN))
-                    .findAny()
-                    .orElseThrow(() -> new IllegalStateException(HISTORY_REPORT_ID_COLUMN + COLUMN_NOT_FOUND));
-        }
+                .asFlux(authContext, tableHandle, predicates, listener);
+        return statsFlux.flatMap(stats -> internalFlux(authContext, pageSize, tableHandle, predicates, stats, listener));
     }
 
 }

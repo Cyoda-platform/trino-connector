@@ -25,18 +25,16 @@ import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
-import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.interactors.WrappedEntityModel;
-import io.trino.spi.type.TypeManager;
-import io.trino.spi.TrinoException;
-import io.trino.spi.StandardErrorCode;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import io.trino.spi.StandardErrorCode;
+import io.trino.spi.TrinoException;
+import io.trino.spi.type.TypeManager;
 import org.joda.beans.MetaProperty;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.hateoas.MediaTypes;
@@ -54,13 +52,10 @@ import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_ID_COLUMN;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
-import static com.cyoda.presto.client.reporting.AbstractTableHolder.TableDefinitionHandle.asTableDefinitionHandle;
-import static com.cyoda.presto.client.reporting.CyodaStaticReportTable.REPORT_STATS;
 import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_VERSION_COLUMN;
 
 public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<DistributedReportInfoView>
@@ -75,25 +70,13 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Dist
 
     private final ReportHistoryApiHandler reportHistoryApiHandler;
 
-    private static final List<ColumnDefinition> COLUMN_DEFS = StandardColumnDefinition.builder()
-            .add(DistributedReportInfoView.meta())
-            .build();
 
     @Inject
     public ReportStatisticsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
-                                      RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager, REPORT_ENDPOINT ,restTemplateCustomizer,LOG);
-        this.reportHistoryApiHandler = new ReportHistoryApiHandler(connectorId,config,typeManager,restTemplateCustomizer);
-    }
-
-    @Override
-    protected Map<TableDefinitionHandle, List<ColumnDefinition>> refreshFieldDefs(AuthContext authContext) {
-        return Collections.singletonMap(asTableDefinitionHandle(REPORT_STATS.name()),COLUMN_DEFS);
-    }
-
-    @Override
-    public String getHandlerKey() {
-        return REPORT_STATS.name();
+                                      RestTemplateCustomizer restTemplateCustomizer,
+                                      ReportHistoryApiHandler reportHistoryApiHandler) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, LOG);
+        this.reportHistoryApiHandler = reportHistoryApiHandler;
     }
 
     @Override
@@ -101,7 +84,6 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Dist
             AuthContext authContext,
             int page,
             int pageSize,
-            List<CyodaColumnHandle> projectedColumns,
             CompoundPredicateNode predicates,
             SizeListener listener
     ) {
@@ -112,14 +94,13 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Dist
                         authContext,
                         page,
                         pageSize,
-                        projectedColumns,
                         predicates,
                         listener
                 ).orElse(PagedModel.empty());
-        List<DistributedReportInfoView> reportStatisticsView = getReportStatisticsView(authContext,uriTemplate, reportHistoryModel.getContent());
+        List<DistributedReportInfoView> reportStatisticsView = getReportStatisticsView(authContext, uriTemplate, reportHistoryModel.getContent());
 
         PagedModel<DistributedReportInfoView> reportStatsView = PagedModel.of(reportStatisticsView, reportHistoryModel.getMetadata());
-        publishSize(listener,reportStatsView);
+        publishSize(listener, reportStatsView);
         return Optional.of(reportStatsView);
     }
 
@@ -129,7 +110,7 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Dist
             @Nonnull Collection<ReportHistoryFieldsView> history
     ) {
 
-        if ( history.isEmpty() ) return Collections.emptyList();
+        if (history.isEmpty()) return Collections.emptyList();
         ImmutableList.Builder<DistributedReportInfoView> builder = ImmutableList.builder();
 
         history.forEach(element -> {
@@ -138,8 +119,8 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Dist
             URI templatedUri = uriTemplate.expand(
                     ImmutableMap.of(
                             HISTORY_REPORT_ID_COLUMN, reportId,
-                            GROUPING_VERSION_COLUMN,groupingVersion,
-                            "full",true
+                            GROUPING_VERSION_COLUMN, groupingVersion,
+                            "full", true
                     )
             );
 
@@ -147,7 +128,8 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Dist
             traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(authContext));
 
             TypeReferences.EntityModelType<WrappedEntityModel<DistributedReportInfoView>> typeReference
-                    = new TypeReferences.EntityModelType<WrappedEntityModel<DistributedReportInfoView>>(){};
+                    = new TypeReferences.EntityModelType<WrappedEntityModel<DistributedReportInfoView>>() {
+            };
 
             try {
                 EntityModel<WrappedEntityModel<DistributedReportInfoView>> entityModel = traverson
@@ -161,7 +143,7 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Dist
             }
         });
         List<DistributedReportInfoView> result = builder.build();
-        LOG.debug("Got %s report statistics",result.size());
+        LOG.debug("Got %s report statistics", result.size());
         return result;
 
     }
@@ -175,15 +157,15 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Dist
         } catch (URISyntaxException e) {
             throw new TrinoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, e);
         }
-        return UriTemplate.of(uri.toASCIIString()+ REPORT_STATS_TEMPLATE);
+        return UriTemplate.of(uri.toASCIIString() + REPORT_STATS_TEMPLATE);
     }
 
     @Nullable
     @Override
     protected Object getFieldValueFromEntity(@Nonnull DistributedReportInfoView field, CyodaColumnHandle columnHandle) {
         MetaProperty<?> metaProperty = field.metaBean().metaPropertyMap().get(columnHandle.getColumnName());
-        if ( metaProperty == null ) {
-            throw new IllegalArgumentException(columnHandle.getColumnName()+" is not defined on ReportDefinitionsView");
+        if (metaProperty == null) {
+            throw new IllegalArgumentException(columnHandle.getColumnName() + " is not defined on ReportDefinitionsView");
         }
         return field.metaBean().metaProperty(columnHandle.getColumnName()).get(field);
     }

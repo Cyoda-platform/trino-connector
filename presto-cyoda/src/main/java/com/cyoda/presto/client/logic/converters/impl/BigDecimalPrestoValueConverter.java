@@ -28,6 +28,8 @@ import javax.inject.Inject;
 import java.math.BigDecimal;
 import java.math.MathContext;
 
+import static java.math.RoundingMode.UNNECESSARY;
+
 public class BigDecimalPrestoValueConverter extends LongDecimalTypeValueConverter<BigDecimal> {
 
     public static final int SCALE = 18;
@@ -47,7 +49,7 @@ public class BigDecimalPrestoValueConverter extends LongDecimalTypeValueConverte
             throw new IllegalArgumentException(String.format("Value %s of a BigDecimal field has higher scale (%s) than maximum of %s",
                     value, value.scale(), SCALE));
         }
-        BigDecimal rescaled = Decimals.rescale(value, DECIMAL_TYPE);
+        BigDecimal rescaled = value.setScale(SCALE, UNNECESSARY);
         return Int128.valueOf(rescaled.unscaledValue());
     }
 

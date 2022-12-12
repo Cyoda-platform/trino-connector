@@ -29,7 +29,6 @@ import io.trino.spi.type.DoubleType;
 import io.trino.spi.type.IntegerType;
 import io.trino.spi.type.RealType;
 import io.trino.spi.type.SmallintType;
-import io.trino.spi.type.StandardTypes;
 import io.trino.spi.type.TimestampType;
 import io.trino.spi.type.TinyintType;
 import io.trino.spi.type.Type;
@@ -134,7 +133,7 @@ public class NewComparisonColumnPredicateTest {
     }
 
     private static CyodaColumnHandle newCyodaColumnHandle(String name, Type type, DataType dataType, int pos, boolean nullable){
-        return new CyodaColumnHandle(CONNECTOR_ID, name, type, new CompoundDataType(name, dataType), pos, REQUEST_HANDLER_KEY, nullable);
+        return new CyodaColumnHandle(name, type, new CompoundDataType(name, dataType), pos, nullable);
     }
 
     private <T extends Comparable<T>> void testMerge(ColumnPredicate<T> a,
@@ -1012,31 +1011,31 @@ public class NewComparisonColumnPredicateTest {
                 result12
         );
 
-        testMerge(newComparisonPredicate(bigDecimalCol, GREATER_EQUAL, BigDecimal.valueOf(12345, 2)),
-                newComparisonPredicate(bigDecimalCol, LESS, BigDecimal.valueOf(67890, 2)),
+        testMerge(newComparisonPredicate(bigDecimalCol, GREATER_EQUAL, BigDecimal.valueOf(12345, 18)),
+                newComparisonPredicate(bigDecimalCol, LESS, BigDecimal.valueOf(67890, 18)),
                 new ColumnPredicate<>(RANGE,
                         bigDecimalCol,
-                        BigDecimal.valueOf(12345, 2),
-                        BigDecimal.valueOf(67890, 2)
+                        BigDecimal.valueOf(12345, 18),
+                        BigDecimal.valueOf(67890, 18)
                 )
         );
 
         ColumnPredicate<BigDecimal> result9;
-        final SortedSet<BigDecimal> values9 = toValueSet(BigDecimal.valueOf(45678, 2));
+        final SortedSet<BigDecimal> values9 = toValueSet(BigDecimal.valueOf(45678, 18));
         if (values9.isEmpty()) {
             result9 = ColumnPredicate.none(bigDecimalCol);
         } else {
             result9 = ColumnPredicate.buildInList(bigDecimalCol, values9);
         }
         ColumnPredicate<BigDecimal> result10;
-        final SortedSet<BigDecimal> values10 = toValueSet(BigDecimal.valueOf(45678, 2), BigDecimal.valueOf(98765, 2));
+        final SortedSet<BigDecimal> values10 = toValueSet(BigDecimal.valueOf(45678, 18), BigDecimal.valueOf(98765, 18));
         if (values10.isEmpty()) {
             result10 = ColumnPredicate.none(bigDecimalCol);
         } else {
             result10 = ColumnPredicate.buildInList(bigDecimalCol, values10);
         }
         ColumnPredicate<BigDecimal> result11;
-        final SortedSet<BigDecimal> values11 = toValueSet(BigDecimal.valueOf(12345, 2), BigDecimal.valueOf(45678, 2));
+        final SortedSet<BigDecimal> values11 = toValueSet(BigDecimal.valueOf(12345, 18), BigDecimal.valueOf(45678, 18));
         if (values11.isEmpty()) {
             result11 = ColumnPredicate.none(bigDecimalCol);
         } else {
@@ -1048,7 +1047,7 @@ public class NewComparisonColumnPredicateTest {
         );
 
         ColumnPredicate<BigDecimal> result6;
-        final SortedSet<BigDecimal> values6 = toValueSet(BigDecimal.valueOf(34567891011L, 2));
+        final SortedSet<BigDecimal> values6 = toValueSet(BigDecimal.valueOf(34567891011L, 18));
         if (values6.isEmpty()) {
             result6 = ColumnPredicate.none(bigDecimalCol);
         } else {
@@ -1056,8 +1055,8 @@ public class NewComparisonColumnPredicateTest {
         }
         ColumnPredicate<BigDecimal> result7;
         final SortedSet<BigDecimal> values7 = toValueSet(
-                BigDecimal.valueOf(34567891011L, 2),
-                BigDecimal.valueOf(98765432111L, 2)
+                BigDecimal.valueOf(34567891011L, 18),
+                BigDecimal.valueOf(98765432111L, 18)
         );
         if (values7.isEmpty()) {
             result7 = ColumnPredicate.none(bigDecimalCol);
@@ -1066,8 +1065,8 @@ public class NewComparisonColumnPredicateTest {
         }
         ColumnPredicate<BigDecimal> result8;
         final SortedSet<BigDecimal> values8 = toValueSet(
-                BigDecimal.valueOf(12345678910L, 2),
-                BigDecimal.valueOf(34567891011L, 2)
+                BigDecimal.valueOf(12345678910L, 18),
+                BigDecimal.valueOf(34567891011L, 18)
         );
         if (values8.isEmpty()) {
             result8 = ColumnPredicate.none(bigDecimalCol);
@@ -1080,18 +1079,18 @@ public class NewComparisonColumnPredicateTest {
         );
 
         testMerge(newComparisonPredicate(bigDecimalCol, GREATER_EQUAL,
-                        BigDecimal.valueOf(12345678910L, 2)),
+                        BigDecimal.valueOf(12345678910L, 18)),
                 newComparisonPredicate(bigDecimalCol, LESS,
-                        BigDecimal.valueOf(67890101112L, 2)),
+                        BigDecimal.valueOf(67890101112L, 18)),
                 new ColumnPredicate(RANGE,
                         bigDecimalCol,
-                        BigDecimal.valueOf(12345678910L, 2),
-                        BigDecimal.valueOf(67890101112L, 2)
+                        BigDecimal.valueOf(12345678910L, 18),
+                        BigDecimal.valueOf(67890101112L, 18)
                 )
         );
 
         ColumnPredicate<BigDecimal> result3;
-        final SortedSet<BigDecimal> values3 = toValueSet(new BigDecimal("3456789101112131415.16"));
+        final SortedSet<BigDecimal> values3 = toValueSet(newBigDecimal("3456789101112131415.16"));
         if (values3.isEmpty()) {
             result3 = ColumnPredicate.none(bigDecimalCol);
         } else {
@@ -1099,8 +1098,8 @@ public class NewComparisonColumnPredicateTest {
         }
         ColumnPredicate<BigDecimal> result4;
         final SortedSet<BigDecimal> values4 = toValueSet(
-                new BigDecimal("3456789101112131415.16"),
-                new BigDecimal("9876543212345678910.11")
+                newBigDecimal("3456789101112131415.16"),
+                newBigDecimal("9876543212345678910.11")
         );
         if (values4.isEmpty()) {
             result4 = ColumnPredicate.none(bigDecimalCol);
@@ -1109,8 +1108,8 @@ public class NewComparisonColumnPredicateTest {
         }
         ColumnPredicate<BigDecimal> result5;
         final SortedSet<BigDecimal> values5 = toValueSet(
-                new BigDecimal("1234567891011121314.15"),
-                new BigDecimal("3456789101112131415.16")
+                newBigDecimal("1234567891011121314.15"),
+                newBigDecimal("3456789101112131415.16")
         );
         if (values5.isEmpty()) {
             result5 = ColumnPredicate.none(bigDecimalCol);
@@ -1125,11 +1124,11 @@ public class NewComparisonColumnPredicateTest {
         testMerge(newComparisonPredicate(bigDecimalCol, GREATER_EQUAL,
                         new BigDecimal("1234567891011121314.15")),
                 newComparisonPredicate(bigDecimalCol, LESS,
-                        new BigDecimal("67891011121314151617.18")),
+                        newBigDecimal("67891011121314151617.18")),
                 new ColumnPredicate<>(RANGE,
                         bigDecimalCol,
-                        new BigDecimal("1234567891011121314.15"),
-                        new BigDecimal("67891011121314151617.18")
+                        newBigDecimal("1234567891011121314.15"),
+                        newBigDecimal("67891011121314151617.18")
                 )
         );
 
@@ -1172,6 +1171,10 @@ public class NewComparisonColumnPredicateTest {
                 result1,
                 result);
     }
+    
+    private static BigDecimal newBigDecimal(String str){
+        return new BigDecimal(str).setScale(18);
+    }
 
     @Test
     public void testLessEqual() {
@@ -1191,9 +1194,9 @@ public class NewComparisonColumnPredicateTest {
                         Float.POSITIVE_INFINITY)));
         Assert.assertEquals(
                 newComparisonPredicate(bigDecimalCol, LESS_EQUAL,
-                        BigDecimal.valueOf(12345, 2)),
+                        BigDecimal.valueOf(12345, 18)),
                 newComparisonPredicate(bigDecimalCol, LESS,
-                        BigDecimal.valueOf(12346, 2)));
+                        BigDecimal.valueOf(12346, 18)));
         Assert.assertEquals(newComparisonPredicate(stringCol, LESS_EQUAL, "a"),
                 newComparisonPredicate(stringCol, LESS, "a\0"));
         //TODO byte[] is not comparable for now
@@ -1253,9 +1256,9 @@ public class NewComparisonColumnPredicateTest {
         );
         Assert.assertEquals(
                 newComparisonPredicate(bigDecimalCol, GREATER_EQUAL,
-                        BigDecimal.valueOf(12346, 2)),
+                        BigDecimal.valueOf(12346, 18)),
                 newComparisonPredicate(bigDecimalCol, GREATER,
-                        BigDecimal.valueOf(12345, 2)));
+                        BigDecimal.valueOf(12345, 18)));
         Assert.assertEquals(newComparisonPredicate(stringCol, GREATER_EQUAL, "a\0"),
                 newComparisonPredicate(stringCol, GREATER, "a")
         );
@@ -1317,13 +1320,7 @@ public class NewComparisonColumnPredicateTest {
                 newComparisonPredicate(doubleCol, LESS, Double.NEGATIVE_INFINITY),
                 ColumnPredicate.none(doubleCol));
         Assert.assertEquals(newComparisonPredicate(bigDecimalCol, LESS,
-                        DecimalUtil.minValue(DecimalUtil.MAX_DECIMAL32_PRECISION, 2)),
-                ColumnPredicate.none(bigDecimalCol));
-        Assert.assertEquals(newComparisonPredicate(bigDecimalCol, LESS,
-                        DecimalUtil.minValue(DecimalUtil.MAX_DECIMAL64_PRECISION, 2)),
-                ColumnPredicate.none(bigDecimalCol));
-        Assert.assertEquals(newComparisonPredicate(bigDecimalCol, LESS,
-                        DecimalUtil.minValue(DecimalUtil.MAX_DECIMAL128_PRECISION, 2)),
+                        DecimalUtil.minValue(38, 18)),
                 ColumnPredicate.none(bigDecimalCol));
         Assert.assertEquals(newComparisonPredicate(stringCol, LESS, ""),
                 ColumnPredicate.none(stringCol));
@@ -1354,13 +1351,7 @@ public class NewComparisonColumnPredicateTest {
                 newComparisonPredicate(doubleCol, GREATER_EQUAL, Double.NEGATIVE_INFINITY),
                 ColumnPredicate.isNotNull(doubleCol));
         Assert.assertEquals(newComparisonPredicate(bigDecimalCol, GREATER_EQUAL,
-                        DecimalUtil.minValue(DecimalUtil.MAX_DECIMAL32_PRECISION, 2)),
-                ColumnPredicate.isNotNull(bigDecimalCol));
-        Assert.assertEquals(newComparisonPredicate(bigDecimalCol, GREATER_EQUAL,
-                        DecimalUtil.minValue(DecimalUtil.MAX_DECIMAL64_PRECISION, 2)),
-                ColumnPredicate.isNotNull(bigDecimalCol));
-        Assert.assertEquals(newComparisonPredicate(bigDecimalCol, GREATER_EQUAL,
-                        DecimalUtil.minValue(DecimalUtil.MAX_DECIMAL128_PRECISION, 2)),
+                        DecimalUtil.minValue(38, 18)),
                 ColumnPredicate.isNotNull(bigDecimalCol));
         Assert.assertEquals(newComparisonPredicate(stringCol, GREATER_EQUAL, ""),
                 ColumnPredicate.isNotNull(stringCol));
@@ -1411,14 +1402,11 @@ public class NewComparisonColumnPredicateTest {
         Assert.assertEquals(newComparisonPredicate(doubleCol, EQUAL, 123.456).toString(),
                 "`double` = 123.456");
         Assert.assertEquals(newComparisonPredicate(bigDecimalCol, EQUAL,
-                        BigDecimal.valueOf(12345, 2)).toString(),
-                "`bigDecimal` = 123.45");
+                        BigDecimal.valueOf(12345, 18)).toString(),
+                "`bigDecimal` = 1.2345E-14");
         Assert.assertEquals(newComparisonPredicate(bigDecimalCol, EQUAL,
-                        BigDecimal.valueOf(12345678910L, 2)).toString(),
-                "`bigDecimal` = 123456789.10");
-        Assert.assertEquals(newComparisonPredicate(bigDecimalCol, EQUAL,
-                        new BigDecimal("1234567891011121314.15")).toString(),
-                "`bigDecimal` = 1234567891011121314.15");
+                        newBigDecimal("12345.678910111213141500")).toString(),
+                "`bigDecimal` = 12345.678910111213141500");
         Assert.assertEquals(newComparisonPredicate(stringCol, EQUAL, "my string").toString(),
                 "`string` = \"my string\"");
         Assert.assertEquals(intInList(10, 0, -10).toString(),
