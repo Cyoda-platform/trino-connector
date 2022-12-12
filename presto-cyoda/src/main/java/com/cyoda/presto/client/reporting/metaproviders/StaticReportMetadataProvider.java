@@ -27,6 +27,7 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
 
     private final Reports reports;
     private final ReportDetails reportDetails;
+    private final ReportStats reportStats;
     private final ReportHistory reportHistory;
     private final ReportGroups reportGroups;
     private final ReportRows reportRows;
@@ -37,6 +38,7 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
         super(typeManager, config, connectorId);
         reports = new Reports();
         reportDetails = new ReportDetails();
+        reportStats = new ReportStats();
         reportHistory = new ReportHistory();
         reportGroups = new ReportGroups();
         reportRows = new ReportRows();
@@ -128,6 +130,12 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
     public class ReportDetails extends StaticTableMetadata {
         public ReportDetails() {
             super(StaticReportTable.REPORT_DETAILS);
+        }
+    }
+
+    public class ReportStats extends StaticTableMetadata {
+        public ReportStats() {
+            super(StaticReportTable.REPORT_STATS);
         }
     }
 
