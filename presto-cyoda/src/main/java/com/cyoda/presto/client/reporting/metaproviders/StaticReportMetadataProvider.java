@@ -137,22 +137,16 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
 
     public class ReportHistory extends StaticTableMetadata {
         private final CyodaColumnHandle typeColumn;
-        private final CyodaColumnHandle reportNameColumn;
         private final CyodaColumnHandle reportIdColumn;
 
         public ReportHistory() {
             super(StaticReportTable.REPORT_HISTORIES);
             typeColumn = getTableHandle().getColumn(StaticReportTable.ReportHistoryColumnDef.TYPE.getFieldName());
-            reportNameColumn = getTableHandle().getColumn(StaticReportTable.ReportHistoryColumnDef.REPORT_NAME.getFieldName());
             reportIdColumn = getTableHandle().getColumn(StaticReportTable.ReportHistoryColumnDef.ID.getFieldName());
         }
 
         public CyodaColumnHandle getTypeColumn() {
             return typeColumn;
-        }
-
-        public CyodaColumnHandle getReportNameColumn() {
-            return reportNameColumn;
         }
 
         public CyodaColumnHandle getReportIdColumn() {
@@ -164,14 +158,12 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
         private final CyodaColumnHandle reportIdColumn;
         private final CyodaColumnHandle groupingVersionColumn;
         private final CyodaColumnHandle groupJsonBase64Column;
-        private final CyodaColumnHandle reportConfigIdColumn;
 
         public ReportGroups() {
             super(StaticReportTable.REPORT_GROUPS);
             reportIdColumn = getTableHandle().getColumn(HISTORY_REPORT_ID_COLUMN);
             groupingVersionColumn = getTableHandle().getColumn(GROUPING_VERSION_COLUMN);
             groupJsonBase64Column = getTableHandle().getColumn(ROW_GROUP_JSON_BASE64_VARIABLE);
-            reportConfigIdColumn = getTableHandle().getColumn(HISTORY_REPORT_NAME_VARIABLE);
         }
 
         public CyodaColumnHandle getReportIdColumn() {
@@ -186,9 +178,6 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
             return groupJsonBase64Column;
         }
 
-        public CyodaColumnHandle getReportConfigIdColumn() {
-            return reportConfigIdColumn;
-        }
     }
 
     public class ReportRows extends StaticTableMetadata {
