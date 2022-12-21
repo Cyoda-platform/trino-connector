@@ -94,6 +94,7 @@ public class CyodaTableHandle implements ConnectorTableHandle {
         return tableName;
     }
 
+    @JsonProperty
     public TableType getTableType() {
         return tableType;
     }
