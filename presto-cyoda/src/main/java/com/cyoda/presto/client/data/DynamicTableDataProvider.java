@@ -75,7 +75,7 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
         if (ROW_GROUP_JSON_BASE64_VARIABLE.equals(columnHandle.getColumnName())) {
             return field.groupJsonBase64();
         }
-        return field.reportRow().get(columnHandle.getColumnName());
+        return columnHandle.getValue(field.reportRow());
     }
 
 }
