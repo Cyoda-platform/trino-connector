@@ -2,7 +2,6 @@ package com.cyoda.presto.client.reporting.metaproviders;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
-import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.type.TypeManager;
@@ -14,38 +13,44 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_ID_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_NAME_VARIABLE;
-import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_GROUP_JSON_BASE64_VARIABLE;
-import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_REPORT_ID_COLUMN;
-import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_REPORT_ROW_NUMBER_COLUMN;
-import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_VERSION_COLUMN;
+import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.GROUPING_VERSION_COLUMN;
+import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.HISTORY_REPORT_ID_COLUMN;
+import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_GROUP_JSON_BASE64_VARIABLE;
+import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_REPORT_ID_COLUMN;
+import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_REPORT_ROW_NUMBER_COLUMN;
 
 public class StaticReportMetadataProvider extends TableMetadataProvider {
 
-    private final Map<String, StaticTableMetadata> metadataMap = new HashMap<>();
+    private final Map<String, StaticTableMetadata> standaloneTablesMap = new HashMap<>();
 
     private final Reports reports;
-    private final ReportDetails reportDetails;
     private final ReportStats reportStats;
     private final ReportHistory reportHistory;
     private final ReportGroups reportGroups;
     private final ReportRows reportRows;
+
+    private final CyodaTableHandle.Template historyTableTemplate;
+    private final CyodaTableHandle.Template groupsTableTemplate;
 
 
     @Inject
     public StaticReportMetadataProvider(TypeManager typeManager, CyodaConfig config, CyodaConnectorId connectorId) {
         super(typeManager, config, connectorId);
         reports = new Reports();
-        reportDetails = new ReportDetails();
         reportStats = new ReportStats();
         reportHistory = new ReportHistory();
         reportGroups = new ReportGroups();
         reportRows = new ReportRows();
+        standaloneTablesMap.put(reports.getTableHandle().getTableName(), reports);
+        standaloneTablesMap.put(reportStats.getTableHandle().getTableName(), reportStats);
+
+        historyTableTemplate = CyodaTableHandle.Template.of(reportHistory.getTableHandle());
+        groupsTableTemplate = CyodaTableHandle.Template.of(reportGroups.getTableHandle());
     }
 
     public CyodaTableHandle getTableHandle(String tableName) {
-        return Optional.ofNullable(metadataMap.get(tableName)).orElseThrow(
+        return Optional.ofNullable(standaloneTablesMap.get(tableName)).orElseThrow(
                 () -> new NoSuchElementException(String.format(
                         "Metadata provider %s does not contain table with name %s",
                         this.getClass().getSimpleName(), tableName))
@@ -53,31 +58,40 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
     }
 
     public List<String> getTableList() {
-        return metadataMap.keySet().stream().toList();
+        return standaloneTablesMap.keySet().stream().toList();
     }
 
     public boolean contains(String tableName) {
-        return metadataMap.containsKey(tableName);
+        return standaloneTablesMap.containsKey(tableName);
     }
 
     public Reports getReports() {
         return reports;
     }
 
-    public ReportDetails getReportDetails() {
-        return reportDetails;
-    }
-
-    public ReportHistory getReportHistory() {
-        return reportHistory;
-    }
-
-    public ReportGroups getReportGroups() {
-        return reportGroups;
-    }
 
     public ReportRows getReportRows() {
         return reportRows;
+    }
+
+    public CyodaTableHandle.Template getHistoryTableTemplate() {
+        return historyTableTemplate;
+    }
+
+    public CyodaTableHandle.Template getGroupsTableTemplate() {
+        return groupsTableTemplate;
+    }
+
+    private List<CyodaColumnHandle> getCyodaColumnHandles(TableDefinition tableDefinition) {
+        return tableDefinition.getColumns().stream()
+                .map(fieldDef -> new CyodaColumnHandle(
+                        fieldDef.getFieldName(),
+                        fieldDef.getDataType().toPrestoType(typeManager),
+                        fieldDef.getDataType(),
+                        fieldDef.getPos(),
+                        true
+                ))
+                .toList();
     }
 
     public abstract class StaticTableMetadata {
@@ -86,26 +100,13 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
 
         protected StaticTableMetadata(StaticReportTable table) {
             tableHandle = createTableHandle(table);
-            metadataMap.put(table.getTableName(), this);
-        }
-
-        private CyodaColumnHandle createColumnHandle(ColumnDefinition fieldDef) {
-            return new CyodaColumnHandle(
-                    fieldDef.getFieldName(),
-                    fieldDef.getDataType().toPrestoType(typeManager),
-                    fieldDef.getDataType(),
-                    fieldDef.getPos(),
-                    true
-            );
         }
 
         private CyodaTableHandle createTableHandle(TableDefinition tableDefinition) {
 
-            List<CyodaColumnHandle> columnHandles = tableDefinition.getColumns().stream()
-                    .map(this::createColumnHandle)
-                    .toList();
+            List<CyodaColumnHandle> columnHandles = getCyodaColumnHandles(tableDefinition);
             return new CyodaTableHandle(connectorId.toString(), config.getSchemaName(),
-                    tableDefinition.getTableName(), columnHandles, tableDefinition.getRequestHandlerKey(),
+                    tableDefinition.getTableName(), columnHandles, tableDefinition.getTableType(),
                     null, null, getUri(tableDefinition));
         }
 
@@ -127,11 +128,6 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
         }
     }
 
-    public class ReportDetails extends StaticTableMetadata {
-        public ReportDetails() {
-            super(StaticReportTable.REPORT_DETAILS);
-        }
-    }
 
     public class ReportStats extends StaticTableMetadata {
         public ReportStats() {
@@ -209,7 +205,7 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
             groupingVersionColumn = getTableHandle().getColumn(GROUPING_VERSION_COLUMN);
             groupJsonBase64Column = getTableHandle().getColumn(ROW_GROUP_JSON_BASE64_VARIABLE);
             //we don't need this as a static table
-            metadataMap.remove(StaticReportTable.REPORT_ROWS.getTableName());
+            standaloneTablesMap.remove(StaticReportTable.REPORT_ROWS.getTableName());
         }
 
         public CyodaColumnHandle getRowNumberColumn() {

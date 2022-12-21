@@ -20,6 +20,7 @@ package com.cyoda.presto.client;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthPayload;
+import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.auth.RefreshContext;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.TrinoException;
@@ -70,6 +71,7 @@ public class RestTemplateCustomizer {
     public static final Duration TOKEN_EXPIRY_OFFSET = Duration.ofSeconds(10);
 
     private final CyodaConfig config;
+    private final AuthService authService;
     private final LoadingCache<AuthContext,RestTemplate> restTemplateCache;
     private final LoadingCache<AuthContext,RestTemplate> refreshRestTemplateCache;
     private final RestTemplate unauthorizedRestTemplate;
@@ -82,8 +84,9 @@ public class RestTemplateCustomizer {
                 .forEach(conv -> ((AbstractJackson2HttpMessageConverter)conv).getObjectMapper().configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true));
     }
     @Inject
-    public RestTemplateCustomizer(CyodaConfig config) {
+    public RestTemplateCustomizer(CyodaConfig config, AuthService authService) {
         this.config = config;
+        this.authService = authService;
         restTemplateCache = Caffeine.newBuilder()
                 .maximumSize(100)
                 .build(key -> {
@@ -115,6 +118,9 @@ public class RestTemplateCustomizer {
 
     public RestTemplate getRestTemplate(AuthContext authContext) {
             return restTemplateCache.get(authContext);
+    }
+    public RestTemplate getRestTemplateWithTechAuth() {
+        return restTemplateCache.get(authService.getTechnicalAuth());
     }
 
     public RestTemplate getUnauthorizedRestTemplate() {

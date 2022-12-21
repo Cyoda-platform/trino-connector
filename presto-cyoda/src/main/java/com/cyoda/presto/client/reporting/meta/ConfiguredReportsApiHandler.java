@@ -22,11 +22,8 @@ import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
-import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -44,16 +41,12 @@ import org.springframework.hateoas.client.Traverson;
 import org.springframework.hateoas.server.core.TypeReferences;
 import org.springframework.web.client.HttpClientErrorException;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.SortedSet;
 
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_NAME_COLUMN;
@@ -61,8 +54,7 @@ import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPO
 import static com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler.HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportTable.REPORTS;
 
-public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<GridConfigFieldsView>
-        implements PagingApiRequestHandler<GridConfigFieldsView> {
+public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<AuthContext, GridConfigFieldsView> {
 
     protected static final SupplierLogger LOG = SupplierLogger.get(ConfiguredReportsApiHandler.class);
 
@@ -85,17 +77,13 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
 
     @Override
     public Optional<PagedModel<GridConfigFieldsView>> retrievePage(
-            AuthContext authContext,
-            int page,
+            AuthContext requestKey, int page,
             int pageSize,
-            CompoundPredicateNode predicates,
             SizeListener listener
     ) {
 
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
 
-
-        PredicateTraversal<String> traversal = PredicateTraversal.of(predicates, String.class);
 
 //        List<String> columnsWithFilter = Collections.singletonList(REPORT_TYPE_COLUMN);
 //        LOG.debug("Columns with Filter: %s",() -> Joiner.on(", ").join(columnsWithFilter));
@@ -107,18 +95,11 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
                 .put(SIZE_REQUEST_PARAMETER, size)
                 .put(FIELDS_REQUEST_PARAMETER, selectedFields);
 
-        Optional<SortedSet<String>> filterByType = traversal.assembleEqualsPredicateValuesFromAnd(this.typeColumn);
-
-        if (!filterByType.isPresent()) return Optional.empty();
-
-        if (!filterByType.get().isEmpty()) {
-            expansionBuilder.put(HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER, filterByType.get());
-        }
 
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
 
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-        traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(authContext));
+        traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(requestKey));
 
         TypeReferences.PagedModelType<GridConfigFieldsView> typeReference
                 = new TypeReferences.PagedModelType<GridConfigFieldsView>() {
@@ -168,10 +149,5 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Gri
     }
 
 
-    @Override
-    protected @Nullable Object getFieldValueFromEntity(@Nonnull GridConfigFieldsView entity, CyodaColumnHandle columnHandle) {
-        Map<String, String> fields = entity.getGridConfigFields();
-        return fields.get(columnHandle.getColumnName());
-    }
 
 }

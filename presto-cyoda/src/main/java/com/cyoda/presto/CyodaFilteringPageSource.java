@@ -18,7 +18,7 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.ApiRequestHandler;
+import com.cyoda.presto.client.data.TableDataProvider;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
@@ -42,13 +42,13 @@ import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("UnstableApiUsage")
-public class CyodaFilteringPageSource<T>
+public class CyodaFilteringPageSource<K,T>
         implements ConnectorPageSource
 {
     private static final SupplierLogger LOG = SupplierLogger.get(CyodaFilteringPageSource.class);
 
     private final List<CyodaColumnHandle> columnHandles;
-    private final ApiRequestHandler<T> requestHandler;
+    private final TableDataProvider<T> dataProvider;
 
     private boolean finished;
     private long readTimeNanos;
@@ -64,14 +64,13 @@ public class CyodaFilteringPageSource<T>
 
     public CyodaFilteringPageSource(
             AuthContext authContext,
-            ApiRequestHandler<T> requestHandler,
+            TableDataProvider<T> dataProvider,
             CyodaTableHandle tableHandle,
             List<CyodaColumnHandle> columnHandles,
             CompoundPredicateNode predicates
     ) {
-        requireNonNull(requestHandler, "requestHandler is null");
         this.columnHandles = ImmutableList.copyOf(requireNonNull(columnHandles, "columnHandles is null"));
-        this.requestHandler = requireNonNull(requestHandler, "requestHandler is null");
+        this.dataProvider = requireNonNull(dataProvider, "dataProvider is null");
         this.finished = false;
         List<CyodaColumnHandle> handles = columnHandles.stream()
                 .collect(toImmutableList());
@@ -83,13 +82,11 @@ public class CyodaFilteringPageSource<T>
 
         this.pageBuilder = new PageBuilder(this.columnTypes);
 
-        this.responseIterable = requestHandler.asFlux(
+        this.responseIterable = dataProvider.getIterable(
                         authContext,
                         tableHandle,
-                        predicates,
-                        SizeListener.NOT_LISTENING)
-                .subscribeOn(Schedulers.parallel())  // Probably the default.
-                .toIterable();
+                        predicates);
+
     }
 
     @Override
@@ -182,7 +179,7 @@ public class CyodaFilteringPageSource<T>
         for (int i = 0; i < columnHandles.size(); i++) {
             BlockBuilder blockBuilder = pageBuilder.getBlockBuilder(i);
             CyodaColumnHandle columnHandle = columnHandles.get(i);
-            requestHandler.writeValue(item, columnHandle, blockBuilder);
+            dataProvider.writeValue(item, columnHandle, blockBuilder);
         }
     }
 

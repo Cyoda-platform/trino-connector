@@ -35,11 +35,11 @@ public class ReportDefinitionHandle {
     public static final String REPORT_COLUMNS_COLUMN = "columns";
     public static final String REPORT_JSON_COLUMN = "json";
 
-    final String reportConfigId;
-    final String reportName;
-    final List<CyodaColumnHandle> columns;
-    final String json;
-    final String description;
+    public final String reportConfigId;
+    public final String reportName;
+    public final List<CyodaColumnHandle> columns;
+    public final String json;
+    public final String description;
 
     public ReportDefinitionHandle(String reportConfigId, String reportName, String description, List<CyodaColumnHandle> columns, String json) {
         this.reportConfigId = reportConfigId;

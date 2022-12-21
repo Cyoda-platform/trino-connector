@@ -17,30 +17,21 @@
 
 package com.cyoda.presto.client.paging;
 
-import com.cyoda.presto.SizeListener;
-import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.PagingApiRequestHandler;
-import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import org.springframework.hateoas.PagedModel;
 
 import java.util.Optional;
 
 @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
-public class PagingHandle<T> {
+public class PagingHandle<K,T> {
 
     private final Optional<PagedModel.PageMetadata> pageMeta;
     private final Optional<PagedModel<T>> pagedModel;
 
 
     public PagingHandle(
-            AuthContext authContext,
-            PagingApiRequestHandler<T> requestHandler,
-            int pageNum,
-            int pageSize,
-            CompoundPredicateNode predicates,
-            SizeListener listener
+            Optional<PagedModel<T>> pagedModel
     ) {
-        this.pagedModel = requestHandler.retrievePage(authContext, pageNum, pageSize, predicates, listener);
+        this.pagedModel = pagedModel;
         this.pageMeta = pagedModel.map(PagedModel::getMetadata);
     }
 

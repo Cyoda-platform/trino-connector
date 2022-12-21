@@ -5,7 +5,6 @@ import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthService;
-import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
@@ -73,19 +72,19 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
                     LOG.debug("Loading config " + key);
                     return getTableHandleFromCyoda(key.configId);
                 });
+
     }
 
     private CyodaTableHandle getTableHandleFromCyoda(String configId) {
         String tableName = BaseReportsApiHandler.reportNameToTableName(configId);
         ReportDefinitionHandle definitionHandle = null;
         try {
-            AuthContext authContext = auth.getTechnicalAuth();
-            definitionHandle = reportConfigDetailsApiHandler.getReportDefSingleHandle(authContext, configId);
+            definitionHandle = reportConfigDetailsApiHandler.getReportDefSingleHandle(configId);
 
             List<CyodaColumnHandle> columns = new ArrayList<>(List.copyOf(staticReportMetadataProvider.getReportRows().getTableHandle().getProjectedColumns()));
             columns.addAll(definitionHandle.getColumns());
             return new CyodaTableHandle(connectorId.toString(), config.getSchemaName(), tableName,
-                    columns, StaticReportTable.REPORT_ROWS.name(), configId, definitionHandle.getDescription(),
+                    columns, CyodaTableHandle.TableType.DATA, configId, definitionHandle.getDescription(),
                     getUri(StaticReportTable.REPORT_ROWS));
         } catch (Exception e) {
             Map<String, String> errorDetail = new HashMap<>();
@@ -111,14 +110,27 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
         Map<String, CyodaTableHandle> result = new HashMap<>();
         Flux<GridConfigFieldsView> flux = configuredReportsApiHandler.asFlux(
                 authContext,
-                this.staticReportMetadataProvider.getReports().getTableHandle(),
-                CompoundPredicateNode.empty(null),
                 NOT_LISTENING
         );
         flux.doOnNext(item -> {
             TableMetaCacheKey cacheKey = TableMetaCacheKey.of(item);
             CyodaTableHandle tableHandle = tableMetaCache.get(cacheKey);
-            result.put(tableHandle.getTableName(), tableHandle);
+            String tableName = tableHandle.getTableName();
+            result.put(tableName, tableHandle);
+            String supName = tableName + "_history";
+            result.put(supName, staticReportMetadataProvider
+                    .getHistoryTableTemplate().createTableHandle(
+                            supName,
+                            tableHandle.getReportConfigId(),
+                            tableHandle.getDescription()
+                    ));
+            supName = tableName + "_groups";
+            result.put(supName, staticReportMetadataProvider
+                    .getGroupsTableTemplate().createTableHandle(
+                            supName,
+                            tableHandle.getReportConfigId(),
+                            tableHandle.getDescription()
+                    ));
         }).blockLast();
         // If there are duplicates, last write wins.
         return ImmutableMap.copyOf(result);

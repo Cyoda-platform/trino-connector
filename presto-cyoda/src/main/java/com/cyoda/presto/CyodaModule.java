@@ -17,11 +17,9 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.auth.AuthService;
-import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.reporting.data.InternalReportRowsApiHandler;
+import com.cyoda.presto.client.data.TableDataProviderProvider;
 import com.cyoda.presto.client.reporting.data.ReportRowsApiHandler;
-import com.cyoda.presto.client.reporting.groups.InternalReportGroupsApiHandler;
 import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
@@ -74,12 +72,11 @@ public class CyodaModule implements Module {
         binder.bind(ReportStatisticsApiHandler.class).in(Scopes.SINGLETON);
         binder.bind(ReportHistoryApiHandler.class).in(Scopes.SINGLETON);
         binder.bind(ReportGroupsApiHandler.class).in(Scopes.SINGLETON);
+
+        binder.bind(ReportGroupsApiHandler.class).in(Scopes.SINGLETON);
         binder.bind(ReportRowsApiHandler.class).in(Scopes.SINGLETON);
 
-        binder.bind(InternalReportGroupsApiHandler.class).in(Scopes.SINGLETON);
-        binder.bind(InternalReportRowsApiHandler.class).in(Scopes.SINGLETON);
-
-        binder.bind(CyodaApiRequestHandlerProvider.class).in(Scopes.SINGLETON);
+        binder.bind(TableDataProviderProvider.class).in(Scopes.SINGLETON);
 
         binder.bind(AuthService.class).in(Scopes.SINGLETON);
 

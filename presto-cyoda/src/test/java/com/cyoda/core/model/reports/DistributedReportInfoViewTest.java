@@ -19,6 +19,7 @@ package com.cyoda.core.model.reports;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.auth.AuthContext;
+import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -40,7 +41,7 @@ public class DistributedReportInfoViewTest {
     public void testRestTemplate() throws MalformedURLException {
         CyodaConfig config = new CyodaConfig();
         config.setServerUrl(new URL("http://localhost"));
-        RestTemplateCustomizer customizer = new RestTemplateCustomizer(config);
+        RestTemplateCustomizer customizer = new RestTemplateCustomizer(config, new AuthService(config));
         AuthContext authContext = mock(AuthContext.class);
         RestTemplate restTemplate = customizer.getRestTemplate(authContext);
         MappingJackson2HttpMessageConverter converter = (MappingJackson2HttpMessageConverter) restTemplate.getMessageConverters().stream().filter(it -> it instanceof MappingJackson2HttpMessageConverter).findAny()

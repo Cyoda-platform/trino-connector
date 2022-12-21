@@ -22,21 +22,8 @@ import com.google.common.base.MoreObjects;
 
 import java.util.UUID;
 
-public class RowHandle {
-
-    final String reportId;
-    final UUID groupingVersion;
-    final String groupJsonBase64;
-    final ReportRow reportRow;
-    final long rowNum;
-
-    public RowHandle(String reportId, UUID groupingVersion, String groupJsonBase64, ReportRow reportRow, long rowNum) {
-        this.reportId = reportId;
-        this.groupingVersion = groupingVersion;
-        this.groupJsonBase64 = groupJsonBase64;
-        this.reportRow = reportRow;
-        this.rowNum = rowNum;
-    }
+public record RowHandle(String reportId, UUID groupingVersion, String groupJsonBase64, ReportRow reportRow,
+                        long rowNum) {
 
     @Override
     public String toString() {

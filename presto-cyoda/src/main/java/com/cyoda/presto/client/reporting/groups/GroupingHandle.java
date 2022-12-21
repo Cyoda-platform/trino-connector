@@ -26,12 +26,10 @@ public class GroupingHandle {
     public final String reportId;
     public final UUID groupingVersion;
     public final GroupHeader groupHeader;
-    public final String reportConfigId;
 
-    public GroupingHandle(String reportId, UUID groupingVersion, GroupHeader groupHeader, String reportConfigId) {
+    public GroupingHandle(String reportId, UUID groupingVersion, GroupHeader groupHeader) {
         this.reportId = reportId;
         this.groupingVersion = groupingVersion;
         this.groupHeader = groupHeader;
-        this.reportConfigId = reportConfigId;
     }
 }

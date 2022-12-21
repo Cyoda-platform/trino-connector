@@ -24,18 +24,21 @@ import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.paging.PagingFluxProvider;
 import com.cyoda.presto.client.paging.PagingHandle;
 import com.cyoda.presto.logging.SupplierLogger;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.PagedModel;
 import reactor.core.publisher.Flux;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
-public abstract class BasePagingReportsApiHandler<K, T> extends BaseReportsApiHandler<K, T> {
+public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApiHandler<K, T> {
 
-    protected BasePagingReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager, RestTemplateCustomizer restTemplateCustomizer, SupplierLogger log) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, log);
-    }
+    private final LoadingCache<K, List<T>> cache;
 
     public abstract Optional<PagedModel<T>> retrievePage(
             K requestKey,
@@ -43,7 +46,18 @@ public abstract class BasePagingReportsApiHandler<K, T> extends BaseReportsApiHa
             int pageSize,
             SizeListener listener);
 
-    public Flux<T> asFlux(K requestKey, SizeListener listener) {
+    protected abstract Duration getCacheDuration();
+
+    protected CachedPagingReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager, RestTemplateCustomizer restTemplateCustomizer, SupplierLogger log) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, log);
+        cache = Caffeine.newBuilder()
+                .expireAfterAccess(getCacheDuration())
+                .build(this::loadByKey);
+    }
+
+//    protected abstract
+
+    private Flux<T> asFlux(K requestKey, SizeListener listener) {
 
         int pageSize = getPageSize();
         logCreation(pageSize, log);
@@ -52,5 +66,12 @@ public abstract class BasePagingReportsApiHandler<K, T> extends BaseReportsApiHa
         return new PagingFluxProvider<>(pagingHandleGetter).generate(0);
     }
 
-    ;
+    public List<T> getByKey(K requestKey){
+        return cache.get(requestKey);
+    }
+
+    private List<T> loadByKey(K requestKey){
+        return asFlux(requestKey, SizeListener.NOT_LISTENING).toStream().collect(Collectors.toList());
+    }
+
 }

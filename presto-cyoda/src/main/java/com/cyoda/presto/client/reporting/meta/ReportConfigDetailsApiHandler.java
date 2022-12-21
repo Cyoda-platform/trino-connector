@@ -21,11 +21,10 @@ import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.SizeListener;
-import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.PagingApiRequestHandler;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
+import com.cyoda.presto.client.paging.PagingFluxProvider;
+import com.cyoda.presto.client.paging.PagingHandle;
+import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
 import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
@@ -51,9 +50,9 @@ import org.springframework.hateoas.UriTemplate;
 import org.springframework.hateoas.client.Traverson;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
+import reactor.core.publisher.Flux;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.inject.Inject;
 import java.lang.reflect.ParameterizedType;
 import java.net.URI;
@@ -65,6 +64,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -72,24 +72,18 @@ import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler.REPORT_DEFS_ENDPOINT;
 import static com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler.ReportColumnType.ALIAS;
 import static com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler.ReportColumnType.COLUMN;
-import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_COLUMNS_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_ID_COLUMN;
-import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_JSON_COLUMN;
-import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_NAME_COLUMN;
 import static java.lang.String.format;
 
 // TODO: Need to have a plan/solution for report configurations that have changed, and for which existing reports
 // exist (with the old version). Maybe we should have a design (in Cyoda) that assembles possible report configurations
 // from report histories, and generates the reports table from that. Or better yet, have an API endpoint that
 // returns "all" report configurations, existing ones and ones that are stored with a report, in an aggregated fashion
-public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<ReportDefinitionHandle>
-        implements PagingApiRequestHandler<ReportDefinitionHandle> {
+public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<String, ReportDefinitionHandle> {
 
     protected static final SupplierLogger LOG = SupplierLogger.get(ReportConfigDetailsApiHandler.class);
 
     public static final String INVALID_REPORT_DEFINITION_FOR = "Invalid Report definition for ";
-    private final ConfiguredReportsApiHandler configuredReportsApiHandler;
-
     public static final String REPORT_DETAILS_ENDPOINT = REPORT_DEFS_ENDPOINT + "/";
 
     // These are also reserved words for column names coming from reports.
@@ -101,51 +95,17 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
 
     @Inject
     public ReportConfigDetailsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
-                                         RestTemplateCustomizer restTemplateCustomizer, ConfiguredReportsApiHandler configuredReportsApiHandler) {
-        super(connectorId, config, typeManager,
-                restTemplateCustomizer, LOG);
-        this.configuredReportsApiHandler = configuredReportsApiHandler;
+                                         RestTemplateCustomizer restTemplateCustomizer) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, LOG);
         uriTemplate = setupUriTemplate();
     }
 
 
-    @Override
-    public Optional<PagedModel<ReportDefinitionHandle>> retrievePage(
-            AuthContext authContext,
-            int page,
-            int pageSize,
-            CompoundPredicateNode predicates,
-            SizeListener listener
-    ) {
-
-        PagedModel<GridConfigFieldsView> reportDefinitionModel = configuredReportsApiHandler.retrievePage(
-                authContext, page, pageSize, predicates, listener).orElse(PagedModel.empty());
-        // TODO: There is a bug, where the API returns one more than the page size, so use limit as long as this bug persists
-        Set<String> ids = reportDefinitionModel.getContent().stream().limit(pageSize).map(GridConfigFieldsView::getId).collect(Collectors.toSet());
-
-        List<ReportDefinitionHandle> reportDefinitionHandles = getReportDefinitionHandles(authContext, ids);
-        PagedModel<ReportDefinitionHandle> reportDefs = PagedModel.of(reportDefinitionHandles, reportDefinitionModel.getMetadata());
-        publishSize(listener, reportDefs);
-        return Optional.of(reportDefs);
-    }
-
-    private List<ReportDefinitionHandle> getReportDefinitionHandles(AuthContext authContext, @Nonnull Set<String> ids) {
-
-        if (ids.isEmpty()) return Collections.emptyList();
-        ImmutableList.Builder<ReportDefinitionHandle> builder = ImmutableList.builder();
-        ids.forEach(id -> builder.add(getReportDefSingleHandle(authContext, id)));
-        List<ReportDefinitionHandle> result = builder.build();
-        LOG.debug("Got %s report definitions", result.size());
-        return result;
-
-    }
-
-    public ReportDefinitionHandle getReportDefSingleHandle(AuthContext authContext,
-                                                           String reportConfigId) {
+    public ReportDefinitionHandle getReportDefSingleHandle(String reportConfigId) {
         URI templatedUri = uriTemplate.expand(Collections.singletonMap(REPORT_ID_COLUMN, reportConfigId));
 
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-        traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(authContext));
+        traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
         String reportName = toReportName(reportConfigId);
 
         try {
@@ -293,23 +253,6 @@ public class ReportConfigDetailsApiHandler extends BasePagingReportsApiHandler<R
         return UriTemplate.of(uri.toASCIIString()).with(vars);
     }
 
-    @Nullable
-    @Override
-    protected Object getFieldValueFromEntity(@Nonnull ReportDefinitionHandle field, CyodaColumnHandle columnHandle) {
-        if (REPORT_ID_COLUMN.equals(columnHandle.getColumnName())) {
-            return field.reportConfigId;
-        }
-        if (REPORT_NAME_COLUMN.equals(columnHandle.getColumnName())) {
-            return field.reportName;
-        }
-        if (REPORT_JSON_COLUMN.equals(columnHandle.getColumnName())) {
-            return field.json;
-        }
-        if (REPORT_COLUMNS_COLUMN.equals(columnHandle.getColumnName())) {
-            return field.columns;
-        }
-        throw new IllegalArgumentException(columnHandle.getColumnName() + " is not defined on ReportDefinitionHandle");
-    }
 
     private static final List<String> COLTYPE_IDENTIFIERS = Arrays.stream(ReportColumnType.values()).map(ReportColumnType::getColType).collect(Collectors.toList());
     private static final String COLTYPE_SUMMARY = Joiner.on(", ").join(COLTYPE_IDENTIFIERS);

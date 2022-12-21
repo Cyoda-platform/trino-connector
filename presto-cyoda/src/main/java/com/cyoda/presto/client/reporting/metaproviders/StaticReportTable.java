@@ -22,6 +22,7 @@ import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.service.api.beans.GroupHeader;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
@@ -41,18 +42,12 @@ import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_CREAT
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_GROUPING_COLUMNS_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_GROUPING_VERSION_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_HIERARHY_ENABLE_COLUMN;
-import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_ID_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_NAME_VARIABLE;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_STATUS_NAME_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_TYPE_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_USER_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.BaseReportsApiHandler.REPORT_ENDPOINT;
-import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_GROUP_JSON_BASE64_VARIABLE;
-import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_REPORT_ID_COLUMN;
-import static com.cyoda.presto.client.reporting.data.ReportRowsApiHandler.ROW_REPORT_ROW_NUMBER_COLUMN;
-import static com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler.GROUPING_VERSION_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler.REPORT_DEFS_ENDPOINT;
-import static com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler.REPORT_DETAILS_ENDPOINT;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_COLUMNS_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_CREATION_DATE_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_DESCRIPTION_COLUMN;
@@ -73,32 +68,33 @@ import static com.cyoda.presto.client.types.DataType.STRING;
 import static com.cyoda.presto.client.types.DataType.UUID_TYPE;
 
 public enum StaticReportTable implements TableDefinition {
-    REPORTS(Arrays.asList(ReportsColumnDef.values()), REPORT_DEFS_ENDPOINT),
-    REPORT_DETAILS(Arrays.asList(ReportDetailsColumnDef.values()), REPORT_DETAILS_ENDPOINT),
+    REPORTS(Arrays.asList(ReportsColumnDef.values()), REPORT_DEFS_ENDPOINT, CyodaTableHandle.TableType.REPORTS),
     REPORT_STATS(StandardColumnDefinition.builder()
             .add(DistributedReportInfoView.meta())
-            .build(), REPORT_ENDPOINT),
-    REPORT_HISTORIES(Arrays.asList(ReportHistoryColumnDef.values()), REPORT_HISTORY_ENDPOINT),
+            .build(), REPORT_ENDPOINT, CyodaTableHandle.TableType.STATS),
+    REPORT_HISTORIES(Arrays.asList(ReportHistoryColumnDef.values()), REPORT_HISTORY_ENDPOINT, CyodaTableHandle.TableType.HISTORY),
     REPORT_GROUPS(StandardColumnDefinition.builder()
-            .add(new StandardColumnDefinition(0, HISTORY_REPORT_ID_COLUMN, STRING))
-            .add(new StandardColumnDefinition(1, GROUPING_VERSION_COLUMN, UUID_TYPE))
-            .add(new StandardColumnDefinition(2, HISTORY_REPORT_NAME_VARIABLE, STRING))
+            .add(new StandardColumnDefinition(0, StaticReportFields.HISTORY_REPORT_ID_COLUMN, STRING))
+            .add(new StandardColumnDefinition(1, StaticReportFields.GROUPING_VERSION_COLUMN, UUID_TYPE))
             .add(GroupHeader.meta())
-            .build(), REPORT_ENDPOINT),
+            .build(), REPORT_ENDPOINT, CyodaTableHandle.TableType.GROUP),
     REPORT_ROWS(StandardColumnDefinition.builder()
-            .add(new StandardColumnDefinition(0, ROW_REPORT_ROW_NUMBER_COLUMN, LONG))
-            .add(new StandardColumnDefinition(1, ROW_REPORT_ID_COLUMN, STRING))
-            .add(new StandardColumnDefinition(2, GROUPING_VERSION_COLUMN, UUID_TYPE))
-            .add(new StandardColumnDefinition(3, ROW_GROUP_JSON_BASE64_VARIABLE, STRING))
-            .build(), REPORT_ENDPOINT);
+            .add(new StandardColumnDefinition(0, StaticReportFields.ROW_REPORT_ROW_NUMBER_COLUMN, LONG))
+            .add(new StandardColumnDefinition(1, StaticReportFields.ROW_REPORT_ID_COLUMN, STRING))
+            .add(new StandardColumnDefinition(2, StaticReportFields.GROUPING_VERSION_COLUMN, UUID_TYPE))
+            .add(new StandardColumnDefinition(3, StaticReportFields.ROW_GROUP_JSON_BASE64_VARIABLE, STRING))
+            .build(), REPORT_ENDPOINT, CyodaTableHandle.TableType.DATA);
 
     private final Map<String, ColumnDefinition> columns;
     private final String endpoint;
 
+    private final CyodaTableHandle.TableType tableType;
 
-    StaticReportTable(List<ColumnDefinition> columns, String endpoint) {
+
+    StaticReportTable(List<ColumnDefinition> columns, String endpoint, CyodaTableHandle.TableType tableType) {
         this.columns = columns.stream().collect(Collectors.toMap(ColumnDefinition::getFieldName, Function.identity()));
         this.endpoint = endpoint;
+        this.tableType = tableType;
     }
 
     @Override
@@ -124,8 +120,8 @@ public enum StaticReportTable implements TableDefinition {
     }
 
     @Override
-    public String getRequestHandlerKey() {
-        return name();
+    public CyodaTableHandle.TableType getTableType() {
+        return tableType;
     }
 
     public List<String> getFieldList() {
@@ -140,16 +136,18 @@ public enum StaticReportTable implements TableDefinition {
         TYPE(4, REPORT_TYPE_COLUMN, STRING),
         USER_ID(5, REPORT_USER_ID_COLUMN, STRING),
         CREATION_DATE(6, REPORT_CREATION_DATE_COLUMN, LOCAL_DATE_TIME),
-        UPDATE_DATE(7, REPORT_UPDATE_DATE_COLUMN, LOCAL_DATE_TIME);
+        UPDATE_DATE(7, REPORT_UPDATE_DATE_COLUMN, LOCAL_DATE_TIME),
+        REPORT_COLUMNS(8, REPORT_COLUMNS_COLUMN, LIST, OBJECT),
+        REPORT_JSON(9, REPORT_JSON_COLUMN, STRING);;
 
         private final int pos;
         private final String fieldName;
         private final CompoundDataType dataType;
 
-        ReportsColumnDef(int pos, String fieldName, DataType dateType) {
+        ReportsColumnDef(int pos, String fieldName, DataType mainType, DataType... typeParams) {
             this.pos = pos;
             this.fieldName = fieldName;
-            this.dataType = new CompoundDataType(fieldName, dateType);
+            this.dataType = new CompoundDataType(fieldName, mainType, typeParams);
         }
 
         @Override
@@ -177,50 +175,9 @@ public enum StaticReportTable implements TableDefinition {
         }
     }
 
-    enum ReportDetailsColumnDef implements ColumnDefinition {
-        ID(0, REPORT_ID_COLUMN, STRING),
-        REPORT_NAME(1, REPORT_NAME_COLUMN, STRING),
-        REPORT_COLUMNS(2, REPORT_COLUMNS_COLUMN, LIST, OBJECT),
-        REPORT_JSON(3, REPORT_JSON_COLUMN, STRING);
-
-        @Override
-        public String toString() {
-            return MoreObjects.toStringHelper(this)
-                    .add("pos", pos)
-                    .add("fieldName", fieldName)
-                    .add("dataType", dataType)
-                    .toString();
-        }
-
-        private final int pos;
-        private final String fieldName;
-        private final CompoundDataType dataType;
-
-        ReportDetailsColumnDef(int pos, String fieldName, DataType dateType, DataType... parType) {
-            this.pos = pos;
-            this.fieldName = fieldName;
-            this.dataType = new CompoundDataType(fieldName, dateType, parType);
-        }
-
-        @Override
-        public int getPos() {
-            return pos;
-        }
-
-        @Override
-        public String getFieldName() {
-            return fieldName;
-        }
-
-        @Override
-        public CompoundDataType getDataType() {
-            return dataType;
-        }
-
-    }
 
     public enum ReportHistoryColumnDef implements ColumnDefinition {
-        ID(0, HISTORY_REPORT_ID_COLUMN, STRING),
+        ID(0, StaticReportFields.HISTORY_REPORT_ID_COLUMN, STRING),
         REPORT_NAME(1, HISTORY_REPORT_NAME_VARIABLE, STRING),
         CREATION_DATE(2, HISTORY_CREATE_TIME_COLUMN, LOCAL_DATE_TIME),
         TYPE(3, HISTORY_TYPE_COLUMN, STRING),

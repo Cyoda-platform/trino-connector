@@ -15,25 +15,29 @@
  *
  */
 
-package com.cyoda.presto.client;
+package com.cyoda.presto.client.data;
 
-import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.block.BlockBuilder;
-import reactor.core.publisher.Flux;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public interface ApiRequestHandler<T> {
+public abstract class TableDataProvider<T> {
 
-    @SuppressWarnings("java:S1452")
-    void writeValue(@Nullable T entity, CyodaColumnHandle field, BlockBuilder blockBuilder);
+    public abstract Iterable<T> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CompoundPredicateNode predicates);
 
-    default Flux<T> asFlux(AuthContext authContext, CyodaTableHandle tableHandle,
-                           CompoundPredicateNode predicates, SizeListener listener) {
-        throw new UnsupportedOperationException("not yet implemented");
+    protected abstract @Nullable Object getFieldValueFromEntity(@Nonnull T entity, CyodaColumnHandle columnHandle);
+
+    public void writeValue(@Nullable T entity, CyodaColumnHandle columnHandle, BlockBuilder blockBuilder) {
+        if (entity == null) {
+            blockBuilder.appendNull();
+            return;
+        }
+        Object value = getFieldValueFromEntity(entity, columnHandle);
+        columnHandle.writeValue(blockBuilder, value);
     }
 }
