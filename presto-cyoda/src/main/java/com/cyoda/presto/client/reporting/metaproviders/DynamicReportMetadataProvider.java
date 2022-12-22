@@ -85,7 +85,9 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
             columns.addAll(definitionHandle.getColumns());
             return new CyodaTableHandle(connectorId.toString(), config.getSchemaName(), tableName,
                     columns, CyodaTableHandle.TableType.DATA, configId, definitionHandle.getDescription(),
-                    getUri(StaticReportTable.REPORT_ROWS));
+                    getUri(StaticReportTable.REPORT_ROWS),
+                    !definitionHandle.getGroupingColumns().isEmpty(),
+                    !definitionHandle.isSingleton());
         } catch (Exception e) {
             Map<String, String> errorDetail = new HashMap<>();
             errorDetail.put("Error Message", e.getMessage());
@@ -115,25 +117,26 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
         flux.doOnNext(item -> {
             TableMetaCacheKey cacheKey = TableMetaCacheKey.of(item);
             CyodaTableHandle tableHandle = tableMetaCache.get(cacheKey);
-            String tableName = tableHandle.getTableName();
-            result.put(tableName, tableHandle);
-            String supName = tableName + "_history";
-            result.put(supName, staticReportMetadataProvider
-                    .getHistoryTableTemplate().createTableHandle(
-                            supName,
-                            tableHandle.getReportConfigId(),
-                            tableHandle.getDescription()
-                    ));
-            supName = tableName + "_groups";
-            result.put(supName, staticReportMetadataProvider
-                    .getGroupsTableTemplate().createTableHandle(
-                            supName,
-                            tableHandle.getReportConfigId(),
-                            tableHandle.getDescription()
-                    ));
+            result.put(tableHandle.getTableName(), tableHandle);
+            if (tableHandle.hasHistory()) {
+                addSupplementaryTable(result, tableHandle, "_history");
+            }
+            if (tableHandle.hasGroups()) {
+                addSupplementaryTable(result, tableHandle, "_groups");
+            }
         }).blockLast();
         // If there are duplicates, last write wins.
         return ImmutableMap.copyOf(result);
+    }
+
+    private void addSupplementaryTable(Map<String, CyodaTableHandle> result, CyodaTableHandle tableHandle, String suffix) {
+        String supName = tableHandle.getTableName() + suffix;
+        result.put(supName, staticReportMetadataProvider
+                .getHistoryTableTemplate().createTableHandle(
+                        supName,
+                        tableHandle.getReportConfigId(),
+                        tableHandle.getDescription()
+                ));
     }
 
     public CyodaTableHandle getTableHandle(AuthContext authContext, String tableName) {

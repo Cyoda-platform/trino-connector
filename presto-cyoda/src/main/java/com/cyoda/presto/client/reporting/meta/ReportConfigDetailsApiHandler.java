@@ -17,13 +17,9 @@
 
 package com.cyoda.presto.client.reporting.meta;
 
-import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
-import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.paging.PagingFluxProvider;
-import com.cyoda.presto.client.paging.PagingHandle;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
 import com.cyoda.presto.client.types.CompoundDataType;
@@ -43,14 +39,12 @@ import io.trino.spi.StandardErrorCode;
 import io.trino.spi.TrinoException;
 import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.MediaTypes;
-import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.TemplateVariable;
 import org.springframework.hateoas.TemplateVariables;
 import org.springframework.hateoas.UriTemplate;
 import org.springframework.hateoas.client.Traverson;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
-import reactor.core.publisher.Flux;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
@@ -62,9 +56,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -117,8 +109,18 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<String,
             DocumentContext parse = JsonPath.parse(jsonResult, JSONPATHA_CONFIG);
             List<CyodaColumnHandle> cols = extractColumns(reportName, parse);
             String description = parse.read("$.content.description", String.class);
+            boolean isSingleton = Optional.ofNullable(
+                    parse.read("$.content.singletonReport", Boolean.class)
+            ).orElse(false);
+            List<String> groupingColumns = Optional.ofNullable(parse.read(
+                            "$.content.columns",
+                            new TypeRef<List<Map<String, String>>>() {
+                            }
+                    ))
+                    .orElse(Collections.emptyList())
+                    .stream().map(map -> map.get("name")).toList();
 
-            return new ReportDefinitionHandle(reportConfigId, reportName, description, cols, jsonResult);
+            return new ReportDefinitionHandle(reportConfigId, reportName, description, cols, jsonResult, isSingleton, groupingColumns);
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);
         }

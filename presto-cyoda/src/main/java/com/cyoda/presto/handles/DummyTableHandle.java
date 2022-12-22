@@ -22,7 +22,7 @@ public class DummyTableHandle extends CyodaTableHandle {
                             @JsonProperty("content") Map<String, String> content) {
         super(connectorId, schemaName, tableName,
                 createDummyFields(content.keySet()),
-                TableType.DUMMY, null, null, null);
+                TableType.DUMMY, null, null, null, false, false);
         this.content = content;
     }
 

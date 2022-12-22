@@ -15,12 +15,10 @@ import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields
 
 public class HistoryTableDataProvider extends TableDataProvider<ReportHistoryFieldsView> {
 
-    private final CyodaTableHandle tableHandle;
     private final ReportHistoryApiHandler reportHistoryApiHandler;
 
 
-    public HistoryTableDataProvider(CyodaTableHandle tableHandle, ReportHistoryApiHandler reportHistoryApiHandler) {
-        this.tableHandle = tableHandle;
+    public HistoryTableDataProvider(ReportHistoryApiHandler reportHistoryApiHandler) {
         this.reportHistoryApiHandler = reportHistoryApiHandler;
     }
 

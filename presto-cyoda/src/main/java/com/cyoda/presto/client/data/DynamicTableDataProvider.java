@@ -24,16 +24,13 @@ import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_REPORT_ROW_NUMBER_COLUMN;
 
 public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
-    private final CyodaTableHandle tableHandle;
     private final ReportHistoryApiHandler reportHistoryApiHandler;
     private final ReportGroupsApiHandler reportGroupsApiHandler;
     private final ReportRowsApiHandler reportRowsApiHandler;
 
-    public DynamicTableDataProvider(CyodaTableHandle tableHandle,
-                                    ReportHistoryApiHandler reportHistoryApiHandler,
+    public DynamicTableDataProvider(ReportHistoryApiHandler reportHistoryApiHandler,
                                     ReportGroupsApiHandler reportGroupsApiHandler,
                                     ReportRowsApiHandler reportRowsApiHandler) {
-        this.tableHandle = tableHandle;
         this.reportHistoryApiHandler = reportHistoryApiHandler;
         this.reportGroupsApiHandler = reportGroupsApiHandler;
         this.reportRowsApiHandler = reportRowsApiHandler;

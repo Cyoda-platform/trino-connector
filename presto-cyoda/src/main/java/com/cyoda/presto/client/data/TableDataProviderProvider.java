@@ -9,14 +9,13 @@ import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 import com.cyoda.presto.handles.CyodaTableHandle;
 
 import javax.inject.Inject;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 public class TableDataProviderProvider {
 
-    private final ReportsTableDataProvider reportsTableDataProvider;
-    private final StatisticsTableDataProvider statisticsTableDataProvider;
-    private final ReportHistoryApiHandler historyApiHandler;
-    private final ReportGroupsApiHandler groupsApiHandler;
-    private final ReportRowsApiHandler rowsApiHandler;
+    private final Map<CyodaTableHandle.TableType, TableDataProvider<?>> providerMap;
     @Inject
     public TableDataProviderProvider(ConfiguredReportsApiHandler reportsApiHandler,
                                      ReportConfigDetailsApiHandler configDetailsApiHandler,
@@ -24,35 +23,36 @@ public class TableDataProviderProvider {
                                      ReportHistoryApiHandler historyApiHandler,
                                      ReportGroupsApiHandler groupsApiHandler,
                                      ReportRowsApiHandler rowsApiHandler) {
-        reportsTableDataProvider = new ReportsTableDataProvider(reportsApiHandler, configDetailsApiHandler);
-        statisticsTableDataProvider = new StatisticsTableDataProvider(reportsApiHandler, statisticsApiHandler);
-        this.historyApiHandler = historyApiHandler;
-        this.groupsApiHandler = groupsApiHandler;
-        this.rowsApiHandler = rowsApiHandler;
+        providerMap = new HashMap<>();
+        providerMap.put(
+                CyodaTableHandle.TableType.REPORTS,
+                new ReportsTableDataProvider(reportsApiHandler, configDetailsApiHandler)
+        );
+        providerMap.put(
+                CyodaTableHandle.TableType.STATS,
+                new StatisticsTableDataProvider(reportsApiHandler, statisticsApiHandler)
+        );
+        providerMap.put(
+                CyodaTableHandle.TableType.HISTORY,
+                new HistoryTableDataProvider(historyApiHandler)
+        );
+        providerMap.put(
+                CyodaTableHandle.TableType.GROUP,
+                new GroupsTableDataProvider(historyApiHandler, groupsApiHandler)
+        );
+        providerMap.put(
+                CyodaTableHandle.TableType.DATA,
+                new DynamicTableDataProvider(historyApiHandler, groupsApiHandler, rowsApiHandler)
+        );
+        providerMap.put(
+                CyodaTableHandle.TableType.DUMMY,
+                new DummyTableDataProvider()
+        );
     }
 
-    public TableDataProvider<?> getDataProvider(CyodaTableHandle tableHandle){
-        switch (tableHandle.getTableType()){
-            case REPORTS -> {
-                return reportsTableDataProvider;
-            }
-            case STATS -> {
-                return statisticsTableDataProvider;
-            }
-            case HISTORY -> {
-                return new HistoryTableDataProvider(tableHandle, historyApiHandler);
-            }
-            case GROUP -> {
-                return new GroupsTableDataProvider(tableHandle, historyApiHandler, groupsApiHandler);
-            }
-            case DATA -> {
-                return new DynamicTableDataProvider(tableHandle, historyApiHandler, groupsApiHandler, rowsApiHandler);
-            }
-            case DUMMY -> {
-                return new DummyTableDataProvider();
-            }
-            default -> throw new RuntimeException("Unknown table type " + tableHandle.getTableType());
-        }
+    public TableDataProvider<?> getDataProvider(CyodaTableHandle.TableType tableType){
+        return Optional.ofNullable(providerMap.get(tableType)).orElseThrow(() ->
+            new RuntimeException("Unknown table type " + tableType));
     }
 
 

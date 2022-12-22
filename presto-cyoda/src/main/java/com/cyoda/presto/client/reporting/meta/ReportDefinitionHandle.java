@@ -40,13 +40,25 @@ public class ReportDefinitionHandle {
     public final List<CyodaColumnHandle> columns;
     public final String json;
     public final String description;
+    public final boolean isSingleton;
+    public final List<String> groupingColumns;
 
-    public ReportDefinitionHandle(String reportConfigId, String reportName, String description, List<CyodaColumnHandle> columns, String json) {
+    public ReportDefinitionHandle(String reportConfigId, String reportName, String description, List<CyodaColumnHandle> columns, String json, boolean isSingleton, List<String> groupingColumns) {
         this.reportConfigId = reportConfigId;
         this.reportName = reportName;
         this.description = description;
         this.columns = columns;
         this.json = json;
+        this.isSingleton = isSingleton;
+        this.groupingColumns = groupingColumns;
+    }
+
+    public boolean isSingleton() {
+        return isSingleton;
+    }
+
+    public List<String> getGroupingColumns() {
+        return groupingColumns;
     }
 
     public String getReportConfigId() {

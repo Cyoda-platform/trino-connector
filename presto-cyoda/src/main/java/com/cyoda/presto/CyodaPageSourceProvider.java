@@ -75,7 +75,7 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
 
         return new CyodaFilteringPageSource<>(
                 authContext,
-                dataProviderProvider.getDataProvider(cyodaTableHandle),
+                dataProviderProvider.getDataProvider(cyodaTableHandle.getTableType()),
                 cyodaTableHandle,
                 cyodaColumns, predicates);
 

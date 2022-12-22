@@ -51,6 +51,9 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     private final transient List<ColumnMetadata> columnMetadata;
     private final transient ConnectorTableMetadata metadata;
 
+    private final boolean hasGroups;
+    private final boolean hasHistory;
+
     @JsonCreator
     public CyodaTableHandle(
             @JsonProperty("connectorId") String connectorId,
@@ -60,7 +63,9 @@ public class CyodaTableHandle implements ConnectorTableHandle {
             @JsonProperty("tableType") TableType tableType,
             @JsonProperty("reportConfigId") String reportConfigId,
             @JsonProperty("description") String description,
-            @JsonProperty("uri") URI uri) {
+            @JsonProperty("uri") URI uri,
+            @JsonProperty("hasGroups") boolean hasGroups,
+            @JsonProperty("hasHistory") boolean hasHistory) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.schemaName = requireNonNull(schemaName, "schemaName is null");
         this.tableName = requireNonNull(tableName, "tableName is null");
@@ -68,6 +73,8 @@ public class CyodaTableHandle implements ConnectorTableHandle {
         this.description = description;
         this.tableType = tableType;
         this.uri = uri;
+        this.hasGroups = hasGroups;
+        this.hasHistory = hasHistory;
         columnHandleMap = new HashMap<>();
         columnMetadata = new ArrayList<>();
         for (CyodaColumnHandle columnHandle : projectedColumns) {
@@ -77,6 +84,16 @@ public class CyodaTableHandle implements ConnectorTableHandle {
         metadata = new ConnectorTableMetadata(
                 new SchemaTableName(schemaName, tableName),
                 columnMetadata, Collections.emptyMap(), Optional.ofNullable(description));
+    }
+
+    @JsonProperty("hasGroups")
+    public boolean hasGroups() {
+        return hasGroups;
+    }
+
+    @JsonProperty("hasHistory")
+    public boolean hasHistory() {
+        return hasHistory;
     }
 
     @JsonProperty
@@ -187,7 +204,7 @@ public class CyodaTableHandle implements ConnectorTableHandle {
         }
 
         public CyodaTableHandle createTableHandle(String tableName, String configId, String description){
-            return new CyodaTableHandle(connectorId, schemaName, tableName, columnHandles, tableType, configId, description, uri);
+            return new CyodaTableHandle(connectorId, schemaName, tableName, columnHandles, tableType, configId, description, uri, false, false);
         }
     }
 

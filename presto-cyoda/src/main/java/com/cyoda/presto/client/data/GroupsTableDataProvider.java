@@ -20,13 +20,11 @@ import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields
 
 public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
 
-    private final CyodaTableHandle tableHandle;
     private final ReportHistoryApiHandler reportHistoryApiHandler;
     private final ReportGroupsApiHandler reportGroupsApiHandler;
 
 
-    public GroupsTableDataProvider(CyodaTableHandle tableHandle, ReportHistoryApiHandler reportHistoryApiHandler, ReportGroupsApiHandler reportGroupsApiHandler) {
-        this.tableHandle = tableHandle;
+    public GroupsTableDataProvider(ReportHistoryApiHandler reportHistoryApiHandler, ReportGroupsApiHandler reportGroupsApiHandler) {
         this.reportHistoryApiHandler = reportHistoryApiHandler;
         this.reportGroupsApiHandler = reportGroupsApiHandler;
     }

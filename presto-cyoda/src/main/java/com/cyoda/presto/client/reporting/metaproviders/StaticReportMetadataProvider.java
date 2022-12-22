@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_NAME_VARIABLE;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.GROUPING_VERSION_COLUMN;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.HISTORY_REPORT_ID_COLUMN;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_GROUP_JSON_BASE64_VARIABLE;
@@ -107,7 +106,7 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
             List<CyodaColumnHandle> columnHandles = getCyodaColumnHandles(tableDefinition);
             return new CyodaTableHandle(connectorId.toString(), config.getSchemaName(),
                     tableDefinition.getTableName(), columnHandles, tableDefinition.getTableType(),
-                    null, null, getUri(tableDefinition));
+                    null, null, getUri(tableDefinition), false, false);
         }
 
         public CyodaTableHandle getTableHandle() {
