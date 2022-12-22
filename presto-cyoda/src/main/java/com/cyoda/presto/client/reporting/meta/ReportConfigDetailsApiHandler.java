@@ -113,7 +113,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<String,
                     parse.read("$.content.singletonReport", Boolean.class)
             ).orElse(false);
             List<String> groupingColumns = Optional.ofNullable(parse.read(
-                            "$.content.columns",
+                            "$.content.grouping",
                             new TypeRef<List<Map<String, String>>>() {
                             }
                     ))
