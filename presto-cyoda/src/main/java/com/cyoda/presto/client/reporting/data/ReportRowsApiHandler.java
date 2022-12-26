@@ -28,6 +28,9 @@ import com.cyoda.presto.client.paging.PagingHandle;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
+import com.cyoda.presto.client.reporting.stats.RowPageRequestStats;
+import com.cyoda.presto.client.reporting.stats.RowRequestStats;
+import com.cyoda.presto.client.reporting.stats.RowRequestStatsHandler;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.ReportRow;
@@ -73,19 +76,15 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
             ROW_GROUP_JSON_BASE64_VARIABLE + "}";
 
     private final CyodaColumnHandle rowNumberColumn;
-    private final CyodaColumnHandle reportIdColumn;
-    private final CyodaColumnHandle groupingVersionColumn;
-    private final CyodaColumnHandle groupJsonBase64Column;
+    private final RowRequestStatsHandler statsHandler;
 
     @Inject
     public ReportRowsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
-                                RestTemplateCustomizer restTemplateCustomizer, StaticReportMetadataProvider staticMetaProvider) {
+                                RestTemplateCustomizer restTemplateCustomizer, StaticReportMetadataProvider staticMetaProvider,
+                                RowRequestStatsHandler statsHandler) {
         super(connectorId, config, typeManager, restTemplateCustomizer, LOG);
         this.rowNumberColumn = staticMetaProvider.getReportRows().getRowNumberColumn();
-        this.reportIdColumn = staticMetaProvider.getReportRows().getReportIdColumn();
-        this.groupJsonBase64Column = staticMetaProvider.getReportRows().getGroupJsonBase64Column();
-        this.groupingVersionColumn = staticMetaProvider.getReportRows().getGroupingVersionColumn();
-
+        this.statsHandler = statsHandler;
     }
 
 
@@ -93,7 +92,8 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
             RowsRequestKey requestKey, int page,
             int pageSize,
             CompoundPredicateNode predicates,
-            SizeListener listener
+            SizeListener listener,
+            RowRequestStats requestStats
     ) {
 
         int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
@@ -109,12 +109,16 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
         return rowNumPredicate.stream().flatMap(it -> RowNumHandle.from(it, page, size).stream())
                 .map(it -> exchange(
                         page,
-                        pageSize,
+                        size,
                         listener,
                         requestKey,
                         uriTemplate,
-                        it)
-                ).reduce(Optional.of(PagedModel.empty()), (result, rowHandles) ->
+                        it))
+                .map(exchangeResult -> {
+                    requestStats.addPageRequest(exchangeResult.pageRequestStats);
+                    return exchangeResult.pagedModel;
+                })
+                .reduce(Optional.of(PagedModel.empty()), (result, rowHandles) ->
                         Optional.of(merge(result.get(), rowHandles.orElse(null)))
                 );
     }
@@ -140,18 +144,15 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
         return PagedModel.of(content, meta);
     }
 
-    private Optional<PagedModel<RowHandle>> exchange(int page, int pageSize, SizeListener listener,
+    private ExchangeResult exchange(int page, int pageSize, SizeListener listener,
                                                      RowsRequestKey requestKey,
                                                      UriTemplate uriTemplate,
                                                      RowNumHandle rowNumHandle) {
+        long startTime = System.currentTimeMillis();
         ImmutableMap.Builder<String, Object> expansionBuilder = ImmutableMap.<String, Object>builder()
                 .put(PAGE_REQUEST_PARAMETER, rowNumHandle.page)
                 .put(SIZE_REQUEST_PARAMETER, rowNumHandle.size);
 
-
-//        String reportId = mixinColumn(expansionBuilder, stringPredicateTraversal, this.reportIdColumn);
-//        UUID groupingVersion = mixinColumn(expansionBuilder, uuidPredicateTraversal, this.groupingVersionColumn);
-//        String groupJsonString = mixinColumn(expansionBuilder, stringPredicateTraversal, this.groupJsonBase64Column);
 
         expansionBuilder.put(ROW_REPORT_ID_COLUMN, requestKey.reportId());
         expansionBuilder.put(ROW_GROUP_JSON_BASE64_VARIABLE, requestKey.groupJsonBase64());
@@ -170,7 +171,8 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
                     .follow()
                     .toObject(typeReference);
             publishSize(listener, fieldsViews);
-            return Optional.ofNullable(fieldsViews)
+            return new ExchangeResult(
+                    Optional.ofNullable(fieldsViews)
                     .map(item -> {
                         AtomicLong rowNum = new AtomicLong(rowNumHandle.offset);
                         List<RowHandle> handles = item.getContent().stream()
@@ -185,34 +187,14 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
                         PagedModel.PageMetadata apiMeta = Optional.ofNullable(fieldsViews.getMetadata()).orElseThrow(() -> new IllegalStateException("No meta attached"));
                         PagedModel.PageMetadata metadata = rowNumHandle.createPageMeta(page, pageSize, item, apiMeta);
                         return PagedModel.of(handles, metadata);
-                    });
+                    }),
+                    new RowPageRequestStats(page, pageSize, rowNumHandle.page, rowNumHandle.size, System.currentTimeMillis() - startTime)
+            );
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);
         }
     }
 
-
-//    private <T extends Comparable<? super T>> T mixinColumn(ImmutableMap.Builder<String, Object> expansionBuilder,
-//                                                            PredicateTraversal<T> traversal, CyodaColumnHandle columnHandle
-//    ) {
-//        String columnName = columnHandle.getColumnName();
-//        Optional<SortedSet<T>> values = traversal.assembleEqualsPredicateValuesFromAnd(columnHandle);
-//        LOG.debug("selecting values for %s : %s", () -> columnName, () -> values.map(it -> String.join(",", it.toString())).orElse("EMPTY"));
-//
-//        Preconditions.checkArgument(values.isPresent());
-//
-//        Set<T> theValues = values
-//                .orElseThrow(() -> new IllegalArgumentException("No consistent result found for column " + columnName + " in predicates"));
-//
-//        if (theValues.size() > 1)
-//            throw new IllegalStateException("Predicates should only have one element for " + columnName);
-//        if (!theValues.isEmpty()) {
-//            T result = theValues.iterator().next();
-//            expansionBuilder.put(columnName, result);
-//            return result;
-//        }
-//        throw new IllegalArgumentException("no result found for column " + columnName + " in predicates");
-//    }
 
     private UriTemplate setupUriTemplate() {
 
@@ -240,9 +222,14 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
 
         int pageSize = getPageSize();
         logCreation(pageSize, predicates, log);
+        RowRequestStats requestStats = statsHandler.registerCall(requestKey, predicates);
         Function<Integer, PagingHandle<?, RowHandle>> pagingHandleGetter = page ->
-                new PagingHandle<>(retrievePage(requestKey, page, pageSize, predicates, listener));
-        return new PagingFluxProvider<>(pagingHandleGetter).generate(0);
+                new PagingHandle<>(retrievePage(requestKey, page, pageSize, predicates, listener, requestStats));
+        return new PagingFluxProvider<>(pagingHandleGetter)
+                .generate(0)
+                .doOnComplete(()-> LOG.info("Fulfilled rows request to cyoda:\n" + requestStats.toString()));
     }
+
+    private record ExchangeResult(Optional<PagedModel<RowHandle>> pagedModel, RowPageRequestStats pageRequestStats){};
 }
 
