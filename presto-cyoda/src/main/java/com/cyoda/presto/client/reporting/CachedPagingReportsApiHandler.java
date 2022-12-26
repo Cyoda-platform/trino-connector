@@ -28,13 +28,11 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.PagedModel;
-import reactor.core.publisher.Flux;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApiHandler<K, T> {
 
@@ -55,23 +53,17 @@ public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApi
                 .build(this::loadByKey);
     }
 
-//    protected abstract
-
-    private Flux<T> asFlux(K requestKey, SizeListener listener) {
-
-        int pageSize = getPageSize();
-        logCreation(pageSize, log);
-        Function<Integer, PagingHandle<?, T>> pagingHandleGetter = page ->
-                new PagingHandle<>(retrievePage(requestKey, page, pageSize, listener));
-        return new PagingFluxProvider<>(pagingHandleGetter).generate(0);
-    }
-
     public List<T> getByKey(K requestKey){
         return cache.get(requestKey);
     }
 
     private List<T> loadByKey(K requestKey){
-        return asFlux(requestKey, SizeListener.NOT_LISTENING).toStream().collect(Collectors.toList());
+
+        int pageSize = getPageSize();
+        logCreation(pageSize, log);
+        Function<Integer, PagingHandle<?, T>> pagingHandleGetter = page ->
+                new PagingHandle<>(retrievePage(requestKey, page, pageSize, SizeListener.NOT_LISTENING));
+        return new PagingFluxProvider<>(pagingHandleGetter).generate(0).collectList().block();
     }
 
 }
