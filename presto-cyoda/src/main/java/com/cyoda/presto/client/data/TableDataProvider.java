@@ -18,6 +18,7 @@
 package com.cyoda.presto.client.data;
 
 import com.cyoda.presto.auth.AuthContext;
+import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
@@ -25,8 +26,17 @@ import io.trino.spi.block.BlockBuilder;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Set;
 
 public abstract class TableDataProvider<T> {
+
+    protected static <T extends Comparable<? super T>> boolean acceptValue(CyodaColumnHandle columnHandle, T value, Set<ColumnPredicate<T>> parsed) {
+        ColumnPredicate<T> valuePredicate = new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, columnHandle, value, null);
+        return parsed.stream()
+                .map(valuePredicate::merge)
+                .map(predicate -> predicate.getType() != ColumnPredicate.PredicateType.NONE)
+                .findAny().isPresent();
+    }
 
     public abstract Iterable<T> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CompoundPredicateNode predicates);
 
