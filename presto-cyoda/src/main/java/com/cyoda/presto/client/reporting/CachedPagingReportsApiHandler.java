@@ -26,7 +26,6 @@ import com.cyoda.presto.client.paging.PagingHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import com.github.benmanes.caffeine.cache.Scheduler;
 import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.PagedModel;
 import reactor.core.scheduler.Schedulers;
@@ -34,7 +33,6 @@ import reactor.core.scheduler.Schedulers;
 import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Executor;
 import java.util.function.Function;
 
 public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApiHandler<K, T> {
@@ -53,7 +51,6 @@ public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApi
         super(connectorId, config, typeManager, restTemplateCustomizer, log);
         cache = Caffeine.newBuilder()
                 .expireAfterAccess(getCacheDuration())
-                .executor(Runnable::run)
                 .build(this::loadByKey);
     }
 
