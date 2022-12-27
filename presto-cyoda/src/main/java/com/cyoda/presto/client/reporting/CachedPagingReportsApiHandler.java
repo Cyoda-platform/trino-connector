@@ -64,7 +64,7 @@ public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApi
         logCreation(pageSize, log);
         Function<Integer, PagingHandle<?, T>> pagingHandleGetter = page ->
                 new PagingHandle<>(retrievePage(requestKey, page, pageSize, SizeListener.NOT_LISTENING));
-        return new PagingFluxProvider<>(pagingHandleGetter).generate(0).subscribeOn(Schedulers.immediate()).collectList().block();
+        return new PagingFluxProvider<>(pagingHandleGetter).generate(0).subscribeOn(Schedulers.immediate(), false).collectList().block();
     }
 
 }
