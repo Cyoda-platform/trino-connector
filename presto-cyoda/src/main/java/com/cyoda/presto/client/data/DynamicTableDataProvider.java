@@ -20,7 +20,9 @@ import reactor.core.scheduler.Schedulers;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_GROUPING_VERSION_COLUMN;
@@ -51,15 +53,15 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
         Set<ColumnPredicate<String>> reportIdParsed = traversal.parseFor(reportIdColumn);
         CyodaColumnHandle groupIdColumn = reportMetadataProvider.getReportRows().getGroupJsonBase64Column();
         Set<ColumnPredicate<String>> groupIdParsed = traversal.parseFor(groupIdColumn);
-        Stream<GroupingHandle> groupStream = reportHistoryApiHandler.getByKey(tableHandle.getReportConfigId())
+        List<GroupingHandle> groupList = reportHistoryApiHandler.getByKey(tableHandle.getReportConfigId())
                 .stream()
                 .filter(fieldsView -> acceptValue(reportIdColumn, fieldsView.getReportId(), reportIdParsed))
                 .flatMap(fieldsView -> reportGroupsApiHandler.getByKey(
                         new GroupsRequestKey(fieldsView.getReportId(), fieldsView.getGroupingVersion())).stream()
                 ).filter(groupingHandle -> acceptValue(
                         groupIdColumn, groupingHandle.groupHeader.getGroupValuesJsonBase64(), groupIdParsed)
-                );
-        return Flux.fromStream(groupStream)
+                ).toList();
+        return Flux.fromIterable(groupList)
                 .flatMap(groupingHandle ->
                         reportRowsApiHandler
                                 .asFlux(RowsRequestKey.of(groupingHandle),
