@@ -2,10 +2,10 @@ package com.cyoda.presto.client.data;
 
 import com.cyoda.core.model.reports.ReportHistoryFieldsView;
 import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import io.trino.spi.connector.Constraint;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,7 +36,7 @@ public class HistoryTableDataProvider extends TableDataProvider<ReportHistoryFie
     }
 
     @Override
-    public Iterable<ReportHistoryFieldsView> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CompoundPredicateNode predicates) {
+    public Iterable<ReportHistoryFieldsView> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, Constraint predicates) {
         return reportHistoryApiHandler.getByKey(tableHandle.getReportConfigId());
     }
 }

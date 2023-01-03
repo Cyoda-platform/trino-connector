@@ -1,9 +1,6 @@
 package com.cyoda.presto.client.data;
 
 import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.logic.ColumnPredicate;
-import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.client.reporting.PredicateTraversal;
 import com.cyoda.presto.client.reporting.groups.GroupingHandle;
 import com.cyoda.presto.client.reporting.groups.GroupsRequestKey;
 import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
@@ -11,12 +8,12 @@ import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import io.trino.spi.connector.Constraint;
 import org.joda.beans.MetaProperty;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.HISTORY_REPORT_ID_COLUMN;
@@ -55,13 +52,13 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
     }
 
     @Override
-    public Iterable<GroupingHandle> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CompoundPredicateNode predicates) {
-        CyodaColumnHandle reportIdColumn = reportMetadataProvider.getReportRows().getReportIdColumn();
-        PredicateTraversal<String> traversal = PredicateTraversal.of(predicates, String.class);
-        Set<ColumnPredicate<String>> reportIdParsed = traversal.parseFor(reportIdColumn);
+    public Iterable<GroupingHandle> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, Constraint constraint) {
+//        CyodaColumnHandle reportIdColumn = reportMetadataProvider.getReportRows().getReportIdColumn();
+//        PredicateTraversal<String> traversal = PredicateTraversal.of(predicates, String.class);
+//        Set<ColumnPredicate<String>> reportIdParsed = traversal.parseFor(reportIdColumn);
         return reportHistoryApiHandler.getByKey(tableHandle.getReportConfigId())
                 .stream()
-                .filter(fieldsView -> acceptValue(reportIdColumn, fieldsView.getReportId(), reportIdParsed))
+//                .filter(fieldsView -> acceptValue(reportIdColumn, fieldsView.getReportId(), reportIdParsed))
                 .flatMap(fieldsView ->
                         reportGroupsApiHandler.getByKey(
                                 new GroupsRequestKey(fieldsView.getReportId(),

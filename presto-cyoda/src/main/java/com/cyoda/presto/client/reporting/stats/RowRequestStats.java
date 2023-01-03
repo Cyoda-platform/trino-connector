@@ -3,11 +3,12 @@ package com.cyoda.presto.client.reporting.stats;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.data.RowsRequestKey;
 import com.google.common.base.MoreObjects;
+import io.trino.spi.connector.Constraint;
 
 import java.util.List;
 
 public record RowRequestStats(RowsRequestKey requestKey,
-                              CompoundPredicateNode predicates,
+                              Constraint predicates,
                               List<RowPageRequestStats> pageRequests) {
     public void addPageRequest(RowPageRequestStats pageRequestStats){
         pageRequests.add(pageRequestStats);

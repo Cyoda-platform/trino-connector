@@ -26,6 +26,9 @@ import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.Page;
 import io.trino.spi.PageBuilder;
 import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.connector.ColumnHandle;
+import io.trino.spi.connector.Constraint;
+import io.trino.spi.predicate.NullableValue;
 import io.trino.spi.type.Type;
 import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.TrinoException;
@@ -34,8 +37,10 @@ import reactor.core.scheduler.Schedulers;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_PAGING_ERROR;
 import static com.google.common.collect.ImmutableList.toImmutableList;
@@ -67,7 +72,7 @@ public class CyodaFilteringPageSource<K,T>
             TableDataProvider<T> dataProvider,
             CyodaTableHandle tableHandle,
             List<CyodaColumnHandle> columnHandles,
-            CompoundPredicateNode predicates
+            Constraint constraint
     ) {
         this.columnHandles = ImmutableList.copyOf(requireNonNull(columnHandles, "columnHandles is null"));
         this.dataProvider = requireNonNull(dataProvider, "dataProvider is null");
@@ -82,10 +87,14 @@ public class CyodaFilteringPageSource<K,T>
 
         this.pageBuilder = new PageBuilder(this.columnTypes);
 
+        if (constraint.predicate().isEmpty() && !constraint.getSummary().isAll()){
+            throw new RuntimeException("Constraint summary is not blank, but predicate not present");
+        }
+
         this.responseIterable = dataProvider.getIterable(
                         authContext,
                         tableHandle,
-                        predicates);
+                        constraint);
 
     }
 

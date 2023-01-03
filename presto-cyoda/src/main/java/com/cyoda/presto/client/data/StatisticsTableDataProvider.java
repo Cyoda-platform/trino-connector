@@ -3,11 +3,11 @@ package com.cyoda.presto.client.data;
 import com.cyoda.core.model.reports.DistributedReportInfoView;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import io.trino.spi.connector.Constraint;
 import org.joda.beans.MetaProperty;
 import reactor.core.scheduler.Schedulers;
 
@@ -25,7 +25,7 @@ public class StatisticsTableDataProvider extends TableDataProvider<DistributedRe
     }
 
     @Override
-    public Iterable<DistributedReportInfoView> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CompoundPredicateNode predicates) {
+    public Iterable<DistributedReportInfoView> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, Constraint predicates) {
         SizeListener listener = SizeListener.NOT_LISTENING;
         return reportsApiHandler.asFlux(authContext, listener)
                 .flatMap(rep -> statisticsApiHandler.asFlux(rep.getId(), listener))

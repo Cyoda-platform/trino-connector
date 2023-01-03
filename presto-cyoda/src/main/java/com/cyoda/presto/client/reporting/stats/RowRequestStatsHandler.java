@@ -3,6 +3,7 @@ package com.cyoda.presto.client.reporting.stats;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.data.RowsRequestKey;
 import com.cyoda.presto.logging.SupplierLogger;
+import io.trino.spi.connector.Constraint;
 
 import javax.inject.Inject;
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ public class RowRequestStatsHandler {
     @Inject
     public RowRequestStatsHandler(){};
 
-    public RowRequestStats registerCall(RowsRequestKey requestKey, CompoundPredicateNode predicates){
+    public RowRequestStats registerCall(RowsRequestKey requestKey, Constraint predicates){
         RowRequestStats stats = new RowRequestStats(requestKey, predicates, new ArrayList<>());
         requestStats.add(stats);
         return stats;

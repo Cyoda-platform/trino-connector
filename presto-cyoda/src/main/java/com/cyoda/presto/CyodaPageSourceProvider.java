@@ -25,6 +25,7 @@ import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.connector.ConnectorTableHandle;
+import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorPageSource;
@@ -66,8 +67,6 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
             DynamicFilter dynamicFilter
     ) {
         requireNonNull(split, "split is null");
-        TupleDomain<ColumnHandle> constraint = ((CyodaSplit) split).getConstraint();
-        CompoundPredicateNode predicates = ColumnPredicateBuilder.setupConstraintPredicates(constraint);
         CyodaTableHandle cyodaTableHandle = (CyodaTableHandle) tableHandle;
         Preconditions.checkArgument(connectorId.equals(cyodaTableHandle.getConnectorId()),"tableHandle not for this connectorId");
         List<CyodaColumnHandle> cyodaColumns = columns.stream().map(CyodaColumnHandle.class::cast).collect(Collectors.toList());
@@ -77,7 +76,7 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
                 authContext,
                 dataProviderProvider.getDataProvider(cyodaTableHandle.getTableType()),
                 cyodaTableHandle,
-                cyodaColumns, predicates);
+                cyodaColumns, ((CyodaSplit) split).getConstraint());
 
     }
 }

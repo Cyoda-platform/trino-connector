@@ -22,6 +22,7 @@ import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.ColumnPredicate;
+import com.cyoda.presto.client.logic.ColumnPredicateBuilder;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.paging.PagingFluxProvider;
 import com.cyoda.presto.client.paging.PagingHandle;
@@ -39,6 +40,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.spi.StandardErrorCode;
 import io.trino.spi.TrinoException;
+import io.trino.spi.connector.Constraint;
 import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
@@ -218,11 +220,13 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
 
 
 
-    public Flux<RowHandle> asFlux(RowsRequestKey requestKey, CompoundPredicateNode predicates, SizeListener listener) {
+    public Flux<RowHandle> asFlux(RowsRequestKey requestKey, Constraint constraint, SizeListener listener) {
 
         int pageSize = getPageSize();
-        logCreation(pageSize, predicates, log);
-        RowRequestStats requestStats = statsHandler.registerCall(requestKey, predicates);
+//        logCreation(pageSize, predicates, log);
+        //TODO temporary predicate
+        CompoundPredicateNode predicates = ColumnPredicateBuilder.setupConstraintPredicates(constraint.getSummary());
+        RowRequestStats requestStats = statsHandler.registerCall(requestKey, constraint);
         Function<Integer, PagingHandle<?, RowHandle>> pagingHandleGetter = page ->
                 new PagingHandle<>(retrievePage(requestKey, page, pageSize, predicates, listener, requestStats));
         return new PagingFluxProvider<>(pagingHandleGetter)

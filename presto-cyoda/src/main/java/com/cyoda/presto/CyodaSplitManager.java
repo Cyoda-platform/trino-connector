@@ -57,6 +57,6 @@ public class CyodaSplitManager implements ConnectorSplitManager {
         CyodaTableHandle tableHandle = (CyodaTableHandle) connectorTableHandle;
         Preconditions.checkArgument(tableHandle.getConnectorId().equals(connectorId),"This split manager is meant for connector id "+connectorId);
 
-        return new FixedSplitSource(Collections.singletonList(new CyodaSplit(tableHandle, constraint.getSummary())));
+        return new FixedSplitSource(Collections.singletonList(new CyodaSplit(tableHandle, constraint)));
     }
 }
