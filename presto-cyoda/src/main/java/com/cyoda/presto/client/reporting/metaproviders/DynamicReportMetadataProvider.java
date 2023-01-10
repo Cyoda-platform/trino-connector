@@ -119,20 +119,29 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
             CyodaTableHandle tableHandle = tableMetaCache.get(cacheKey);
             result.put(tableHandle.getTableName(), tableHandle);
             if (tableHandle.hasHistory()) {
-                addSupplementaryTable(result, tableHandle, "_history");
+                addHistoryTable(result, tableHandle);
             }
             if (tableHandle.hasGroups()) {
-                addSupplementaryTable(result, tableHandle, "_groups");
+                addGroupsTable(result, tableHandle);
             }
         }).blockLast();
         // If there are duplicates, last write wins.
         return ImmutableMap.copyOf(result);
     }
 
-    private void addSupplementaryTable(Map<String, CyodaTableHandle> result, CyodaTableHandle tableHandle, String suffix) {
-        String supName = tableHandle.getTableName() + suffix;
+    private void addHistoryTable(Map<String, CyodaTableHandle> result, CyodaTableHandle tableHandle) {
+        String supName = tableHandle.getTableName() + "_history";
         result.put(supName, staticReportMetadataProvider
                 .getHistoryTableTemplate().createTableHandle(
+                        supName,
+                        tableHandle.getReportConfigId(),
+                        tableHandle.getDescription()
+                ));
+    }
+    private void addGroupsTable(Map<String, CyodaTableHandle> result, CyodaTableHandle tableHandle) {
+        String supName = tableHandle.getTableName() + "_groups";
+        result.put(supName, staticReportMetadataProvider
+                .getGroupsTableTemplate().createTableHandle(
                         supName,
                         tableHandle.getReportConfigId(),
                         tableHandle.getDescription()
