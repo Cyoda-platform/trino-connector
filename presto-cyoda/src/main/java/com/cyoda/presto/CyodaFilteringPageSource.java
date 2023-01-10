@@ -88,7 +88,6 @@ public class CyodaFilteringPageSource<K,T>
 
         this.pageBuilder = new PageBuilder(this.columnTypes);
         this.split = split;
-        split.startExecution();
         this.responseIterable = dataProvider.getIterable(
                         authContext,
                         tableHandle,
@@ -194,7 +193,6 @@ public class CyodaFilteringPageSource<K,T>
     public void close()
     {
         finished = true;
-        split.endExecution();
     }
 
 }
