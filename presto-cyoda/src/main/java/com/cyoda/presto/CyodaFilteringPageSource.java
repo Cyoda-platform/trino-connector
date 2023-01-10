@@ -61,12 +61,9 @@ public class CyodaFilteringPageSource<K,T>
     private long completedPositions;
     private final Iterable<T> responseIterable;
     private Iterator<T> responseIterator;
-    private final List<Type> columnTypes;
-
     private final PageBuilder pageBuilder;
     private final AtomicInteger totalRowNumber;
     private final AtomicInteger pages;
-    private final CyodaSplit split;
 
     public CyodaFilteringPageSource(
             AuthContext authContext,
@@ -80,14 +77,13 @@ public class CyodaFilteringPageSource<K,T>
         this.finished = false;
         List<CyodaColumnHandle> handles = columnHandles.stream()
                 .collect(toImmutableList());
-        this.columnTypes = handles.stream()
+        List<Type> columnTypes = handles.stream()
                 .map(CyodaColumnHandle::getColumnType)
                 .collect(toImmutableList());
         this.totalRowNumber = new AtomicInteger();
         this.pages = new AtomicInteger();
 
-        this.pageBuilder = new PageBuilder(this.columnTypes);
-        this.split = split;
+        this.pageBuilder = new PageBuilder(columnTypes);
         this.responseIterable = dataProvider.getIterable(
                         authContext,
                         tableHandle,
