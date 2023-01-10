@@ -1,6 +1,7 @@
 package com.cyoda.presto.client.reporting.data;
 
 import com.cyoda.core.model.reports.DistributedReportInfoView;
+import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.client.reporting.groups.GroupingHandle;
 
 import javax.annotation.Nonnull;
@@ -15,11 +16,11 @@ public record RowsRequestKey(String reportId, UUID groupingVersion, String group
         this.groupJsonBase64 = groupJsonBase64;
     }
 
-    public static RowsRequestKey of(GroupingHandle groupingHandle) {
+    public static RowsRequestKey of(CyodaSplit split) {
         return new RowsRequestKey(
-                groupingHandle.reportId,
-                groupingHandle.groupingVersion,
-                groupingHandle.groupHeader.getGroupValuesJsonBase64());
+                split.getReportId(),
+                split.getGroupingVersion(),
+                split.getGroupJsonBase64());
     }
 
     @Override

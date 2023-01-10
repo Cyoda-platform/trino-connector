@@ -66,13 +66,14 @@ public class CyodaFilteringPageSource<K,T>
     private final PageBuilder pageBuilder;
     private final AtomicInteger totalRowNumber;
     private final AtomicInteger pages;
+    private final CyodaSplit split;
 
     public CyodaFilteringPageSource(
             AuthContext authContext,
             TableDataProvider<T> dataProvider,
             CyodaTableHandle tableHandle,
             List<CyodaColumnHandle> columnHandles,
-            Constraint constraint
+            CyodaSplit split
     ) {
         this.columnHandles = ImmutableList.copyOf(requireNonNull(columnHandles, "columnHandles is null"));
         this.dataProvider = requireNonNull(dataProvider, "dataProvider is null");
@@ -86,15 +87,12 @@ public class CyodaFilteringPageSource<K,T>
         this.pages = new AtomicInteger();
 
         this.pageBuilder = new PageBuilder(this.columnTypes);
-
-        if (constraint.predicate().isEmpty() && !constraint.getSummary().isAll()){
-            throw new RuntimeException("Constraint summary is not blank, but predicate not present");
-        }
-
+        this.split = split;
+        split.startExecution();
         this.responseIterable = dataProvider.getIterable(
                         authContext,
                         tableHandle,
-                        constraint);
+                        split);
 
     }
 
@@ -149,7 +147,7 @@ public class CyodaFilteringPageSource<K,T>
             }
 
             if (!responseIterator.hasNext()) {
-                finished = true;
+                close();
             }
 
             // only return a page if the buffer is full, or we are finishing
@@ -196,6 +194,7 @@ public class CyodaFilteringPageSource<K,T>
     public void close()
     {
         finished = true;
+        split.endExecution();
     }
 
 }

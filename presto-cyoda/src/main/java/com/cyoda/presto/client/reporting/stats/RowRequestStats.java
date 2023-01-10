@@ -8,7 +8,6 @@ import io.trino.spi.connector.Constraint;
 import java.util.List;
 
 public record RowRequestStats(RowsRequestKey requestKey,
-                              Constraint predicates,
                               List<RowPageRequestStats> pageRequests) {
     public void addPageRequest(RowPageRequestStats pageRequestStats){
         pageRequests.add(pageRequestStats);
@@ -18,7 +17,6 @@ public record RowRequestStats(RowsRequestKey requestKey,
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("requestKey", requestKey)
-                .add("predicates", predicates)
                 .add("pages", pageRequests).toString();
     }
 }

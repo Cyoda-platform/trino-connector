@@ -1,24 +1,21 @@
 package com.cyoda.presto.client.data;
 
-import com.cyoda.presto.SizeListener;
+import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.reporting.data.ReportRowsApiHandler;
 import com.cyoda.presto.client.reporting.data.RowHandle;
-import com.cyoda.presto.client.reporting.data.RowsRequestKey;
-import com.cyoda.presto.client.reporting.groups.GroupingHandle;
 import com.cyoda.presto.client.reporting.groups.GroupsRequestKey;
 import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import io.trino.spi.connector.ConnectorSplitSource;
 import io.trino.spi.connector.Constraint;
-import reactor.core.publisher.Flux;
-import reactor.core.scheduler.Schedulers;
+import io.trino.spi.connector.FixedSplitSource;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_GROUPING_VERSION_COLUMN;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_GROUP_JSON_BASE64_VARIABLE;
@@ -29,7 +26,8 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
     private final ReportHistoryApiHandler reportHistoryApiHandler;
     private final ReportGroupsApiHandler reportGroupsApiHandler;
     private final ReportRowsApiHandler reportRowsApiHandler;
-    private final StaticReportMetadataProvider reportMetadataProvider;
+    private final CyodaColumnHandle reportIdColumn;
+    private final CyodaColumnHandle groupIdColumn;
 
     public DynamicTableDataProvider(ReportHistoryApiHandler reportHistoryApiHandler,
                                     ReportGroupsApiHandler reportGroupsApiHandler,
@@ -38,35 +36,36 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
         this.reportHistoryApiHandler = reportHistoryApiHandler;
         this.reportGroupsApiHandler = reportGroupsApiHandler;
         this.reportRowsApiHandler = reportRowsApiHandler;
-        this.reportMetadataProvider = reportMetadataProvider;
+
+        reportIdColumn = reportMetadataProvider.getReportRows().getReportIdColumn();
+        groupIdColumn = reportMetadataProvider.getReportRows().getGroupJsonBase64Column();
     }
 
     @Override
-    public Iterable<RowHandle> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, Constraint constraint) {
-//        CyodaColumnHandle reportIdColumn = reportMetadataProvider.getReportRows().getReportIdColumn();
-//        PredicateTraversal<String> traversal = PredicateTraversal.of(predicates, String.class);
-//        Set<ColumnPredicate<String>> reportIdParsed = traversal.parseFor(reportIdColumn);
-//        CyodaColumnHandle groupIdColumn = reportMetadataProvider.getReportRows().getGroupJsonBase64Column();
-//        Set<ColumnPredicate<String>> groupIdParsed = traversal.parseFor(groupIdColumn);
-        List<GroupingHandle> groupList = reportHistoryApiHandler.getByKey(tableHandle.getReportConfigId())
+    public ConnectorSplitSource getSplits(AuthContext authContext, CyodaTableHandle tableHandle, Constraint constraint) {
+        return new FixedSplitSource(
+                reportHistoryApiHandler.getByKey(tableHandle.getReportConfigId())
                 .stream()
-//                .filter(fieldsView -> acceptValue(reportIdColumn, fieldsView.getReportId(), reportIdParsed))
+                .filter(fieldsView -> acceptVal(reportIdColumn, fieldsView.getReportId(), constraint))
                 .flatMap(fieldsView -> reportGroupsApiHandler.getByKey(
-                        new GroupsRequestKey(fieldsView.getReportId(), fieldsView.getGroupingVersion())).stream()
-//                ).filter(groupingHandle -> acceptValue(
-//                        groupIdColumn, groupingHandle.groupHeader.getGroupValuesJsonBase64(), groupIdParsed)
-                ).toList();
+                                new GroupsRequestKey(fieldsView.getReportId(), fieldsView.getGroupingVersion())).stream()
+                ).filter(groupingHandle -> acceptVal(
+                        groupIdColumn, groupingHandle.groupHeader.getGroupValuesJsonBase64(), constraint)
+                )
+                .map(groupingHandle -> new CyodaSplit(
+                        tableHandle.getTableName(),
+                        tableHandle.getReportConfigId(),
+                        groupingHandle.reportId,
+                        groupingHandle.groupingVersion,
+                        groupingHandle.groupHeader.getGroupValuesJsonBase64()))
+                .toList());
+    }
 
-        return Flux.fromIterable(groupList)
-                .flatMap(groupingHandle ->
-                        reportRowsApiHandler
-                                .asFlux(RowsRequestKey.of(groupingHandle),
-                                        constraint, //predicates,
-                                        SizeListener.NOT_LISTENING)
+    @Override
+    public Iterable<RowHandle> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CyodaSplit split) {
 
-                        )
-                .subscribeOn(Schedulers.parallel())  // Probably the default.
-                .toIterable();
+
+        return reportRowsApiHandler.getIterable(split);
     }
 
     @Nullable

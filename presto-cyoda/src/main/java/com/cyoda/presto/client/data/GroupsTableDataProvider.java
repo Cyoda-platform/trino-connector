@@ -1,5 +1,6 @@
 package com.cyoda.presto.client.data;
 
+import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.reporting.groups.GroupingHandle;
 import com.cyoda.presto.client.reporting.groups.GroupsRequestKey;
@@ -8,12 +9,15 @@ import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import io.trino.spi.connector.ConnectorSplitSource;
 import io.trino.spi.connector.Constraint;
+import io.trino.spi.connector.FixedSplitSource;
 import org.joda.beans.MetaProperty;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.HISTORY_REPORT_ID_COLUMN;
@@ -25,6 +29,8 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
     private final ReportGroupsApiHandler reportGroupsApiHandler;
     private final StaticReportMetadataProvider reportMetadataProvider;
 
+    private final CyodaColumnHandle reportIdColumn;
+
 
     public GroupsTableDataProvider(ReportHistoryApiHandler reportHistoryApiHandler,
                                    ReportGroupsApiHandler reportGroupsApiHandler,
@@ -32,6 +38,7 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
         this.reportHistoryApiHandler = reportHistoryApiHandler;
         this.reportGroupsApiHandler = reportGroupsApiHandler;
         this.reportMetadataProvider = reportMetadataProvider;
+        reportIdColumn = reportMetadataProvider.getReportGroups().getReportIdColumn();
     }
 
 
@@ -52,18 +59,23 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
     }
 
     @Override
-    public Iterable<GroupingHandle> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, Constraint constraint) {
-//        CyodaColumnHandle reportIdColumn = reportMetadataProvider.getReportRows().getReportIdColumn();
-//        PredicateTraversal<String> traversal = PredicateTraversal.of(predicates, String.class);
-//        Set<ColumnPredicate<String>> reportIdParsed = traversal.parseFor(reportIdColumn);
-        return reportHistoryApiHandler.getByKey(tableHandle.getReportConfigId())
+    public ConnectorSplitSource getSplits(AuthContext authContext, CyodaTableHandle tableHandle, Constraint constraint) {
+        List<CyodaSplit> splitList = reportHistoryApiHandler.getByKey(tableHandle.getReportConfigId())
                 .stream()
-//                .filter(fieldsView -> acceptValue(reportIdColumn, fieldsView.getReportId(), reportIdParsed))
-                .flatMap(fieldsView ->
-                        reportGroupsApiHandler.getByKey(
-                                new GroupsRequestKey(fieldsView.getReportId(),
-                                        fieldsView.getGroupingVersion())
-                        ).stream()).collect(Collectors.toList());
+                .filter(fieldsView -> acceptVal(reportIdColumn, fieldsView.getReportId(), constraint))
+                .map(fieldsView -> new CyodaSplit(
+                        tableHandle.getTableName(),
+                        tableHandle.getReportConfigId(),
+                        fieldsView.getReportId(),
+                        fieldsView.getGroupingVersion(),
+                        null))
+                .toList();
+        return new FixedSplitSource(splitList);
+    }
+
+    @Override
+    public Iterable<GroupingHandle> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CyodaSplit split) {
+        return reportGroupsApiHandler.getByKey(new GroupsRequestKey(split.getReportId(), split.getGroupingVersion()));
     }
 
 }

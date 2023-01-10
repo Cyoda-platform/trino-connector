@@ -18,8 +18,8 @@ public class RowRequestStatsHandler {
     @Inject
     public RowRequestStatsHandler(){};
 
-    public RowRequestStats registerCall(RowsRequestKey requestKey, Constraint predicates){
-        RowRequestStats stats = new RowRequestStats(requestKey, predicates, new ArrayList<>());
+    public RowRequestStats registerCall(RowsRequestKey requestKey){
+        RowRequestStats stats = new RowRequestStats(requestKey, new ArrayList<>());
         requestStats.add(stats);
         return stats;
     }

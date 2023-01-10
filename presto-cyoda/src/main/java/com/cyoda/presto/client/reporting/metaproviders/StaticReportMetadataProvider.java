@@ -68,7 +68,9 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
         return reports;
     }
 
-
+    public ReportGroups getReportGroups(){
+        return reportGroups;
+    }
     public ReportRows getReportRows() {
         return reportRows;
     }

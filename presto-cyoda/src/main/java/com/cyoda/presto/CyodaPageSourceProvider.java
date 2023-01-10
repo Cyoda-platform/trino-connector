@@ -76,7 +76,7 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
                 authContext,
                 dataProviderProvider.getDataProvider(cyodaTableHandle.getTableType()),
                 cyodaTableHandle,
-                cyodaColumns, ((CyodaSplit) split).getConstraint());
+                cyodaColumns, ((CyodaSplit) split));
 
     }
 }
