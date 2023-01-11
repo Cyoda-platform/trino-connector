@@ -87,7 +87,7 @@ public class CyodaEventListener implements EventListener {
         }
 
         try {
-            getQueryStatisticsMessage(queryCompletedEvent).ifPresent(msg -> log.info("Query Stats: \n%s", msg));
+            getQueryStatisticsMessage(queryCompletedEvent).ifPresent(msg -> log.debug("Query Stats: \n%s", msg));
         } catch (JsonProcessingException e) {
             log.error(e,"Cannot log QueryStatistics");
         }
@@ -97,7 +97,7 @@ public class CyodaEventListener implements EventListener {
     public void splitCompleted(SplitCompletedEvent splitCompletedEvent) {
         log.debug("Completed Query Split for %s", splitCompletedEvent.getQueryId());
         try {
-            getSplitStatisticsMessage(splitCompletedEvent).ifPresent(msg -> log.info("Split Statistics: \n%s", msg));
+            getSplitStatisticsMessage(splitCompletedEvent).ifPresent(msg -> log.debug("Split Statistics: \n%s", msg));
         } catch (JsonProcessingException e) {
             log.error(e,"Cannot log SplitCompletedEvent");
         }
@@ -129,10 +129,14 @@ public class CyodaEventListener implements EventListener {
     }
 
     private Optional<String> getSplitStatisticsMessage(SplitCompletedEvent splitCompletedEvent) throws JsonProcessingException {
+        if (log.isDebugEnabled() && config.containsKey(QUERY_SPLIT_LOGGING_FLAG) && config.get(QUERY_SPLIT_LOGGING_FLAG).startsWith("1")) {
             return Optional.of(OBJECT_MAPPER_SUPPLIER.get()
                     .writerFor(LoggableSplitStatistics.class)
                     .writeValueAsString(LoggableSplitStatistics.from(splitCompletedEvent.getStatistics()))
             );
+        } else {
+            return Optional.empty();
+        }
     }
 
     private Optional<String> getQueryMetaMessage(QueryMetadata metadata) throws JsonProcessingException {
