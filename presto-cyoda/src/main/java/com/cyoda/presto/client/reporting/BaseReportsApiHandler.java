@@ -23,12 +23,15 @@ import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
+import com.cyoda.presto.client.reporting.stats.ApiRequestStats;
+import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.base.Preconditions;
 import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.PagedModel;
 
 import javax.annotation.Nonnull;
+import java.util.Date;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -51,21 +54,36 @@ public abstract class BaseReportsApiHandler<K, T>{
     protected final SupplierLogger log;
     protected final AuthService auth;
 
+    private final CyodaApiRequestStatsMonitor requestStatsMonitor;
+
     protected BaseReportsApiHandler(CyodaConnectorId connectorId,
                                     CyodaConfig config,
                                     TypeManager typeManager,
                                     RestTemplateCustomizer restTemplateCustomizer,
-                                    SupplierLogger log) {
+                                    SupplierLogger log,
+                                    AuthService authService,
+                                    CyodaApiRequestStatsMonitor requestStatsMonitor) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.config = requireNonNull(config, "config is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.restTemplateCustomizer = restTemplateCustomizer;
         this.log = log;
-        this.auth = new AuthService(config); //TODO inject later
+        this.auth = authService;
+        this.requestStatsMonitor = requestStatsMonitor;
     }
 
     protected int getPageSize(){
         return config.getRequestPageSize();
+    }
+
+    protected void registerApiCall(String queryId, Date callTime, String requestUrl, Object response){
+        requestStatsMonitor.add(
+                new ApiRequestStats(
+                        queryId,
+                        callTime,
+                        requestUrl,
+                        System.currentTimeMillis() - callTime.getTime(),
+                        response));
     }
 
     protected static String toReportName(@Nonnull String reportConfigId) {

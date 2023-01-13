@@ -18,7 +18,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collections;
 
-public class StatisticsTableDataProvider extends TableDataProvider<DistributedReportInfoView>{
+public class StatisticsTableDataProvider extends UnsplitTableDataProvider<DistributedReportInfoView>{
 
     private final ConfiguredReportsApiHandler reportsApiHandler;
     private final ReportStatisticsApiHandler statisticsApiHandler;
@@ -26,11 +26,6 @@ public class StatisticsTableDataProvider extends TableDataProvider<DistributedRe
     public StatisticsTableDataProvider(ConfiguredReportsApiHandler reportsApiHandler, ReportStatisticsApiHandler statisticsApiHandler) {
         this.reportsApiHandler = reportsApiHandler;
         this.statisticsApiHandler = statisticsApiHandler;
-    }
-
-    @Override
-    public ConnectorSplitSource getSplits(AuthContext authContext, CyodaTableHandle tableHandle, Constraint constraint) {
-        return new FixedSplitSource(Collections.singletonList(CyodaSplit.emptySplit(tableHandle.getTableName())));
     }
 
     @Override

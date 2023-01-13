@@ -20,9 +20,11 @@ package com.cyoda.presto.client.reporting.data;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.CyodaSplit;
+import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
+import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.ReportRow;
@@ -44,6 +46,7 @@ import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
+import java.util.Date;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
@@ -60,36 +63,13 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
             "}/group_rows/{" +
             ROW_GROUP_JSON_BASE64_VARIABLE + "}";
 
-    private final CyodaColumnHandle rowNumberColumn;
-
     @Inject
     public ReportRowsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
-                                RestTemplateCustomizer restTemplateCustomizer, StaticReportMetadataProvider staticMetaProvider) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, LOG);
-        this.rowNumberColumn = staticMetaProvider.getReportRows().getRowNumberColumn();
+                                RestTemplateCustomizer restTemplateCustomizer,
+                                AuthService authService,
+                                CyodaApiRequestStatsMonitor requestStatsMonitor) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
     }
-
-
-//    private @Nonnull PagedModel<RowHandle> merge(@Nonnull PagedModel<RowHandle> result, @Nullable PagedModel<RowHandle> response) {
-//        if (response == null) return result;
-//        ImmutableList.Builder<RowHandle> builder = ImmutableList.builder();
-//        builder.addAll(result.getContent());
-//        builder.addAll(response.getContent());
-//        Collection<RowHandle> content = builder.build();
-//
-//        PagedModel.PageMetadata resultMetadata = result.getMetadata();
-//        PagedModel.PageMetadata responseMetadata = Optional.ofNullable(response.getMetadata()).orElseThrow(
-//                () -> new IllegalArgumentException("No pageMeta attached to response. Cannot continue")
-//        );
-//
-//        long totalElements = Optional.ofNullable(resultMetadata).map(PagedModel.PageMetadata::getTotalElements).orElse(0L)
-//                + responseMetadata.getTotalElements();
-//        PagedModel.PageMetadata meta = new PagedModel.PageMetadata(
-//                Optional.ofNullable(resultMetadata).map(PagedModel.PageMetadata::getSize).orElse(responseMetadata.getSize()),
-//                Optional.ofNullable(resultMetadata).map(PagedModel.PageMetadata::getNumber).orElse(responseMetadata.getNumber()),
-//                totalElements);
-//        return PagedModel.of(content, meta);
-//    }
 
 
     private UriTemplate setupUriTemplate() {
@@ -133,6 +113,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
 
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
 
+        Date apiCallTime = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
         traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
 
@@ -144,6 +125,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
             final PagedModel<ReportRow> fieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
+            registerApiCall(split.getQueryId(), apiCallTime, templatedUri.toString(), fieldsViews);
             return  Optional.ofNullable(fieldsViews)
                     .map(item -> {
                         AtomicLong rowNum = new AtomicLong(rowNumHandle.offset);

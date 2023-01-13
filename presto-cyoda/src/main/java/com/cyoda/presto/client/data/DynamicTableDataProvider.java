@@ -42,7 +42,7 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
     }
 
     @Override
-    public ConnectorSplitSource getSplits(AuthContext authContext, CyodaTableHandle tableHandle, Constraint constraint) {
+    public ConnectorSplitSource getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
         return new FixedSplitSource(
                 reportHistoryApiHandler.getByKey(tableHandle.getReportConfigId())
                 .stream()
@@ -57,7 +57,7 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
                         tableHandle.getReportConfigId(),
                         groupingHandle.reportId,
                         groupingHandle.groupingVersion,
-                        groupingHandle.groupHeader.getGroupValuesJsonBase64()))
+                        groupingHandle.groupHeader.getGroupValuesJsonBase64(), queryId))
                 .toList());
     }
 

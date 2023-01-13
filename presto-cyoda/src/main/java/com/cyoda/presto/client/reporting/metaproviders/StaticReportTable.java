@@ -60,6 +60,7 @@ import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPO
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_USER_ID_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler.REPORT_HISTORY_ENDPOINT;
 import static com.cyoda.presto.client.types.DataType.BOOLEAN;
+import static com.cyoda.presto.client.types.DataType.DATE;
 import static com.cyoda.presto.client.types.DataType.LIST;
 import static com.cyoda.presto.client.types.DataType.LOCAL_DATE_TIME;
 import static com.cyoda.presto.client.types.DataType.LONG;
@@ -72,6 +73,7 @@ public enum StaticReportTable implements TableDefinition {
     REPORT_STATS(StandardColumnDefinition.builder()
             .add(DistributedReportInfoView.meta())
             .build(), REPORT_ENDPOINT, CyodaTableHandle.TableType.STATS),
+    API_CALL_STATS(Arrays.asList(ApiCallStatsColumnDef.values()), null, CyodaTableHandle.TableType.CALL_STATS),
     REPORT_HISTORIES(Arrays.asList(ReportHistoryColumnDef.values()), REPORT_HISTORY_ENDPOINT, CyodaTableHandle.TableType.HISTORY),
     REPORT_GROUPS(StandardColumnDefinition.builder()
             .add(new StandardColumnDefinition(0, StaticReportFields.HISTORY_REPORT_ID_COLUMN, STRING))
@@ -172,6 +174,46 @@ public enum StaticReportTable implements TableDefinition {
                     .add("fieldName", fieldName)
                     .add("dataType", dataType)
                     .toString();
+        }
+    }
+
+    public enum ApiCallStatsColumnDef implements ColumnDefinition {
+        QUERY_ID(0, STRING),
+        CALL_TIME(1, DATE),
+        DURATION(2, LONG),
+        REQUEST_URL(3, STRING),
+        RESPONSE(4, OBJECT);
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("pos", pos)
+                    .add("fieldName", fieldName)
+                    .add("dataType", dataType)
+                    .toString();
+        }
+        private final int pos;
+        private final String fieldName;
+        private final CompoundDataType dataType;
+
+        ApiCallStatsColumnDef(int pos, DataType mainType, DataType... typeParams) {
+            this.pos = pos;
+            this.fieldName = name().toLowerCase();
+            this.dataType = new CompoundDataType(fieldName, mainType, typeParams);
+        }
+
+        @Override
+        public int getPos() {
+            return pos;
+        }
+
+        @Override
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        @Override
+        public CompoundDataType getDataType() {
+            return dataType;
         }
     }
 

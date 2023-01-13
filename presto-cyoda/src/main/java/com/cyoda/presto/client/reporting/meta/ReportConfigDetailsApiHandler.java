@@ -19,9 +19,11 @@ package com.cyoda.presto.client.reporting.meta;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
+import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
+import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -87,8 +89,10 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<String,
 
     @Inject
     public ReportConfigDetailsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
-                                         RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, LOG);
+                                         RestTemplateCustomizer restTemplateCustomizer,
+                                         AuthService authService,
+                                         CyodaApiRequestStatsMonitor requestStatsMonitor) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
         uriTemplate = setupUriTemplate();
     }
 

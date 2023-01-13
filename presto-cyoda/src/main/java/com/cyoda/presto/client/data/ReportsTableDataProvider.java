@@ -20,7 +20,7 @@ import java.util.Map;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_COLUMNS_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_JSON_COLUMN;
 
-public class ReportsTableDataProvider extends TableDataProvider<ReportsTableData>{
+public class ReportsTableDataProvider extends UnsplitTableDataProvider<ReportsTableData>{
 
     private final ConfiguredReportsApiHandler reportsApiHandler;
     private final ReportConfigDetailsApiHandler configDetailsApiHandler;
@@ -28,11 +28,6 @@ public class ReportsTableDataProvider extends TableDataProvider<ReportsTableData
     public ReportsTableDataProvider(ConfiguredReportsApiHandler reportsApiHandler, ReportConfigDetailsApiHandler configDetailsApiHandler) {
         this.reportsApiHandler = reportsApiHandler;
         this.configDetailsApiHandler = configDetailsApiHandler;
-    }
-
-    @Override
-    public ConnectorSplitSource getSplits(AuthContext authContext, CyodaTableHandle tableHandle, Constraint constraint) {
-        return new FixedSplitSource(Collections.singletonList(CyodaSplit.emptySplit(tableHandle.getTableName())));
     }
 
     @Override

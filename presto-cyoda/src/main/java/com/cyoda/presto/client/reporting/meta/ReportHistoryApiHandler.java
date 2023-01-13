@@ -21,10 +21,12 @@ import com.cyoda.core.model.reports.ReportHistoryFieldsView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.SizeListener;
+import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.CachedPagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
+import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.collect.ImmutableList;
@@ -45,6 +47,7 @@ import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -68,8 +71,10 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Strin
 
     @Inject
     public ReportHistoryApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
-                                   RestTemplateCustomizer restTemplateCustomizer) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, LOG);
+                                   RestTemplateCustomizer restTemplateCustomizer,
+                                   AuthService authService,
+                                   CyodaApiRequestStatsMonitor requestStatsMonitor) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
 //        this.typeColumn = staticMetaProvider.getReportHistory().getTypeColumn();
 //        this.reportNameColumn = staticMetaProvider.getReportHistory().getReportNameColumn();
 //        this.reportIdColumn = staticMetaProvider.getReportHistory().getReportIdColumn();
@@ -91,38 +96,11 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Strin
                 .put(FIELDS_REQUEST_PARAMETER, selectedFields);
 
 
-//        PredicateTraversal<String> traversal = PredicateTraversal.of(predicates, String.class);
-//        // TODO: Add the other selection possibilities from the report history endpoint.
-//        Optional<SortedSet<String>> filterByType = traversal.assembleEqualsPredicateValuesFromAnd(this.typeColumn);
-//        LOG.debug("selecting by types:", () -> filterByType.map(it -> String.join(",", it)).orElse("EMPTY"));
-//
-//        // If the optional is empty, it means the predicates are such that everything must be filtered.
-//        if (!filterByType.isPresent()) return Optional.empty();
-//
-//        if (!filterByType.get().isEmpty()) {
-//            expansionBuilder.put(HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER, filterByType.get());
-//        }
-//
-//        Optional<SortedSet<String>> reportNames = traversal.assembleEqualsPredicateValuesFromAnd(this.reportNameColumn);
-//        LOG.debug("selecting by report names:", () -> reportNames.map(it -> String.join(",", it)).orElse("EMPTY"));
-//        if (!reportNames.isPresent()) return Optional.empty();
-//        if (!reportNames.get().isEmpty()) {
-//            if (reportNames.get().size() == 1) {
-//                expansionBuilder.put(HISTORY_REPORT_NAME_REQUEST_PARAMETER, reportNames.get().iterator().next());
-//            } else {
-//                expansionBuilder.put(HISTORY_REPORT_NAMES_REQUEST_PARAMETER, reportNames.get());
-//            }
-//        }
-//
-//        Optional<SortedSet<String>> reportIds = traversal.assembleEqualsPredicateValuesFromAnd(this.reportIdColumn);
-//        LOG.debug("selecting by report ids:", () -> reportNames.map(it -> String.join(",", it)).orElse("EMPTY"));
-//        if (!reportIds.isPresent()) return Optional.empty();
-//        expansionBuilder.put(HISTORY_REPORT_IDS_REQUEST_PARAMETER, reportIds.get());
-
         expansionBuilder.put(HISTORY_REPORT_NAME_REQUEST_PARAMETER, requestKey);
         UriTemplate uriTemplate = setupUriTemplate();
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
 
+        Date apiCallTime = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
         traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
 
@@ -135,6 +113,7 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Strin
                     .follow()
                     .toObject(typeReference);
             publishSize(listener, fieldsViews);
+            registerApiCall(null, apiCallTime, templatedUri.toString(), fieldsViews);
             return Optional.ofNullable(fieldsViews);
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);

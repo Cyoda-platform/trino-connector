@@ -25,6 +25,7 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
 
     private final Reports reports;
     private final ReportStats reportStats;
+    private final ApiCallStats apiCallStats;
     private final ReportHistory reportHistory;
     private final ReportGroups reportGroups;
     private final ReportRows reportRows;
@@ -41,8 +42,10 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
         reportHistory = new ReportHistory();
         reportGroups = new ReportGroups();
         reportRows = new ReportRows();
+        apiCallStats = new ApiCallStats();
         standaloneTablesMap.put(reports.getTableHandle().getTableName(), reports);
         standaloneTablesMap.put(reportStats.getTableHandle().getTableName(), reportStats);
+        standaloneTablesMap.put(apiCallStats.getTableHandle().getTableName(), apiCallStats);
 
         historyTableTemplate = CyodaTableHandle.Template.of(reportHistory.getTableHandle());
         groupsTableTemplate = CyodaTableHandle.Template.of(reportGroups.getTableHandle());
@@ -133,6 +136,12 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
     public class ReportStats extends StaticTableMetadata {
         public ReportStats() {
             super(StaticReportTable.REPORT_STATS);
+        }
+    }
+
+    public class ApiCallStats extends StaticTableMetadata {
+        public ApiCallStats() {
+            super(StaticReportTable.API_CALL_STATS);
         }
     }
 

@@ -19,7 +19,6 @@ package com.cyoda.presto.client.data;
 
 import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.logic.ColumnPredicate;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.google.common.collect.ImmutableMap;
@@ -30,7 +29,6 @@ import io.trino.spi.predicate.NullableValue;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Set;
 
 public abstract class TableDataProvider<T> {
 
@@ -45,7 +43,7 @@ public abstract class TableDataProvider<T> {
                 .orElse(true);
     }
 
-    public abstract ConnectorSplitSource getSplits(AuthContext authContext, CyodaTableHandle tableHandle, Constraint constraint);
+    public abstract ConnectorSplitSource getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint);
     public abstract Iterable<T> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CyodaSplit split);
 
     protected abstract @Nullable Object getFieldValueFromEntity(@Nonnull T entity, CyodaColumnHandle columnHandle);

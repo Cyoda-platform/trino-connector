@@ -18,7 +18,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.HISTORY_REPORT_ID_COLUMN;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.GROUPING_VERSION_COLUMN;
@@ -59,7 +58,7 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
     }
 
     @Override
-    public ConnectorSplitSource getSplits(AuthContext authContext, CyodaTableHandle tableHandle, Constraint constraint) {
+    public ConnectorSplitSource getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
         List<CyodaSplit> splitList = reportHistoryApiHandler.getByKey(tableHandle.getReportConfigId())
                 .stream()
                 .filter(fieldsView -> acceptVal(reportIdColumn, fieldsView.getReportId(), constraint))
@@ -68,7 +67,7 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
                         tableHandle.getReportConfigId(),
                         fieldsView.getReportId(),
                         fieldsView.getGroupingVersion(),
-                        null))
+                        null, queryId))
                 .toList();
         return new FixedSplitSource(splitList);
     }

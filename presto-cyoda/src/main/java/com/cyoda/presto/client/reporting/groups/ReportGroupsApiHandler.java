@@ -20,9 +20,11 @@ package com.cyoda.presto.client.reporting.groups;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.SizeListener;
+import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.CachedPagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
+import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.GroupHeader;
@@ -45,6 +47,7 @@ import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -73,8 +76,9 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
     @Inject
     public ReportGroupsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                   RestTemplateCustomizer restTemplateCustomizer,
-                                  StaticReportMetadataProvider staticMetaProvider) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, LOG);
+                                  AuthService authService,
+                                  CyodaApiRequestStatsMonitor requestStatsMonitor) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
 //        this.groupingVersionColumn = staticMetaProvider.getReportGroups().getGroupingVersionColumn();
 //        this.reportIdColumn = staticMetaProvider.getReportGroups().getReportIdColumn();
 //        // An External Column
@@ -109,6 +113,7 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
         expansionBuilder.put(GROUPING_VERSION_COLUMN, requestKey.groupingVersion());
         URI templatedUri = uriTemplate.expand(expansionBuilder.build());
 
+        Date apiCallTime = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
         traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
 
@@ -128,6 +133,7 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
                         return PagedModel.of(handles, item.getMetadata());
                     });
             publishSize(listener, groupingHandles.orElse(PagedModel.empty()));
+            registerApiCall(null, apiCallTime, templatedUri.toString(), groupingHandles);
             return groupingHandles;
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);

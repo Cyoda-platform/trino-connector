@@ -24,13 +24,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 
 import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
 import static java.util.Objects.requireNonNull;
 
 public class CyodaSplit implements ConnectorSplit {
+    private final String queryId;
     private final List<HostAddress> addresses;
 
     private final String tableName;
@@ -50,7 +50,8 @@ public class CyodaSplit implements ConnectorSplit {
 
 
     @JsonCreator
-    public CyodaSplit(List<HostAddress> addresses, String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64, int page, int size) {
+    public CyodaSplit(String queryId, List<HostAddress> addresses, String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64, int page, int size) {
+        this.queryId = queryId;
         this.addresses = addresses;
         this.tableName = tableName;
         this.reportConfigId = reportConfigId;
@@ -61,12 +62,17 @@ public class CyodaSplit implements ConnectorSplit {
         this.size = size;
     }
 
-    public CyodaSplit(String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64){
-        this(Collections.emptyList(), tableName, reportConfigId, reportId, groupingVersion, groupJsonBase64, 0, Integer.MAX_VALUE-1);
+    public CyodaSplit(String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64, String queryId){
+        this(queryId, Collections.emptyList(), tableName, reportConfigId, reportId, groupingVersion, groupJsonBase64, 0, Integer.MAX_VALUE-1);
     }
 
     public static CyodaSplit emptySplit(String tableName){
-        return new CyodaSplit(tableName, null, null, null, null);
+        return new CyodaSplit(tableName, null, null, null, null, null);
+    }
+
+    @JsonProperty
+    public String getQueryId() {
+        return queryId;
     }
 
     @JsonProperty

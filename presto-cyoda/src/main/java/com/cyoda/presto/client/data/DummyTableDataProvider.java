@@ -14,16 +14,11 @@ import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.Map;
 
-public class DummyTableDataProvider extends TableDataProvider<Map<String, String>>{
+public class DummyTableDataProvider extends UnsplitTableDataProvider<Map<String, String>>{
 
     @Override
     public Iterable<Map<String, String>> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CyodaSplit split) {
         return Collections.singleton(((DummyTableHandle)tableHandle).getContent());
-    }
-
-    @Override
-    public ConnectorSplitSource getSplits(AuthContext authContext, CyodaTableHandle tableHandle, Constraint constraint) {
-        return new FixedSplitSource(Collections.singletonList(CyodaSplit.emptySplit(tableHandle.getTableName())));
     }
 
     @Nullable

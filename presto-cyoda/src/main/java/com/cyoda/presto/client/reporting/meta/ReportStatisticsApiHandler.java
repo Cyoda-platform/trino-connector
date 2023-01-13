@@ -22,8 +22,10 @@ import com.cyoda.core.model.reports.ReportHistoryFieldsView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.SizeListener;
+import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
+import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.interactors.WrappedEntityModel;
 import com.google.common.collect.ImmutableList;
@@ -67,8 +69,10 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Stri
     @Inject
     public ReportStatisticsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                       RestTemplateCustomizer restTemplateCustomizer,
-                                      ReportHistoryApiHandler reportHistoryApiHandler) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, LOG);
+                                      ReportHistoryApiHandler reportHistoryApiHandler,
+                                      AuthService authService,
+                                      CyodaApiRequestStatsMonitor requestStatsMonitor) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
         this.reportHistoryApiHandler = reportHistoryApiHandler;
     }
 

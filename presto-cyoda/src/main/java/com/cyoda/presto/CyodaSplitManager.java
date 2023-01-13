@@ -62,6 +62,6 @@ public class CyodaSplitManager implements ConnectorSplitManager {
         }
         return dataProviderProvider
                 .getDataProvider(tableHandle.getTableType())
-                .getSplits(auth.fromSession(session), tableHandle, constraint);
+                .getSplits(auth.fromSession(session), session.getQueryId(), tableHandle, constraint);
     }
 }
