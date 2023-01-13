@@ -113,7 +113,8 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Strin
                     .follow()
                     .toObject(typeReference);
             publishSize(listener, fieldsViews);
-            registerApiCall(null, apiCallTime, templatedUri.toString(), fieldsViews);
+            if (fieldsViews != null)
+                registerApiCall(null, apiCallTime, templatedUri.toString(), fieldsViews.getContent());
             return Optional.ofNullable(fieldsViews);
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);

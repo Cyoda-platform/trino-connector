@@ -133,7 +133,8 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
                         return PagedModel.of(handles, item.getMetadata());
                     });
             publishSize(listener, groupingHandles.orElse(PagedModel.empty()));
-            registerApiCall(null, apiCallTime, templatedUri.toString(), groupingHandles);
+            if (fieldsViews != null)
+                registerApiCall(null, apiCallTime, templatedUri.toString(), fieldsViews.getContent());
             return groupingHandles;
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);

@@ -23,9 +23,7 @@ import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
-import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.ReportRow;
 import com.google.common.collect.ImmutableList;
@@ -47,7 +45,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
@@ -125,20 +122,18 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
             final PagedModel<ReportRow> fieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
-            registerApiCall(split.getQueryId(), apiCallTime, templatedUri.toString(), fieldsViews);
-            return  Optional.ofNullable(fieldsViews)
-                    .map(item -> {
-                        AtomicLong rowNum = new AtomicLong(rowNumHandle.offset);
-                        return item.getContent().stream()
-                                .map(reportRow ->
-                                        new RowHandle(requestKey.reportId(),
-                                                requestKey.groupingVersion(),
-                                                requestKey.groupJsonBase64(),
-                                                reportRow, rowNum.incrementAndGet()))
-                                .filter(reportRow -> rowNumHandle.isInRowWindow(reportRow.rowNum()))
-                                .limit(rowNumHandle.size) // This to ringfence buggy API that sends one than the page size.
-                                .collect(Collectors.toList());
-                    }).orElse(Collections.emptyList());
+            if (fieldsViews == null) return Collections.emptyList();
+            registerApiCall(split.getQueryId(), apiCallTime, templatedUri.toString(), fieldsViews.getContent());
+            AtomicLong rowNum = new AtomicLong(rowNumHandle.offset);
+            return fieldsViews.getContent().stream()
+                    .map(reportRow ->
+                            new RowHandle(requestKey.reportId(),
+                                    requestKey.groupingVersion(),
+                                    requestKey.groupJsonBase64(),
+                                    reportRow, rowNum.incrementAndGet()))
+                    .filter(reportRow -> rowNumHandle.isInRowWindow(reportRow.rowNum()))
+                    .limit(rowNumHandle.size) // This to ringfence buggy API that sends one than the page size.
+                    .collect(Collectors.toList());
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);
         }
