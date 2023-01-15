@@ -23,11 +23,8 @@ import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.CachedPagingReportsApiHandler;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
-import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -114,7 +111,7 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Strin
                     .toObject(typeReference);
             publishSize(listener, fieldsViews);
             if (fieldsViews != null)
-                registerApiCall(null, apiCallTime, templatedUri.toString(), fieldsViews.getContent());
+                registerApiCall(null, apiCallTime, templatedUri.toString());
             return Optional.ofNullable(fieldsViews);
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);

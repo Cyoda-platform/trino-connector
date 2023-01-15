@@ -182,7 +182,7 @@ public enum StaticReportTable implements TableDefinition {
         CALL_TIME(1, DATE),
         DURATION(2, LONG),
         REQUEST_URL(3, STRING),
-        RESPONSE(4, OBJECT);
+        RESPONSE(4, STRING);
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)

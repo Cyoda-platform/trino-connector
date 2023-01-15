@@ -23,9 +23,7 @@ import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.CachedPagingReportsApiHandler;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
-import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.GroupHeader;
 import com.cyoda.service.interactors.WrappedEntityModel;
@@ -134,7 +132,7 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
                     });
             publishSize(listener, groupingHandles.orElse(PagedModel.empty()));
             if (fieldsViews != null)
-                registerApiCall(null, apiCallTime, templatedUri.toString(), fieldsViews.getContent());
+                registerApiCall(null, apiCallTime, templatedUri.toString());
             return groupingHandles;
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);

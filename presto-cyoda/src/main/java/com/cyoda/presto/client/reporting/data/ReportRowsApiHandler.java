@@ -123,7 +123,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
                     .follow()
                     .toObject(typeReference);
             if (fieldsViews == null) return Collections.emptyList();
-            registerApiCall(split.getQueryId(), apiCallTime, templatedUri.toString(), fieldsViews.getContent());
+            registerApiCall(split.getQueryId(), apiCallTime, templatedUri.toString());
             AtomicLong rowNum = new AtomicLong(rowNumHandle.offset);
             return fieldsViews.getContent().stream()
                     .map(reportRow ->

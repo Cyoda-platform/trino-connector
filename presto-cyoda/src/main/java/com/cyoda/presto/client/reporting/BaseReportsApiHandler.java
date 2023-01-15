@@ -76,14 +76,14 @@ public abstract class BaseReportsApiHandler<K, T>{
         return config.getRequestPageSize();
     }
 
-    protected void registerApiCall(String queryId, Date callTime, String requestUrl, Object response){
+    protected void registerApiCall(String queryId, Date callTime, String requestUrl){
         requestStatsMonitor.add(
                 new ApiRequestStats(
                         queryId,
                         callTime,
                         requestUrl,
                         System.currentTimeMillis() - callTime.getTime(),
-                        response));
+                        null));
     }
 
     protected static String toReportName(@Nonnull String reportConfigId) {
