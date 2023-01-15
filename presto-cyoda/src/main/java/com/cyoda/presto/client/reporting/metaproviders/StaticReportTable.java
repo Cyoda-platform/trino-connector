@@ -182,7 +182,7 @@ public enum StaticReportTable implements TableDefinition {
         CALL_TIME(1, DATE),
         DURATION(2, LONG),
         API_HANDLER(3, STRING),
-        REQUEST_PARAMS(4, DataType.MAP, STRING, OBJECT),
+        REQUEST_PARAMS(4, DataType.MAP, STRING, STRING),
         REQUEST_URL(5, STRING),
         RESPONSE(6, STRING);
         @Override
