@@ -62,8 +62,8 @@ public class StringPrestoValueConverter extends StringTypeValueConverter<String>
     }
 
     @Override
-    public String fromCyodaNative(@Nonnull Object cyodaNative, String columnName) {
-        //a reasonable shortcut to make this type a failsafe for objects
-        return cyodaNative.toString();
+    public String fromOtherCyodaType(Object value, String columnName) {
+    //a reasonable shortcut to make this type a failsafe for objects
+        return value.toString();
     }
 }
