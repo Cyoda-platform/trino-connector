@@ -109,7 +109,8 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
 
         expansionBuilder.put(HISTORY_REPORT_ID_COLUMN, requestKey.reportId());
         expansionBuilder.put(GROUPING_VERSION_COLUMN, requestKey.groupingVersion());
-        URI templatedUri = uriTemplate.expand(expansionBuilder.build());
+        ImmutableMap<String, Object> expansion = expansionBuilder.build();
+        URI templatedUri = uriTemplate.expand(expansion);
 
         Date apiCallTime = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
@@ -132,7 +133,7 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
                     });
             publishSize(listener, groupingHandles.orElse(PagedModel.empty()));
             if (fieldsViews != null)
-                registerApiCall(null, apiCallTime, templatedUri.toString());
+                registerApiCall(null, apiCallTime, templatedUri.toString(), expansion);
             return groupingHandles;
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);

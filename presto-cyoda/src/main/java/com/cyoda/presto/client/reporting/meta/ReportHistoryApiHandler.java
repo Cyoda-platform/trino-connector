@@ -95,7 +95,8 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Strin
 
         expansionBuilder.put(HISTORY_REPORT_NAME_REQUEST_PARAMETER, requestKey);
         UriTemplate uriTemplate = setupUriTemplate();
-        URI templatedUri = uriTemplate.expand(expansionBuilder.build());
+        ImmutableMap<String, Object> expansion = expansionBuilder.build();
+        URI templatedUri = uriTemplate.expand(expansion);
 
         Date apiCallTime = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
@@ -111,7 +112,7 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Strin
                     .toObject(typeReference);
             publishSize(listener, fieldsViews);
             if (fieldsViews != null)
-                registerApiCall(null, apiCallTime, templatedUri.toString());
+                registerApiCall(null, apiCallTime, templatedUri.toString(), expansion);
             return Optional.ofNullable(fieldsViews);
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);

@@ -39,6 +39,12 @@ public class ApiCallStatsDataProvider extends UnsplitTableDataProvider<ApiReques
             case DURATION -> {
                 return entity.duration();
             }
+            case API_HANDLER -> {
+                return entity.handlerName();
+            }
+            case REQUEST_PARAMS -> {
+                return entity.params();
+            }
             case REQUEST_URL -> {
                 return entity.requestUrl();
             }

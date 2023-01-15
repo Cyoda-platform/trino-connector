@@ -33,6 +33,7 @@ import org.springframework.hateoas.PagedModel;
 import javax.annotation.Nonnull;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -76,12 +77,14 @@ public abstract class BaseReportsApiHandler<K, T>{
         return config.getRequestPageSize();
     }
 
-    protected void registerApiCall(String queryId, Date callTime, String requestUrl){
+    protected void registerApiCall(String queryId, Date callTime, String requestUrl, Map<String, Object> params){
         requestStatsMonitor.add(
                 new ApiRequestStats(
                         queryId,
                         callTime,
                         requestUrl,
+                        this.getClass().getSimpleName(),
+                        params,
                         System.currentTimeMillis() - callTime.getTime(),
                         null));
     }

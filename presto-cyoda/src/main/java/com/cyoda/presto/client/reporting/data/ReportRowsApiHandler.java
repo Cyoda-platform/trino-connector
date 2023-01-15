@@ -108,7 +108,8 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
         expansionBuilder.put(ROW_REPORT_ID_COLUMN, requestKey.reportId());
         expansionBuilder.put(ROW_GROUP_JSON_BASE64_VARIABLE, requestKey.groupJsonBase64());
 
-        URI templatedUri = uriTemplate.expand(expansionBuilder.build());
+        ImmutableMap<String, Object> expansion = expansionBuilder.build();
+        URI templatedUri = uriTemplate.expand(expansion);
 
         Date apiCallTime = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
@@ -123,7 +124,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
                     .follow()
                     .toObject(typeReference);
             if (fieldsViews == null) return Collections.emptyList();
-            registerApiCall(split.getQueryId(), apiCallTime, templatedUri.toString());
+            registerApiCall(split.getQueryId(), apiCallTime, templatedUri.toString(), expansion);
             AtomicLong rowNum = new AtomicLong(rowNumHandle.offset);
             return fieldsViews.getContent().stream()
                     .map(reportRow ->

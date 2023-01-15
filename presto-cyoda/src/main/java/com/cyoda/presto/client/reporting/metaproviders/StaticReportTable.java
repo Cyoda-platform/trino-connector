@@ -181,8 +181,10 @@ public enum StaticReportTable implements TableDefinition {
         QUERY_ID(0, STRING),
         CALL_TIME(1, DATE),
         DURATION(2, LONG),
-        REQUEST_URL(3, STRING),
-        RESPONSE(4, STRING);
+        API_HANDLER(3, STRING),
+        REQUEST_PARAMS(4, DataType.MAP, STRING, OBJECT),
+        REQUEST_URL(5, STRING),
+        RESPONSE(6, STRING);
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
