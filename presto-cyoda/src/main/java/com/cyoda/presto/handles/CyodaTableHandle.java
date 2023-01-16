@@ -28,6 +28,7 @@ import com.google.common.base.Joiner;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +78,7 @@ public class CyodaTableHandle implements ConnectorTableHandle {
         this.hasHistory = hasHistory;
         columnHandleMap = new HashMap<>();
         columnMetadata = new ArrayList<>();
+        projectedColumns.sort(Comparator.comparingInt(CyodaColumnHandle::getOrdinalPosition));
         for (CyodaColumnHandle columnHandle : projectedColumns) {
             columnHandleMap.put(columnHandle.getColumnName(), columnHandle);
             columnMetadata.add(columnHandle.getColumnMetadata());
