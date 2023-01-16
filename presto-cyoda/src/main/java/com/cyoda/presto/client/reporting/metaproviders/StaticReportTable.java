@@ -60,6 +60,7 @@ import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPO
 import static com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler.REPORT_HISTORY_ENDPOINT;
 import static com.cyoda.presto.client.types.DataType.BOOLEAN;
 import static com.cyoda.presto.client.types.DataType.DATE;
+import static com.cyoda.presto.client.types.DataType.INTEGER;
 import static com.cyoda.presto.client.types.DataType.LIST;
 import static com.cyoda.presto.client.types.DataType.LOCAL_DATE_TIME;
 import static com.cyoda.presto.client.types.DataType.LONG;
@@ -180,7 +181,7 @@ public enum StaticReportTable implements TableDefinition {
         QUERY_ID(0, STRING),
         CALL_TIME(1, DATE),
         CALL_MILLIS(2, LONG),
-        DURATION_MILLIS(3, LONG),
+        DURATION_MILLIS(3, INTEGER),
         API_HANDLER(4, STRING),
         REQUEST_PARAMS(5, DataType.MAP, STRING, STRING),
         REQUEST_URL(6, STRING),
