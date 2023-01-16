@@ -2,11 +2,13 @@ package com.cyoda.presto.client.reporting.metaproviders;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
+import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.type.TypeManager;
 
 import javax.inject.Inject;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -88,6 +90,7 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
 
     private List<CyodaColumnHandle> getCyodaColumnHandles(TableDefinition tableDefinition) {
         return tableDefinition.getColumns().stream()
+                .sorted(Comparator.comparingInt(ColumnDefinition::getPos))
                 .map(fieldDef -> new CyodaColumnHandle(
                         fieldDef.getFieldName(),
                         fieldDef.getDataType().toPrestoType(typeManager),

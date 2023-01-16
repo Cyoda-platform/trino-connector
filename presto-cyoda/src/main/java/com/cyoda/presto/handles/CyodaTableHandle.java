@@ -78,7 +78,6 @@ public class CyodaTableHandle implements ConnectorTableHandle {
         this.hasHistory = hasHistory;
         columnHandleMap = new HashMap<>();
         columnMetadata = new ArrayList<>();
-        projectedColumns.sort(Comparator.comparingInt(CyodaColumnHandle::getOrdinalPosition));
         for (CyodaColumnHandle columnHandle : projectedColumns) {
             columnHandleMap.put(columnHandle.getColumnName(), columnHandle);
             columnMetadata.add(columnHandle.getColumnMetadata());
@@ -203,7 +202,11 @@ public class CyodaTableHandle implements ConnectorTableHandle {
             this.uri = uri;
         }
         public static Template of(CyodaTableHandle tableHandle){
-            return new Template(tableHandle.connectorId, tableHandle.schemaName, tableHandle.getProjectedColumns(), tableHandle.tableType, tableHandle.uri);
+            return new Template(tableHandle.connectorId,
+                    tableHandle.schemaName,
+                    tableHandle.getProjectedColumns(),
+                    tableHandle.tableType,
+                    tableHandle.uri);
         }
 
         public CyodaTableHandle createTableHandle(String tableName, String configId, String description){

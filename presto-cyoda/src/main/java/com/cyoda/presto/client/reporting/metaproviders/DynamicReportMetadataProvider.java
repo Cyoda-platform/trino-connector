@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -83,6 +84,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
 
             List<CyodaColumnHandle> columns = new ArrayList<>(List.copyOf(staticReportMetadataProvider.getReportRows().getTableHandle().getProjectedColumns()));
             columns.addAll(definitionHandle.getColumns());
+            columns.sort(Comparator.comparingInt(CyodaColumnHandle::getOrdinalPosition));
             return new CyodaTableHandle(connectorId.toString(), config.getSchemaName(), tableName,
                     columns, CyodaTableHandle.TableType.DATA, configId, definitionHandle.getDescription(),
                     getUri(StaticReportTable.REPORT_ROWS),
