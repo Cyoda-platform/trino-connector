@@ -23,6 +23,7 @@ import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.predicate.DiscreteValues;
+import io.trino.spi.predicate.NullableValue;
 import io.trino.spi.type.Type;
 
 public interface PrestoValueConverter<T> {
@@ -38,6 +39,9 @@ public interface PrestoValueConverter<T> {
     }
     default ColumnPredicate<?> newInListPredicate(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
         throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
+    }
+    default NullableValue toNullableValue(Type type, Object value){
+        return new NullableValue(type, value);
     }
 
     default boolean areConsecutive(T a, T b){

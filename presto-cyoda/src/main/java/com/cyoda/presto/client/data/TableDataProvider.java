@@ -39,7 +39,7 @@ public abstract class TableDataProvider<T> {
                 .orElse(true) // no constraint
             || constraint
                 .predicate()
-                .map(p -> p.test(ImmutableMap.of(column, new NullableValue(column.getColumnType(), value))))
+                .map(p -> p.test(ImmutableMap.of(column, column.getConverter().toNullableValue(column.getColumnType(), value))))
                 .orElse(true);
     }
 
