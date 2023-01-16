@@ -47,6 +47,7 @@ import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,7 +57,7 @@ import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPO
 import static com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler.HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportTable.REPORTS;
 
-public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<AuthContext, GridConfigFieldsView> {
+public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<ReportListKey, GridConfigFieldsView> {
 
     protected static final SupplierLogger LOG = SupplierLogger.get(ConfiguredReportsApiHandler.class);
 
@@ -81,7 +82,7 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Aut
 
     @Override
     public Optional<PagedModel<GridConfigFieldsView>> retrievePage(
-            AuthContext requestKey, int page,
+            ReportListKey requestKey, int page,
             int pageSize,
             SizeListener listener
     ) {
@@ -100,10 +101,12 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Aut
                 .put(FIELDS_REQUEST_PARAMETER, selectedFields);
 
 
-        URI templatedUri = uriTemplate.expand(expansionBuilder.build());
+        ImmutableMap<String, Object> expansion = expansionBuilder.build();
+        URI templatedUri = uriTemplate.expand(expansion);
 
+        Date callTime = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-        traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(requestKey));
+        traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(requestKey.authContext()));
 
         TypeReferences.PagedModelType<GridConfigFieldsView> typeReference
                 = new TypeReferences.PagedModelType<GridConfigFieldsView>() {
@@ -112,6 +115,7 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Aut
             final PagedModel<GridConfigFieldsView> gridConfigFieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
+            registerApiCall(requestKey.queryId(), callTime, templatedUri.toString(), expansion);
             addReportAndTableName(gridConfigFieldsViews);
             publishSize(listener, gridConfigFieldsViews);
             return Optional.ofNullable(gridConfigFieldsViews);

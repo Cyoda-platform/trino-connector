@@ -17,6 +17,7 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.HostAddress;
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -66,8 +67,14 @@ public class CyodaSplit implements ConnectorSplit {
         this(queryId, Collections.emptyList(), tableName, reportConfigId, reportId, groupingVersion, groupJsonBase64, 0, Integer.MAX_VALUE-1);
     }
 
-    public static CyodaSplit emptySplit(String tableName){
-        return new CyodaSplit(tableName, null, null, null, null, null);
+    public static CyodaSplit emptySplit(CyodaTableHandle tableHandle, String queryId){
+        return new CyodaSplit(
+                tableHandle.getTableName(),
+                tableHandle.getReportConfigId(),
+                null,
+                null,
+                null,
+                queryId);
     }
 
     @JsonProperty

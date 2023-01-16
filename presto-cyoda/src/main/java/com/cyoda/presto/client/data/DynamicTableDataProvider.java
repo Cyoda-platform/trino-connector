@@ -6,6 +6,7 @@ import com.cyoda.presto.client.reporting.data.ReportRowsApiHandler;
 import com.cyoda.presto.client.reporting.data.RowHandle;
 import com.cyoda.presto.client.reporting.groups.GroupsRequestKey;
 import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
+import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
@@ -44,11 +45,11 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
     @Override
     public ConnectorSplitSource getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
         return new FixedSplitSource(
-                reportHistoryApiHandler.getByKey(tableHandle.getReportConfigId())
+                reportHistoryApiHandler.getByKey(new ReportConfigKey(tableHandle.getReportConfigId(), queryId))
                 .stream()
                 .filter(fieldsView -> acceptVal(reportIdColumn, fieldsView.getReportId(), constraint))
                 .flatMap(fieldsView -> reportGroupsApiHandler.getByKey(
-                                new GroupsRequestKey(fieldsView.getReportId(), fieldsView.getGroupingVersion())).stream()
+                                new GroupsRequestKey(fieldsView.getReportId(), fieldsView.getGroupingVersion(), queryId)).stream()
                 ).filter(groupingHandle -> acceptVal(
                         groupIdColumn, groupingHandle.groupHeader.getGroupValuesJsonBase64(), constraint)
                 )

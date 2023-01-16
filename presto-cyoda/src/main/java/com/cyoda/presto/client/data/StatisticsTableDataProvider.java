@@ -5,6 +5,8 @@ import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
+import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
+import com.cyoda.presto.client.reporting.meta.ReportListKey;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
@@ -29,10 +31,10 @@ public class StatisticsTableDataProvider extends UnsplitTableDataProvider<Distri
     }
 
     @Override
-    public Iterable<DistributedReportInfoView> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CyodaSplit predicates) {
+    public Iterable<DistributedReportInfoView> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CyodaSplit split) {
         SizeListener listener = SizeListener.NOT_LISTENING;
-        return reportsApiHandler.asFlux(authContext, listener)
-                .flatMap(rep -> statisticsApiHandler.asFlux(rep.getId(), listener))
+        return reportsApiHandler.asFlux(new ReportListKey(authContext, split.getQueryId()), listener)
+                .flatMap(rep -> statisticsApiHandler.asFlux(new ReportConfigKey(rep.getId(), split.getQueryId()), listener))
                 .subscribeOn(Schedulers.parallel())
                 .toIterable();
     }

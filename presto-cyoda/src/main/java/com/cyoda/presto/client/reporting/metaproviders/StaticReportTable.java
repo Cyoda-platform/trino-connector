@@ -42,7 +42,6 @@ import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_CREAT
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_GROUPING_COLUMNS_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_GROUPING_VERSION_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_HIERARHY_ENABLE_COLUMN;
-import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_REPORT_NAME_VARIABLE;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_STATUS_NAME_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_TYPE_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_USER_NAME_COLUMN;
@@ -180,11 +179,12 @@ public enum StaticReportTable implements TableDefinition {
     public enum ApiCallStatsColumnDef implements ColumnDefinition {
         QUERY_ID(0, STRING),
         CALL_TIME(1, DATE),
-        DURATION(2, LONG),
-        API_HANDLER(3, STRING),
-        REQUEST_PARAMS(4, DataType.MAP, STRING, STRING),
-        REQUEST_URL(5, STRING),
-        RESPONSE(6, STRING);
+        CALL_MILLIS(2, LONG),
+        DURATION_MILLIS(3, LONG),
+        API_HANDLER(4, STRING),
+        REQUEST_PARAMS(5, DataType.MAP, STRING, STRING),
+        REQUEST_URL(6, STRING),
+        RESPONSE(7, STRING);
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)

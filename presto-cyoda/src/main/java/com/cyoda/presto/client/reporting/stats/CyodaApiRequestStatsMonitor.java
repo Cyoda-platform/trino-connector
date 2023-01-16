@@ -10,7 +10,7 @@ public class CyodaApiRequestStatsMonitor {
 
     private static final SupplierLogger LOG = SupplierLogger.get(CyodaApiRequestStatsMonitor.class);
 
-    private static final long MAX_SIZE = 10; //TODO small for testing
+    private static final long MAX_SIZE = 10000;
     private final ConcurrentLinkedDeque<ApiRequestStats> requestStatsDeque = new ConcurrentLinkedDeque<>();
     private final AtomicLong currentQueueSize = new AtomicLong();
 

@@ -33,7 +33,7 @@ import reactor.core.publisher.Flux;
 import java.util.Optional;
 import java.util.function.Function;
 
-public abstract class BasePagingReportsApiHandler<K, T> extends BaseReportsApiHandler<K, T> {
+public abstract class BasePagingReportsApiHandler<K, T> extends BaseReportsApiHandler {
 
     protected BasePagingReportsApiHandler(CyodaConnectorId connectorId,
                                           CyodaConfig config,

@@ -52,7 +52,7 @@ import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_GROUP_JSON_BASE64_VARIABLE;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_REPORT_ID_COLUMN;
 
-public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, RowHandle>{
+public class ReportRowsApiHandler extends BaseReportsApiHandler {
 
     protected static final SupplierLogger LOG = SupplierLogger.get(ReportRowsApiHandler.class);
 
@@ -93,8 +93,6 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
 
     public Iterable<RowHandle> getIterable(CyodaSplit split) {
 
-        RowsRequestKey requestKey = RowsRequestKey.of(split);
-
         //        int size = (pageSize == 0) ? DEFAULT_PAGE_SIZE : pageSize;
         UriTemplate uriTemplate = setupUriTemplate();
 
@@ -105,8 +103,8 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
                 .put(SIZE_REQUEST_PARAMETER, rowNumHandle.size);
 
 
-        expansionBuilder.put(ROW_REPORT_ID_COLUMN, requestKey.reportId());
-        expansionBuilder.put(ROW_GROUP_JSON_BASE64_VARIABLE, requestKey.groupJsonBase64());
+        expansionBuilder.put(ROW_REPORT_ID_COLUMN, split.getReportId());
+        expansionBuilder.put(ROW_GROUP_JSON_BASE64_VARIABLE, split.getGroupJsonBase64());
 
         ImmutableMap<String, Object> expansion = expansionBuilder.build();
         URI templatedUri = uriTemplate.expand(expansion);
@@ -128,9 +126,9 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler<RowsRequestKey, 
             AtomicLong rowNum = new AtomicLong(rowNumHandle.offset);
             return fieldsViews.getContent().stream()
                     .map(reportRow ->
-                            new RowHandle(requestKey.reportId(),
-                                    requestKey.groupingVersion(),
-                                    requestKey.groupJsonBase64(),
+                            new RowHandle(split.getReportId(),
+                                    split.getGroupingVersion(),
+                                    split.getGroupJsonBase64(),
                                     reportRow, rowNum.incrementAndGet()))
                     .filter(reportRow -> rowNumHandle.isInRowWindow(reportRow.rowNum()))
                     .limit(rowNumHandle.size) // This to ringfence buggy API that sends one than the page size.

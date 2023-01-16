@@ -37,7 +37,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApiHandler<K, T> {
+public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApiHandler {
 
     private final LoadingCache<K, List<T>> cache;
 

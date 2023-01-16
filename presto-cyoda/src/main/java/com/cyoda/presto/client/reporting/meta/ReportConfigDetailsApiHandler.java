@@ -55,6 +55,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -73,7 +74,7 @@ import static java.lang.String.format;
 // exist (with the old version). Maybe we should have a design (in Cyoda) that assembles possible report configurations
 // from report histories, and generates the reports table from that. Or better yet, have an API endpoint that
 // returns "all" report configurations, existing ones and ones that are stored with a report, in an aggregated fashion
-public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<String, ReportDefinitionHandle> {
+public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler {
 
     protected static final SupplierLogger LOG = SupplierLogger.get(ReportConfigDetailsApiHandler.class);
 
@@ -97,9 +98,12 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<String,
     }
 
 
-    public ReportDefinitionHandle getReportDefSingleHandle(String reportConfigId) {
-        URI templatedUri = uriTemplate.expand(Collections.singletonMap(REPORT_ID_COLUMN, reportConfigId));
+    public ReportDefinitionHandle getReportDefSingleHandle(ReportConfigKey reportConfigKey) {
+        String reportConfigId = reportConfigKey.configId();
+        Map<String, Object> expansion = Collections.singletonMap(REPORT_ID_COLUMN, reportConfigId);
+        URI templatedUri = uriTemplate.expand(expansion);
 
+        Date callDate = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
         traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
         String reportName = toReportName(reportConfigId);
@@ -109,7 +113,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler<String,
                             .follow()
                             .toEntity(String.class)).map(ResponseEntity::getBody)
                     .orElseThrow(() -> new IllegalArgumentException("No body found at " + templatedUri));
-
+            registerApiCall(reportConfigKey.queryId(), callDate, templatedUri.toString(), expansion);
             DocumentContext parse = JsonPath.parse(jsonResult, JSONPATHA_CONFIG);
             List<CyodaColumnHandle> cols = extractColumns(reportName, parse);
             String description = parse.read("$.content.description", String.class);

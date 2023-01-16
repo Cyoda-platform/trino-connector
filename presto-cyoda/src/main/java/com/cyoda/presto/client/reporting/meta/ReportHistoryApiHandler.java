@@ -51,7 +51,7 @@ import java.util.Optional;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportTable.REPORT_HISTORIES;
 
-public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<String, ReportHistoryFieldsView> {
+public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<ReportConfigKey, ReportHistoryFieldsView> {
 
     private static final SupplierLogger LOG = SupplierLogger.get(ReportHistoryApiHandler.class);
 
@@ -80,7 +80,7 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Strin
 
     @Override
     public Optional<PagedModel<ReportHistoryFieldsView>> retrievePage(
-            String requestKey, int page,
+            ReportConfigKey requestKey, int page,
             int pageSize,
             SizeListener listener
     ) {
@@ -93,7 +93,7 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Strin
                 .put(FIELDS_REQUEST_PARAMETER, selectedFields);
 
 
-        expansionBuilder.put(HISTORY_REPORT_NAME_REQUEST_PARAMETER, requestKey);
+        expansionBuilder.put(HISTORY_REPORT_NAME_REQUEST_PARAMETER, requestKey.configId());
         UriTemplate uriTemplate = setupUriTemplate();
         ImmutableMap<String, Object> expansion = expansionBuilder.build();
         URI templatedUri = uriTemplate.expand(expansion);
@@ -112,7 +112,7 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Strin
                     .toObject(typeReference);
             publishSize(listener, fieldsViews);
             if (fieldsViews != null)
-                registerApiCall(null, apiCallTime, templatedUri.toString(), expansion);
+                registerApiCall(requestKey.queryId(), apiCallTime, templatedUri.toString(), expansion);
             return Optional.ofNullable(fieldsViews);
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, "retrieveCollection", e, templatedUri);

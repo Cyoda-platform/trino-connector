@@ -5,16 +5,7 @@ import com.cyoda.core.model.reports.DistributedReportInfoView;
 import javax.annotation.Nonnull;
 import java.util.UUID;
 
-public record GroupsRequestKey(String reportId, UUID groupingVersion) {
-    public GroupsRequestKey(@Nonnull String reportId,
-                            @Nonnull UUID groupingVersion) {
-        this.reportId = reportId;
-        this.groupingVersion = groupingVersion;
-    }
-
-    public static GroupsRequestKey of(DistributedReportInfoView stats) {
-        return new GroupsRequestKey(stats.getId(), stats.getGroupingVersion());
-    }
+public record GroupsRequestKey(String reportId, UUID groupingVersion, String queryId) {
 
     @Override
     public int hashCode() {

@@ -39,7 +39,7 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 // TODO: The API calls to Cyoda need to have some check on API version. Sasha might be able to say how he did it for UI
-public abstract class BaseReportsApiHandler<K, T>{
+public abstract class BaseReportsApiHandler {
 
     public static final String REPORT_ENDPOINT = "/api/platform-api/reporting/report";
     public static final String PAGE_REQUEST_PARAMETER = "page";

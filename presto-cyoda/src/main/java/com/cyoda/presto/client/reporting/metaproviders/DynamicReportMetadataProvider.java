@@ -8,7 +8,9 @@ import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
+import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle;
+import com.cyoda.presto.client.reporting.meta.ReportListKey;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.DummyTableHandle;
@@ -80,7 +82,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
         String tableName = BaseReportsApiHandler.reportNameToTableName(configId);
         ReportDefinitionHandle definitionHandle = null;
         try {
-            definitionHandle = reportConfigDetailsApiHandler.getReportDefSingleHandle(configId);
+            definitionHandle = reportConfigDetailsApiHandler.getReportDefSingleHandle(new ReportConfigKey(configId, "META"));
 
             List<CyodaColumnHandle> columns = new ArrayList<>(List.copyOf(staticReportMetadataProvider.getReportRows().getTableHandle().getProjectedColumns()));
             columns.addAll(definitionHandle.getColumns());
@@ -113,7 +115,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     protected Map<String, CyodaTableHandle> tableByUserCacheLoad(AuthContext authContext) {
         Map<String, CyodaTableHandle> result = new HashMap<>();
         Flux<GridConfigFieldsView> flux = configuredReportsApiHandler.asFlux(
-                authContext,
+                new ReportListKey(authContext, "META"),
                 NOT_LISTENING
         );
         flux.doOnNext(item -> {

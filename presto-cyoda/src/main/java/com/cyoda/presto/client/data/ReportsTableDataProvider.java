@@ -5,7 +5,9 @@ import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
+import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle;
+import com.cyoda.presto.client.reporting.meta.ReportListKey;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.connector.ConnectorSplitSource;
@@ -31,10 +33,11 @@ public class ReportsTableDataProvider extends UnsplitTableDataProvider<ReportsTa
     }
 
     @Override
-    public Iterable<ReportsTableData> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CyodaSplit predicates) {
-        return reportsApiHandler.asFlux(authContext, SizeListener.NOT_LISTENING)
+    public Iterable<ReportsTableData> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CyodaSplit split) {
+        return reportsApiHandler.asFlux(new ReportListKey(authContext, split.getQueryId()), SizeListener.NOT_LISTENING)
                 .map(gridConfigView -> {
-                    ReportDefinitionHandle repDef = configDetailsApiHandler.getReportDefSingleHandle(gridConfigView.getId());
+                    ReportDefinitionHandle repDef = configDetailsApiHandler.getReportDefSingleHandle(
+                            new ReportConfigKey(gridConfigView.getId(), split.getQueryId()));
                     return new ReportsTableData(gridConfigView, repDef);
                 }).toIterable();
     }

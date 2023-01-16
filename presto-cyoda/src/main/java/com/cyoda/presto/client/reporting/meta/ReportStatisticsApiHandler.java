@@ -47,14 +47,16 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.HISTORY_REPORT_ID_COLUMN;
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.GROUPING_VERSION_COLUMN;
 
-public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<String, DistributedReportInfoView> {
+public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<ReportConfigKey, DistributedReportInfoView> {
 
     protected static final SupplierLogger LOG = SupplierLogger.get(ReportStatisticsApiHandler.class);
 
@@ -78,7 +80,7 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Stri
 
     @Override
     public Optional<PagedModel<DistributedReportInfoView>> retrievePage(
-            String requestKey, int page,
+            ReportConfigKey requestKey, int page,
             int pageSize,
             SizeListener listener
     ) {
@@ -90,7 +92,8 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Stri
                         page,
                         pageSize,
                         listener).orElse(PagedModel.empty());
-        List<DistributedReportInfoView> reportStatisticsView = getReportStatisticsView(uriTemplate, reportHistoryModel.getContent());
+        List<DistributedReportInfoView> reportStatisticsView = getReportStatisticsView(
+                uriTemplate, reportHistoryModel.getContent(), requestKey.queryId());
 
         PagedModel<DistributedReportInfoView> reportStatsView = PagedModel.of(reportStatisticsView, reportHistoryModel.getMetadata());
         publishSize(listener, reportStatsView);
@@ -99,7 +102,8 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Stri
 
     private List<DistributedReportInfoView> getReportStatisticsView(
             UriTemplate uriTemplate,
-            @Nonnull Collection<ReportHistoryFieldsView> history
+            @Nonnull Collection<ReportHistoryFieldsView> history,
+            String queryId
     ) {
 
         if (history.isEmpty()) return Collections.emptyList();
@@ -108,14 +112,13 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Stri
         history.forEach(element -> {
             String reportId = element.getReportHistoryFields().get(HISTORY_REPORT_ID_COLUMN).toString();
             String groupingVersion = element.getReportHistoryFields().get(GROUPING_VERSION_COLUMN).toString();
-            URI templatedUri = uriTemplate.expand(
-                    ImmutableMap.of(
-                            HISTORY_REPORT_ID_COLUMN, reportId,
-                            GROUPING_VERSION_COLUMN, groupingVersion,
-                            "full", true
-                    )
+            Map<String, Object> expansion = ImmutableMap.of(
+                    HISTORY_REPORT_ID_COLUMN, reportId,
+                    GROUPING_VERSION_COLUMN, groupingVersion,
+                    "full", true
             );
-
+            URI templatedUri = uriTemplate.expand(expansion);
+            Date callTime = new Date();
             Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
             traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
 
@@ -129,6 +132,7 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Stri
                         .toObject(typeReference);
                 Optional<DistributedReportInfoView> reportStatistics = Optional.ofNullable(entityModel)
                         .map(EntityModel::getContent).map(WrappedEntityModel::getContent);
+                registerApiCall(queryId, callTime, templatedUri.toString(), expansion);
                 builder.add(reportStatistics.orElse(DistributedReportInfoView.builder().id(reportId).build()));
             } catch (HttpClientErrorException e) {
                 throw requestFailedException(this, "retrieveCollection", e, templatedUri);
