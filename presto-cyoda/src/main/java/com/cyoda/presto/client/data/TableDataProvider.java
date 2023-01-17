@@ -32,15 +32,18 @@ import javax.annotation.Nullable;
 
 public abstract class TableDataProvider<T> {
 
-    static boolean acceptVal(CyodaColumnHandle column, String value, Constraint constraint){
+    static boolean acceptVal(CyodaColumnHandle column, Object value, Constraint constraint){
         return constraint
-                .getPredicateColumns()
-                .map(set -> !set.contains(column))
-                .orElse(true) // no constraint
-            || constraint
                 .predicate()
                 .map(p -> p.test(ImmutableMap.of(column, column.getConverter().toNullableValue(column.getColumnType(), value))))
                 .orElse(true);
+    }
+
+    static boolean hasConstraint(CyodaColumnHandle column, Constraint constraint){
+        return constraint
+                .getPredicateColumns()
+                .map(set -> set.contains(column))
+                .orElse(false); // no constraint
     }
 
     public abstract ConnectorSplitSource getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint);

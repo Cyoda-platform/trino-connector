@@ -1,5 +1,6 @@
 package com.cyoda.presto.client.data;
 
+import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.reporting.data.ReportRowsApiHandler;
@@ -17,6 +18,8 @@ import io.trino.spi.connector.FixedSplitSource;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.stream.Stream;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_GROUPING_VERSION_COLUMN;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_GROUP_JSON_BASE64_VARIABLE;
@@ -27,38 +30,58 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
     private final ReportHistoryApiHandler reportHistoryApiHandler;
     private final ReportGroupsApiHandler reportGroupsApiHandler;
     private final ReportRowsApiHandler reportRowsApiHandler;
+    private final CyodaConfig config;
     private final CyodaColumnHandle reportIdColumn;
     private final CyodaColumnHandle groupIdColumn;
+    private final CyodaColumnHandle rowNumberColumn;
 
     public DynamicTableDataProvider(ReportHistoryApiHandler reportHistoryApiHandler,
                                     ReportGroupsApiHandler reportGroupsApiHandler,
                                     ReportRowsApiHandler reportRowsApiHandler,
-                                    StaticReportMetadataProvider reportMetadataProvider) {
+                                    StaticReportMetadataProvider reportMetadataProvider,
+                                    CyodaConfig config) {
         this.reportHistoryApiHandler = reportHistoryApiHandler;
         this.reportGroupsApiHandler = reportGroupsApiHandler;
         this.reportRowsApiHandler = reportRowsApiHandler;
 
         reportIdColumn = reportMetadataProvider.getReportRows().getReportIdColumn();
         groupIdColumn = reportMetadataProvider.getReportRows().getGroupJsonBase64Column();
+        rowNumberColumn = reportMetadataProvider.getReportRows().getRowNumberColumn();
+        this.config = config;
     }
 
     @Override
     public ConnectorSplitSource getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
+        boolean hasReportIdConstraint = hasConstraint(reportIdColumn, constraint);
+        boolean hasGroupIdConstraint = hasConstraint(groupIdColumn, constraint);
+        boolean hasRowNumConstraint = hasConstraint(rowNumberColumn, constraint);
         return new FixedSplitSource(
                 reportHistoryApiHandler.getByKey(new ReportConfigKey(tableHandle.getReportConfigId(), queryId))
                 .stream()
-                .filter(fieldsView -> acceptVal(reportIdColumn, fieldsView.getReportId(), constraint))
+                .filter(fieldsView -> !hasReportIdConstraint || acceptVal(reportIdColumn, fieldsView.getReportId(), constraint))
                 .flatMap(fieldsView -> reportGroupsApiHandler.getByKey(
                                 new GroupsRequestKey(fieldsView.getReportId(), fieldsView.getGroupingVersion(), queryId)).stream()
-                ).filter(groupingHandle -> acceptVal(
+                ).filter(groupingHandle -> !hasGroupIdConstraint || acceptVal(
                         groupIdColumn, groupingHandle.groupHeader.getGroupValuesJsonBase64(), constraint)
                 )
-                .map(groupingHandle -> new CyodaSplit(
-                        tableHandle.getTableName(),
-                        tableHandle.getReportConfigId(),
-                        groupingHandle.reportId,
-                        groupingHandle.groupingVersion,
-                        groupingHandle.groupHeader.getGroupValuesJsonBase64(), queryId))
+                .flatMap(groupingHandle -> {
+                    int pageSize = config.getRowRequestPageSize();
+                    long maxPages = groupingHandle.groupHeader.getRowCount()/pageSize;
+                    return Stream.iterate(0, x->x<=maxPages, x->x+1)
+                            .filter(page -> !hasRowNumConstraint ||
+                                    Stream.iterate(1, x->x<=pageSize, x->x+1)
+                                    .map(x->x+(page*pageSize))
+                                    .anyMatch(row -> acceptVal(rowNumberColumn, row, constraint)))
+                            .map(page -> new CyodaSplit(
+                                    queryId,
+                                    Collections.emptyList(),
+                                    tableHandle.getTableName(),
+                                    tableHandle.getReportConfigId(),
+                                    groupingHandle.reportId,
+                                    groupingHandle.groupingVersion,
+                                    groupingHandle.groupHeader.getGroupValuesJsonBase64(),
+                                    page, pageSize));
+                })
                 .toList());
     }
 

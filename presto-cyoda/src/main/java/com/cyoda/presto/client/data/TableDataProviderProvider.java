@@ -1,5 +1,6 @@
 package com.cyoda.presto.client.data;
 
+import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.client.reporting.data.ReportRowsApiHandler;
 import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
@@ -26,7 +27,8 @@ public class TableDataProviderProvider {
                                      ReportGroupsApiHandler groupsApiHandler,
                                      ReportRowsApiHandler rowsApiHandler,
                                      StaticReportMetadataProvider reportMetadataProvider,
-                                     CyodaApiRequestStatsMonitor statsMonitor) {
+                                     CyodaApiRequestStatsMonitor statsMonitor,
+                                     CyodaConfig config) {
         providerMap = new HashMap<>();
         providerMap.put(
                 CyodaTableHandle.TableType.REPORTS,
@@ -46,7 +48,7 @@ public class TableDataProviderProvider {
         );
         providerMap.put(
                 CyodaTableHandle.TableType.DATA,
-                new DynamicTableDataProvider(historyApiHandler, groupsApiHandler, rowsApiHandler, reportMetadataProvider)
+                new DynamicTableDataProvider(historyApiHandler, groupsApiHandler, rowsApiHandler, reportMetadataProvider, config)
         );
         providerMap.put(
                 CyodaTableHandle.TableType.DUMMY,

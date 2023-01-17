@@ -51,6 +51,7 @@ public class CyodaConfig {
     private boolean httpsOverride;
     private String schemaName;
     private int requestPageSize;
+    private int rowRequestPageSize;
     private String userLoginEndpoint;
     private String refreshTokenEndpoint;
 
@@ -73,6 +74,7 @@ public class CyodaConfig {
         httpsOverride = DEFAULT_HTTPS_OVERRIDE;
         schemaName = DEFAULT_SCHEMA_NAME;
         requestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
+        rowRequestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
         userLoginEndpoint = DEFAULT_LOGIN_ENDPOINT;
         refreshTokenEndpoint = DEFAULT_REFERSH_ENDPOINT;
 
@@ -241,6 +243,15 @@ public class CyodaConfig {
 
     public int getRequestPageSize() {
         return requestPageSize;
+    }
+
+    public int getRowRequestPageSize() {
+        return rowRequestPageSize;
+    }
+
+    @Config("cyoda.presto.row-request-page-size")
+    public void setRowRequestPageSize(int rowRequestPageSize) {
+        this.rowRequestPageSize = rowRequestPageSize;
     }
 
     @Config("cyoda.presto.user-login-endpoint")
