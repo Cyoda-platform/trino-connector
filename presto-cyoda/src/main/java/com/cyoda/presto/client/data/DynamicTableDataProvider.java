@@ -70,7 +70,7 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
                     return Stream.iterate(0, x->x<=maxPages, x->x+1)
                             .filter(page -> !hasRowNumConstraint ||
                                     Stream.iterate(1, x->x<=pageSize, x->x+1)
-                                    .map(x->x+(page*pageSize))
+                                    .map(x->x+((long) page*pageSize))
                                     .anyMatch(row -> acceptVal(rowNumberColumn, row, constraint)))
                             .map(page -> new CyodaSplit(
                                     queryId,
