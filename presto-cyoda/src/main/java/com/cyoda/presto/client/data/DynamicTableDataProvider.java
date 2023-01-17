@@ -66,8 +66,9 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
                 )
                 .flatMap(groupingHandle -> {
                     int pageSize = config.getRowRequestPageSize();
-                    long maxPages = groupingHandle.groupHeader.getRowCount()/pageSize;
-                    return Stream.iterate(0, x->x<=maxPages, x->x+1)
+                    long maxPages = groupingHandle.groupHeader.getRowCount()/pageSize +
+                            Long.signum(groupingHandle.groupHeader.getRowCount() % pageSize);
+                    return Stream.iterate(0, x->x<maxPages, x->x+1)
                             .filter(page -> !hasRowNumConstraint ||
                                     Stream.iterate(1, x->x<=pageSize, x->x+1)
                                     .map(x->x+((long) page*pageSize))
