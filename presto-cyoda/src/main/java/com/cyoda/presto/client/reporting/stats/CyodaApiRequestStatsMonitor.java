@@ -26,6 +26,10 @@ public class CyodaApiRequestStatsMonitor {
         }
     }
 
+    public void truncate(){
+        requestStatsDeque.clear();
+    }
+
     public Iterable<ApiRequestStats> getIterable(){
         return requestStatsDeque;
     }
