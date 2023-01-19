@@ -41,7 +41,6 @@ import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -55,7 +54,6 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -119,18 +117,6 @@ public class RestTemplateCustomizer {
 
     }
 
-    private void setupInterceptor(RestTemplate template){
-        ClientHttpRequestFactory factory =
-                new BufferingClientHttpRequestFactory(new SimpleClientHttpRequestFactory());
-        template.setRequestFactory(factory);
-        List<ClientHttpRequestInterceptor> interceptors = template.getInterceptors();
-        if (interceptors == null) {
-            interceptors = new ArrayList<>();
-            template.setInterceptors(interceptors);
-        }
-        interceptors.add(new RestResponseInterceptor(apiRequestStatsMonitor));
-    }
-
     enum TemplateType {
         ACCESS,
         REFRESH
@@ -151,9 +137,6 @@ public class RestTemplateCustomizer {
                                          List<HttpMessageConverter<?>> messageConverters) {
 
         RestTemplate template = new RestTemplate();
-        if (config.getLogApiCallStats() && config.getLogApiCallResponse()){
-            setupInterceptor(template);
-        }
         if ( messageConverters != null ) {
             template.setMessageConverters(messageConverters);
         }
@@ -172,6 +155,12 @@ public class RestTemplateCustomizer {
         }
 
         template.setRequestFactory(new OkHttp3ClientHttpRequestFactory(builder.build()));
+        if (config.getLogApiCallStats() && config.getLogApiCallResponse()){
+            ClientHttpRequestFactory factory =
+                    new BufferingClientHttpRequestFactory(template.getRequestFactory());
+            template.setRequestFactory(factory);
+            template.getInterceptors().add(new RestResponseInterceptor(apiRequestStatsMonitor));
+        }
 
         MappingJackson2HttpMessageConverter converter = (MappingJackson2HttpMessageConverter) template.getMessageConverters().stream().filter(it -> it instanceof MappingJackson2HttpMessageConverter).findAny()
                 .orElseThrow(() -> new RuntimeException("Cannot find converter"));
