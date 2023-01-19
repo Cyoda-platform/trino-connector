@@ -49,6 +49,9 @@ public class CyodaConfig {
     private int maxHttpIdle;
     private long maxHttpKeepalive;
     private boolean httpsOverride;
+    private boolean logApiCallStats;
+    private boolean logApiCallResponse;
+    private long apiCallStatsMaxRecords;
     private String schemaName;
     private int requestPageSize;
     private int rowRequestPageSize;
@@ -77,7 +80,9 @@ public class CyodaConfig {
         rowRequestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
         userLoginEndpoint = DEFAULT_LOGIN_ENDPOINT;
         refreshTokenEndpoint = DEFAULT_REFERSH_ENDPOINT;
-
+        logApiCallStats = false;
+        logApiCallResponse = true; //does not matter if logApiCallStats = false
+        apiCallStatsMaxRecords = 10000;
         anonymousLogin = false;
         anonymousUserId = null;
         anonymousToken = null;
@@ -223,6 +228,33 @@ public class CyodaConfig {
     public CyodaConfig setHttpsOverride(boolean httpsOverride) {
         this.httpsOverride = httpsOverride;
         return this;
+    }
+
+    public boolean getLogApiCallStats() {
+        return logApiCallStats;
+    }
+
+    @Config("cyoda.presto.log-api-call-stats")
+    public void setLogApiCallStats(boolean logApiCallStats) {
+        this.logApiCallStats = logApiCallStats;
+    }
+
+    public boolean getLogApiCallResponse() {
+        return logApiCallResponse;
+    }
+
+    @Config("cyoda.presto.log-api-call-response")
+    public void setLogApiCallResponse(boolean logApiCallResponse) {
+        this.logApiCallResponse = logApiCallResponse;
+    }
+
+    public long getApiCallStatsMaxRecords() {
+        return apiCallStatsMaxRecords;
+    }
+
+    @Config("cyoda.presto.api-call-stats-max-records")
+    public void setApiCallStatsMaxRecords(long apiCallStatsMaxRecords) {
+        this.apiCallStatsMaxRecords = apiCallStatsMaxRecords;
     }
 
     public String getSchemaName() {

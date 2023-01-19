@@ -21,11 +21,10 @@ import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.SizeListener;
-import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
+import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -71,11 +70,11 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Rep
     @Inject
     public ConfiguredReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                        RestTemplateCustomizer restTemplateCustomizer,
-                                       StaticReportMetadataProvider staticReportMetadataProvider,
+                                       StaticTableMetadataProvider staticTableMetadataProvider,
                                        AuthService authService,
                                        CyodaApiRequestStatsMonitor requestStatsMonitor) {
         super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
-        this.typeColumn = staticReportMetadataProvider.getReports().getTypeColumn();
+        this.typeColumn = staticTableMetadataProvider.getReports().getTypeColumn();
 
     }
 

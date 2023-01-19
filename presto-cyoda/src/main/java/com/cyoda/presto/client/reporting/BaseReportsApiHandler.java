@@ -78,15 +78,7 @@ public abstract class BaseReportsApiHandler {
     }
 
     protected void registerApiCall(String queryId, Date callTime, String requestUrl, Map<String, Object> params){
-        requestStatsMonitor.add(
-                new ApiRequestStats(
-                        queryId,
-                        callTime,
-                        requestUrl,
-                        this.getClass().getSimpleName(),
-                        params,
-                        System.currentTimeMillis() - callTime.getTime(),
-                        null));
+        requestStatsMonitor.registerApiCall(queryId, callTime, requestUrl, params);
     }
 
     protected static String toReportName(@Nonnull String reportConfigId) {

@@ -26,7 +26,7 @@ import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.DynamicReportMetadataProvider;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
+import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
@@ -65,7 +65,7 @@ public class CyodaModule implements Module {
         binder.bind(CyodaSplitManager.class).in(Scopes.SINGLETON);
         binder.bind(CyodaPageSourceProvider.class).in(Scopes.SINGLETON);
 
-        binder.bind(StaticReportMetadataProvider.class).in(Scopes.SINGLETON);
+        binder.bind(StaticTableMetadataProvider.class).in(Scopes.SINGLETON);
         binder.bind(DynamicReportMetadataProvider.class).in(Scopes.SINGLETON);
 
         binder.bind(ConfiguredReportsApiHandler.class).in(Scopes.SINGLETON);

@@ -44,7 +44,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     private final AuthService auth;
     private final ConfiguredReportsApiHandler configuredReportsApiHandler;
     private ReportConfigDetailsApiHandler reportConfigDetailsApiHandler;
-    private final StaticReportMetadataProvider staticReportMetadataProvider;
+    private final StaticTableMetadataProvider staticTableMetadataProvider;
 
     /**
      * TableName -> TableMetadata
@@ -55,12 +55,12 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     @Inject
     public DynamicReportMetadataProvider(CyodaConnectorId connectorId, CyodaConfig config,
                                          TypeManager typeManager, AuthService auth,
-                                         StaticReportMetadataProvider staticReportMetadataProvider,
+                                         StaticTableMetadataProvider staticTableMetadataProvider,
                                          ConfiguredReportsApiHandler configuredReportsApiHandler,
                                          ReportConfigDetailsApiHandler reportConfigDetailsApiHandler) {
         super(typeManager, config, connectorId);
         this.auth = auth;
-        this.staticReportMetadataProvider = staticReportMetadataProvider;
+        this.staticTableMetadataProvider = staticTableMetadataProvider;
         this.configuredReportsApiHandler = configuredReportsApiHandler;
         this.reportConfigDetailsApiHandler = reportConfigDetailsApiHandler;
         tableByUserCache = Caffeine.newBuilder()
@@ -84,7 +84,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
         try {
             definitionHandle = reportConfigDetailsApiHandler.getReportDefSingleHandle(new ReportConfigKey(configId, "META"));
 
-            List<CyodaColumnHandle> columns = new ArrayList<>(List.copyOf(staticReportMetadataProvider.getReportRows().getTableHandle().getProjectedColumns()));
+            List<CyodaColumnHandle> columns = new ArrayList<>(List.copyOf(staticTableMetadataProvider.getReportRows().getTableHandle().getProjectedColumns()));
             columns.addAll(definitionHandle.getColumns());
             columns.sort(Comparator.comparingInt(CyodaColumnHandle::getOrdinalPosition));
             return new CyodaTableHandle(connectorId.toString(), config.getSchemaName(), tableName,
@@ -135,7 +135,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
 
     private void addHistoryTable(Map<String, CyodaTableHandle> result, CyodaTableHandle tableHandle) {
         String supName = tableHandle.getTableName() + "_history";
-        result.put(supName, staticReportMetadataProvider
+        result.put(supName, staticTableMetadataProvider
                 .getHistoryTableTemplate().createTableHandle(
                         supName,
                         tableHandle.getReportConfigId(),
@@ -144,7 +144,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     }
     private void addGroupsTable(Map<String, CyodaTableHandle> result, CyodaTableHandle tableHandle) {
         String supName = tableHandle.getTableName() + "_groups";
-        result.put(supName, staticReportMetadataProvider
+        result.put(supName, staticTableMetadataProvider
                 .getGroupsTableTemplate().createTableHandle(
                         supName,
                         tableHandle.getReportConfigId(),

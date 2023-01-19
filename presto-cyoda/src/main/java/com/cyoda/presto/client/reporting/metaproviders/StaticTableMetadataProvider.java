@@ -21,7 +21,7 @@ import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_REPORT_ID_COLUMN;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_REPORT_ROW_NUMBER_COLUMN;
 
-public class StaticReportMetadataProvider extends TableMetadataProvider {
+public class StaticTableMetadataProvider extends TableMetadataProvider {
 
     private final Map<String, StaticTableMetadata> standaloneTablesMap = new HashMap<>();
 
@@ -37,7 +37,7 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
 
 
     @Inject
-    public StaticReportMetadataProvider(TypeManager typeManager, CyodaConfig config, CyodaConnectorId connectorId) {
+    public StaticTableMetadataProvider(TypeManager typeManager, CyodaConfig config, CyodaConnectorId connectorId) {
         super(typeManager, config, connectorId);
         reports = new Reports();
         reportStats = new ReportStats();
@@ -47,7 +47,9 @@ public class StaticReportMetadataProvider extends TableMetadataProvider {
         apiCallStats = new ApiCallStats();
         standaloneTablesMap.put(reports.getTableHandle().getTableName(), reports);
         standaloneTablesMap.put(reportStats.getTableHandle().getTableName(), reportStats);
-        standaloneTablesMap.put(apiCallStats.getTableHandle().getTableName(), apiCallStats);
+        if (config.getLogApiCallStats()) {
+            standaloneTablesMap.put(apiCallStats.getTableHandle().getTableName(), apiCallStats);
+        }
 
         historyTableTemplate = CyodaTableHandle.Template.of(reportHistory.getTableHandle());
         groupsTableTemplate = CyodaTableHandle.Template.of(reportGroups.getTableHandle());

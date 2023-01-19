@@ -22,6 +22,7 @@ import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthPayload;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.auth.RefreshContext;
+import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.TrinoException;
 import io.trino.spi.security.AccessDeniedException;
@@ -36,7 +37,11 @@ import okhttp3.OkHttpClient;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.client.Traverson;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.BufferingClientHttpRequestFactory;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -50,6 +55,7 @@ import java.net.URISyntaxException;
 import java.time.Duration;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
@@ -72,6 +78,7 @@ public class RestTemplateCustomizer {
 
     private final CyodaConfig config;
     private final AuthService authService;
+    private final CyodaApiRequestStatsMonitor apiRequestStatsMonitor;
     private final LoadingCache<AuthContext,RestTemplate> restTemplateCache;
     private final LoadingCache<AuthContext,RestTemplate> refreshRestTemplateCache;
     private final RestTemplate unauthorizedRestTemplate;
@@ -84,9 +91,10 @@ public class RestTemplateCustomizer {
                 .forEach(conv -> ((AbstractJackson2HttpMessageConverter)conv).getObjectMapper().configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true));
     }
     @Inject
-    public RestTemplateCustomizer(CyodaConfig config, AuthService authService) {
+    public RestTemplateCustomizer(CyodaConfig config, AuthService authService, CyodaApiRequestStatsMonitor apiRequestStatsMonitor) {
         this.config = config;
         this.authService = authService;
+        this.apiRequestStatsMonitor = apiRequestStatsMonitor;
         restTemplateCache = Caffeine.newBuilder()
                 .maximumSize(100)
                 .build(key -> {
@@ -111,6 +119,18 @@ public class RestTemplateCustomizer {
 
     }
 
+    private void setupInterceptor(RestTemplate template){
+        ClientHttpRequestFactory factory =
+                new BufferingClientHttpRequestFactory(new SimpleClientHttpRequestFactory());
+        template.setRequestFactory(factory);
+        List<ClientHttpRequestInterceptor> interceptors = template.getInterceptors();
+        if (interceptors == null) {
+            interceptors = new ArrayList<>();
+            template.setInterceptors(interceptors);
+        }
+        interceptors.add(new RestResponseInterceptor(apiRequestStatsMonitor));
+    }
+
     enum TemplateType {
         ACCESS,
         REFRESH
@@ -131,6 +151,9 @@ public class RestTemplateCustomizer {
                                          List<HttpMessageConverter<?>> messageConverters) {
 
         RestTemplate template = new RestTemplate();
+        if (config.getLogApiCallStats() && config.getLogApiCallResponse()){
+            setupInterceptor(template);
+        }
         if ( messageConverters != null ) {
             template.setMessageConverters(messageConverters);
         }

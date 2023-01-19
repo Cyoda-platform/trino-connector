@@ -9,7 +9,7 @@ import com.cyoda.presto.client.reporting.groups.GroupsRequestKey;
 import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
+import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.connector.ConnectorSplitSource;
@@ -38,7 +38,7 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
     public DynamicTableDataProvider(ReportHistoryApiHandler reportHistoryApiHandler,
                                     ReportGroupsApiHandler reportGroupsApiHandler,
                                     ReportRowsApiHandler reportRowsApiHandler,
-                                    StaticReportMetadataProvider reportMetadataProvider,
+                                    StaticTableMetadataProvider reportMetadataProvider,
                                     CyodaConfig config) {
         this.reportHistoryApiHandler = reportHistoryApiHandler;
         this.reportGroupsApiHandler = reportGroupsApiHandler;

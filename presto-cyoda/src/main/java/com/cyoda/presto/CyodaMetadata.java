@@ -19,7 +19,7 @@ package com.cyoda.presto;
 
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.reporting.metaproviders.DynamicReportMetadataProvider;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
+import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
@@ -56,7 +56,7 @@ public class CyodaMetadata implements ConnectorMetadata {
     private final String connectorId;
     private final CyodaConfig config;
     private final AuthService auth;
-    private final StaticReportMetadataProvider staticMetadataProvider;
+    private final StaticTableMetadataProvider staticMetadataProvider;
     private final DynamicReportMetadataProvider dynamicReportMetadataProvider;
     private final CyodaApiRequestStatsMonitor apiRequestStatsMonitor;
 
@@ -65,7 +65,7 @@ public class CyodaMetadata implements ConnectorMetadata {
             CyodaConnectorId connectorId,
             CyodaConfig config,
             AuthService auth,
-            StaticReportMetadataProvider staticMetadataProvider,
+            StaticTableMetadataProvider staticMetadataProvider,
             DynamicReportMetadataProvider dynamicReportMetadataProvider,
             CyodaApiRequestStatsMonitor apiRequestStatsMonitor) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();

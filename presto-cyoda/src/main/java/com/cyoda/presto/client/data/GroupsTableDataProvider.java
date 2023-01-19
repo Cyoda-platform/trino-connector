@@ -7,7 +7,7 @@ import com.cyoda.presto.client.reporting.groups.GroupsRequestKey;
 import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
+import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.connector.ConnectorSplitSource;
@@ -27,14 +27,14 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
 
     private final ReportHistoryApiHandler reportHistoryApiHandler;
     private final ReportGroupsApiHandler reportGroupsApiHandler;
-    private final StaticReportMetadataProvider reportMetadataProvider;
+    private final StaticTableMetadataProvider reportMetadataProvider;
 
     private final CyodaColumnHandle reportIdColumn;
 
 
     public GroupsTableDataProvider(ReportHistoryApiHandler reportHistoryApiHandler,
                                    ReportGroupsApiHandler reportGroupsApiHandler,
-                                   StaticReportMetadataProvider reportMetadataProvider) {
+                                   StaticTableMetadataProvider reportMetadataProvider) {
         this.reportHistoryApiHandler = reportHistoryApiHandler;
         this.reportGroupsApiHandler = reportGroupsApiHandler;
         this.reportMetadataProvider = reportMetadataProvider;

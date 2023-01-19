@@ -25,7 +25,7 @@
 //import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
 //import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 //import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
-//import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
+//import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 //import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
 //import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 //import com.cyoda.presto.client.types.CompoundDataType;
@@ -72,8 +72,8 @@
 //        when(mockTypeManager.getType(localDateTimeSig)).thenReturn(TimestampType.TIMESTAMP_MILLIS);
 //
 //        RestTemplateCustomizer restTemplateCustomizer = new RestTemplateCustomizer(mockCyodaConfig);
-//        StaticReportMetadataProvider staticReportMetadataProvider = mock(StaticReportMetadataProvider.class);
-//        StaticReportMetadataProvider.Reports reports = mock(StaticReportMetadataProvider.Reports.class);
+//        StaticTableMetadataProvider staticReportMetadataProvider = mock(StaticTableMetadataProvider.class);
+//        StaticTableMetadataProvider.Reports reports = mock(StaticTableMetadataProvider.Reports.class);
 //        when(reports.getTypeColumn()).thenReturn(new CyodaColumnHandle("type", VarcharType.VARCHAR, new CompoundDataType("", DataType.STRING),2, true));
 //        when(staticReportMetadataProvider.getReports()).thenReturn(reports);
 //

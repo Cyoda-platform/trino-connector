@@ -21,9 +21,8 @@ import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 import org.testng.annotations.Test;
@@ -32,7 +31,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import static org.mockito.Mockito.mock;
-import static org.testng.Assert.*;
 
 public class DistributedReportInfoViewTest {
 
@@ -41,7 +39,8 @@ public class DistributedReportInfoViewTest {
     public void testRestTemplate() throws MalformedURLException {
         CyodaConfig config = new CyodaConfig();
         config.setServerUrl(new URL("http://localhost"));
-        RestTemplateCustomizer customizer = new RestTemplateCustomizer(config, new AuthService(config));
+
+        RestTemplateCustomizer customizer = new RestTemplateCustomizer(config, new AuthService(config), new CyodaApiRequestStatsMonitor(config));
         AuthContext authContext = mock(AuthContext.class);
         RestTemplate restTemplate = customizer.getRestTemplate(authContext);
         MappingJackson2HttpMessageConverter converter = (MappingJackson2HttpMessageConverter) restTemplate.getMessageConverters().stream().filter(it -> it instanceof MappingJackson2HttpMessageConverter).findAny()
