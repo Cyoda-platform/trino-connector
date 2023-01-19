@@ -25,7 +25,7 @@ public class CyodaApiRequestStatsMonitor {
         this.config = config;
     };
 
-    public void registerApiCall(String queryId, Date callTime, String requestUrl, Map<String, Object> params){
+    public void registerApiCall(String queryId, Date callTime, String requestUrl, Map<String, Object> params, String apiHandlerName){
         if (!config.getLogApiCallStats()) return;
 
         String response = tempResponseHolder.remove(requestUrl);
@@ -34,7 +34,7 @@ public class CyodaApiRequestStatsMonitor {
                         queryId,
                         callTime,
                         requestUrl,
-                        this.getClass().getSimpleName(),
+                        apiHandlerName,
                         params,
                         System.currentTimeMillis() - callTime.getTime(),
                         response));
