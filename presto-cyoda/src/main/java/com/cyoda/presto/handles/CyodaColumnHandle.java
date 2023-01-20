@@ -83,6 +83,7 @@ public class CyodaColumnHandle implements ColumnHandle {
         getConverter().writeCyodaNative(columnType, blockBuilder, cyodaNative, columnName);
     }
 
+    @JsonIgnore
     public Object getValue(Map<String, Object> row){
         Object result = row.get(columnName);
         if (result != null) {

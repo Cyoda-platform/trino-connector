@@ -17,18 +17,17 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.auth.AuthService;
-import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.reporting.data.InternalReportRowsApiHandler;
+import com.cyoda.presto.client.data.TableDataProviderProvider;
 import com.cyoda.presto.client.reporting.data.ReportRowsApiHandler;
-import com.cyoda.presto.client.reporting.groups.InternalReportGroupsApiHandler;
 import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.DynamicReportMetadataProvider;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
+import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
+import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -66,7 +65,7 @@ public class CyodaModule implements Module {
         binder.bind(CyodaSplitManager.class).in(Scopes.SINGLETON);
         binder.bind(CyodaPageSourceProvider.class).in(Scopes.SINGLETON);
 
-        binder.bind(StaticReportMetadataProvider.class).in(Scopes.SINGLETON);
+        binder.bind(StaticTableMetadataProvider.class).in(Scopes.SINGLETON);
         binder.bind(DynamicReportMetadataProvider.class).in(Scopes.SINGLETON);
 
         binder.bind(ConfiguredReportsApiHandler.class).in(Scopes.SINGLETON);
@@ -74,12 +73,13 @@ public class CyodaModule implements Module {
         binder.bind(ReportStatisticsApiHandler.class).in(Scopes.SINGLETON);
         binder.bind(ReportHistoryApiHandler.class).in(Scopes.SINGLETON);
         binder.bind(ReportGroupsApiHandler.class).in(Scopes.SINGLETON);
+
+        binder.bind(ReportGroupsApiHandler.class).in(Scopes.SINGLETON);
         binder.bind(ReportRowsApiHandler.class).in(Scopes.SINGLETON);
 
-        binder.bind(InternalReportGroupsApiHandler.class).in(Scopes.SINGLETON);
-        binder.bind(InternalReportRowsApiHandler.class).in(Scopes.SINGLETON);
+        binder.bind(CyodaApiRequestStatsMonitor.class).in(Scopes.SINGLETON);
 
-        binder.bind(CyodaApiRequestHandlerProvider.class).in(Scopes.SINGLETON);
+        binder.bind(TableDataProviderProvider.class).in(Scopes.SINGLETON);
 
         binder.bind(AuthService.class).in(Scopes.SINGLETON);
 

@@ -1,14 +1,9 @@
 package com.cyoda.presto.handles;
 
-import com.cyoda.presto.DummyPageSource;
-import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
-import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.type.VarcharType;
 
 import java.util.List;
@@ -27,7 +22,7 @@ public class DummyTableHandle extends CyodaTableHandle {
                             @JsonProperty("content") Map<String, String> content) {
         super(connectorId, schemaName, tableName,
                 createDummyFields(content.keySet()),
-                "NULL", null, null, null);
+                TableType.DUMMY, null, null, null, false, false);
         this.content = content;
     }
 
@@ -41,11 +36,6 @@ public class DummyTableHandle extends CyodaTableHandle {
     @JsonProperty
     public Map<String, String> getContent() {
         return content;
-    }
-
-    @Override
-    public ConnectorPageSource getPageSource(AuthContext authContext, CyodaApiRequestHandlerProvider handlerProvider, List<CyodaColumnHandle> cyodaColumns, CompoundPredicateNode predicates) {
-        return new DummyPageSource(this);
     }
 
 

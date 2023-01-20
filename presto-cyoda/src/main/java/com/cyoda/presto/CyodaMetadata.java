@@ -19,10 +19,13 @@ package com.cyoda.presto;
 
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.reporting.metaproviders.DynamicReportMetadataProvider;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportMetadataProvider;
+import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
+import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
+import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
+import io.trino.spi.TrinoException;
 import io.trino.spi.connector.TableColumnsMetadata;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ColumnMetadata;
@@ -43,6 +46,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaMetadata implements ConnectorMetadata {
@@ -52,21 +56,24 @@ public class CyodaMetadata implements ConnectorMetadata {
     private final String connectorId;
     private final CyodaConfig config;
     private final AuthService auth;
-    private final StaticReportMetadataProvider staticMetadataProvider;
+    private final StaticTableMetadataProvider staticMetadataProvider;
     private final DynamicReportMetadataProvider dynamicReportMetadataProvider;
+    private final CyodaApiRequestStatsMonitor apiRequestStatsMonitor;
 
     @Inject
     public CyodaMetadata(
             CyodaConnectorId connectorId,
             CyodaConfig config,
             AuthService auth,
-            StaticReportMetadataProvider staticMetadataProvider,
-            DynamicReportMetadataProvider dynamicReportMetadataProvider) {
+            StaticTableMetadataProvider staticMetadataProvider,
+            DynamicReportMetadataProvider dynamicReportMetadataProvider,
+            CyodaApiRequestStatsMonitor apiRequestStatsMonitor) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
         this.config = requireNonNull(config,"confif is null");
         this.auth = auth;
         this.staticMetadataProvider = staticMetadataProvider;
         this.dynamicReportMetadataProvider = dynamicReportMetadataProvider;
+        this.apiRequestStatsMonitor = apiRequestStatsMonitor;
     }
 
 
@@ -112,6 +119,15 @@ public class CyodaMetadata implements ConnectorMetadata {
 //        return new ConnectorTableLayout(handle);
 //    }
 
+
+    @Override
+    public void truncateTable(ConnectorSession session, ConnectorTableHandle tableHandle) {
+        if (StaticReportTable.API_CALL_STATS.getTableName().equals(((CyodaTableHandle)tableHandle).getTableName())){
+            apiRequestStatsMonitor.truncate();
+        } else {
+            throw new TrinoException(NOT_SUPPORTED, "This table does not support truncate operation");
+        }
+    }
 
     @Override
     public ConnectorTableMetadata getTableMetadata(ConnectorSession session, ConnectorTableHandle table) {

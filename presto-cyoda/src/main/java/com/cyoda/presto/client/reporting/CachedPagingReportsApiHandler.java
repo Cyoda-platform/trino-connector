@@ -26,24 +26,20 @@ import com.cyoda.presto.client.paging.PagingFluxProvider;
 import com.cyoda.presto.client.paging.PagingHandle;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.PagedModel;
-import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 
+import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-public abstract class BasePagingReportsApiHandler<K, T> extends BaseReportsApiHandler {
+public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApiHandler {
 
-    protected BasePagingReportsApiHandler(CyodaConnectorId connectorId,
-                                          CyodaConfig config,
-                                          TypeManager typeManager,
-                                          RestTemplateCustomizer restTemplateCustomizer,
-                                          SupplierLogger log,
-                                          AuthService authService,
-                                          CyodaApiRequestStatsMonitor requestStatsMonitor) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, log, authService, requestStatsMonitor);
-    }
+    private final LoadingCache<K, List<T>> cache;
 
     public abstract Optional<PagedModel<T>> retrievePage(
             K requestKey,
@@ -51,14 +47,32 @@ public abstract class BasePagingReportsApiHandler<K, T> extends BaseReportsApiHa
             int pageSize,
             SizeListener listener);
 
-    public Flux<T> asFlux(K requestKey, SizeListener listener) {
+    protected abstract Duration getCacheDuration();
+
+    protected CachedPagingReportsApiHandler(CyodaConnectorId connectorId,
+                                            CyodaConfig config,
+                                            TypeManager typeManager,
+                                            RestTemplateCustomizer restTemplateCustomizer,
+                                            SupplierLogger log,
+                                            AuthService authService,
+                                            CyodaApiRequestStatsMonitor requestStatsMonitor) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, log, authService, requestStatsMonitor);
+        cache = Caffeine.newBuilder()
+                .expireAfterAccess(getCacheDuration())
+                .build(this::loadByKey);
+    }
+
+    public List<T> getByKey(K requestKey){
+        return cache.get(requestKey);
+    }
+
+    private List<T> loadByKey(K requestKey){
 
         int pageSize = getPageSize();
         logCreation(pageSize, log);
         Function<Integer, PagingHandle<?, T>> pagingHandleGetter = page ->
-                new PagingHandle<>(retrievePage(requestKey, page, pageSize, listener));
-        return new PagingFluxProvider<>(pagingHandleGetter).generate(0);
+                new PagingHandle<>(retrievePage(requestKey, page, pageSize, SizeListener.NOT_LISTENING));
+        return new PagingFluxProvider<>(pagingHandleGetter).generate(0).subscribeOn(Schedulers.immediate(), false).collectList().block();
     }
 
-    ;
 }

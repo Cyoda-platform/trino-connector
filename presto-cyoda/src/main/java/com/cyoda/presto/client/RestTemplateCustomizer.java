@@ -20,7 +20,9 @@ package com.cyoda.presto.client;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthPayload;
+import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.auth.RefreshContext;
+import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.TrinoException;
 import io.trino.spi.security.AccessDeniedException;
@@ -35,6 +37,9 @@ import okhttp3.OkHttpClient;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.client.Traverson;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.BufferingClientHttpRequestFactory;
+import org.springframework.http.client.ClientHttpRequestFactory;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
@@ -70,6 +75,8 @@ public class RestTemplateCustomizer {
     public static final Duration TOKEN_EXPIRY_OFFSET = Duration.ofSeconds(10);
 
     private final CyodaConfig config;
+    private final AuthService authService;
+    private final CyodaApiRequestStatsMonitor apiRequestStatsMonitor;
     private final LoadingCache<AuthContext,RestTemplate> restTemplateCache;
     private final LoadingCache<AuthContext,RestTemplate> refreshRestTemplateCache;
     private final RestTemplate unauthorizedRestTemplate;
@@ -82,8 +89,10 @@ public class RestTemplateCustomizer {
                 .forEach(conv -> ((AbstractJackson2HttpMessageConverter)conv).getObjectMapper().configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true));
     }
     @Inject
-    public RestTemplateCustomizer(CyodaConfig config) {
+    public RestTemplateCustomizer(CyodaConfig config, AuthService authService, CyodaApiRequestStatsMonitor apiRequestStatsMonitor) {
         this.config = config;
+        this.authService = authService;
+        this.apiRequestStatsMonitor = apiRequestStatsMonitor;
         restTemplateCache = Caffeine.newBuilder()
                 .maximumSize(100)
                 .build(key -> {
@@ -116,6 +125,9 @@ public class RestTemplateCustomizer {
     public RestTemplate getRestTemplate(AuthContext authContext) {
             return restTemplateCache.get(authContext);
     }
+    public RestTemplate getRestTemplateWithTechAuth() {
+        return restTemplateCache.get(authService.getTechnicalAuth());
+    }
 
     public RestTemplate getUnauthorizedRestTemplate() {
         return unauthorizedRestTemplate;
@@ -143,6 +155,12 @@ public class RestTemplateCustomizer {
         }
 
         template.setRequestFactory(new OkHttp3ClientHttpRequestFactory(builder.build()));
+        if (config.getLogApiCallStats() && config.getLogApiCallResponse()){
+            ClientHttpRequestFactory factory =
+                    new BufferingClientHttpRequestFactory(template.getRequestFactory());
+            template.setRequestFactory(factory);
+            template.getInterceptors().add(new RestResponseInterceptor(apiRequestStatsMonitor));
+        }
 
         MappingJackson2HttpMessageConverter converter = (MappingJackson2HttpMessageConverter) template.getMessageConverters().stream().filter(it -> it instanceof MappingJackson2HttpMessageConverter).findAny()
                 .orElseThrow(() -> new RuntimeException("Cannot find converter"));

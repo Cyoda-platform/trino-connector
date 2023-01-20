@@ -20,26 +20,26 @@ package com.cyoda.presto.client.reporting;
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.SizeListener;
-import com.cyoda.presto.client.ApiRequestHandler;
+import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.client.reporting.stats.ApiRequestStats;
+import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.base.Preconditions;
-import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.PagedModel;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import java.util.Date;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
 
 // TODO: The API calls to Cyoda need to have some check on API version. Sasha might be able to say how he did it for UI
-public abstract class BaseReportsApiHandler<T> implements ApiRequestHandler<T> {
+public abstract class BaseReportsApiHandler {
 
     public static final String REPORT_ENDPOINT = "/api/platform-api/reporting/report";
     public static final String PAGE_REQUEST_PARAMETER = "page";
@@ -53,33 +53,35 @@ public abstract class BaseReportsApiHandler<T> implements ApiRequestHandler<T> {
     protected final RestTemplateCustomizer restTemplateCustomizer;
     protected final TypeManager typeManager;
     protected final SupplierLogger log;
+    protected final AuthService auth;
+
+    private final CyodaApiRequestStatsMonitor requestStatsMonitor;
 
     protected BaseReportsApiHandler(CyodaConnectorId connectorId,
                                     CyodaConfig config,
                                     TypeManager typeManager,
                                     RestTemplateCustomizer restTemplateCustomizer,
-                                    SupplierLogger log) {
+                                    SupplierLogger log,
+                                    AuthService authService,
+                                    CyodaApiRequestStatsMonitor requestStatsMonitor) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.config = requireNonNull(config, "config is null");
         this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.restTemplateCustomizer = restTemplateCustomizer;
         this.log = log;
+        this.auth = authService;
+        this.requestStatsMonitor = requestStatsMonitor;
     }
-
-    @Override
-    public void writeValue(@Nullable T entity, CyodaColumnHandle columnHandle, BlockBuilder blockBuilder) {
-        if (entity == null) {
-            blockBuilder.appendNull();
-            return;
-        }
-        Object value = getFieldValueFromEntity(entity, columnHandle);
-        columnHandle.writeValue(blockBuilder, value);
-    }
-
-    protected abstract @Nullable Object getFieldValueFromEntity(@Nonnull T field, CyodaColumnHandle columnHandle);
 
     protected int getPageSize(){
         return config.getRequestPageSize();
+    }
+
+    protected void registerApiCall(String queryId, Date callTime, String requestUrl, Map<String, Object> params){
+        requestStatsMonitor.registerApiCall(queryId, callTime, requestUrl, params, getName());
+    }
+    public String getName(){
+        return this.getClass().getSimpleName().replaceAll("ApiHandler", "");
     }
 
     protected static String toReportName(@Nonnull String reportConfigId) {
@@ -114,12 +116,18 @@ public abstract class BaseReportsApiHandler<T> implements ApiRequestHandler<T> {
         listener.sizeKnown(pageMetadata == null ? 0 : pageMetadata.getTotalElements());
     }
 
-    protected static void logCreation(int pageSize, CyodaTableHandle tableHandle, CompoundPredicateNode predicates, SupplierLogger logger) {
+    protected void logCreation(int pageSize, CompoundPredicateNode predicates, SupplierLogger logger) {
         logger.debug("building responseIterator for %s with pageSize %s and predicates %s",
-                tableHandle::getTableName,
+                getClass()::getSimpleName,
                 () -> pageSize,
                 predicates::toString
         );
     }
 
+    protected void logCreation(int pageSize, SupplierLogger logger) {
+        logger.debug("building responseIterator for %s with pageSize %s",
+                getClass()::getSimpleName,
+                () -> pageSize
+        );
+    }
 }

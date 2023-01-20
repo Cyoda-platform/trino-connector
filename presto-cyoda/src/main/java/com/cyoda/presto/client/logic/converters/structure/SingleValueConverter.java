@@ -59,7 +59,7 @@ public abstract class SingleValueConverter<T> extends AbstractValueConverter<T> 
                 return super.fromCyodaNative(list.get(0), columnName);
         }
         if (!getClazz().isAssignableFrom(cyodaNative.getClass())) {
-            LOG.info(String.format("Column \"%s\": type mismatch %s <-> %s. Trying to convert...",
+            LOG.debug(String.format("Column \"%s\": type mismatch %s <-> %s. Trying to convert...",
                     columnName, getClazz().getName(), cyodaNative.getClass().getName()));
             return fromOtherCyodaType(cyodaNative, columnName);
         }

@@ -1,6 +1,7 @@
 package com.cyoda.presto.client.reporting.metaproviders;
 
 import com.cyoda.presto.client.reporting.ColumnDefinition;
+import com.cyoda.presto.handles.CyodaTableHandle;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -15,5 +16,5 @@ public interface TableDefinition {
     @Nonnull
     ColumnDefinition getColumn(String name);
 
-    String getRequestHandlerKey();
+    CyodaTableHandle.TableType getTableType();
 }

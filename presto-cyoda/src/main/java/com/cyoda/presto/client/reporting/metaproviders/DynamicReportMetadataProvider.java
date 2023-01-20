@@ -5,11 +5,12 @@ import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthService;
-import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
+import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle;
+import com.cyoda.presto.client.reporting.meta.ReportListKey;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.DummyTableHandle;
@@ -27,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,7 +44,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     private final AuthService auth;
     private final ConfiguredReportsApiHandler configuredReportsApiHandler;
     private ReportConfigDetailsApiHandler reportConfigDetailsApiHandler;
-    private final StaticReportMetadataProvider staticReportMetadataProvider;
+    private final StaticTableMetadataProvider staticTableMetadataProvider;
 
     /**
      * TableName -> TableMetadata
@@ -53,12 +55,12 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     @Inject
     public DynamicReportMetadataProvider(CyodaConnectorId connectorId, CyodaConfig config,
                                          TypeManager typeManager, AuthService auth,
-                                         StaticReportMetadataProvider staticReportMetadataProvider,
+                                         StaticTableMetadataProvider staticTableMetadataProvider,
                                          ConfiguredReportsApiHandler configuredReportsApiHandler,
                                          ReportConfigDetailsApiHandler reportConfigDetailsApiHandler) {
         super(typeManager, config, connectorId);
         this.auth = auth;
-        this.staticReportMetadataProvider = staticReportMetadataProvider;
+        this.staticTableMetadataProvider = staticTableMetadataProvider;
         this.configuredReportsApiHandler = configuredReportsApiHandler;
         this.reportConfigDetailsApiHandler = reportConfigDetailsApiHandler;
         tableByUserCache = Caffeine.newBuilder()
@@ -73,20 +75,23 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
                     LOG.debug("Loading config " + key);
                     return getTableHandleFromCyoda(key.configId);
                 });
+
     }
 
     private CyodaTableHandle getTableHandleFromCyoda(String configId) {
         String tableName = BaseReportsApiHandler.reportNameToTableName(configId);
         ReportDefinitionHandle definitionHandle = null;
         try {
-            AuthContext authContext = auth.getTechnicalAuth();
-            definitionHandle = reportConfigDetailsApiHandler.getReportDefSingleHandle(authContext, configId);
+            definitionHandle = reportConfigDetailsApiHandler.getReportDefSingleHandle(new ReportConfigKey(configId, "META"));
 
-            List<CyodaColumnHandle> columns = new ArrayList<>(List.copyOf(staticReportMetadataProvider.getReportRows().getTableHandle().getProjectedColumns()));
+            List<CyodaColumnHandle> columns = new ArrayList<>(List.copyOf(staticTableMetadataProvider.getReportRows().getTableHandle().getProjectedColumns()));
             columns.addAll(definitionHandle.getColumns());
+            columns.sort(Comparator.comparingInt(CyodaColumnHandle::getOrdinalPosition));
             return new CyodaTableHandle(connectorId.toString(), config.getSchemaName(), tableName,
-                    columns, StaticReportTable.REPORT_ROWS.name(), configId, definitionHandle.getDescription(),
-                    getUri(StaticReportTable.REPORT_ROWS));
+                    columns, CyodaTableHandle.TableType.DATA, configId, definitionHandle.getDescription(),
+                    getUri(StaticReportTable.REPORT_ROWS),
+                    !definitionHandle.getGroupingColumns().isEmpty(),
+                    !definitionHandle.isSingleton());
         } catch (Exception e) {
             Map<String, String> errorDetail = new HashMap<>();
             errorDetail.put("Error Message", e.getMessage());
@@ -110,18 +115,41 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     protected Map<String, CyodaTableHandle> tableByUserCacheLoad(AuthContext authContext) {
         Map<String, CyodaTableHandle> result = new HashMap<>();
         Flux<GridConfigFieldsView> flux = configuredReportsApiHandler.asFlux(
-                authContext,
-                this.staticReportMetadataProvider.getReports().getTableHandle(),
-                CompoundPredicateNode.empty(null),
+                new ReportListKey(authContext, "META"),
                 NOT_LISTENING
         );
         flux.doOnNext(item -> {
             TableMetaCacheKey cacheKey = TableMetaCacheKey.of(item);
             CyodaTableHandle tableHandle = tableMetaCache.get(cacheKey);
             result.put(tableHandle.getTableName(), tableHandle);
+            if (tableHandle.hasHistory()) {
+                addHistoryTable(result, tableHandle);
+            }
+            if (tableHandle.hasGroups()) {
+                addGroupsTable(result, tableHandle);
+            }
         }).blockLast();
         // If there are duplicates, last write wins.
         return ImmutableMap.copyOf(result);
+    }
+
+    private void addHistoryTable(Map<String, CyodaTableHandle> result, CyodaTableHandle tableHandle) {
+        String supName = tableHandle.getTableName() + "_history";
+        result.put(supName, staticTableMetadataProvider
+                .getHistoryTableTemplate().createTableHandle(
+                        supName,
+                        tableHandle.getReportConfigId(),
+                        tableHandle.getDescription()
+                ));
+    }
+    private void addGroupsTable(Map<String, CyodaTableHandle> result, CyodaTableHandle tableHandle) {
+        String supName = tableHandle.getTableName() + "_groups";
+        result.put(supName, staticTableMetadataProvider
+                .getGroupsTableTemplate().createTableHandle(
+                        supName,
+                        tableHandle.getReportConfigId(),
+                        tableHandle.getDescription()
+                ));
     }
 
     public CyodaTableHandle getTableHandle(AuthContext authContext, String tableName) {

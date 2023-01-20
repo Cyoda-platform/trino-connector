@@ -18,46 +18,103 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.handles.CyodaTableHandle;
-import io.trino.spi.connector.ColumnHandle;
-import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.HostAddress;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import com.google.common.collect.ImmutableList;
 
-import java.net.URI;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 import static java.util.Objects.requireNonNull;
 
 public class CyodaSplit implements ConnectorSplit {
+    private final String queryId;
     private final List<HostAddress> addresses;
-    private final TupleDomain<ColumnHandle> constraint;
-    private final CyodaTableHandle tableHandle;
+
+    private final String tableName;
+
+    private final String reportConfigId;
+
+    private final String reportId;
+
+    private final UUID groupingVersion;
+
+    private final String groupJsonBase64;
+
+
+    private final int page;
+
+    private final int size;
+
 
     @JsonCreator
-    public CyodaSplit(
-            @JsonProperty("tableHandle") CyodaTableHandle tableHandle,
-            @JsonProperty("constraint") TupleDomain<ColumnHandle> constraint) {
-        this.tableHandle = requireNonNull(tableHandle, "tableHandle name is null");
-        addresses = tableHandle.getUri() == null ?
-                Collections.emptyList() :
-                ImmutableList.of(HostAddress.fromUri(tableHandle.getUri()));
-        this.constraint = requireNonNull(constraint, "constraint name is null");
+    public CyodaSplit(String queryId, List<HostAddress> addresses, String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64, int page, int size) {
+        this.queryId = queryId;
+        this.addresses = addresses;
+        this.tableName = tableName;
+        this.reportConfigId = reportConfigId;
+        this.reportId = reportId;
+        this.groupingVersion = groupingVersion;
+        this.groupJsonBase64 = groupJsonBase64;
+        this.page = page;
+        this.size = size;
     }
 
+    public CyodaSplit(String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64, String queryId){
+        this(queryId, Collections.emptyList(), tableName, reportConfigId, reportId, groupingVersion, groupJsonBase64, 0, Integer.MAX_VALUE-1);
+    }
 
-    @JsonProperty
-    public CyodaTableHandle getTableHandle() {
-        return tableHandle;
+    public static CyodaSplit emptySplit(CyodaTableHandle tableHandle, String queryId){
+        return new CyodaSplit(
+                tableHandle.getTableName(),
+                tableHandle.getReportConfigId(),
+                null,
+                null,
+                null,
+                queryId);
     }
 
     @JsonProperty
-    public TupleDomain<ColumnHandle> getConstraint() {
-        return constraint;
+    public String getQueryId() {
+        return queryId;
+    }
+
+    @JsonProperty
+    public String getTableName() {
+        return tableName;
+    }
+
+    @JsonProperty
+    public String getReportConfigId() {
+        return reportConfigId;
+    }
+
+    @JsonProperty
+    public String getReportId() {
+        return reportId;
+    }
+
+    @JsonProperty
+    public UUID getGroupingVersion() {
+        return groupingVersion;
+    }
+
+    @JsonProperty
+    public String getGroupJsonBase64() {
+        return groupJsonBase64;
+    }
+
+    @JsonProperty
+    public int getPage() {
+        return page;
+    }
+
+    @JsonProperty
+    public int getSize() {
+        return size;
     }
 
     @Override
@@ -77,8 +134,6 @@ public class CyodaSplit implements ConnectorSplit {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("addresses", addresses)
-                .add("constraint", constraint)
-                .add("tableHandle", tableHandle)
                 .toString();
     }
 }

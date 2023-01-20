@@ -19,6 +19,7 @@ public abstract class TableMetadataProvider {
     }
 
     protected URI getUri(TableDefinition tableDefinition) {
+        if (tableDefinition.getEndpoint() == null) return null;
         final URI uri;
         try {
             uri = config.getServerUrl().toURI().resolve(tableDefinition.getEndpoint());

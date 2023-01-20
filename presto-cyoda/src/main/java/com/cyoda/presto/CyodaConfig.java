@@ -49,8 +49,12 @@ public class CyodaConfig {
     private int maxHttpIdle;
     private long maxHttpKeepalive;
     private boolean httpsOverride;
+    private boolean logApiCallStats;
+    private boolean logApiCallResponse;
+    private long apiCallStatsMaxRecords;
     private String schemaName;
     private int requestPageSize;
+    private int rowRequestPageSize;
     private String userLoginEndpoint;
     private String refreshTokenEndpoint;
 
@@ -73,9 +77,12 @@ public class CyodaConfig {
         httpsOverride = DEFAULT_HTTPS_OVERRIDE;
         schemaName = DEFAULT_SCHEMA_NAME;
         requestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
+        rowRequestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
         userLoginEndpoint = DEFAULT_LOGIN_ENDPOINT;
         refreshTokenEndpoint = DEFAULT_REFERSH_ENDPOINT;
-
+        logApiCallStats = false;
+        logApiCallResponse = true; //does not matter if logApiCallStats = false
+        apiCallStatsMaxRecords = 10000;
         anonymousLogin = false;
         anonymousUserId = null;
         anonymousToken = null;
@@ -223,6 +230,33 @@ public class CyodaConfig {
         return this;
     }
 
+    public boolean getLogApiCallStats() {
+        return logApiCallStats;
+    }
+
+    @Config("cyoda.presto.log-api-call-stats")
+    public void setLogApiCallStats(boolean logApiCallStats) {
+        this.logApiCallStats = logApiCallStats;
+    }
+
+    public boolean getLogApiCallResponse() {
+        return logApiCallResponse;
+    }
+
+    @Config("cyoda.presto.log-api-call-response")
+    public void setLogApiCallResponse(boolean logApiCallResponse) {
+        this.logApiCallResponse = logApiCallResponse;
+    }
+
+    public long getApiCallStatsMaxRecords() {
+        return apiCallStatsMaxRecords;
+    }
+
+    @Config("cyoda.presto.api-call-stats-max-records")
+    public void setApiCallStatsMaxRecords(long apiCallStatsMaxRecords) {
+        this.apiCallStatsMaxRecords = apiCallStatsMaxRecords;
+    }
+
     public String getSchemaName() {
         return schemaName;
     }
@@ -241,6 +275,15 @@ public class CyodaConfig {
 
     public int getRequestPageSize() {
         return requestPageSize;
+    }
+
+    public int getRowRequestPageSize() {
+        return rowRequestPageSize;
+    }
+
+    @Config("cyoda.presto.row-request-page-size")
+    public void setRowRequestPageSize(int rowRequestPageSize) {
+        this.rowRequestPageSize = rowRequestPageSize;
     }
 
     @Config("cyoda.presto.user-login-endpoint")

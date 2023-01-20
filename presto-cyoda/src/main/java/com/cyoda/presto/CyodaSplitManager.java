@@ -17,34 +17,34 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.auth.AuthService;
+import com.cyoda.presto.client.data.TableDataProviderProvider;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.connector.ConnectorSession;
-import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.connector.ConnectorSplitSource;
-import io.trino.spi.connector.FixedSplitSource;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import com.google.common.base.Preconditions;
 
 import javax.inject.Inject;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaSplitManager implements ConnectorSplitManager {
     private final String connectorId;
+    private final TableDataProviderProvider dataProviderProvider;
+    private final AuthService auth;
 
 
     @Inject
-    public CyodaSplitManager(CyodaConnectorId connectorId) {
+    public CyodaSplitManager(CyodaConnectorId connectorId, TableDataProviderProvider dataProviderProvider, AuthService auth) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
+        this.dataProviderProvider = dataProviderProvider;
+        this.auth = auth;
     }
 
     @Override
@@ -57,6 +57,11 @@ public class CyodaSplitManager implements ConnectorSplitManager {
         CyodaTableHandle tableHandle = (CyodaTableHandle) connectorTableHandle;
         Preconditions.checkArgument(tableHandle.getConnectorId().equals(connectorId),"This split manager is meant for connector id "+connectorId);
 
-        return new FixedSplitSource(Collections.singletonList(new CyodaSplit(tableHandle, constraint.getSummary())));
+        if (constraint.predicate().isEmpty() && !constraint.getSummary().isAll()){
+            throw new RuntimeException("Constraint summary is not blank, but predicate not present");
+        }
+        return dataProviderProvider
+                .getDataProvider(tableHandle.getTableType())
+                .getSplits(auth.fromSession(session), session.getQueryId(), tableHandle, constraint);
     }
 }

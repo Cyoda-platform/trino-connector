@@ -60,4 +60,10 @@ public class StringPrestoValueConverter extends StringTypeValueConverter<String>
         }
         return a.equals(b.substring(0, b.length() - 1));
     }
+
+    @Override
+    public String fromOtherCyodaType(Object value, String columnName) {
+    //a reasonable shortcut to make this type a failsafe for objects
+        return value.toString();
+    }
 }

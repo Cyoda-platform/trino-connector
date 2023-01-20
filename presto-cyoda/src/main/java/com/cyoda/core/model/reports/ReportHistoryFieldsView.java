@@ -17,15 +17,17 @@
 
 package com.cyoda.core.model.reports;
 
+import com.cyoda.presto.client.reporting.metaproviders.StaticReportFields;
+
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 public class ReportHistoryFieldsView {
 
     // TODO: Any field of the DistributedReport class can be selected. These are not all of them.
     public static final String HISTORY_REPORT_NAME_VARIABLE = "configName";
 
-    public static final String HISTORY_REPORT_ID_COLUMN = "reportId";
     public static final String HISTORY_CREATE_TIME_COLUMN = "createTime";
     public static final String HISTORY_TYPE_COLUMN = "type";
     public static final String HISTORY_STATUS_NAME_COLUMN = "status";
@@ -38,5 +40,14 @@ public class ReportHistoryFieldsView {
 
     public Map<String, Object> getReportHistoryFields() {
         return reportHistoryFields;
+    }
+
+    public String getReportId(){
+        return (String) reportHistoryFields.get(StaticReportFields.HISTORY_REPORT_ID_COLUMN);
+    }
+
+    public UUID getGroupingVersion(){
+        return UUID.fromString((String) reportHistoryFields.get(HISTORY_GROUPING_VERSION_COLUMN));
+
     }
 }

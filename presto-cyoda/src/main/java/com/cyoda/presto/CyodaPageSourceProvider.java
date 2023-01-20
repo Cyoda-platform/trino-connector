@@ -19,13 +19,13 @@ package com.cyoda.presto;
 
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthService;
-import com.cyoda.presto.client.ApiRequestHandler;
-import com.cyoda.presto.client.CyodaApiRequestHandlerProvider;
+import com.cyoda.presto.client.data.TableDataProviderProvider;
 import com.cyoda.presto.client.logic.ColumnPredicateBuilder;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.connector.ConnectorTableHandle;
+import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorPageSource;
@@ -38,7 +38,6 @@ import io.trino.spi.predicate.TupleDomain;
 
 import javax.inject.Inject;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
@@ -46,15 +45,15 @@ import static java.util.Objects.requireNonNull;
 public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
 
     private final String connectorId;
-    private final CyodaApiRequestHandlerProvider handlerProvider;
+    private final TableDataProviderProvider dataProviderProvider;
     private final AuthService auth;
 
     @Inject
     public CyodaPageSourceProvider(CyodaConnectorId connectorId,
-                                   CyodaApiRequestHandlerProvider handlerProvider,
+                                   TableDataProviderProvider dataProviderProvider,
                                    AuthService auth) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
-        this.handlerProvider = requireNonNull(handlerProvider, "handlerProvider is null");
+        this.dataProviderProvider = requireNonNull(dataProviderProvider, "dataProviderProvider is null");
         this.auth = auth;
     }
 
@@ -68,13 +67,16 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
             DynamicFilter dynamicFilter
     ) {
         requireNonNull(split, "split is null");
-        TupleDomain<ColumnHandle> constraint = ((CyodaSplit) split).getConstraint();
-        CompoundPredicateNode predicates = ColumnPredicateBuilder.setupConstraintPredicates(constraint);
         CyodaTableHandle cyodaTableHandle = (CyodaTableHandle) tableHandle;
         Preconditions.checkArgument(connectorId.equals(cyodaTableHandle.getConnectorId()),"tableHandle not for this connectorId");
         List<CyodaColumnHandle> cyodaColumns = columns.stream().map(CyodaColumnHandle.class::cast).collect(Collectors.toList());
         AuthContext authContext = auth.fromSession(session);
-        return cyodaTableHandle.getPageSource(authContext, handlerProvider, cyodaColumns, predicates);
+
+        return new CyodaFilteringPageSource<>(
+                authContext,
+                dataProviderProvider.getDataProvider(cyodaTableHandle.getTableType()),
+                cyodaTableHandle,
+                cyodaColumns, ((CyodaSplit) split));
 
     }
 }

@@ -31,10 +31,10 @@ import static com.cyoda.presto.CyodaErrorCode.CYODA_API_ERROR;
 
 public class PagingFluxProvider<T> {
     private static final SupplierLogger LOG = SupplierLogger.get(PagingFluxProvider.class);
-    private final Function<Integer, PagingHandle<T>> pagingHandleGetter;
+    private final Function<Integer, PagingHandle<?,T>> pagingHandleGetter;
 
 
-    public PagingFluxProvider(Function<Integer, PagingHandle<T>> pagingHandleGetter) {
+    public PagingFluxProvider(Function<Integer, PagingHandle<?,T>> pagingHandleGetter) {
         this.pagingHandleGetter = pagingHandleGetter;
     }
 
@@ -59,7 +59,7 @@ public class PagingFluxProvider<T> {
         AtomicInteger currentPage = new AtomicInteger(startPage);
         final AtomicLong currentPos = new AtomicLong();
         return Flux.generate(() -> {
-            PagingHandle<T> pagingHandle = pagingHandleGetter.apply(currentPage.getAndIncrement());
+            PagingHandle<?,T> pagingHandle = pagingHandleGetter.apply(currentPage.getAndIncrement());
             // We fix the meta which tells us about how many pages / elements on the first call
             // We assume that this is effectively a committed read, which is true if we are
             // reading from Cyoda at a fixed pointInTime.
@@ -88,7 +88,7 @@ public class PagingFluxProvider<T> {
                     sink.next(item);
                 } else { // Load next page
                     if (currentPage.get() < pageData.maxPages) {
-                        PagingHandle<T> nextPage = pagingHandleGetter.apply(currentPage.getAndIncrement());
+                        PagingHandle<?,T> nextPage = pagingHandleGetter.apply(currentPage.getAndIncrement());
                         pageData.currentElementOnPage.set(0);
                         PagedModel<T> pagedModel = nextPage.getPagedModel().orElse(PagedModel.empty());
                         long itemLimit = currentPage.get() == pageData.maxPages ? pageData.maxEntries - currentPos.get()

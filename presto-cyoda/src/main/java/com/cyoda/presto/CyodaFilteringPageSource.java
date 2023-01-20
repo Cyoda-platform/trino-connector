@@ -18,7 +18,7 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.ApiRequestHandler;
+import com.cyoda.presto.client.data.TableDataProvider;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
@@ -26,6 +26,9 @@ import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.Page;
 import io.trino.spi.PageBuilder;
 import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.connector.ColumnHandle;
+import io.trino.spi.connector.Constraint;
+import io.trino.spi.predicate.NullableValue;
 import io.trino.spi.type.Type;
 import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.TrinoException;
@@ -34,21 +37,23 @@ import reactor.core.scheduler.Schedulers;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Predicate;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_PAGING_ERROR;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("UnstableApiUsage")
-public class CyodaFilteringPageSource<T>
+public class CyodaFilteringPageSource<K,T>
         implements ConnectorPageSource
 {
     private static final SupplierLogger LOG = SupplierLogger.get(CyodaFilteringPageSource.class);
 
     private final List<CyodaColumnHandle> columnHandles;
-    private final ApiRequestHandler<T> requestHandler;
+    private final TableDataProvider<T> dataProvider;
 
     private boolean finished;
     private long readTimeNanos;
@@ -56,40 +61,34 @@ public class CyodaFilteringPageSource<T>
     private long completedPositions;
     private final Iterable<T> responseIterable;
     private Iterator<T> responseIterator;
-    private final List<Type> columnTypes;
-
     private final PageBuilder pageBuilder;
     private final AtomicInteger totalRowNumber;
     private final AtomicInteger pages;
 
     public CyodaFilteringPageSource(
             AuthContext authContext,
-            ApiRequestHandler<T> requestHandler,
+            TableDataProvider<T> dataProvider,
             CyodaTableHandle tableHandle,
             List<CyodaColumnHandle> columnHandles,
-            CompoundPredicateNode predicates
+            CyodaSplit split
     ) {
-        requireNonNull(requestHandler, "requestHandler is null");
         this.columnHandles = ImmutableList.copyOf(requireNonNull(columnHandles, "columnHandles is null"));
-        this.requestHandler = requireNonNull(requestHandler, "requestHandler is null");
+        this.dataProvider = requireNonNull(dataProvider, "dataProvider is null");
         this.finished = false;
         List<CyodaColumnHandle> handles = columnHandles.stream()
                 .collect(toImmutableList());
-        this.columnTypes = handles.stream()
+        List<Type> columnTypes = handles.stream()
                 .map(CyodaColumnHandle::getColumnType)
                 .collect(toImmutableList());
         this.totalRowNumber = new AtomicInteger();
         this.pages = new AtomicInteger();
 
-        this.pageBuilder = new PageBuilder(this.columnTypes);
-
-        this.responseIterable = requestHandler.asFlux(
+        this.pageBuilder = new PageBuilder(columnTypes);
+        this.responseIterable = dataProvider.getIterable(
                         authContext,
                         tableHandle,
-                        predicates,
-                        SizeListener.NOT_LISTENING)
-                .subscribeOn(Schedulers.parallel())  // Probably the default.
-                .toIterable();
+                        split);
+
     }
 
     @Override
@@ -143,7 +142,7 @@ public class CyodaFilteringPageSource<T>
             }
 
             if (!responseIterator.hasNext()) {
-                finished = true;
+                close();
             }
 
             // only return a page if the buffer is full, or we are finishing
@@ -182,7 +181,7 @@ public class CyodaFilteringPageSource<T>
         for (int i = 0; i < columnHandles.size(); i++) {
             BlockBuilder blockBuilder = pageBuilder.getBlockBuilder(i);
             CyodaColumnHandle columnHandle = columnHandles.get(i);
-            requestHandler.writeValue(item, columnHandle, blockBuilder);
+            dataProvider.writeValue(item, columnHandle, blockBuilder);
         }
     }
 
