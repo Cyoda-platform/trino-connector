@@ -179,13 +179,15 @@ public enum StaticReportTable implements TableDefinition {
 
     public enum ApiCallStatsColumnDef implements ColumnDefinition {
         QUERY_ID(0, STRING),
-        CALL_TIME(1, DATE),
-        CALL_MILLIS(2, INTEGER),
-        DURATION_MILLIS(3, LONG),
-        API_HANDLER(4, STRING),
-        REQUEST_PARAMS(5, DataType.MAP, STRING, STRING),
-        REQUEST_URL(6, STRING),
-        RESPONSE(7, STRING);
+        NODE_ID(1, STRING),
+        NODE_ADDRESS(2, STRING),
+        CALL_TIME(3, DATE),
+        CALL_MILLIS(4, INTEGER),
+        DURATION_MILLIS(5, LONG),
+        API_HANDLER(6, STRING),
+        REQUEST_PARAMS(7, DataType.MAP, STRING, STRING),
+        REQUEST_URL(8, STRING),
+        RESPONSE(9, STRING);
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)

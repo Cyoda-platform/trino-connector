@@ -24,6 +24,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -63,18 +64,21 @@ public class CyodaSplit implements ConnectorSplit {
         this.size = size;
     }
 
-    public CyodaSplit(String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64, String queryId){
-        this(queryId, Collections.emptyList(), tableName, reportConfigId, reportId, groupingVersion, groupJsonBase64, 0, Integer.MAX_VALUE-1);
+    public CyodaSplit(String queryId, List<HostAddress> addresses, String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64){
+        this(queryId, addresses, tableName, reportConfigId, reportId, groupingVersion, groupJsonBase64, 0, Integer.MAX_VALUE-1);
     }
 
     public static CyodaSplit emptySplit(CyodaTableHandle tableHandle, String queryId){
-        return new CyodaSplit(
+        return new CyodaSplit(queryId, Collections.emptyList(), tableHandle.getTableName(), tableHandle.getReportConfigId(), null, null, null);
+    }
+    public static CyodaSplit addressedEmptySplit(CyodaTableHandle tableHandle, String queryId, URI nodeAddress){
+        return new CyodaSplit(queryId,
+                Collections.singletonList(HostAddress.fromUri(nodeAddress)),
                 tableHandle.getTableName(),
                 tableHandle.getReportConfigId(),
                 null,
                 null,
-                null,
-                queryId);
+                null);
     }
 
     @JsonProperty
@@ -119,7 +123,7 @@ public class CyodaSplit implements ConnectorSplit {
 
     @Override
     public boolean isRemotelyAccessible() {
-        return true;
+        return addresses.isEmpty();
     }
     public List<HostAddress> getAddresses() {
         return addresses;

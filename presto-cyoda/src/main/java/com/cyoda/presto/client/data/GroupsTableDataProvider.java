@@ -18,6 +18,7 @@ import org.joda.beans.MetaProperty;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import java.util.Collections;
 import java.util.List;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.HISTORY_REPORT_ID_COLUMN;
@@ -64,12 +65,7 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
         List<CyodaSplit> splitList = reportHistoryApiHandler.getByKey(new ReportConfigKey(tableHandle.getReportConfigId(), queryId))
                 .stream()
                 .filter(fieldsView -> !hasReportIdConstraint || acceptVal(reportIdColumn, fieldsView.getReportId(), constraint))
-                .map(fieldsView -> new CyodaSplit(
-                        tableHandle.getTableName(),
-                        tableHandle.getReportConfigId(),
-                        fieldsView.getReportId(),
-                        fieldsView.getGroupingVersion(),
-                        null, queryId))
+                .map(fieldsView -> new CyodaSplit(queryId, Collections.emptyList(), tableHandle.getTableName(), tableHandle.getReportConfigId(), fieldsView.getReportId(), fieldsView.getGroupingVersion(), null))
                 .toList();
         return new FixedSplitSource(splitList);
     }

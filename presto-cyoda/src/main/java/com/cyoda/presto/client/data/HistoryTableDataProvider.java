@@ -43,7 +43,7 @@ public class HistoryTableDataProvider extends TableDataProvider<ReportHistoryFie
     @Override
     public ConnectorSplitSource getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
         return new FixedSplitSource(Collections.singletonList(
-                new CyodaSplit(tableHandle.getTableName(), tableHandle.getReportConfigId(), null, null, null, queryId)));
+                new CyodaSplit(queryId, Collections.emptyList(), tableHandle.getTableName(), tableHandle.getReportConfigId(), null, null, null)));
     }
 
     @Override

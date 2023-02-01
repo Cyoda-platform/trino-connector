@@ -7,16 +7,29 @@ import com.cyoda.presto.client.reporting.stats.ApiRequestStats;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import io.trino.metadata.InternalNode;
+import io.trino.metadata.InternalNodeManager;
+import io.trino.metadata.NodeState;
+import io.trino.spi.connector.ConnectorSplitSource;
+import io.trino.spi.connector.Constraint;
+import io.trino.spi.connector.FixedSplitSource;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Collections;
+import java.util.stream.Collectors;
 
-public class ApiCallStatsDataProvider extends UnsplitTableDataProvider<ApiRequestStats>{
+public class ApiCallStatsDataProvider extends TableDataProvider<ApiRequestStats> {
 
     private final CyodaApiRequestStatsMonitor statsMonitor;
 
-    public ApiCallStatsDataProvider(CyodaApiRequestStatsMonitor statsMonitor) {
+    private final InternalNodeManager internalNodeManager;
+    private final InternalNode thisNode;
+
+    public ApiCallStatsDataProvider(CyodaApiRequestStatsMonitor statsMonitor, InternalNodeManager internalNodeManager) {
         this.statsMonitor = statsMonitor;
+        this.internalNodeManager = internalNodeManager;
+        thisNode = internalNodeManager.getCurrentNode();
     }
 
     @Override
@@ -32,6 +45,12 @@ public class ApiCallStatsDataProvider extends UnsplitTableDataProvider<ApiReques
         switch (columnDef){
             case QUERY_ID -> {
                 return entity.queryId();
+            }
+            case NODE_ID -> {
+                return thisNode.getNodeIdentifier();
+            }
+            case NODE_ADDRESS -> {
+                return thisNode.getInternalUri();
             }
             case CALL_TIME -> {
                 return entity.callTime();
@@ -56,5 +75,16 @@ public class ApiCallStatsDataProvider extends UnsplitTableDataProvider<ApiReques
             }
         }
         throw new IllegalArgumentException("Unknown column " + columnHandle.getColumnName());
+    }
+
+    @Override
+    public ConnectorSplitSource getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
+        return new FixedSplitSource(
+                internalNodeManager.getNodes(NodeState.ACTIVE)
+                .stream()
+                .map(InternalNode::getInternalUri)
+                .map(uri -> CyodaSplit.addressedEmptySplit(tableHandle, queryId, uri))
+                .collect(Collectors.toList())
+        );
     }
 }

@@ -10,6 +10,7 @@ import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import io.trino.metadata.InternalNodeManager;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -28,7 +29,8 @@ public class TableDataProviderProvider {
                                      ReportRowsApiHandler rowsApiHandler,
                                      StaticTableMetadataProvider reportMetadataProvider,
                                      CyodaApiRequestStatsMonitor statsMonitor,
-                                     CyodaConfig config) {
+                                     CyodaConfig config,
+                                     InternalNodeManager internalNodeManager) {
         providerMap = new HashMap<>();
         providerMap.put(
                 CyodaTableHandle.TableType.REPORTS,
@@ -56,7 +58,7 @@ public class TableDataProviderProvider {
         );
         providerMap.put(
                 CyodaTableHandle.TableType.CALL_STATS,
-                new ApiCallStatsDataProvider(statsMonitor)
+                new ApiCallStatsDataProvider(statsMonitor, internalNodeManager)
         );
     }
 
