@@ -10,7 +10,6 @@ import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
-import io.trino.spi.connector.ConnectorSplitSource;
 import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.FixedSplitSource;
 import org.joda.beans.MetaProperty;
@@ -18,7 +17,6 @@ import org.joda.beans.MetaProperty;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import java.util.Collections;
 import java.util.List;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.HISTORY_REPORT_ID_COLUMN;
@@ -60,14 +58,13 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
     }
 
     @Override
-    public ConnectorSplitSource getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
+    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
         boolean hasReportIdConstraint = hasConstraint(reportIdColumn, constraint);
-        List<CyodaSplit> splitList = reportHistoryApiHandler.getByKey(new ReportConfigKey(tableHandle.getReportConfigId(), queryId))
+        return reportHistoryApiHandler.getByKey(new ReportConfigKey(tableHandle.getReportConfigId(), queryId))
                 .stream()
                 .filter(fieldsView -> !hasReportIdConstraint || acceptVal(reportIdColumn, fieldsView.getReportId(), constraint))
-                .map(fieldsView -> new CyodaSplit(queryId, Collections.emptyList(), tableHandle.getTableName(), tableHandle.getReportConfigId(), fieldsView.getReportId(), fieldsView.getGroupingVersion(), null))
+                .map(fieldsView -> new CyodaSplit(queryId, tableHandle.getTableName(), tableHandle.getReportConfigId(), fieldsView.getReportId(), fieldsView.getGroupingVersion(), null))
                 .toList();
-        return new FixedSplitSource(splitList);
     }
 
     @Override

@@ -23,12 +23,11 @@ import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.google.common.collect.ImmutableMap;
 import io.trino.spi.block.BlockBuilder;
-import io.trino.spi.connector.ConnectorSplitSource;
 import io.trino.spi.connector.Constraint;
-import io.trino.spi.predicate.NullableValue;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 public abstract class TableDataProvider<T> {
 
@@ -46,7 +45,7 @@ public abstract class TableDataProvider<T> {
                 .orElse(false); // no constraint
     }
 
-    public abstract ConnectorSplitSource getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint);
+    public abstract List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint);
     public abstract Iterable<T> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CyodaSplit split);
 
     protected abstract @Nullable Object getFieldValueFromEntity(@Nonnull T entity, CyodaColumnHandle columnHandle);

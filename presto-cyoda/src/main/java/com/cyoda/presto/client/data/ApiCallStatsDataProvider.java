@@ -10,13 +10,11 @@ import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.metadata.InternalNode;
 import io.trino.metadata.InternalNodeManager;
 import io.trino.metadata.NodeState;
-import io.trino.spi.connector.ConnectorSplitSource;
 import io.trino.spi.connector.Constraint;
-import io.trino.spi.connector.FixedSplitSource;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collections;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class ApiCallStatsDataProvider extends TableDataProvider<ApiRequestStats> {
@@ -42,7 +40,7 @@ public class ApiCallStatsDataProvider extends TableDataProvider<ApiRequestStats>
     protected Object getFieldValueFromEntity(@Nonnull ApiRequestStats entity, CyodaColumnHandle columnHandle) {
         StaticReportTable.ApiCallStatsColumnDef columnDef = StaticReportTable.ApiCallStatsColumnDef.valueOf(
                 columnHandle.getColumnName().toUpperCase());
-        switch (columnDef){
+        switch (columnDef) {
             case QUERY_ID -> {
                 return entity.queryId();
             }
@@ -56,7 +54,7 @@ public class ApiCallStatsDataProvider extends TableDataProvider<ApiRequestStats>
                 return entity.callTime();
             }
             case CALL_MILLIS -> {
-                return entity.callTime().toInstant().getNano()/1000000;
+                return entity.callTime().toInstant().getNano() / 1000000;
             }
             case DURATION_MILLIS -> {
                 return entity.duration();
@@ -78,13 +76,12 @@ public class ApiCallStatsDataProvider extends TableDataProvider<ApiRequestStats>
     }
 
     @Override
-    public ConnectorSplitSource getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
-        return new FixedSplitSource(
-                internalNodeManager.getNodes(NodeState.ACTIVE)
+    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
+        return internalNodeManager.getNodes(NodeState.ACTIVE)
                 .stream()
                 .map(InternalNode::getInternalUri)
                 .map(uri -> CyodaSplit.addressedEmptySplit(tableHandle, queryId, uri))
-                .collect(Collectors.toList())
-        );
+                .collect(Collectors.toList()
+                );
     }
 }

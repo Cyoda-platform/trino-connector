@@ -12,13 +12,12 @@ import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
-import io.trino.spi.connector.ConnectorSplitSource;
 import io.trino.spi.connector.Constraint;
-import io.trino.spi.connector.FixedSplitSource;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Stream;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_GROUPING_VERSION_COLUMN;
@@ -51,31 +50,30 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
     }
 
     @Override
-    public ConnectorSplitSource getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
+    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
         boolean hasReportIdConstraint = hasConstraint(reportIdColumn, constraint);
         boolean hasGroupIdConstraint = hasConstraint(groupIdColumn, constraint);
         boolean hasRowNumConstraint = hasConstraint(rowNumberColumn, constraint);
-        return new FixedSplitSource(
-                reportHistoryApiHandler.getByKey(new ReportConfigKey(tableHandle.getReportConfigId(), queryId))
+        return reportHistoryApiHandler.getByKey(new ReportConfigKey(tableHandle.getReportConfigId(), queryId))
                 .stream()
                 .filter(fieldsView -> !hasReportIdConstraint || acceptVal(reportIdColumn, fieldsView.getReportId(), constraint))
                 .flatMap(fieldsView -> reportGroupsApiHandler.getByKey(
-                                new GroupsRequestKey(fieldsView.getReportId(), fieldsView.getGroupingVersion(), queryId)).stream()
+                        new GroupsRequestKey(fieldsView.getReportId(), fieldsView.getGroupingVersion(), queryId)).stream()
                 ).filter(groupingHandle -> !hasGroupIdConstraint || acceptVal(
                         groupIdColumn, groupingHandle.groupHeader.getGroupValuesJsonBase64(), constraint)
                 )
                 .flatMap(groupingHandle -> {
                     int pageSize = config.getRowRequestPageSize();
-                    long maxPages = groupingHandle.groupHeader.getRowCount()/pageSize +
+                    long maxPages = groupingHandle.groupHeader.getRowCount() / pageSize +
                             Long.signum(groupingHandle.groupHeader.getRowCount() % pageSize);
-                    return Stream.iterate(0, x->x<maxPages, x->x+1)
+                    return Stream.iterate(0, x -> x < maxPages, x -> x + 1)
                             .filter(page -> !hasRowNumConstraint ||
-                                    Stream.iterate(1, x->x<=pageSize, x->x+1)
-                                    .map(x->x+((long) page*pageSize))
-                                    .anyMatch(row -> acceptVal(rowNumberColumn, row, constraint)))
+                                    Stream.iterate(1, x -> x <= pageSize, x -> x + 1)
+                                            .map(x -> x + ((long) page * pageSize))
+                                            .anyMatch(row -> acceptVal(rowNumberColumn, row, constraint)))
                             .map(page -> new CyodaSplit(
                                     queryId,
-                                    Collections.emptyList(),
+                                    new ArrayList<>(),
                                     tableHandle.getTableName(),
                                     tableHandle.getReportConfigId(),
                                     groupingHandle.reportId,
@@ -83,7 +81,7 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
                                     groupingHandle.groupHeader.getGroupValuesJsonBase64(),
                                     page, pageSize));
                 })
-                .toList());
+                .toList();
     }
 
     @Override
