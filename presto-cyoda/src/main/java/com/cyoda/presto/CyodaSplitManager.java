@@ -21,6 +21,7 @@ import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.data.TableDataProviderProvider;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.metadata.InternalNodeManager;
+import io.trino.spi.NodeManager;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.DynamicFilter;
@@ -49,11 +50,11 @@ public class CyodaSplitManager implements ConnectorSplitManager {
     public CyodaSplitManager(CyodaConnectorId connectorId,
                              TableDataProviderProvider dataProviderProvider,
                              AuthService auth,
-                             InternalNodeManager internalNodeManager) {
+                             NodeManager nodeManager) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
         this.dataProviderProvider = dataProviderProvider;
         this.auth = auth;
-        splitDispatcher = new CyodaSplitDispatcher(internalNodeManager);
+        splitDispatcher = new CyodaSplitDispatcher(nodeManager);
     }
 
     @Override

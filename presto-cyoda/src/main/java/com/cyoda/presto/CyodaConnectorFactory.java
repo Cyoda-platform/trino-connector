@@ -19,6 +19,7 @@ package com.cyoda.presto;
 
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.json.JsonModule;
+import io.trino.server.ServerMainModule;
 import io.trino.spi.type.TypeManager;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.Connector;
@@ -47,7 +48,7 @@ public class CyodaConnectorFactory implements ConnectorFactory {
             // A plugin is not required to use Guice; it is just very convenient
             Bootstrap app = new Bootstrap(
                     new JsonModule(),
-                    new CyodaModule(catalogName, context.getTypeManager()),
+                    new CyodaModule(catalogName, context),
                     binder -> {
                         binder.bind(TypeManager.class).toInstance(context.getTypeManager());
                     });

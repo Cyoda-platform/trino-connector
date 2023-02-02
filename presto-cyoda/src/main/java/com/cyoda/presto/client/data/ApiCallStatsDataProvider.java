@@ -8,8 +8,9 @@ import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.metadata.InternalNode;
-import io.trino.metadata.InternalNodeManager;
 import io.trino.metadata.NodeState;
+import io.trino.spi.Node;
+import io.trino.spi.NodeManager;
 import io.trino.spi.connector.Constraint;
 
 import javax.annotation.Nonnull;
@@ -21,13 +22,13 @@ public class ApiCallStatsDataProvider extends TableDataProvider<ApiRequestStats>
 
     private final CyodaApiRequestStatsMonitor statsMonitor;
 
-    private final InternalNodeManager internalNodeManager;
-    private final InternalNode thisNode;
+    private final NodeManager nodeManager;
+    private final Node thisNode;
 
-    public ApiCallStatsDataProvider(CyodaApiRequestStatsMonitor statsMonitor, InternalNodeManager internalNodeManager) {
+    public ApiCallStatsDataProvider(CyodaApiRequestStatsMonitor statsMonitor, NodeManager nodeManager) {
         this.statsMonitor = statsMonitor;
-        this.internalNodeManager = internalNodeManager;
-        thisNode = internalNodeManager.getCurrentNode();
+        this.nodeManager = nodeManager;
+        thisNode = nodeManager.getCurrentNode();
     }
 
     @Override
@@ -48,7 +49,7 @@ public class ApiCallStatsDataProvider extends TableDataProvider<ApiRequestStats>
                 return thisNode.getNodeIdentifier();
             }
             case NODE_ADDRESS -> {
-                return thisNode.getInternalUri();
+                return thisNode.getHttpUri();
             }
             case CALL_TIME -> {
                 return entity.callTime();
@@ -77,9 +78,9 @@ public class ApiCallStatsDataProvider extends TableDataProvider<ApiRequestStats>
 
     @Override
     public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
-        return internalNodeManager.getNodes(NodeState.ACTIVE)
+        return nodeManager.getWorkerNodes()
                 .stream()
-                .map(InternalNode::getInternalUri)
+                .map(Node::getHttpUri)
                 .map(uri -> CyodaSplit.addressedEmptySplit(tableHandle, queryId, uri))
                 .collect(Collectors.toList()
                 );

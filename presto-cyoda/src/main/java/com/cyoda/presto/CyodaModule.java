@@ -28,6 +28,8 @@ import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.DynamicReportMetadataProvider;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
+import io.trino.spi.NodeManager;
+import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.type.Type;
 import io.trino.spi.type.TypeManager;
 import com.fasterxml.jackson.databind.DeserializationContext;
@@ -48,16 +50,19 @@ import static java.util.Objects.requireNonNull;
 public class CyodaModule implements Module {
     private final String connectorId;
     private final TypeManager typeManager;
+    private final NodeManager nodeManager;
 
 
-    public CyodaModule(String connectorId, TypeManager typeManager) {
+    public CyodaModule(String connectorId, ConnectorContext context) {
         this.connectorId = requireNonNull(connectorId, "connector id is null");
-        this.typeManager = requireNonNull(typeManager, "typeManager is null");
+        typeManager = requireNonNull(context.getTypeManager(), "typeManager is null");
+        nodeManager = requireNonNull(context.getNodeManager(), "nodeManager is null");
     }
 
     @Override
     public void configure(Binder binder) {
         binder.bind(TypeManager.class).toInstance(typeManager);
+        binder.bind(NodeManager.class).toInstance(nodeManager);
 
         binder.bind(CyodaConnector.class).in(Scopes.SINGLETON);
         binder.bind(CyodaConnectorId.class).toInstance(new CyodaConnectorId(connectorId));
