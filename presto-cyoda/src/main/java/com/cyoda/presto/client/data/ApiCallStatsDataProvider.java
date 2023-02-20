@@ -1,38 +1,27 @@
 package com.cyoda.presto.client.data;
 
 import com.cyoda.presto.CyodaSplit;
-import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
 import com.cyoda.presto.client.reporting.stats.ApiRequestStats;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
-import io.trino.metadata.InternalNode;
-import io.trino.metadata.NodeState;
-import io.trino.spi.Node;
 import io.trino.spi.NodeManager;
-import io.trino.spi.connector.Constraint;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.List;
-import java.util.stream.Collectors;
 
-public class ApiCallStatsDataProvider extends TableDataProvider<ApiRequestStats> {
+public class ApiCallStatsDataProvider extends VirtualTableDataProvider<ApiRequestStats> {
 
     private final CyodaApiRequestStatsMonitor statsMonitor;
 
-    private final NodeManager nodeManager;
-    private final Node thisNode;
-
     public ApiCallStatsDataProvider(CyodaApiRequestStatsMonitor statsMonitor, NodeManager nodeManager) {
+        super(nodeManager);
         this.statsMonitor = statsMonitor;
-        this.nodeManager = nodeManager;
-        thisNode = nodeManager.getCurrentNode();
     }
 
     @Override
-    public Iterable<ApiRequestStats> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CyodaSplit split) {
+    public Iterable<ApiRequestStats> getIterable(CyodaTableHandle tableHandle, CyodaSplit split) {
         return statsMonitor.getIterable();
     }
 
@@ -76,13 +65,4 @@ public class ApiCallStatsDataProvider extends TableDataProvider<ApiRequestStats>
         throw new IllegalArgumentException("Unknown column " + columnHandle.getColumnName());
     }
 
-    @Override
-    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
-        return nodeManager.getWorkerNodes()
-                .stream()
-                .map(Node::getHttpUri)
-                .map(uri -> CyodaSplit.addressedEmptySplit(tableHandle, queryId, uri))
-                .collect(Collectors.toList()
-                );
-    }
 }

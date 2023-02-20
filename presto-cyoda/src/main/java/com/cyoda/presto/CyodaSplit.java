@@ -26,7 +26,9 @@ import com.google.common.base.MoreObjects;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static java.util.Objects.requireNonNull;
@@ -35,7 +37,7 @@ public class CyodaSplit implements ConnectorSplit {
     private final String queryId;
     private final List<HostAddress> addresses;
 
-    private final String tableName;
+    private final boolean assignToCoordinator;
 
     private final String reportConfigId;
 
@@ -48,36 +50,68 @@ public class CyodaSplit implements ConnectorSplit {
 
     private final int page;
 
-    private final int size;
-
+    private final Map<String, ?> customData;
 
     @JsonCreator
-    public CyodaSplit(String queryId, List<HostAddress> addresses, String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64, int page, int size) {
+    public CyodaSplit(String queryId, List<HostAddress> addresses, boolean assignToCoordinator, String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64, int page, Map<String, ?> customData) {
         this.queryId = queryId;
         this.addresses = addresses;
-        this.tableName = tableName;
+        this.assignToCoordinator = assignToCoordinator;
         this.reportConfigId = reportConfigId;
         this.reportId = reportId;
         this.groupingVersion = groupingVersion;
         this.groupJsonBase64 = groupJsonBase64;
         this.page = page;
-        this.size = size;
+        this.customData = customData;
     }
 
     public CyodaSplit(String queryId, String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64){
-        this(queryId, new ArrayList<>(), tableName, reportConfigId, reportId, groupingVersion, groupJsonBase64, 0, Integer.MAX_VALUE-1);
+        this(queryId,
+                new ArrayList<>(),
+                false,
+                tableName,
+                reportConfigId,
+                reportId,
+                groupingVersion,
+                groupJsonBase64,
+                0,
+                null);
     }
 
-    public static CyodaSplit emptySplit(CyodaTableHandle tableHandle, String queryId){
-        return new CyodaSplit(queryId, tableHandle.getTableName(), tableHandle.getReportConfigId(), null, null, null);
+    public static CyodaSplit emptyCoordinatorSplit(String tableName, String queryId, Map<String, ?> customData){
+        return new CyodaSplit(queryId,
+                new ArrayList<>(),
+                true,
+                tableName,
+                null,
+                null,
+                null,
+                null,
+                0,
+                customData);
     }
+    public static CyodaSplit configSplit(String tableName, String reportConfigId, String queryId){
+        return new CyodaSplit(queryId,
+                new ArrayList<>(),
+                false,
+                tableName,
+                reportConfigId,
+                null,
+                null,
+                null,
+                0, null);
+    }
+
     public static CyodaSplit addressedEmptySplit(CyodaTableHandle tableHandle, String queryId, URI nodeAddress){
         return new CyodaSplit(queryId,
+                Collections.singletonList(HostAddress.fromUri(nodeAddress)),
+                false,
                 tableHandle.getTableName(),
-                tableHandle.getReportConfigId(),
                 null,
                 null,
-                null);
+                null,
+                null,
+                0, null);
     }
 
     @JsonProperty
@@ -86,8 +120,8 @@ public class CyodaSplit implements ConnectorSplit {
     }
 
     @JsonProperty
-    public String getTableName() {
-        return tableName;
+    public boolean isAssignToCoordinator() {
+        return assignToCoordinator;
     }
 
     @JsonProperty
@@ -116,8 +150,8 @@ public class CyodaSplit implements ConnectorSplit {
     }
 
     @JsonProperty
-    public int getSize() {
-        return size;
+    public Map<String, ?> getCustomData() {
+        return customData;
     }
 
     @Override

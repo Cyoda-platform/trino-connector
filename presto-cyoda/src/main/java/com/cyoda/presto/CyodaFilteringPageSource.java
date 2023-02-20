@@ -17,37 +17,29 @@
 
 package com.cyoda.presto;
 
-import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.data.TableDataProvider;
-import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.Page;
 import io.trino.spi.PageBuilder;
 import io.trino.spi.block.BlockBuilder;
-import io.trino.spi.connector.ColumnHandle;
-import io.trino.spi.connector.Constraint;
-import io.trino.spi.predicate.NullableValue;
 import io.trino.spi.type.Type;
 import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.TrinoException;
 import com.google.common.collect.ImmutableList;
-import reactor.core.scheduler.Schedulers;
 
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Predicate;
 
 import static com.cyoda.presto.CyodaErrorCode.CYODA_PAGING_ERROR;
 import static com.google.common.collect.ImmutableList.toImmutableList;
 import static java.util.Objects.requireNonNull;
 
 @SuppressWarnings("UnstableApiUsage")
-public class CyodaFilteringPageSource<K,T>
+public class CyodaFilteringPageSource<T>
         implements ConnectorPageSource
 {
     private static final SupplierLogger LOG = SupplierLogger.get(CyodaFilteringPageSource.class);
@@ -66,7 +58,6 @@ public class CyodaFilteringPageSource<K,T>
     private final AtomicInteger pages;
 
     public CyodaFilteringPageSource(
-            AuthContext authContext,
             TableDataProvider<T> dataProvider,
             CyodaTableHandle tableHandle,
             List<CyodaColumnHandle> columnHandles,
@@ -85,8 +76,7 @@ public class CyodaFilteringPageSource<K,T>
 
         this.pageBuilder = new PageBuilder(columnTypes);
         this.responseIterable = dataProvider.getIterable(
-                        authContext,
-                        tableHandle,
+                tableHandle,
                         split);
 
     }

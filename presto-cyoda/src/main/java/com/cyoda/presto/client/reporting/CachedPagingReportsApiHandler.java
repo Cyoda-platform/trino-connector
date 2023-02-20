@@ -37,17 +37,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApiHandler {
-
-    private final LoadingCache<K, List<T>> cache;
+public abstract class CachedPagingReportsApiHandler<K, T> extends CachedReportsApiHandler<K, T> {
 
     public abstract Optional<PagedModel<T>> retrievePage(
             K requestKey,
             int page,
             int pageSize,
             SizeListener listener);
-
-    protected abstract Duration getCacheDuration();
 
     protected CachedPagingReportsApiHandler(CyodaConnectorId connectorId,
                                             CyodaConfig config,
@@ -57,16 +53,10 @@ public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApi
                                             AuthService authService,
                                             CyodaApiRequestStatsMonitor requestStatsMonitor) {
         super(connectorId, config, typeManager, restTemplateCustomizer, log, authService, requestStatsMonitor);
-        cache = Caffeine.newBuilder()
-                .expireAfterAccess(getCacheDuration())
-                .build(this::loadByKey);
     }
 
-    public List<T> getByKey(K requestKey){
-        return cache.get(requestKey);
-    }
-
-    private List<T> loadByKey(K requestKey){
+    @Override
+    protected List<T> loadByKey(K requestKey){
 
         int pageSize = getPageSize();
         logCreation(pageSize, log);

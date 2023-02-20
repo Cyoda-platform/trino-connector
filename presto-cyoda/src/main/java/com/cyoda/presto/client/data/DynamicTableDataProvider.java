@@ -1,8 +1,11 @@
 package com.cyoda.presto.client.data;
 
+import com.cyoda.presto.CyodaCachedPageSource;
 import com.cyoda.presto.CyodaConfig;
+import com.cyoda.presto.CyodaFilteringPageSource;
 import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.auth.AuthContext;
+import com.cyoda.presto.client.reporting.data.DataRequestKey;
 import com.cyoda.presto.client.reporting.data.ReportRowsApiHandler;
 import com.cyoda.presto.client.reporting.data.RowHandle;
 import com.cyoda.presto.client.reporting.groups.GroupsRequestKey;
@@ -12,6 +15,9 @@ import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
+import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.connector.Constraint;
 
 import javax.annotation.Nonnull;
@@ -33,6 +39,11 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
     private final CyodaColumnHandle reportIdColumn;
     private final CyodaColumnHandle groupIdColumn;
     private final CyodaColumnHandle rowNumberColumn;
+
+    private final LoadingCache<DataRequestKey, CyodaCachedPageSource<RowHandle>> pageCache =
+            Caffeine.newBuilder().build(
+                    this::getCachedPageSource
+            );
 
     public DynamicTableDataProvider(ReportHistoryApiHandler reportHistoryApiHandler,
                                     ReportGroupsApiHandler reportGroupsApiHandler,
@@ -74,21 +85,29 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
                             .map(page -> new CyodaSplit(
                                     queryId,
                                     new ArrayList<>(),
-                                    tableHandle.getTableName(),
+                                    false, tableHandle.getTableName(),
                                     tableHandle.getReportConfigId(),
                                     groupingHandle.reportId,
                                     groupingHandle.groupingVersion,
                                     groupingHandle.groupHeader.getGroupValuesJsonBase64(),
-                                    page, pageSize));
+                                    page, null));
                 })
                 .toList();
     }
 
-    @Override
-    public Iterable<RowHandle> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CyodaSplit split) {
-
-
+    @Override //this is used only while loading an uncached page
+    public Iterable<RowHandle> getIterable(CyodaTableHandle tableHandle, CyodaSplit split) {
         return reportRowsApiHandler.getIterable(split);
+    }
+
+    @Override //this is using cached pages
+    public ConnectorPageSource getPageSource(CyodaTableHandle tableHandle, List<CyodaColumnHandle> cyodaColumns, CyodaSplit split) {
+        return pageCache.get(new DataRequestKey(split, tableHandle)).mapNewPage(cyodaColumns);
+    }
+
+    @Nonnull
+    public CyodaCachedPageSource<RowHandle> getCachedPageSource(DataRequestKey requestKey) {
+        return new CyodaCachedPageSource<>(this, requestKey.getTableHandle(), requestKey.getSplit());
     }
 
     @Nullable

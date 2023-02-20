@@ -14,11 +14,16 @@ public class CyodaSplitDispatcher {
     protected static final SupplierLogger LOG = SupplierLogger.get(CyodaSplitDispatcher.class);
 
     private final NodeManager nodeManager;
+    private final Node coordinator;
 
     private URI[] nodeBuckets;
 
     public CyodaSplitDispatcher(NodeManager nodeManager) {
         this.nodeManager = nodeManager;
+        this.coordinator = nodeManager.getAllNodes().stream()
+                .filter(Node::isCoordinator)
+                .findAny()
+                .orElseThrow();
         setupBuckets();
 //        nodeManager.addNodeChangeListener(allNodes -> {
 //            LOG.warn("Node list changed. Restructuring cache buckets");
@@ -26,14 +31,24 @@ public class CyodaSplitDispatcher {
 //        });
     }
 
-    private void appendNodeUriForSplit(CyodaSplit split){
+    private void dispatchToWorkers(CyodaSplit split){
         if (!split.getAddresses().isEmpty() || split.getReportConfigId() == null) return;
         int hash = Objects.hash(split.getReportConfigId(), split.getReportId(), split.getGroupJsonBase64(), split.getPage());
         split.getAddresses().add(HostAddress.fromUri(nodeBuckets[hash % nodeBuckets.length]));
     }
 
+    private void dispatchToCoordinator(CyodaSplit split){
+        split.getAddresses().add(HostAddress.fromUri(coordinator.getHttpUri()));
+    }
+
     public void dispatch(List<CyodaSplit> splits){
-        splits.forEach(this::appendNodeUriForSplit);
+        for (CyodaSplit split : splits) {
+            if (split.isAssignToCoordinator()){
+                dispatchToCoordinator(split);
+            } else {
+                dispatchToWorkers(split);
+            }
+        }
     }
 
     private void setupBuckets(){
