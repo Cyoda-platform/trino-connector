@@ -127,7 +127,10 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Repor
 
     @Override
     protected LoadingCache<ReportConfigKey, List<ReportHistoryFieldsView>> setupCache(CacheLoader<ReportConfigKey, List<ReportHistoryFieldsView>> loader) {
-        return Caffeine.newBuilder().expireAfterWrite(Duration.ofSeconds(5)).build(loader);
+        return Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofSeconds(5))
+                .recordStats()
+                .build(loader);
     }
 
     @Override

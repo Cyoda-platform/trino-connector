@@ -23,6 +23,7 @@ import io.trino.spi.connector.Constraint;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
@@ -58,7 +59,10 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
         rowNumberColumn = reportMetadataProvider.getReportRows().getRowNumberColumn();
         this.config = config;
         pageCache =
-                Caffeine.newBuilder().build(
+                Caffeine.newBuilder()
+                        .expireAfterAccess(Duration.ofDays(1))
+                        .recordStats()
+                        .build(
                         this::getCachedPageSource
                 );
         cacheMonitor.register("DATA", pageCache,

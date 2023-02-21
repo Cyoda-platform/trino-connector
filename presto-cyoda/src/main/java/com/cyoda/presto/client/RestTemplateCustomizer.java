@@ -96,6 +96,7 @@ public class RestTemplateCustomizer {
         this.apiRequestStatsMonitor = apiRequestStatsMonitor;
         restTemplateCache = Caffeine.newBuilder()
                 .maximumSize(100)
+                .recordStats()
                 .build(key -> {
                     LOG.debug(()->"creating RestTemplate for "+key.getPayload().getUsername());
                     return newRestTemplate(ACCESS,key,HAL_CONVERTERS);
@@ -103,6 +104,7 @@ public class RestTemplateCustomizer {
         cacheMonitor.register("REST_TEMPLATE", restTemplateCache, AuthContext::getUserId, x -> 1);
         refreshRestTemplateCache = Caffeine.newBuilder()
                 .maximumSize(100)
+                .recordStats()
                 .build(key -> {
                     LOG.debug(()->"creating refresh RestTemplate for "+key.getPayload().getUsername());
                     return newRestTemplate(REFRESH,key,null);
