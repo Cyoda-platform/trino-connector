@@ -25,7 +25,11 @@ import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.CachedPagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
+import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.spi.StandardErrorCode;
@@ -47,6 +51,7 @@ import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportTable.REPORT_HISTORIES;
@@ -70,8 +75,9 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Repor
     public ReportHistoryApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                    RestTemplateCustomizer restTemplateCustomizer,
                                    AuthService authService,
-                                   CyodaApiRequestStatsMonitor requestStatsMonitor) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
+                                   CyodaApiRequestStatsMonitor requestStatsMonitor,
+                                   CyodaCacheMonitor cacheMonitor) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor, cacheMonitor);
 //        this.typeColumn = staticMetaProvider.getReportHistory().getTypeColumn();
 //        this.reportNameColumn = staticMetaProvider.getReportHistory().getReportNameColumn();
 //        this.reportIdColumn = staticMetaProvider.getReportHistory().getReportIdColumn();
@@ -120,8 +126,14 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Repor
     }
 
     @Override
-    protected Duration getCacheDuration() {
-        return Duration.ofSeconds(5);
+    protected LoadingCache<ReportConfigKey, List<ReportHistoryFieldsView>> setupCache(CacheLoader<ReportConfigKey, List<ReportHistoryFieldsView>> loader) {
+        return Caffeine.newBuilder().expireAfterWrite(Duration.ofSeconds(5)).build(loader);
+    }
+
+    @Override
+    protected void registerCache(CyodaCacheMonitor cacheMonitor, LoadingCache<ReportConfigKey, List<ReportHistoryFieldsView>> cache) {
+        cacheMonitor.register("HISTORY", cache,
+                ReportConfigKey::configId, List::size);
     }
 
     private UriTemplate setupUriTemplate() {

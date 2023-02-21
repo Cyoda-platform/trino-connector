@@ -23,6 +23,7 @@ import com.cyoda.presto.auth.AuthPayload;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.auth.RefreshContext;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
+import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.TrinoException;
 import io.trino.spi.security.AccessDeniedException;
@@ -89,7 +90,7 @@ public class RestTemplateCustomizer {
                 .forEach(conv -> ((AbstractJackson2HttpMessageConverter)conv).getObjectMapper().configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true));
     }
     @Inject
-    public RestTemplateCustomizer(CyodaConfig config, AuthService authService, CyodaApiRequestStatsMonitor apiRequestStatsMonitor) {
+    public RestTemplateCustomizer(CyodaConfig config, AuthService authService, CyodaApiRequestStatsMonitor apiRequestStatsMonitor, CyodaCacheMonitor cacheMonitor) {
         this.config = config;
         this.authService = authService;
         this.apiRequestStatsMonitor = apiRequestStatsMonitor;
@@ -99,14 +100,14 @@ public class RestTemplateCustomizer {
                     LOG.debug(()->"creating RestTemplate for "+key.getPayload().getUsername());
                     return newRestTemplate(ACCESS,key,HAL_CONVERTERS);
                 });
-
+        cacheMonitor.register("REST_TEMPLATE", restTemplateCache, AuthContext::getUserId, x -> 1);
         refreshRestTemplateCache = Caffeine.newBuilder()
                 .maximumSize(100)
                 .build(key -> {
                     LOG.debug(()->"creating refresh RestTemplate for "+key.getPayload().getUsername());
                     return newRestTemplate(REFRESH,key,null);
                 });
-
+        cacheMonitor.register("REST_REFRESH", refreshRestTemplateCache, AuthContext::getUserId, x -> 1);
         this.unauthorizedRestTemplate = newRestTemplate(ACCESS,null,null);
 
         try {

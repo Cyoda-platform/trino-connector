@@ -11,6 +11,7 @@ import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle;
 import com.cyoda.presto.client.reporting.meta.ReportListKey;
+import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.DummyTableHandle;
@@ -57,7 +58,8 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
                                          TypeManager typeManager, AuthService auth,
                                          StaticTableMetadataProvider staticTableMetadataProvider,
                                          ConfiguredReportsApiHandler configuredReportsApiHandler,
-                                         ReportConfigDetailsApiHandler reportConfigDetailsApiHandler) {
+                                         ReportConfigDetailsApiHandler reportConfigDetailsApiHandler,
+                                         CyodaCacheMonitor cacheMonitor) {
         super(typeManager, config, connectorId);
         this.auth = auth;
         this.staticTableMetadataProvider = staticTableMetadataProvider;
@@ -69,13 +71,14 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
                     LOG.debug("Loading Tables Cache for user " + key.getUserId());
                     return tableByUserCacheLoad(key);
                 });
+        cacheMonitor.register("AUTH", tableByUserCache, AuthContext::getUserId, Map::size);
         tableMetaCache = Caffeine.newBuilder()
                 .expireAfterAccess(Duration.ofDays(1))
                 .build(key -> {
                     LOG.debug("Loading config " + key);
                     return getTableHandleFromCyoda(key.configId);
                 });
-
+        cacheMonitor.register("META", tableMetaCache, key -> key.configId, x->1);
     }
 
     private CyodaTableHandle getTableHandleFromCyoda(String configId) {

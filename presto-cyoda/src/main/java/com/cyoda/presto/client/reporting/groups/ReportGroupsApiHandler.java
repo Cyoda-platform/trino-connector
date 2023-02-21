@@ -24,9 +24,13 @@ import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.CachedPagingReportsApiHandler;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
+import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.GroupHeader;
 import com.cyoda.service.interactors.WrappedEntityModel;
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.spi.StandardErrorCode;
@@ -75,8 +79,9 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
     public ReportGroupsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
                                   RestTemplateCustomizer restTemplateCustomizer,
                                   AuthService authService,
-                                  CyodaApiRequestStatsMonitor requestStatsMonitor) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
+                                  CyodaApiRequestStatsMonitor requestStatsMonitor,
+                                  CyodaCacheMonitor cacheMonitor) {
+        super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor, cacheMonitor);
 //        this.groupingVersionColumn = staticMetaProvider.getReportGroups().getGroupingVersionColumn();
 //        this.reportIdColumn = staticMetaProvider.getReportGroups().getReportIdColumn();
 //        // An External Column
@@ -141,31 +146,14 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
     }
 
     @Override
-    protected Duration getCacheDuration() {
-        return Duration.ofDays(1);
+    protected LoadingCache<GroupsRequestKey, List<GroupingHandle>> setupCache(CacheLoader<GroupsRequestKey, List<GroupingHandle>> loader) {
+        return Caffeine.newBuilder().expireAfterAccess(Duration.ofDays(1)).build(loader);
     }
 
-//    private <T extends Comparable<? super T>> Optional<T> mixinColumn(ImmutableMap.Builder<String, Object> expansionBuilder,
-//                                                                      PredicateTraversal<T> traversal, CyodaColumnHandle columnHandle
-//    ) {
-//        String columnName = columnHandle.getColumnName();
-//        Optional<SortedSet<T>> values = traversal.assembleEqualsPredicateValuesFromAnd(columnHandle);
-//        LOG.debug("selecting values for %s : %s", () -> columnName, () -> values.map(it -> String.join(",", it.toString())).orElse("EMPTY"));
-//
-//        Preconditions.checkArgument(values.isPresent());
-//
-//        Set<T> theValues = values
-//                .orElseThrow(() -> new IllegalArgumentException("No consistent result found for column " + columnName + IN_PREDICATES));
-//
-//        if (theValues.size() > 1)
-//            throw new IllegalStateException("Predicates should only have one element for " + columnName);
-//        if (!theValues.isEmpty()) {
-//            T result = theValues.iterator().next();
-//            expansionBuilder.put(columnName, result);
-//            return Optional.of(result);
-//        }
-//        return Optional.empty();
-//    }
+    @Override
+    protected void registerCache(CyodaCacheMonitor cacheMonitor, LoadingCache<GroupsRequestKey, List<GroupingHandle>> cache) {
+        cacheMonitor.register("GROUPS", cache, GroupsRequestKey::reportId, List::size);
+    }
 
     private UriTemplate setupUriTemplate() {
 

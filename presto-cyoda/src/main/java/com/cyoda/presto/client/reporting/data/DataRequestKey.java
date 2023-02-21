@@ -58,14 +58,13 @@ public final class DataRequestKey {
         DataRequestKey other = (DataRequestKey) obj;
         return Objects.equals(reportConfigId, other.reportConfigId) &&
                 Objects.equals(reportId, other.reportId) &&
-                Objects.equals(groupingVersion, other.groupingVersion) &&
                 Objects.equals(groupJsonBase64, other.groupJsonBase64) &&
                 page == other.page;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(reportConfigId, reportId, groupingVersion, groupJsonBase64, page);
+        return Objects.hash(reportConfigId, reportId, groupJsonBase64, page);
     }
 
     public String getQueryId() {

@@ -50,6 +50,11 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
         if (config.getLogApiCallStats()) {
             standaloneTablesMap.put(apiCallStats.getTableHandle().getTableName(), apiCallStats);
         }
+        StaticTableMetadata cacheStats = new StaticTableMetadata(StaticReportTable.CACHE_STATS);
+        standaloneTablesMap.put(cacheStats.getTableHandle().getTableName(), cacheStats);
+        StaticTableMetadata cacheContent = new StaticTableMetadata(StaticReportTable.CACHE_CONTENT);
+        standaloneTablesMap.put(cacheContent.getTableHandle().getTableName(), cacheContent);
+
 
         historyTableTemplate = CyodaTableHandle.Template.of(reportHistory.getTableHandle());
         groupsTableTemplate = CyodaTableHandle.Template.of(reportGroups.getTableHandle());
@@ -103,7 +108,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
                 .toList();
     }
 
-    public abstract class StaticTableMetadata {
+    public class StaticTableMetadata {
 
         private final CyodaTableHandle tableHandle;
 

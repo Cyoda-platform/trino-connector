@@ -184,7 +184,9 @@ public class CyodaTableHandle implements ConnectorTableHandle {
         GROUP,
         DATA,
         DUMMY,
-        CALL_STATS
+        CALL_STATS,
+        CACHE_STATS,
+        CACHE_CONTENT
     }
 
     public static class Template{
