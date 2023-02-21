@@ -31,7 +31,7 @@ public class CyodaSplitDispatcher {
     private void dispatchToWorkers(CyodaSplit split){
         if (!split.getAddresses().isEmpty() || split.getReportConfigId() == null) return;
         refreshBuckets();
-        int hash = Objects.hash(split.getReportConfigId(), split.getReportId(), split.getGroupJsonBase64(), split.getPage());
+        int hash = Math.abs(Objects.hash(split.getReportConfigId(), split.getReportId(), split.getGroupJsonBase64(), split.getPage()));
         split.getAddresses().add(HostAddress.fromUri(nodeBuckets.get(hash % nodeBuckets.size()).getHttpUri()));
     }
 
