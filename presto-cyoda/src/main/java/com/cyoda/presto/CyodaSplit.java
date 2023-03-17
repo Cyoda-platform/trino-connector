@@ -171,6 +171,14 @@ public class CyodaSplit implements ConnectorSplit {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("addresses", addresses)
+                .add("queryId", queryId)
+                .add("addresses", addresses)
+                .add("assignToCoordinator", assignToCoordinator)
+                .add("reportConfigId", reportConfigId)
+                .add("reportId", reportId)
+                .add("groupingVersion", groupingVersion)
+                .add("groupJsonBase64", groupJsonBase64)
+                .add("page", page)
                 .toString();
     }
 }

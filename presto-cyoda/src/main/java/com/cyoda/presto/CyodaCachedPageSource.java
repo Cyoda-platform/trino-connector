@@ -86,6 +86,7 @@ public class CyodaCachedPageSource<T> implements ConnectorPageSource {
     public Page getNextPage() {
         if (cursor.get() >= pages.size()){
             LOG.warn(String.format("Cached page out of bounds - index:%s size:%s", cursor.get(), pages.size()));
+            return null;
         }
         int i = cursor.get();
         Page res = pages.get(i++);
