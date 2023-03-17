@@ -9,6 +9,7 @@ import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.split.MappedPageSource;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -33,16 +34,24 @@ public class CyodaCachedPageSource<T> implements ConnectorPageSource {
                 tableHandle,
                 allColumns,
                 split);
-        pages = ImmutableList.<Page>builder().addAll(new Iterator<>() {
-            @Override
-            public boolean hasNext() {
-                return !source.isFinished();
+        List<Page> pagesPt = new ArrayList<>();
+        while (!source.isFinished()){
+            Page page = source.getNextPage();
+            if (page !=  null){
+                pagesPt.add(page);
             }
-            @Override
-            public Page next() {
-                return source.getNextPage();
-            }
-        }).build();
+        }
+        pages = ImmutableList.copyOf(pagesPt);
+//        pages = ImmutableList.<Page>builder().addAll(new Iterator<>() {
+//            @Override
+//            public boolean hasNext() {
+//                return !source.isFinished();
+//            }
+//            @Override
+//            public Page next() {
+//                return source.getNextPage();
+//            }
+//        }).build();
         completedBytes = source.getCompletedBytes();
         columnIdxMap = new HashMap<>();
         for (int i = 0; i < allColumns.size(); i++) {
