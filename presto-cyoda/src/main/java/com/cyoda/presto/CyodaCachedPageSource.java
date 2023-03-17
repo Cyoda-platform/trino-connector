@@ -3,6 +3,7 @@ package com.cyoda.presto;
 import com.cyoda.presto.client.data.TableDataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.collect.ImmutableList;
 import io.trino.spi.Page;
 import io.trino.spi.connector.ConnectorPageSource;
@@ -11,13 +12,12 @@ import io.trino.split.MappedPageSource;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class CyodaCachedPageSource<T> implements ConnectorPageSource {
 
+    private static final SupplierLogger LOG = SupplierLogger.get(CyodaCachedPageSource.class);
     private final long completedBytes;
     private final ImmutableList<Page> pages;
 
@@ -40,6 +40,9 @@ public class CyodaCachedPageSource<T> implements ConnectorPageSource {
             if (page !=  null){
                 pagesPt.add(page);
             }
+        }
+        if (pagesPt.size() == 0){
+            LOG.warn("Created empty page cache for split " + split.toString());
         }
         pages = ImmutableList.copyOf(pagesPt);
 //        pages = ImmutableList.<Page>builder().addAll(new Iterator<>() {
@@ -81,6 +84,9 @@ public class CyodaCachedPageSource<T> implements ConnectorPageSource {
 
     @Override
     public Page getNextPage() {
+        if (cursor.get() >= pages.size()){
+            LOG.warn(String.format("Cached page out of bounds - index:%s size:%s", cursor.get(), pages.size()));
+        }
         int i = cursor.get();
         Page res = pages.get(i++);
         cursor.set(i);
