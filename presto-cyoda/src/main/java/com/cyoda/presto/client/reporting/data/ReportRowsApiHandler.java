@@ -89,16 +89,11 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler {
     }
 
 
-    @Override
-    protected int getPageSize() {
-        return config.getRowRequestPageSize();
-    }
-
     public Iterable<RowHandle> getIterable(CyodaSplit split) {
 
         UriTemplate uriTemplate = setupUriTemplate();
         long startTime = System.currentTimeMillis();
-        RowNumHandle rowNumHandle = RowNumHandle.getSimpleHandle(split.getPage(), getPageSize());
+        RowNumHandle rowNumHandle = RowNumHandle.getSimpleHandle(split.getPage(), split.getPageSize());
         ImmutableMap.Builder<String, Object> expansionBuilder = ImmutableMap.<String, Object>builder()
                 .put(PAGE_REQUEST_PARAMETER, rowNumHandle.page)
                 .put(SIZE_REQUEST_PARAMETER, rowNumHandle.size);

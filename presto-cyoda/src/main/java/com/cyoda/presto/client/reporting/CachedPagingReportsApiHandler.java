@@ -28,13 +28,11 @@ import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.github.benmanes.caffeine.cache.CacheLoader;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.PagedModel;
 import reactor.core.scheduler.Schedulers;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -67,7 +65,7 @@ public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApi
 
     protected List<T> loadByKey(K requestKey){
 
-        int pageSize = getPageSize();
+        int pageSize = config.getRequestPageSize();
         logCreation(pageSize, log);
         Function<Integer, PagingHandle<?, T>> pagingHandleGetter = page ->
                 new PagingHandle<>(retrievePage(requestKey, page, pageSize, SizeListener.NOT_LISTENING));

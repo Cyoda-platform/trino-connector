@@ -53,7 +53,7 @@ public abstract class BasePagingReportsApiHandler<K, T> extends BaseReportsApiHa
 
     public Flux<T> asFlux(K requestKey, SizeListener listener) {
 
-        int pageSize = getPageSize();
+        int pageSize = config.getRequestPageSize();
         logCreation(pageSize, log);
         Function<Integer, PagingHandle<?, T>> pagingHandleGetter = page ->
                 new PagingHandle<>(retrievePage(requestKey, page, pageSize, listener));

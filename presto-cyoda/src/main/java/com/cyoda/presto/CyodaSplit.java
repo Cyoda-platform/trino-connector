@@ -50,10 +50,12 @@ public class CyodaSplit implements ConnectorSplit {
 
     private final int page;
 
+    private final int pageSize;
+
     private final Map<String, ?> customData;
 
     @JsonCreator
-    public CyodaSplit(String queryId, List<HostAddress> addresses, boolean assignToCoordinator, String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64, int page, Map<String, ?> customData) {
+    public CyodaSplit(String queryId, List<HostAddress> addresses, boolean assignToCoordinator, String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64, int page, int pageSize, Map<String, ?> customData) {
         this.queryId = queryId;
         this.addresses = addresses;
         this.assignToCoordinator = assignToCoordinator;
@@ -62,6 +64,7 @@ public class CyodaSplit implements ConnectorSplit {
         this.groupingVersion = groupingVersion;
         this.groupJsonBase64 = groupJsonBase64;
         this.page = page;
+        this.pageSize = pageSize;
         this.customData = customData;
     }
 
@@ -75,7 +78,7 @@ public class CyodaSplit implements ConnectorSplit {
                 groupingVersion,
                 groupJsonBase64,
                 0,
-                null);
+                Integer.MAX_VALUE, null);
     }
 
     public static CyodaSplit emptyCoordinatorSplit(String tableName, String queryId, Map<String, ?> customData){
@@ -88,7 +91,7 @@ public class CyodaSplit implements ConnectorSplit {
                 null,
                 null,
                 0,
-                customData);
+                Integer.MAX_VALUE, customData);
     }
     public static CyodaSplit configSplit(String tableName, String reportConfigId, String queryId){
         return new CyodaSplit(queryId,
@@ -99,7 +102,7 @@ public class CyodaSplit implements ConnectorSplit {
                 null,
                 null,
                 null,
-                0, null);
+                0, Integer.MAX_VALUE, null);
     }
 
     public static CyodaSplit addressedEmptySplit(CyodaTableHandle tableHandle, String queryId, URI nodeAddress){
@@ -111,7 +114,7 @@ public class CyodaSplit implements ConnectorSplit {
                 null,
                 null,
                 null,
-                0, null);
+                0, Integer.MAX_VALUE, null);
     }
 
     @JsonProperty
@@ -150,6 +153,11 @@ public class CyodaSplit implements ConnectorSplit {
     }
 
     @JsonProperty
+    public int getPageSize() {
+        return pageSize;
+    }
+
+    @JsonProperty
     public Map<String, ?> getCustomData() {
         return customData;
     }
@@ -179,6 +187,7 @@ public class CyodaSplit implements ConnectorSplit {
                 .add("groupingVersion", groupingVersion)
                 .add("groupJsonBase64", groupJsonBase64)
                 .add("page", page)
+                .add("pageSize", pageSize)
                 .toString();
     }
 }

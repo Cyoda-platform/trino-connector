@@ -2,7 +2,6 @@ package com.cyoda.presto.client.data;
 
 import com.cyoda.presto.CyodaCachedPageSource;
 import com.cyoda.presto.CyodaConfig;
-import com.cyoda.presto.CyodaFilteringPageSource;
 import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.reporting.data.DataRequestKey;
@@ -100,7 +99,7 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
                                     groupingHandle.reportId,
                                     groupingHandle.groupingVersion,
                                     groupingHandle.groupHeader.getGroupValuesJsonBase64(),
-                                    page, null));
+                                    page, pageSize, null));
                 })
                 .toList();
     }

@@ -73,10 +73,6 @@ public abstract class BaseReportsApiHandler {
         this.requestStatsMonitor = requestStatsMonitor;
     }
 
-    protected int getPageSize(){
-        return config.getRequestPageSize();
-    }
-
     protected void registerApiCall(String queryId, Date callTime, String requestUrl, Map<String, Object> params){
         requestStatsMonitor.registerApiCall(queryId, callTime, requestUrl, params, getName());
     }

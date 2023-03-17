@@ -20,6 +20,7 @@ public final class DataRequestKey {
     private final UUID groupingVersion;
     private final String groupJsonBase64;
     private final int page;
+    private final int pageSize;
 
     private DataRequestKey(
             String queryId,
@@ -27,8 +28,8 @@ public final class DataRequestKey {
             String reportId,
             UUID groupingVersion,
             String groupJsonBase64,
-            int page
-    ) {
+            int page,
+            int pageSize) {
         this.queryId = queryId;
         this.tableHandle = tableHandle;
         this.split = split;
@@ -37,6 +38,7 @@ public final class DataRequestKey {
         this.groupingVersion = groupingVersion;
         this.groupJsonBase64 = groupJsonBase64;
         this.page = page;
+        this.pageSize = pageSize;
     }
 
     public DataRequestKey(CyodaSplit split, CyodaTableHandle tableHandle) {
@@ -48,8 +50,8 @@ public final class DataRequestKey {
                 split.getReportId(),
                 split.getGroupingVersion(),
                 split.getGroupJsonBase64(),
-                split.getPage()
-        );
+                split.getPage(),
+                split.getPageSize());
     }
 
     @Override
@@ -59,7 +61,8 @@ public final class DataRequestKey {
         return Objects.equals(reportConfigId, other.reportConfigId) &&
                 Objects.equals(reportId, other.reportId) &&
                 Objects.equals(groupJsonBase64, other.groupJsonBase64) &&
-                page == other.page;
+                page == other.page &&
+                pageSize == other.pageSize;
     }
 
     @Override
