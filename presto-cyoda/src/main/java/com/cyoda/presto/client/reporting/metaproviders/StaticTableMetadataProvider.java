@@ -28,6 +28,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
     private final Reports reports;
     private final ReportStats reportStats;
     private final ApiCallStats apiCallStats;
+    private final CacheContent cacheContent;
     private final ReportHistory reportHistory;
     private final ReportGroups reportGroups;
     private final ReportRows reportRows;
@@ -52,7 +53,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
         }
         StaticTableMetadata cacheStats = new StaticTableMetadata(StaticReportTable.CACHE_STATS);
         standaloneTablesMap.put(cacheStats.getTableHandle().getTableName(), cacheStats);
-        StaticTableMetadata cacheContent = new StaticTableMetadata(StaticReportTable.CACHE_CONTENT);
+        cacheContent = new CacheContent();
         standaloneTablesMap.put(cacheContent.getTableHandle().getTableName(), cacheContent);
 
 
@@ -74,6 +75,14 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
 
     public boolean contains(String tableName) {
         return standaloneTablesMap.containsKey(tableName);
+    }
+
+    public ApiCallStats getApiCallStats() {
+        return apiCallStats;
+    }
+
+    public CacheContent getCacheContent() {
+        return cacheContent;
     }
 
     public Reports getReports() {
@@ -150,8 +159,24 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
     }
 
     public class ApiCallStats extends StaticTableMetadata {
+        private final CyodaColumnHandle nodeIdColumn;
         public ApiCallStats() {
             super(StaticReportTable.API_CALL_STATS);
+            nodeIdColumn = getTableHandle().getColumn(StaticReportTable.ApiCallStatsColumnDef.NODE_ID.getFieldName());
+        }
+        public CyodaColumnHandle getNodeIdColumn() {
+            return nodeIdColumn;
+        }
+    }
+
+    public class CacheContent extends StaticTableMetadata {
+        private final CyodaColumnHandle cacheKeyColumn;
+        public CacheContent() {
+            super(StaticReportTable.CACHE_CONTENT);
+            cacheKeyColumn = getTableHandle().getColumn(StaticReportTable.CacheContentColumnDef.KEY.getFieldName());
+        }
+        public CyodaColumnHandle getCacheKeyColumn() {
+            return cacheKeyColumn;
         }
     }
 

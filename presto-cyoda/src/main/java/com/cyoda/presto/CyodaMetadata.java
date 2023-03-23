@@ -26,6 +26,7 @@ import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.TrinoException;
+import io.trino.spi.connector.RetryMode;
 import io.trino.spi.connector.TableColumnsMetadata;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ColumnMetadata;
@@ -44,6 +45,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.OptionalLong;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
@@ -127,6 +129,26 @@ public class CyodaMetadata implements ConnectorMetadata {
         } else {
             throw new TrinoException(NOT_SUPPORTED, "This table does not support truncate operation");
         }
+    }
+
+    @Override
+    public OptionalLong executeDelete(ConnectorSession session, ConnectorTableHandle handle) {
+        return ConnectorMetadata.super.executeDelete(session, handle);
+    }
+
+    @Override
+    public Optional<ConnectorTableHandle> applyDelete(ConnectorSession session, ConnectorTableHandle handle) {
+        return ConnectorMetadata.super.applyDelete(session, handle);
+    }
+
+    @Override
+    public ColumnHandle getDeleteRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle) {
+        CyodaTableHandle.TableType tableType = ((CyodaTableHandle)tableHandle).getTableType();
+        return switch (tableType){
+            case CALL_STATS -> staticMetadataProvider.getApiCallStats().getNodeIdColumn();
+            case CACHE_CONTENT -> staticMetadataProvider.getCacheContent().getCacheKeyColumn();
+            default -> ConnectorMetadata.super.getDeleteRowIdColumnHandle(session, tableHandle);
+        };
     }
 
     @Override
