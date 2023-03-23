@@ -25,6 +25,7 @@ import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
+import io.airlift.slice.Slice;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.RetryMode;
 import io.trino.spi.connector.TableColumnsMetadata;
@@ -40,6 +41,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import javax.inject.Inject;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -149,6 +151,15 @@ public class CyodaMetadata implements ConnectorMetadata {
             case CACHE_CONTENT -> staticMetadataProvider.getCacheContent().getCacheKeyColumn();
             default -> ConnectorMetadata.super.getDeleteRowIdColumnHandle(session, tableHandle);
         };
+    }
+
+    @Override
+    public ConnectorTableHandle beginDelete(ConnectorSession session, ConnectorTableHandle tableHandle, RetryMode retryMode) {
+        return tableHandle;
+    }
+
+    @Override
+    public void finishDelete(ConnectorSession session, ConnectorTableHandle tableHandle, Collection<Slice> fragments) {
     }
 
     @Override
