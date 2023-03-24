@@ -27,6 +27,7 @@ import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.airlift.slice.Slice;
 import io.trino.spi.TrinoException;
+import io.trino.spi.connector.ConnectorPartitioningHandle;
 import io.trino.spi.connector.RetryMode;
 import io.trino.spi.connector.TableColumnsMetadata;
 import io.trino.spi.connector.ColumnHandle;
@@ -151,6 +152,11 @@ public class CyodaMetadata implements ConnectorMetadata {
             case CACHE_CONTENT -> staticMetadataProvider.getCacheContent().getCacheKeyColumn();
             default -> ConnectorMetadata.super.getDeleteRowIdColumnHandle(session, tableHandle);
         };
+    }
+
+    @Override
+    public Optional<ConnectorPartitioningHandle> getUpdateLayout(ConnectorSession session, ConnectorTableHandle tableHandle) {
+        return Optional.of(new ConnectorPartitioningHandle(){});
     }
 
     @Override
