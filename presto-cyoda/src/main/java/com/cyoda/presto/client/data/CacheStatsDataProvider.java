@@ -8,6 +8,7 @@ import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import io.trino.spi.NodeManager;
+import io.trino.spi.block.Block;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -64,5 +65,10 @@ public class CacheStatsDataProvider extends VirtualTableDataProvider<Map.Entry<S
             }
             default -> throw new RuntimeException("Unknown field " + columnDef);
         }
+    }
+
+    @Override
+    protected void deleteByIds(Block rowIds) {
+        throw new UnsupportedOperationException("Cache statistics table does not support delete operation");
     }
 }

@@ -7,9 +7,14 @@ import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.NodeManager;
+import io.trino.spi.block.Block;
+import io.trino.spi.type.VarcharType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import static io.trino.spi.type.BigintType.BIGINT;
+import static java.lang.Math.toIntExact;
 
 public class ApiCallStatsDataProvider extends VirtualTableDataProvider<ApiRequestStats> {
 
@@ -65,4 +70,13 @@ public class ApiCallStatsDataProvider extends VirtualTableDataProvider<ApiReques
         throw new IllegalArgumentException("Unknown column " + columnHandle.getColumnName());
     }
 
+    @Override
+    protected void deleteByIds(Block rowIds) {
+        for (int position = 0; position < rowIds.getPositionCount(); position++) {
+            String requestNodeId = VarcharType.VARCHAR.getSlice(rowIds, position).toStringUtf8();
+            if (thisNode.getNodeIdentifier().equals(requestNodeId)){
+                statsMonitor.truncate();
+            }
+        }
+    }
 }

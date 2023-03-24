@@ -10,6 +10,7 @@ import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import io.trino.spi.NodeManager;
+import io.trino.spi.block.Block;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -51,5 +52,10 @@ public class CacheContentDataProvider extends VirtualTableDataProvider<CacheCont
             }
             default -> throw new RuntimeException("Unknown field " + columnDef);
         }
+    }
+
+    @Override
+    protected void deleteByIds(Block rowIds) {
+        throw new RuntimeException("not yet");
     }
 }
