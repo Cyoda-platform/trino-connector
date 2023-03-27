@@ -22,6 +22,7 @@ import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthPayload;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.auth.RefreshContext;
+import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -78,8 +79,8 @@ public class RestTemplateCustomizer {
     private final CyodaConfig config;
     private final AuthService authService;
     private final CyodaApiRequestStatsMonitor apiRequestStatsMonitor;
-    private final LoadingCache<AuthContext,RestTemplate> restTemplateCache;
-    private final LoadingCache<AuthContext,RestTemplate> refreshRestTemplateCache;
+    private final ContentIdLoadingCache<AuthContext,RestTemplate> restTemplateCache;
+    private final ContentIdLoadingCache<AuthContext,RestTemplate> refreshRestTemplateCache;
     private final RestTemplate unauthorizedRestTemplate;
     private final URI refreshUri;
 
@@ -94,21 +95,21 @@ public class RestTemplateCustomizer {
         this.config = config;
         this.authService = authService;
         this.apiRequestStatsMonitor = apiRequestStatsMonitor;
-        restTemplateCache = Caffeine.newBuilder()
+        restTemplateCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
                 .maximumSize(100)
                 .recordStats()
                 .build(key -> {
                     LOG.debug(()->"creating RestTemplate for "+key.getPayload().getUsername());
                     return newRestTemplate(ACCESS,key,HAL_CONVERTERS);
-                });
+                }));
         cacheMonitor.register("REST_TEMPLATE", restTemplateCache, AuthContext::getUserId, x -> 1);
-        refreshRestTemplateCache = Caffeine.newBuilder()
+        refreshRestTemplateCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
                 .maximumSize(100)
                 .recordStats()
                 .build(key -> {
                     LOG.debug(()->"creating refresh RestTemplate for "+key.getPayload().getUsername());
                     return newRestTemplate(REFRESH,key,null);
-                });
+                }));
         cacheMonitor.register("REST_REFRESH", refreshRestTemplateCache, AuthContext::getUserId, x -> 1);
         this.unauthorizedRestTemplate = newRestTemplate(ACCESS,null,null);
 

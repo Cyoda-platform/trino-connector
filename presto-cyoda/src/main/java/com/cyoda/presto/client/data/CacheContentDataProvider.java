@@ -11,10 +11,13 @@ import com.cyoda.presto.handles.CyodaTableHandle;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import io.trino.spi.NodeManager;
 import io.trino.spi.block.Block;
+import io.trino.spi.type.UuidType;
+import io.trino.spi.type.VarcharType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
+import java.util.UUID;
 
 public class CacheContentDataProvider extends VirtualTableDataProvider<CacheContent>{
 
@@ -35,6 +38,9 @@ public class CacheContentDataProvider extends VirtualTableDataProvider<CacheCont
     protected Object getFieldValueFromEntity(@Nonnull CacheContent entity, CyodaColumnHandle columnHandle) {
         CacheContentColumnDef columnDef = CacheContentColumnDef.valueOf(columnHandle.getColumnName().toUpperCase());
         switch (columnDef){
+            case CONTENT_ID -> {
+                return entity.contentId();
+            }
             case NODE_ID -> {
                 return thisNode.getNodeIdentifier();
             }
@@ -56,6 +62,9 @@ public class CacheContentDataProvider extends VirtualTableDataProvider<CacheCont
 
     @Override
     protected void deleteByIds(Block rowIds) {
-        throw new RuntimeException("not yet");
+        for (int position = 0; position < rowIds.getPositionCount(); position++) {
+            UUID contentId = UuidType.trinoUuidToJavaUuid(UuidType.UUID.getSlice(rowIds, position));
+            cacheMonitor.removeContent(contentId);
+        }
     }
 }

@@ -24,6 +24,7 @@ import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.paging.PagingFluxProvider;
 import com.cyoda.presto.client.paging.PagingHandle;
+import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -39,7 +40,7 @@ import java.util.function.Function;
 
 public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApiHandler {
 
-    protected final LoadingCache<K, List<T>> cache;
+    protected final ContentIdLoadingCache<K, List<T>> cache;
 
     public abstract Optional<PagedModel<T>> retrievePage(
             K requestKey,
@@ -48,7 +49,7 @@ public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApi
             SizeListener listener);
 
     protected abstract LoadingCache<K, List<T>> setupCache(CacheLoader<K, List<T>> loader);
-    protected abstract void registerCache(CyodaCacheMonitor cacheMonitor, LoadingCache<K, List<T>> cache);
+    protected abstract void registerCache(CyodaCacheMonitor cacheMonitor, ContentIdLoadingCache<K, List<T>> cache);
 
     protected CachedPagingReportsApiHandler(CyodaConnectorId connectorId,
                                             CyodaConfig config,
@@ -59,7 +60,7 @@ public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApi
                                             CyodaApiRequestStatsMonitor requestStatsMonitor,
                                             CyodaCacheMonitor cacheMonitor) {
         super(connectorId, config, typeManager, restTemplateCustomizer, log, authService, requestStatsMonitor);
-        cache = setupCache(this::loadByKey);
+        cache = new ContentIdLoadingCache<>(setupCache(this::loadByKey));
         registerCache(cacheMonitor, cache);
     }
 

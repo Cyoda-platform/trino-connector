@@ -270,6 +270,7 @@ public enum StaticReportTable implements TableDefinition {
     }
 
     public enum CacheContentColumnDef implements ColumnDefinition {
+        CONTENT_ID(0, UUID_TYPE),
         NODE_ID(1, STRING),
         NODE_ADDRESS(2, STRING),
         CACHE_NAME(3, STRING),

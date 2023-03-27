@@ -173,7 +173,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
         private final CyodaColumnHandle cacheKeyColumn;
         public CacheContent() {
             super(StaticReportTable.CACHE_CONTENT);
-            cacheKeyColumn = getTableHandle().getColumn(StaticReportTable.CacheContentColumnDef.KEY.getFieldName());
+            cacheKeyColumn = getTableHandle().getColumn(StaticReportTable.CacheContentColumnDef.CONTENT_ID.getFieldName());
         }
         public CyodaColumnHandle getCacheKeyColumn() {
             return cacheKeyColumn;

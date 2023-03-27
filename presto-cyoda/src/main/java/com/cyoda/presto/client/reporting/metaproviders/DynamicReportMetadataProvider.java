@@ -11,6 +11,7 @@ import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle;
 import com.cyoda.presto.client.reporting.meta.ReportListKey;
+import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
@@ -50,8 +51,8 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     /**
      * TableName -> TableMetadata
      */
-    private final LoadingCache<AuthContext, Map<String, CyodaTableHandle>> tableByUserCache;
-    private final LoadingCache<TableMetaCacheKey, CyodaTableHandle> tableMetaCache;
+    private final ContentIdLoadingCache<AuthContext, Map<String, CyodaTableHandle>> tableByUserCache;
+    private final ContentIdLoadingCache<TableMetaCacheKey, CyodaTableHandle> tableMetaCache;
 
     @Inject
     public DynamicReportMetadataProvider(CyodaConnectorId connectorId, CyodaConfig config,
@@ -65,21 +66,21 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
         this.staticTableMetadataProvider = staticTableMetadataProvider;
         this.configuredReportsApiHandler = configuredReportsApiHandler;
         this.reportConfigDetailsApiHandler = reportConfigDetailsApiHandler;
-        tableByUserCache = Caffeine.newBuilder()
+        tableByUserCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
                 .expireAfterAccess(Duration.ofMinutes(2))
                 .recordStats()
                 .build(key -> {
                     LOG.debug("Loading Tables Cache for user " + key.getUserId());
                     return tableByUserCacheLoad(key);
-                });
+                }));
         cacheMonitor.register("AUTH", tableByUserCache, AuthContext::getUserId, Map::size);
-        tableMetaCache = Caffeine.newBuilder()
+        tableMetaCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
                 .expireAfterAccess(Duration.ofDays(1))
                 .recordStats()
                 .build(key -> {
                     LOG.debug("Loading config " + key);
                     return getTableHandleFromCyoda(key.configId);
-                });
+                }));
         cacheMonitor.register("META", tableMetaCache, key -> key.configId, x->1);
     }
 

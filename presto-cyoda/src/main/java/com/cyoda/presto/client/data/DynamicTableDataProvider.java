@@ -12,6 +12,7 @@ import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
+import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
@@ -41,7 +42,7 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
     private final CyodaColumnHandle groupIdColumn;
     private final CyodaColumnHandle rowNumberColumn;
 
-    private final LoadingCache<DataRequestKey, CyodaCachedPageSource<RowHandle>> pageCache;
+    private final ContentIdLoadingCache<DataRequestKey, CyodaCachedPageSource<RowHandle>> pageCache;
 
     public DynamicTableDataProvider(ReportHistoryApiHandler reportHistoryApiHandler,
                                     ReportGroupsApiHandler reportGroupsApiHandler,
@@ -58,12 +59,12 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
         rowNumberColumn = reportMetadataProvider.getReportRows().getRowNumberColumn();
         this.config = config;
         pageCache =
-                Caffeine.newBuilder()
+                new ContentIdLoadingCache<>(Caffeine.newBuilder()
                         .expireAfterAccess(Duration.ofDays(1))
                         .recordStats()
                         .build(
                         this::getCachedPageSource
-                );
+                ));
         cacheMonitor.register("DATA", pageCache,
                 key -> key.getReportConfigId() + "|" + key.getReportId() + "|" + key.getGroupJsonBase64() + "|" + key.getPage(),
                 page -> (int) page.getCompletedBytes());

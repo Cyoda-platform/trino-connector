@@ -24,6 +24,7 @@ import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.CachedPagingReportsApiHandler;
+import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -51,7 +52,6 @@ import java.time.Duration;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportTable.REPORT_HISTORIES;
@@ -134,7 +134,7 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Repor
     }
 
     @Override
-    protected void registerCache(CyodaCacheMonitor cacheMonitor, LoadingCache<ReportConfigKey, List<ReportHistoryFieldsView>> cache) {
+    protected void registerCache(CyodaCacheMonitor cacheMonitor, ContentIdLoadingCache<ReportConfigKey, List<ReportHistoryFieldsView>> cache) {
         cacheMonitor.register("HISTORY", cache,
                 ReportConfigKey::configId, List::size);
     }

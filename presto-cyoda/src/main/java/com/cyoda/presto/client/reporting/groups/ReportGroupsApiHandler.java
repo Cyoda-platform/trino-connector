@@ -23,6 +23,7 @@ import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.CachedPagingReportsApiHandler;
+import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -154,7 +155,7 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
     }
 
     @Override
-    protected void registerCache(CyodaCacheMonitor cacheMonitor, LoadingCache<GroupsRequestKey, List<GroupingHandle>> cache) {
+    protected void registerCache(CyodaCacheMonitor cacheMonitor, ContentIdLoadingCache<GroupsRequestKey, List<GroupingHandle>> cache) {
         cacheMonitor.register("GROUPS", cache, GroupsRequestKey::reportId, List::size);
     }
 
