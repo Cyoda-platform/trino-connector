@@ -71,7 +71,7 @@ public class CyodaSplit implements ConnectorSplit {
     public CyodaSplit(String queryId, String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64){
         this(queryId,
                 new ArrayList<>(),
-                false,
+                true,
                 tableName,
                 reportConfigId,
                 reportId,

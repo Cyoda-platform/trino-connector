@@ -28,7 +28,7 @@ public abstract class VirtualTableDataProvider<T> extends TableDataProvider<T> {
 
     @Override
     public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
-        return nodeManager.getWorkerNodes()
+        return nodeManager.getAllNodes()
                 .stream()
                 .map(Node::getHttpUri)
                 .map(uri -> CyodaSplit.addressedEmptySplit(tableHandle, queryId, uri))
