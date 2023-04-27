@@ -24,8 +24,11 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static java.util.Objects.requireNonNull;
@@ -34,7 +37,7 @@ public class CyodaSplit implements ConnectorSplit {
     private final String queryId;
     private final List<HostAddress> addresses;
 
-    private final String tableName;
+    private final boolean assignToCoordinator;
 
     private final String reportConfigId;
 
@@ -47,34 +50,71 @@ public class CyodaSplit implements ConnectorSplit {
 
     private final int page;
 
-    private final int size;
+    private final int pageSize;
 
+    private final Map<String, ?> customData;
 
     @JsonCreator
-    public CyodaSplit(String queryId, List<HostAddress> addresses, String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64, int page, int size) {
+    public CyodaSplit(String queryId, List<HostAddress> addresses, boolean assignToCoordinator, String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64, int page, int pageSize, Map<String, ?> customData) {
         this.queryId = queryId;
         this.addresses = addresses;
-        this.tableName = tableName;
+        this.assignToCoordinator = assignToCoordinator;
         this.reportConfigId = reportConfigId;
         this.reportId = reportId;
         this.groupingVersion = groupingVersion;
         this.groupJsonBase64 = groupJsonBase64;
         this.page = page;
-        this.size = size;
+        this.pageSize = pageSize;
+        this.customData = customData;
     }
 
-    public CyodaSplit(String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64, String queryId){
-        this(queryId, Collections.emptyList(), tableName, reportConfigId, reportId, groupingVersion, groupJsonBase64, 0, Integer.MAX_VALUE-1);
+    public CyodaSplit(String queryId, String tableName, String reportConfigId, String reportId, UUID groupingVersion, String groupJsonBase64){
+        this(queryId,
+                new ArrayList<>(),
+                true,
+                tableName,
+                reportConfigId,
+                reportId,
+                groupingVersion,
+                groupJsonBase64,
+                0,
+                Integer.MAX_VALUE, null);
     }
 
-    public static CyodaSplit emptySplit(CyodaTableHandle tableHandle, String queryId){
-        return new CyodaSplit(
+    public static CyodaSplit emptyCoordinatorSplit(String tableName, String queryId, Map<String, ?> customData){
+        return new CyodaSplit(queryId,
+                new ArrayList<>(),
+                true,
+                tableName,
+                null,
+                null,
+                null,
+                null,
+                0,
+                Integer.MAX_VALUE, customData);
+    }
+    public static CyodaSplit configSplit(String tableName, String reportConfigId, String queryId){
+        return new CyodaSplit(queryId,
+                new ArrayList<>(),
+                false,
+                tableName,
+                reportConfigId,
+                null,
+                null,
+                null,
+                0, Integer.MAX_VALUE, null);
+    }
+
+    public static CyodaSplit addressedEmptySplit(CyodaTableHandle tableHandle, String queryId, URI nodeAddress){
+        return new CyodaSplit(queryId,
+                Collections.singletonList(HostAddress.fromUri(nodeAddress)),
+                false,
                 tableHandle.getTableName(),
-                tableHandle.getReportConfigId(),
                 null,
                 null,
                 null,
-                queryId);
+                null,
+                0, Integer.MAX_VALUE, null);
     }
 
     @JsonProperty
@@ -83,8 +123,8 @@ public class CyodaSplit implements ConnectorSplit {
     }
 
     @JsonProperty
-    public String getTableName() {
-        return tableName;
+    public boolean isAssignToCoordinator() {
+        return assignToCoordinator;
     }
 
     @JsonProperty
@@ -113,13 +153,18 @@ public class CyodaSplit implements ConnectorSplit {
     }
 
     @JsonProperty
-    public int getSize() {
-        return size;
+    public int getPageSize() {
+        return pageSize;
+    }
+
+    @JsonProperty
+    public Map<String, ?> getCustomData() {
+        return customData;
     }
 
     @Override
     public boolean isRemotelyAccessible() {
-        return true;
+        return addresses.isEmpty();
     }
     public List<HostAddress> getAddresses() {
         return addresses;
@@ -134,6 +179,15 @@ public class CyodaSplit implements ConnectorSplit {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("addresses", addresses)
+                .add("queryId", queryId)
+                .add("addresses", addresses)
+                .add("assignToCoordinator", assignToCoordinator)
+                .add("reportConfigId", reportConfigId)
+                .add("reportId", reportId)
+                .add("groupingVersion", groupingVersion)
+                .add("groupJsonBase64", groupJsonBase64)
+                .add("page", page)
+                .add("pageSize", pageSize)
                 .toString();
     }
 }

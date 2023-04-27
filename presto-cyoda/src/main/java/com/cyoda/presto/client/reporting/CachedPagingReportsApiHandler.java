@@ -24,22 +24,23 @@ import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.paging.PagingFluxProvider;
 import com.cyoda.presto.client.paging.PagingHandle;
+import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
+import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.PagedModel;
 import reactor.core.scheduler.Schedulers;
 
-import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
 public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApiHandler {
 
-    private final LoadingCache<K, List<T>> cache;
+    protected final ContentIdLoadingCache<K, List<T>> cache;
 
     public abstract Optional<PagedModel<T>> retrievePage(
             K requestKey,
@@ -47,7 +48,8 @@ public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApi
             int pageSize,
             SizeListener listener);
 
-    protected abstract Duration getCacheDuration();
+    protected abstract LoadingCache<K, List<T>> setupCache(CacheLoader<K, List<T>> loader);
+    protected abstract void registerCache(CyodaCacheMonitor cacheMonitor, ContentIdLoadingCache<K, List<T>> cache);
 
     protected CachedPagingReportsApiHandler(CyodaConnectorId connectorId,
                                             CyodaConfig config,
@@ -55,24 +57,23 @@ public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApi
                                             RestTemplateCustomizer restTemplateCustomizer,
                                             SupplierLogger log,
                                             AuthService authService,
-                                            CyodaApiRequestStatsMonitor requestStatsMonitor) {
+                                            CyodaApiRequestStatsMonitor requestStatsMonitor,
+                                            CyodaCacheMonitor cacheMonitor) {
         super(connectorId, config, typeManager, restTemplateCustomizer, log, authService, requestStatsMonitor);
-        cache = Caffeine.newBuilder()
-                .expireAfterAccess(getCacheDuration())
-                .build(this::loadByKey);
+        cache = new ContentIdLoadingCache<>(setupCache(this::loadByKey));
+        registerCache(cacheMonitor, cache);
     }
 
-    public List<T> getByKey(K requestKey){
-        return cache.get(requestKey);
-    }
+    protected List<T> loadByKey(K requestKey){
 
-    private List<T> loadByKey(K requestKey){
-
-        int pageSize = getPageSize();
+        int pageSize = config.getRequestPageSize();
         logCreation(pageSize, log);
         Function<Integer, PagingHandle<?, T>> pagingHandleGetter = page ->
                 new PagingHandle<>(retrievePage(requestKey, page, pageSize, SizeListener.NOT_LISTENING));
         return new PagingFluxProvider<>(pagingHandleGetter).generate(0).subscribeOn(Schedulers.immediate(), false).collectList().block();
     }
 
+    public List<T> getByKey(K requestKey) {
+        return cache.get(requestKey);
+    }
 }

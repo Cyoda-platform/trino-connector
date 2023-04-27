@@ -7,13 +7,12 @@ import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
-import io.trino.spi.connector.ConnectorSplitSource;
 import io.trino.spi.connector.Constraint;
-import io.trino.spi.connector.FixedSplitSource;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.HISTORY_REPORT_ID_COLUMN;
@@ -41,13 +40,13 @@ public class HistoryTableDataProvider extends TableDataProvider<ReportHistoryFie
     }
 
     @Override
-    public ConnectorSplitSource getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
-        return new FixedSplitSource(Collections.singletonList(
-                new CyodaSplit(tableHandle.getTableName(), tableHandle.getReportConfigId(), null, null, null, queryId)));
+    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
+        return Collections.singletonList(
+                new CyodaSplit(queryId, tableHandle.getTableName(), tableHandle.getReportConfigId(), null, null, null));
     }
 
     @Override
-    public Iterable<ReportHistoryFieldsView> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CyodaSplit split) {
+    public Iterable<ReportHistoryFieldsView> getIterable(CyodaTableHandle tableHandle, CyodaSplit split) {
         return reportHistoryApiHandler.getByKey(new ReportConfigKey(split.getReportConfigId(), split.getQueryId()));
     }
 }

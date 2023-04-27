@@ -1,26 +1,32 @@
 package com.cyoda.presto.client.data;
 
 import com.cyoda.presto.CyodaSplit;
-import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
 import com.cyoda.presto.client.reporting.stats.ApiRequestStats;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import io.trino.spi.NodeManager;
+import io.trino.spi.block.Block;
+import io.trino.spi.type.VarcharType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class ApiCallStatsDataProvider extends UnsplitTableDataProvider<ApiRequestStats>{
+import static io.trino.spi.type.BigintType.BIGINT;
+import static java.lang.Math.toIntExact;
+
+public class ApiCallStatsDataProvider extends VirtualTableDataProvider<ApiRequestStats> {
 
     private final CyodaApiRequestStatsMonitor statsMonitor;
 
-    public ApiCallStatsDataProvider(CyodaApiRequestStatsMonitor statsMonitor) {
+    public ApiCallStatsDataProvider(CyodaApiRequestStatsMonitor statsMonitor, NodeManager nodeManager) {
+        super(nodeManager);
         this.statsMonitor = statsMonitor;
     }
 
     @Override
-    public Iterable<ApiRequestStats> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CyodaSplit split) {
+    public Iterable<ApiRequestStats> getIterable(CyodaTableHandle tableHandle, CyodaSplit split) {
         return statsMonitor.getIterable();
     }
 
@@ -29,15 +35,21 @@ public class ApiCallStatsDataProvider extends UnsplitTableDataProvider<ApiReques
     protected Object getFieldValueFromEntity(@Nonnull ApiRequestStats entity, CyodaColumnHandle columnHandle) {
         StaticReportTable.ApiCallStatsColumnDef columnDef = StaticReportTable.ApiCallStatsColumnDef.valueOf(
                 columnHandle.getColumnName().toUpperCase());
-        switch (columnDef){
+        switch (columnDef) {
             case QUERY_ID -> {
                 return entity.queryId();
+            }
+            case NODE_ID -> {
+                return thisNode.getNodeIdentifier();
+            }
+            case NODE_ADDRESS -> {
+                return thisNode.getHttpUri();
             }
             case CALL_TIME -> {
                 return entity.callTime();
             }
             case CALL_MILLIS -> {
-                return entity.callTime().toInstant().getNano()/1000000;
+                return entity.callTime().toInstant().getNano() / 1000000;
             }
             case DURATION_MILLIS -> {
                 return entity.duration();
@@ -56,5 +68,15 @@ public class ApiCallStatsDataProvider extends UnsplitTableDataProvider<ApiReques
             }
         }
         throw new IllegalArgumentException("Unknown column " + columnHandle.getColumnName());
+    }
+
+    @Override
+    protected void deleteByIds(Block rowIds) {
+        for (int position = 0; position < rowIds.getPositionCount(); position++) {
+            String requestNodeId = VarcharType.VARCHAR.getSlice(rowIds, position).toStringUtf8();
+            if (thisNode.getNodeIdentifier().equals(requestNodeId)){
+                statsMonitor.truncate();
+            }
+        }
     }
 }

@@ -17,18 +17,19 @@
 
 package com.cyoda.presto.client.data;
 
+import com.cyoda.presto.CyodaFilteringPageSource;
 import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.google.common.collect.ImmutableMap;
 import io.trino.spi.block.BlockBuilder;
-import io.trino.spi.connector.ConnectorSplitSource;
+import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.connector.Constraint;
-import io.trino.spi.predicate.NullableValue;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 public abstract class TableDataProvider<T> {
 
@@ -46,12 +47,21 @@ public abstract class TableDataProvider<T> {
                 .orElse(false); // no constraint
     }
 
-    public abstract ConnectorSplitSource getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint);
-    public abstract Iterable<T> getIterable(AuthContext authContext, CyodaTableHandle tableHandle, CyodaSplit split);
+    public abstract List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint);
+    public abstract Iterable<T> getIterable(CyodaTableHandle tableHandle, CyodaSplit split);
 
     protected abstract @Nullable Object getFieldValueFromEntity(@Nonnull T entity, CyodaColumnHandle columnHandle);
 
-    public void writeValue(@Nullable T entity, CyodaColumnHandle columnHandle, BlockBuilder blockBuilder) {
+    public ConnectorPageSource getPageSource(CyodaTableHandle tableHandle,
+                                             List<CyodaColumnHandle> cyodaColumns,
+                                             CyodaSplit split){
+        return new CyodaFilteringPageSource<>(
+                this,
+                tableHandle,
+                cyodaColumns, split);
+    }
+
+    public final void writeValue(@Nullable T entity, CyodaColumnHandle columnHandle, BlockBuilder blockBuilder) {
         if (entity == null) {
             blockBuilder.appendNull();
             return;
@@ -59,4 +69,5 @@ public abstract class TableDataProvider<T> {
         Object value = getFieldValueFromEntity(entity, columnHandle);
         columnHandle.writeValue(blockBuilder, value);
     }
+
 }

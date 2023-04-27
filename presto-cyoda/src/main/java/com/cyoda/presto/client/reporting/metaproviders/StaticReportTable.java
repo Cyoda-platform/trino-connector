@@ -74,6 +74,8 @@ public enum StaticReportTable implements TableDefinition {
             .add(DistributedReportInfoView.meta())
             .build(), REPORT_ENDPOINT, CyodaTableHandle.TableType.STATS),
     API_CALL_STATS(Arrays.asList(ApiCallStatsColumnDef.values()), null, CyodaTableHandle.TableType.CALL_STATS),
+    CACHE_STATS(Arrays.asList(CacheStatsColumnDef.values()), null, CyodaTableHandle.TableType.CACHE_STATS),
+    CACHE_CONTENT(Arrays.asList(CacheContentColumnDef.values()), null, CyodaTableHandle.TableType.CACHE_CONTENT),
     REPORT_HISTORIES(Arrays.asList(ReportHistoryColumnDef.values()), REPORT_HISTORY_ENDPOINT, CyodaTableHandle.TableType.HISTORY),
     REPORT_GROUPS(StandardColumnDefinition.builder()
             .add(new StandardColumnDefinition(0, StaticReportFields.HISTORY_REPORT_ID_COLUMN, STRING))
@@ -179,13 +181,15 @@ public enum StaticReportTable implements TableDefinition {
 
     public enum ApiCallStatsColumnDef implements ColumnDefinition {
         QUERY_ID(0, STRING),
-        CALL_TIME(1, DATE),
-        CALL_MILLIS(2, INTEGER),
-        DURATION_MILLIS(3, LONG),
-        API_HANDLER(4, STRING),
-        REQUEST_PARAMS(5, DataType.MAP, STRING, STRING),
-        REQUEST_URL(6, STRING),
-        RESPONSE(7, STRING);
+        NODE_ID(1, STRING),
+        NODE_ADDRESS(2, STRING),
+        CALL_TIME(3, DATE),
+        CALL_MILLIS(4, INTEGER),
+        DURATION_MILLIS(5, LONG),
+        API_HANDLER(6, STRING),
+        REQUEST_PARAMS(7, DataType.MAP, STRING, STRING),
+        REQUEST_URL(8, STRING),
+        RESPONSE(9, STRING);
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
@@ -199,6 +203,92 @@ public enum StaticReportTable implements TableDefinition {
         private final CompoundDataType dataType;
 
         ApiCallStatsColumnDef(int pos, DataType mainType, DataType... typeParams) {
+            this.pos = pos;
+            this.fieldName = name().toLowerCase();
+            this.dataType = new CompoundDataType(fieldName, mainType, typeParams);
+        }
+
+        @Override
+        public int getPos() {
+            return pos;
+        }
+
+        @Override
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        @Override
+        public CompoundDataType getDataType() {
+            return dataType;
+        }
+    }
+
+    public enum CacheStatsColumnDef implements ColumnDefinition {
+        NODE_ID(1, STRING),
+        NODE_ADDRESS(2, STRING),
+        CACHE_NAME(3, STRING),
+        HIT_COUNT(4, LONG),
+        MISS_COUNT(5, LONG),
+        LOAD_SUCCESS_COUNT(6, LONG),
+        LOAD_FAILURE_COUNT(7, LONG),
+        TOTAL_LOAD_TIME(8, LONG),
+        EVICTION_COUNT(9, LONG),
+        EVICTION_WEIGHT(10, LONG);
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("pos", pos)
+                    .add("fieldName", fieldName)
+                    .add("dataType", dataType)
+                    .toString();
+        }
+        private final int pos;
+        private final String fieldName;
+        private final CompoundDataType dataType;
+
+        CacheStatsColumnDef(int pos, DataType mainType, DataType... typeParams) {
+            this.pos = pos;
+            this.fieldName = name().toLowerCase();
+            this.dataType = new CompoundDataType(fieldName, mainType, typeParams);
+        }
+
+        @Override
+        public int getPos() {
+            return pos;
+        }
+
+        @Override
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        @Override
+        public CompoundDataType getDataType() {
+            return dataType;
+        }
+    }
+
+    public enum CacheContentColumnDef implements ColumnDefinition {
+        CONTENT_ID(0, UUID_TYPE),
+        NODE_ID(1, STRING),
+        NODE_ADDRESS(2, STRING),
+        CACHE_NAME(3, STRING),
+        KEY(4, STRING),
+        SIZE(5, LONG);
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("pos", pos)
+                    .add("fieldName", fieldName)
+                    .add("dataType", dataType)
+                    .toString();
+        }
+        private final int pos;
+        private final String fieldName;
+        private final CompoundDataType dataType;
+
+        CacheContentColumnDef(int pos, DataType mainType, DataType... typeParams) {
             this.pos = pos;
             this.fieldName = name().toLowerCase();
             this.dataType = new CompoundDataType(fieldName, mainType, typeParams);

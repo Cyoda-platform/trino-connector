@@ -20,6 +20,8 @@ package com.cyoda.presto;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.data.TableDataProviderProvider;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import io.trino.metadata.InternalNodeManager;
+import io.trino.spi.NodeManager;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.DynamicFilter;
@@ -28,8 +30,11 @@ import io.trino.spi.connector.ConnectorSplitSource;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import com.google.common.base.Preconditions;
+import io.trino.spi.connector.FixedSplitSource;
 
 import javax.inject.Inject;
+
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
@@ -38,13 +43,18 @@ public class CyodaSplitManager implements ConnectorSplitManager {
     private final String connectorId;
     private final TableDataProviderProvider dataProviderProvider;
     private final AuthService auth;
+    private final CyodaSplitDispatcher splitDispatcher;
 
 
     @Inject
-    public CyodaSplitManager(CyodaConnectorId connectorId, TableDataProviderProvider dataProviderProvider, AuthService auth) {
+    public CyodaSplitManager(CyodaConnectorId connectorId,
+                             TableDataProviderProvider dataProviderProvider,
+                             AuthService auth,
+                             NodeManager nodeManager) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
         this.dataProviderProvider = dataProviderProvider;
         this.auth = auth;
+        splitDispatcher = new CyodaSplitDispatcher(nodeManager);
     }
 
     @Override
@@ -60,8 +70,10 @@ public class CyodaSplitManager implements ConnectorSplitManager {
         if (constraint.predicate().isEmpty() && !constraint.getSummary().isAll()){
             throw new RuntimeException("Constraint summary is not blank, but predicate not present");
         }
-        return dataProviderProvider
+        List<CyodaSplit> splits = dataProviderProvider
                 .getDataProvider(tableHandle.getTableType())
                 .getSplits(auth.fromSession(session), session.getQueryId(), tableHandle, constraint);
+        splitDispatcher.dispatch(splits);
+        return new FixedSplitSource(splits);
     }
 }
