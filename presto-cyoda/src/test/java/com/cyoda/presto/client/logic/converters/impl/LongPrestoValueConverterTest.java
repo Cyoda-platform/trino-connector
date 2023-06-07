@@ -36,9 +36,18 @@ public class LongPrestoValueConverterTest {
         assertEquals(converter.fromOtherCyodaType((byte) 1,"hello"),(Long) 1L);
         assertEquals(converter.fromOtherCyodaType((short)10,"hello"),(Long) 10L);
         assertEquals(converter.fromOtherCyodaType((int)100,"hello"),(Long) 100L);
-        assertEquals(converter.fromOtherCyodaType(BigInteger.valueOf(1_000),"hello"),(Long) 1_000L);
         assertEquals(converter.fromOtherCyodaType(new AtomicInteger(10_000),"hello"),(Long) 10_000L);
         assertEquals(converter.fromOtherCyodaType(new AtomicLong(100_000),"hello"),(Long) 100_000L);
+    }
+
+    @Test
+    public void testBigInteger() {
+        assertEquals(converter.fromOtherCyodaType(BigInteger.valueOf(1_000),"hello"),(Long) 1_000L);
+        assertEquals(converter.fromOtherCyodaType(BigInteger.valueOf(Long.MIN_VALUE),"hello"),(Long) Long.MIN_VALUE);
+        assertEquals(converter.fromOtherCyodaType(BigInteger.valueOf(Long.MAX_VALUE),"hello"),(Long) Long.MAX_VALUE);
+        assertThrows(UnsupportedOperationException.class, () -> converter.fromOtherCyodaType(BigInteger.valueOf(Long.MAX_VALUE).add(BigInteger.ONE),"hello"));
+        assertThrows(UnsupportedOperationException.class, () -> converter.fromOtherCyodaType(BigInteger.valueOf(Long.MIN_VALUE).subtract(BigInteger.ONE),"hello"));
+
     }
     
     @Test
