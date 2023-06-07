@@ -22,6 +22,11 @@ import com.cyoda.presto.client.types.DataType;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class LongPrestoValueConverter extends LongComparedTypeValueConverter<Long> {
 
@@ -54,6 +59,29 @@ public class LongPrestoValueConverter extends LongComparedTypeValueConverter<Lon
     @Override
     public String stringify(Long value) {
         return value.toString();
+    }
+
+    private static final List<Class<? extends Number>> SUPPORTED_CONVERSION_TYPES = Arrays.asList(
+            Byte.class, Short.class, Integer.class, BigInteger.class, AtomicInteger.class, AtomicLong.class
+    );
+
+    /**
+     * Implement support for integer types, i.e. whole numbers and booleans
+     * Numbers that are decimals are not supported and will call the superclass method.
+     *
+     * @param value to convert
+     * @param columnName not used directly here
+     * @return the converted value
+     */
+    @Override
+    public Long fromOtherCyodaType(Object value, String columnName) {
+        if ( SUPPORTED_CONVERSION_TYPES.contains(value.getClass()) ) {
+            return ((Number) value).longValue();
+        }
+        if ( value instanceof Boolean) {
+            return ((Boolean) value) ? 1L : 0L;
+        }
+        return super.fromOtherCyodaType(value, columnName);
     }
 
 }
