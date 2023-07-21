@@ -67,7 +67,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
         this.configuredReportsApiHandler = configuredReportsApiHandler;
         this.reportConfigDetailsApiHandler = reportConfigDetailsApiHandler;
         tableByUserCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
-                .expireAfterAccess(Duration.ofMinutes(2))
+                .expireAfterWrite(Duration.ofSeconds(5))
                 .recordStats()
                 .build(key -> {
                     LOG.debug("Loading Tables Cache for user " + key.getUserId());
