@@ -202,7 +202,11 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler {
 //        if (path.contains("[*]")) {
 //            return Types.newParameterizedType(List.class, clazz);
 //        }
-        return Types.newParameterizedType(clazz);
+        if ( clazz instanceof Class<?> ) {
+            return Types.newParameterizedType(clazz,Object.class);
+        } else {
+            return Types.newParameterizedType(clazz);
+        }
     }
 
     private ParameterizedType fromColDefs(String reportName, DocumentContext documentContext, String columnName) {

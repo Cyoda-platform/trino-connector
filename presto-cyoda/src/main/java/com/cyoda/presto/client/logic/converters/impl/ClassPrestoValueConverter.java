@@ -19,7 +19,10 @@ package com.cyoda.presto.client.logic.converters.impl;
 
 import com.cyoda.presto.client.logic.converters.structure.SliceJsonValueConverter;
 import com.cyoda.presto.client.types.DataType;
-import io.airlift.slice.Slice;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import io.airlift.slice.Slices;
+import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.type.Type;
 
 @SuppressWarnings({"ALL","java:S3740"})
 public class ClassPrestoValueConverter extends SliceJsonValueConverter<Class> {
@@ -28,4 +31,24 @@ public class ClassPrestoValueConverter extends SliceJsonValueConverter<Class> {
         super(DataType.CLASS);
     }
 
+    @Override
+    public void writeCyodaNative(Type type, BlockBuilder builder, Object cyodaNative, String columnName) {
+        if (cyodaNative == null){
+            builder.appendNull();
+            return;
+        }
+        try {
+            String json = OBJECT_MAPPER_SUPPLIER.get().writerFor(String.class).writeValueAsString(cyodaNative.toString());
+            String clean = cleanUpJson(json);
+            type.writeSlice(builder, Slices.utf8Slice(clean));
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Cannot convert to json",e);
+        }
+
+    }
+
+    @Override
+    public void writeCyodaNativeFromCollection(Type type, BlockBuilder builder, Object cyodaNative, String columnName) {
+        writeCyodaNative(type, builder, cyodaNative, columnName);
+    }
 }
