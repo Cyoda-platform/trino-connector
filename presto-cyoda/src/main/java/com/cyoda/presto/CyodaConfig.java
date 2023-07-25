@@ -57,6 +57,11 @@ public class CyodaConfig {
     private int rowRequestPageSize;
     private String userLoginEndpoint;
     private String refreshTokenEndpoint;
+    private long cacheUserAuthSecAfterWrite;
+    private long cacheReportHistorySecAfterWrite;
+    private long cacheReportMetaHoursAfterAccess;
+    private long cacheReportPagesHoursAfterAccess;
+    private long cacheReportGroupsHoursAfterAccess;
 
     private boolean anonymousLogin;
     private String anonymousUserId;
@@ -88,7 +93,11 @@ public class CyodaConfig {
         anonymousToken = null;
         anonymousRefreshToken = null;
         anonymousUserName = null;
-
+        cacheUserAuthSecAfterWrite = 5;
+        cacheReportHistorySecAfterWrite = 30;
+        cacheReportMetaHoursAfterAccess = 24;
+        cacheReportPagesHoursAfterAccess = 24;
+        cacheReportGroupsHoursAfterAccess = 24;
     }
 
     @NotNull
@@ -356,5 +365,50 @@ public class CyodaConfig {
         NONE,
         BASIC,
         JWT
+    }
+
+    public long getCacheUserAuthSecAfterWrite() {
+        return cacheUserAuthSecAfterWrite;
+    }
+
+    @Config("cyoda.cache.auth.saw")
+    public void setCacheUserAuthSecAfterWrite(long cacheUserAuthSecAfterWrite) {
+        this.cacheUserAuthSecAfterWrite = cacheUserAuthSecAfterWrite;
+    }
+
+    public long getCacheReportHistorySecAfterWrite() {
+        return cacheReportHistorySecAfterWrite;
+    }
+
+    @Config("cyoda.cache.history.saw")
+    public void setCacheReportHistorySecAfterWrite(long cacheReportHistorySecAfterWrite) {
+        this.cacheReportHistorySecAfterWrite = cacheReportHistorySecAfterWrite;
+    }
+
+    public long getCacheReportMetaHoursAfterAccess() {
+        return cacheReportMetaHoursAfterAccess;
+    }
+
+    @Config("cyoda.cache.meta.haa")
+    public void setCacheReportMetaHoursAfterAccess(long cacheReportMetaHoursAfterAccess) {
+        this.cacheReportMetaHoursAfterAccess = cacheReportMetaHoursAfterAccess;
+    }
+
+    public long getCacheReportPagesHoursAfterAccess() {
+        return cacheReportPagesHoursAfterAccess;
+    }
+
+    @Config("cyoda.cache.pages.haa")
+    public void setCacheReportPagesHoursAfterAccess(long cacheReportPagesHoursAfterAccess) {
+        this.cacheReportPagesHoursAfterAccess = cacheReportPagesHoursAfterAccess;
+    }
+
+    public long getCacheReportGroupsHoursAfterAccess() {
+        return cacheReportGroupsHoursAfterAccess;
+    }
+
+    @Config("cyoda.cache.groups.haa")
+    public void setCacheReportGroupsHoursAfterAccess(long cacheReportGroupsHoursAfterAccess) {
+        this.cacheReportGroupsHoursAfterAccess = cacheReportGroupsHoursAfterAccess;
     }
 }

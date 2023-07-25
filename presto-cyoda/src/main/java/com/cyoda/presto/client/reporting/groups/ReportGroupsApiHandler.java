@@ -149,7 +149,7 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
     @Override
     protected LoadingCache<GroupsRequestKey, List<GroupingHandle>> setupCache(CacheLoader<GroupsRequestKey, List<GroupingHandle>> loader) {
         return Caffeine.newBuilder()
-                .expireAfterAccess(Duration.ofDays(1))
+                .expireAfterAccess(Duration.ofHours(config.getCacheReportGroupsHoursAfterAccess()))
                 .recordStats()
                 .build(loader);
     }

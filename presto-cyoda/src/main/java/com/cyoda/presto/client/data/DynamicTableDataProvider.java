@@ -60,7 +60,7 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
         this.config = config;
         pageCache =
                 new ContentIdLoadingCache<>(Caffeine.newBuilder()
-                        .expireAfterAccess(Duration.ofDays(1))
+                        .expireAfterAccess(Duration.ofHours(config.getCacheReportPagesHoursAfterAccess()))
                         .recordStats()
                         .build(
                         this::getCachedPageSource

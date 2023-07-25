@@ -67,7 +67,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
         this.configuredReportsApiHandler = configuredReportsApiHandler;
         this.reportConfigDetailsApiHandler = reportConfigDetailsApiHandler;
         tableByUserCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
-                .expireAfterWrite(Duration.ofSeconds(5))
+                .expireAfterWrite(Duration.ofSeconds(config.getCacheUserAuthSecAfterWrite()))
                 .recordStats()
                 .build(key -> {
                     LOG.debug("Loading Tables Cache for user " + key.getUserId());
@@ -75,7 +75,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
                 }));
         cacheMonitor.register("AUTH", tableByUserCache, AuthContext::getUserId, Map::size);
         tableMetaCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
-                .expireAfterAccess(Duration.ofDays(1))
+                .expireAfterAccess(Duration.ofHours(config.getCacheReportMetaHoursAfterAccess()))
                 .recordStats()
                 .build(key -> {
                     LOG.debug("Loading config " + key);
