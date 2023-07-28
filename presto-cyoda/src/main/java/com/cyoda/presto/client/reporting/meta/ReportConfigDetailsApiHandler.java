@@ -84,6 +84,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler {
     // These are also reserved words for column names coming from reports.
     // TODO This validation needs to be moved to platform
     private static final List<String> RESERVED_COLUMN_NAMES = StaticReportTable.REPORT_ROWS.getFieldList();
+    protected final TypeManager typeManager;
 
     private final UriTemplate uriTemplate;
 
@@ -93,7 +94,8 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler {
                                          RestTemplateCustomizer restTemplateCustomizer,
                                          AuthService authService,
                                          CyodaApiRequestStatsMonitor requestStatsMonitor) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
+        super(config, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
+        this.typeManager = typeManager;
         uriTemplate = setupUriTemplate();
     }
 

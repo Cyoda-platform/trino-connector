@@ -65,7 +65,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler {
                                 RestTemplateCustomizer restTemplateCustomizer,
                                 AuthService authService,
                                 CyodaApiRequestStatsMonitor requestStatsMonitor) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
+        super(config, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
     }
 
 

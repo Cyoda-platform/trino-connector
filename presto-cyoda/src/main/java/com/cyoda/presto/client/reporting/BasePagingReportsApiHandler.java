@@ -42,7 +42,7 @@ public abstract class BasePagingReportsApiHandler<K, T> extends BaseReportsApiHa
                                           SupplierLogger log,
                                           AuthService authService,
                                           CyodaApiRequestStatsMonitor requestStatsMonitor) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, log, authService, requestStatsMonitor);
+        super(config, restTemplateCustomizer, log, authService, requestStatsMonitor);
     }
 
     public abstract Optional<PagedModel<T>> retrievePage(

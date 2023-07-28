@@ -18,16 +18,13 @@
 package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.CyodaConfig;
-import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.client.reporting.stats.ApiRequestStats;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.base.Preconditions;
-import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.PagedModel;
 
 import javax.annotation.Nonnull;
@@ -48,25 +45,19 @@ public abstract class BaseReportsApiHandler {
 
     public static final int DEFAULT_PAGE_SIZE = 10;
 
-    protected final CyodaConnectorId connectorId;
     protected final CyodaConfig config;
     protected final RestTemplateCustomizer restTemplateCustomizer;
-    protected final TypeManager typeManager;
     protected final SupplierLogger log;
     protected final AuthService auth;
 
     private final CyodaApiRequestStatsMonitor requestStatsMonitor;
 
-    protected BaseReportsApiHandler(CyodaConnectorId connectorId,
-                                    CyodaConfig config,
-                                    TypeManager typeManager,
+    protected BaseReportsApiHandler(CyodaConfig config,
                                     RestTemplateCustomizer restTemplateCustomizer,
                                     SupplierLogger log,
                                     AuthService authService,
                                     CyodaApiRequestStatsMonitor requestStatsMonitor) {
-        this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.config = requireNonNull(config, "config is null");
-        this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.restTemplateCustomizer = restTemplateCustomizer;
         this.log = log;
         this.auth = authService;

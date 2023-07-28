@@ -59,7 +59,7 @@ public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApi
                                             AuthService authService,
                                             CyodaApiRequestStatsMonitor requestStatsMonitor,
                                             CyodaCacheMonitor cacheMonitor) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, log, authService, requestStatsMonitor);
+        super(config, restTemplateCustomizer, log, authService, requestStatsMonitor);
         cache = new ContentIdLoadingCache<>(setupCache(this::loadByKey));
         registerCache(cacheMonitor, cache);
     }
