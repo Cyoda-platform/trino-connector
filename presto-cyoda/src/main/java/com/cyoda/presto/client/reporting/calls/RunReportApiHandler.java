@@ -11,13 +11,14 @@ import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.collect.ImmutableList;
 import io.trino.spi.StandardErrorCode;
 import io.trino.spi.TrinoException;
-import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.TemplateVariable;
 import org.springframework.hateoas.TemplateVariables;
 import org.springframework.hateoas.UriTemplate;
-import org.springframework.hateoas.client.Traverson;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
 import javax.inject.Inject;
 import java.net.URI;
@@ -46,12 +47,12 @@ public class RunReportApiHandler extends BaseReportsApiHandler {
         URI templatedUri = uriTemplate.expand(expansion);
 
         Date callDate = new Date();
-        Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-        traverson.setRestOperations(restTemplateCustomizer.getRestTemplate(authContext));
+        RestTemplate restTemplate = restTemplateCustomizer.getRestTemplate(authContext);
+
         ResponseEntity<String> response;
         try {
-            response = traverson.follow().toEntity(String.class);
-            LOG.info("CALLING run report, response: " + response);
+            response = restTemplate.exchange(templatedUri, HttpMethod.POST, HttpEntity.EMPTY, String.class);
+            LOG.info("CALLed run report, response: " + response);
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, e, templatedUri);
         } finally {
