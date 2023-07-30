@@ -50,7 +50,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_TABLE_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler.HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER;
@@ -114,12 +113,13 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Rep
             final PagedModel<GridConfigFieldsView> gridConfigFieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
-            registerApiCall(requestKey.queryId(), callTime, templatedUri.toString(), expansion);
             addReportAndTableName(gridConfigFieldsViews);
             publishSize(listener, gridConfigFieldsViews);
             return Optional.ofNullable(gridConfigFieldsViews);
         } catch (HttpClientErrorException e) {
-            throw requestFailedException(this, "retrieveCollection", e, templatedUri);
+            throw requestFailedException(this, e, templatedUri);
+        } finally {
+            registerApiCall(requestKey.queryId(), callTime, templatedUri.toString(), expansion);
         }
     }
 

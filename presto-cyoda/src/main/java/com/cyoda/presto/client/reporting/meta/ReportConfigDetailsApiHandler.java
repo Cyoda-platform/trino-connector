@@ -63,7 +63,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler.REPORT_DEFS_ENDPOINT;
 import static com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler.ReportColumnType.ALIAS;
 import static com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler.ReportColumnType.COLUMN;
@@ -115,7 +114,6 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler {
                             .follow()
                             .toEntity(String.class)).map(ResponseEntity::getBody)
                     .orElseThrow(() -> new IllegalArgumentException("No body found at " + templatedUri));
-            registerApiCall(reportConfigKey.queryId(), callDate, templatedUri.toString(), expansion);
             DocumentContext parse = JsonPath.parse(jsonResult, JSONPATHA_CONFIG);
             List<CyodaColumnHandle> cols = extractColumns(reportName, parse);
             String description = parse.read("$.content.description", String.class);
@@ -132,7 +130,9 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler {
 
             return new ReportDefinitionHandle(reportConfigId, reportName, description, cols, jsonResult, isSingleton, groupingColumns);
         } catch (HttpClientErrorException e) {
-            throw requestFailedException(this, "retrieveCollection", e, templatedUri);
+            throw requestFailedException(this, e, templatedUri);
+        } finally {
+            registerApiCall(reportConfigKey.queryId(), callDate, templatedUri.toString(), expansion);
         }
     }
 

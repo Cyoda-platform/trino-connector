@@ -53,7 +53,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.HISTORY_REPORT_ID_COLUMN;
-import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.GROUPING_VERSION_COLUMN;
 
 public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<ReportConfigKey, DistributedReportInfoView> {
@@ -132,10 +131,11 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Repo
                         .toObject(typeReference);
                 Optional<DistributedReportInfoView> reportStatistics = Optional.ofNullable(entityModel)
                         .map(EntityModel::getContent).map(WrappedEntityModel::getContent);
-                registerApiCall(queryId, callTime, templatedUri.toString(), expansion);
                 builder.add(reportStatistics.orElse(DistributedReportInfoView.builder().id(reportId).build()));
             } catch (HttpClientErrorException e) {
-                throw requestFailedException(this, "retrieveCollection", e, templatedUri);
+                throw requestFailedException(this, e, templatedUri);
+            } finally {
+                registerApiCall(queryId, callTime, templatedUri.toString(), expansion);
             }
         });
         List<DistributedReportInfoView> result = builder.build();

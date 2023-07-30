@@ -25,14 +25,23 @@ import com.cyoda.presto.client.logic.CompoundPredicateNode;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.base.Preconditions;
+import io.trino.spi.StandardErrorCode;
+import io.trino.spi.TrinoException;
 import org.springframework.hateoas.PagedModel;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 
 import javax.annotation.Nonnull;
+import java.net.URI;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.cyoda.presto.CyodaErrorCode.CYODA_API_ERROR;
+import static com.cyoda.presto.CyodaErrorCode.CYODA_TOO_MANY_REQUESTS;
+import static com.google.common.base.MoreObjects.toStringHelper;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 // TODO: The API calls to Cyoda need to have some check on API version. Sasha might be able to say how he did it for UI
@@ -62,6 +71,31 @@ public abstract class BaseReportsApiHandler {
         this.log = log;
         this.auth = authService;
         this.requestStatsMonitor = requestStatsMonitor;
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    public RuntimeException requestFailedException(Object me, HttpClientErrorException e, URI uri) {
+        if (HttpStatus.UNAUTHORIZED.equals(e.getStatusCode())) {
+            return new TrinoException(StandardErrorCode.PERMISSION_DENIED, "Authentication failed : " + e.getStatusText());
+        }
+        if (HttpStatus.TOO_MANY_REQUESTS.equals(e.getStatusCode())) {
+            return new TrinoException(CYODA_TOO_MANY_REQUESTS, "Request throttled : " + e.getStatusText());
+        }
+
+        return new TrinoException(CYODA_API_ERROR,
+                format("[Cyoda] Error %s at %s returned an invalid response: %s [Error: %s]",
+                        getName(), uri.toASCIIString(), asString(me,e), e.getResponseBodyAsString()),
+                e
+        );
+    }
+
+    private static String asString(Object me, HttpClientErrorException e) {
+        return toStringHelper(me)
+                .add("statusCode", e.getStatusCode())
+                .add("statusMessage", e.getStatusText())
+                .add("headers", e.getResponseHeaders())
+                .omitNullValues()
+                .toString();
     }
 
     protected void registerApiCall(String queryId, Date callTime, String requestUrl, Map<String, Object> params){

@@ -1,19 +1,16 @@
 package com.cyoda.presto.client.reporting.calls;
 
 import com.cyoda.presto.CyodaConfig;
-import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
-import com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.collect.ImmutableList;
 import io.trino.spi.StandardErrorCode;
 import io.trino.spi.TrinoException;
-import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.TemplateVariable;
 import org.springframework.hateoas.TemplateVariables;
@@ -28,10 +25,6 @@ import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
-import java.util.Optional;
-
-import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
-import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_ID_COLUMN;
 
 public class RunReportApiHandler extends BaseReportsApiHandler {
 
@@ -59,9 +52,10 @@ public class RunReportApiHandler extends BaseReportsApiHandler {
         try {
             response = traverson.follow().toEntity(String.class);
             LOG.info("CALLING run report, response: " + response);
-            registerApiCall(reportConfigKey.queryId(), callDate, templatedUri.toString(), expansion);
         } catch (HttpClientErrorException e) {
-            throw requestFailedException(this, "retrieveCollection", e, templatedUri);
+            throw requestFailedException(this, e, templatedUri);
+        } finally {
+            registerApiCall(reportConfigKey.queryId(), callDate, templatedUri.toString(), expansion);
         }
         return response.toString();
     }
@@ -74,7 +68,7 @@ public class RunReportApiHandler extends BaseReportsApiHandler {
             throw new TrinoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, e);
         }
         final ImmutableList.Builder<TemplateVariable> builder = ImmutableList.builder();
-        builder.add(TemplateVariable.pathVariable("gridConfig"));
+        builder.add(TemplateVariable.requestParameter("gridConfig"));
         builder.add();
 
         TemplateVariables vars = new TemplateVariables(builder.build());
