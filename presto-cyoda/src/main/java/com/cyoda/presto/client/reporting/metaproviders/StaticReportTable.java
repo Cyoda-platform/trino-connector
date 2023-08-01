@@ -76,6 +76,7 @@ public enum StaticReportTable implements TableDefinition {
     API_CALL_STATS(Arrays.asList(ApiCallStatsColumnDef.values()), null, CyodaTableHandle.TableType.CALL_STATS),
     CACHE_STATS(Arrays.asList(CacheStatsColumnDef.values()), null, CyodaTableHandle.TableType.CACHE_STATS),
     CACHE_CONTENT(Arrays.asList(CacheContentColumnDef.values()), null, CyodaTableHandle.TableType.CACHE_CONTENT),
+    LOG_TABLE(Arrays.asList(LogTableColumnDef.values()), null, CyodaTableHandle.TableType.LOG_TABLE),
     REPORT_HISTORIES(Arrays.asList(ReportHistoryColumnDef.values()), REPORT_HISTORY_ENDPOINT, CyodaTableHandle.TableType.HISTORY),
     REPORT_GROUPS(StandardColumnDefinition.builder()
             .add(new StandardColumnDefinition(0, StaticReportFields.HISTORY_REPORT_ID_COLUMN, STRING))
@@ -289,6 +290,49 @@ public enum StaticReportTable implements TableDefinition {
         private final CompoundDataType dataType;
 
         CacheContentColumnDef(int pos, DataType mainType, DataType... typeParams) {
+            this.pos = pos;
+            this.fieldName = name().toLowerCase();
+            this.dataType = new CompoundDataType(fieldName, mainType, typeParams);
+        }
+
+        @Override
+        public int getPos() {
+            return pos;
+        }
+
+        @Override
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        @Override
+        public CompoundDataType getDataType() {
+            return dataType;
+        }
+    }
+
+    public enum LogTableColumnDef implements ColumnDefinition {
+        NODE_ID(1, STRING),
+        NODE_ADDRESS(2, STRING),
+        DATE(3, DataType.DATE),
+        LEVEL(4, STRING),
+        CLASS(5, STRING),
+        METHOD(6, STRING),
+        MESSAGE(7, STRING),
+        STACKTRACE(8, STRING);
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("pos", pos)
+                    .add("fieldName", fieldName)
+                    .add("dataType", dataType)
+                    .toString();
+        }
+        private final int pos;
+        private final String fieldName;
+        private final CompoundDataType dataType;
+
+        LogTableColumnDef(int pos, DataType mainType, DataType... typeParams) {
             this.pos = pos;
             this.fieldName = name().toLowerCase();
             this.dataType = new CompoundDataType(fieldName, mainType, typeParams);

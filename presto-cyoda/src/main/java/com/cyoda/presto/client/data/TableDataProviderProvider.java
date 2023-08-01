@@ -77,6 +77,10 @@ public class TableDataProviderProvider {
                 CACHE_CONTENT,
                 new CacheContentDataProvider(nodeManager, cyodaCacheMonitor)
         );
+        providerMap.put(
+                LOG_TABLE,
+                new LogTableDataProvider(nodeManager)
+        );
     }
 
     public TableDataProvider<?> getDataProvider(TableType tableType){

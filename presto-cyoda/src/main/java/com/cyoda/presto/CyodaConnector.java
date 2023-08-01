@@ -18,8 +18,8 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.handles.CyodaTransactionHandle;
+import com.cyoda.presto.logging.SupplierLogger;
 import io.airlift.bootstrap.LifeCycleManager;
-import io.airlift.log.Logger;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorMetadata;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
@@ -36,7 +36,7 @@ import static java.util.Objects.requireNonNull;
 
 public class CyodaConnector implements Connector {
 
-    private static final Logger log = Logger.get(CyodaConnector.class);
+    private static final SupplierLogger log = SupplierLogger.get(CyodaConnector.class);
 
     private final LifeCycleManager lifeCycleManager;
     private final CyodaMetadata metadata;

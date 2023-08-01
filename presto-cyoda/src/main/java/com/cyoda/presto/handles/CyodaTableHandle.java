@@ -186,7 +186,8 @@ public class CyodaTableHandle implements ConnectorTableHandle {
         DUMMY,
         CALL_STATS,
         CACHE_STATS,
-        CACHE_CONTENT
+        CACHE_CONTENT,
+        LOG_TABLE
     }
 
     public static class Template{
