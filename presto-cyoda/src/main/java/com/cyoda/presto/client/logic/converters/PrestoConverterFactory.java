@@ -7,7 +7,6 @@ import com.cyoda.presto.client.logic.converters.impl.ByteArrayPrestoValueConvert
 import com.cyoda.presto.client.logic.converters.impl.ByteBufferPrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.BytePrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.CharacterPrestoValueConverter;
-import com.cyoda.presto.client.logic.converters.impl.ClassPrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.DatePrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.DoublePrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.FloatPrestoValueConverter;
@@ -71,7 +70,6 @@ public class PrestoConverterFactory {
         singleBuilder.put(DataType.BYTE_ARRAY,new ByteArrayPrestoValueConverter());
         singleBuilder.put(DataType.OBJECT,new ObjectPrestoValueConverter());
         singleBuilder.put(DataType.LOCALE,new LocalePrestoValueConverter());
-        singleBuilder.put(DataType.CLASS,new ClassPrestoValueConverter());
         singleValueConverters = singleBuilder.build();
 
     }

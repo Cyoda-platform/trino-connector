@@ -42,7 +42,7 @@ public class CompoundDataType {
     }
 
     public static CompoundDataType of(ParameterizedType type, String columnName){
-        return of(type, columnName, DataType::fromClassExact);
+        return of(type, columnName, DataType::fromClassFSToString);
     }
 
     private static CompoundDataType of(ParameterizedType type, String columnName, BiFunction<Class<?>, String, DataType> dataTypeFinder){
