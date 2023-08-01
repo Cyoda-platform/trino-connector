@@ -55,7 +55,8 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
         standaloneTablesMap.put(cacheStats.getTableHandle().getTableName(), cacheStats);
         cacheContent = new CacheContent();
         standaloneTablesMap.put(cacheContent.getTableHandle().getTableName(), cacheContent);
-
+        StaticTableMetadata logTable = new StaticTableMetadata(StaticReportTable.LOG_TABLE);
+        standaloneTablesMap.put("log", logTable);
 
         historyTableTemplate = CyodaTableHandle.Template.of(reportHistory.getTableHandle());
         groupsTableTemplate = CyodaTableHandle.Template.of(reportGroups.getTableHandle());
