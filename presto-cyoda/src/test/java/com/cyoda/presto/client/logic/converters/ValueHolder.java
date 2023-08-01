@@ -7,7 +7,6 @@ import com.cyoda.presto.client.logic.converters.impl.ByteArrayPrestoValueConvert
 import com.cyoda.presto.client.logic.converters.impl.ByteBufferPrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.BytePrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.CharacterPrestoValueConverter;
-import com.cyoda.presto.client.logic.converters.impl.ClassPrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.DatePrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.DoublePrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.FloatPrestoValueConverter;
@@ -71,7 +70,6 @@ public class ValueHolder<T> {
         new ValueHolder<>(new ByteBufferPrestoValueConverter(), ByteBuffer.wrap(bytes));
         new ValueHolder<>(new BytePrestoValueConverter(), random.byteValue());
         new ValueHolder<>(new CharacterPrestoValueConverter(), 'F');
-        new ValueHolder<>(new ClassPrestoValueConverter(), ValueHolder.class);
         new ValueHolder<>(new DatePrestoValueConverter(), new Date());
         new ValueHolder<>(new DoublePrestoValueConverter(), random);
         new ValueHolder<>(new FloatPrestoValueConverter(), random.floatValue());

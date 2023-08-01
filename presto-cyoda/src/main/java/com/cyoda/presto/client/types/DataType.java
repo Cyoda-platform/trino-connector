@@ -89,11 +89,8 @@ public enum DataType implements IDataType {
     UUID_TYPE       (UUID.class,            StandardTypes.UUID,         true, 0),
     BYTE_ARRAY      (byte[].class,          StandardTypes.VARBINARY,    false, 0),
     BYTE_BUFFER     (ByteBuffer.class,      StandardTypes.VARBINARY,    false, 0),
-    CLASS           (Class.class,           StandardTypes.VARCHAR,      false, 0),
     LOCALE          (Locale.class,          StandardTypes.VARCHAR,      false, 0),
-//    NULL            (null,                  null, false, 0),
     OBJECT          (Object.class,          StandardTypes.JSON,         false, 0), //Unsure. We will transform these to Json strings.
-//    ARRAY           (Object[].class,        StandardTypes.ARRAY,        false, 0),
     LIST            (List.class,            StandardTypes.ARRAY,        false, 1),
     MAP             (Map.class,             StandardTypes.MAP,          false, 2),
     SET             (Set.class,             StandardTypes.ARRAY,        false, 1);
@@ -116,38 +113,6 @@ public enum DataType implements IDataType {
         this.typeParametersCount = typeParametersCount;
         this.staticParams = Arrays.stream(staticParams).mapToObj(TypeSignatureParameter::numericParameter).collect(Collectors.toList());
     }
-
-    public static <T> Class<T> getJType(IDataType<T> dataType){
-        return dataType.getJavaType();
-    }
-
-    public static TypeSignature toPrestoTypeSignature(DataType dataType) {
-        switch (dataType) {
-            case BOOLEAN: return BooleanType.BOOLEAN.getTypeSignature();
-            case BYTE: return TinyintType.TINYINT.getTypeSignature();
-            case SHORT: return SmallintType.SMALLINT.getTypeSignature();
-            case INTEGER: return IntegerType.INTEGER.getTypeSignature();
-            case LONG: return BigintType.BIGINT.getTypeSignature();
-            case FLOAT: return RealType.REAL.getTypeSignature();
-            case DOUBLE: return DoubleType.DOUBLE.getTypeSignature();
-            case STRING: return VarcharType.VARCHAR.getTypeSignature();
-            case DATE: return DateType.DATE.getTypeSignature();
-            case LOCAL_DATE_TIME: return TimestampType.TIMESTAMP_MILLIS.getTypeSignature();
-            case LOCAL_DATE: return BigintType.BIGINT.getTypeSignature();
-            case YEAR: return VarcharType.VARCHAR.getTypeSignature();
-            case OBJECT: return JsonType.JSON.getTypeSignature();
-            default: throw new UnsupportedOperationException(dataType + " Not yet done");
-        }
-    }
-
-    public static List<DataType> validateDataTypes(List<DataType> dataTypes, String columnName) {
-        if (dataTypes == null || dataTypes.isEmpty())
-            throw new IllegalArgumentException("No DataType for field " + columnName);
-        if (dataTypes.size() - 1 != dataTypes.get(0).getTypeParametersCount())
-            throw new IllegalArgumentException("Invalid DataType set (" + Arrays.toString(dataTypes.toArray()) + ") for field " + columnName);
-        return dataTypes;
-    }
-
     @Override
     public Class<?> getJavaType() {
         return javaType;
@@ -189,16 +154,7 @@ public enum DataType implements IDataType {
             .putAll(primitiveClassToDataType)
             .build();
 
-    public static Optional<DataType> fromClass(Class<?> clazz) {
-       return Optional.ofNullable(classToDataType.get(clazz));
-    }
-
-    public static @Nonnull DataType fromClassExact(Class<?> clazz, String columnName) {
-        return Optional.ofNullable(classToDataType.get(clazz)).orElseThrow(
-                () -> new IllegalArgumentException(String.format("Error creating column \"%s\": Class [%s] is not supported.",
-                        columnName, clazz.getName())));
-    }
-
+    //to extract metadata from joda .meta()
     public static @Nonnull DataType fromClassFSToObject(Class<?> clazz, String columnName) {
         DataType res = classToDataType.get(clazz);
         if (res != null)
@@ -210,46 +166,18 @@ public enum DataType implements IDataType {
         }
     }
 
-    public static List<DataType> fromReflectType(ParameterizedType type, String columnName){
-        DataType mainType = DataType.fromClassExact((Class<?>) type.getRawType(), columnName);
-        List<DataType> res = new ArrayList<>(mainType.getTypeParametersCount()+1);
-        res.add(mainType);
-        if (mainType.getTypeParametersCount() > 0) {
-            java.lang.reflect.Type[] actualTypeArguments = type.getActualTypeArguments();
-            if (actualTypeArguments.length < mainType.getTypeParametersCount())
-                throw new IllegalArgumentException(String.format("Error creating column \"%s\": Not matching type arguments for type %s",
-                        columnName, type));
-            res.add(fromClassExact((Class<?>) actualTypeArguments[0],columnName));
-            if (mainType.getTypeParametersCount() > 1)
-                res.add(fromClassExact((Class<?>) actualTypeArguments[1],columnName));
+    //to extract metadata from report config
+    public static @Nonnull DataType fromClassFSToString(Class<?> clazz, String columnName) {
+        DataType res = classToDataType.get(clazz);
+        if (res != null)
+            return res;
+        else {
+            LOG.info(String.format("Field \"%s\": No native support for class %s. Processing as String",
+                    columnName, clazz.getName()));
+            return STRING;
         }
-        return res;
     }
 
-
-//    public static DataType fromType(Type type) {
-//        if ( type.getTypeSignature().getBase().equals(VarcharType.VARCHAR.getTypeSignature().getBase())) {
-//            return STRING;
-//        }
-//        if ( type.getTypeSignature().getBase().equals(IntegerType.INTEGER.getTypeSignature().getBase())) {
-//            return INTEGER;
-//        }
-//        if ( type.getTypeSignature().getBase().equals(JsonType.JSON.getTypeSignature().getBase())) {
-//            return OBJECT;
-//        }
-//        if ( type.getTypeSignature().getBase().equals(BigDecimalType.BIG_DECIMAL_TYPE.getTypeSignature().getBase())) {
-//            return BIG_DECIMAL;
-//        }
-//        throw new UnsupportedOperationException("Mapping of "+type+" to DataType not yet implemented");
-//    }
-//
-
-//    public static final Set<String> supportedPrestoTypes = ImmutableSet.copyOf(
-//            Arrays.stream(DataType.values())
-//                    .map(DataType::getTypeString)
-//                    .filter(Objects::nonNull)
-//                    .collect(Collectors.toSet())
-//    );
 
 }
 
