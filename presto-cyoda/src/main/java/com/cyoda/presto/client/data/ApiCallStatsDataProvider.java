@@ -45,9 +45,6 @@ public class ApiCallStatsDataProvider extends VirtualTableDataProvider<ApiReques
             case CALL_TIME -> {
                 return entity.callTime();
             }
-            case CALL_MILLIS -> {
-                return entity.callTime().toInstant().getNano() / 1000000;
-            }
             case DURATION_MILLIS -> {
                 return entity.duration();
             }

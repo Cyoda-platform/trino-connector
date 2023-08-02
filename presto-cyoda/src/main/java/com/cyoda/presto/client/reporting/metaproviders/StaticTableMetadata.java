@@ -184,7 +184,6 @@ public enum StaticTableMetadata implements TableDefinition {
         NODE_ID(1, STRING),
         NODE_ADDRESS(2, STRING),
         CALL_TIME(3, DATE),
-        CALL_MILLIS(4, INTEGER),
         DURATION_MILLIS(5, LONG),
         API_HANDLER(6, STRING),
         REQUEST_PARAMS(7, DataType.MAP, STRING, STRING),
