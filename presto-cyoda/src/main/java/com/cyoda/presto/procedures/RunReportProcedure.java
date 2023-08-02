@@ -40,7 +40,7 @@ public class RunReportProcedure implements CyodaProcedure{
     }
 
     public List<Procedure.Argument> getArguments() {
-        return Collections.singletonList(new Procedure.Argument("configId", true, VarcharType.VARCHAR, true, null));
+        return Collections.singletonList(new Procedure.Argument("config_id", true, VarcharType.VARCHAR, true, null));
     }
 
     public MethodHandle getMethodHandle() {
@@ -53,8 +53,8 @@ public class RunReportProcedure implements CyodaProcedure{
         }
     }
 
-    public static void runReport(ConnectorSession session, String configId){
+    public static void runReport(ConnectorSession session, String config_id){
         AuthContext authContext = INSTANCE.auth.fromSession(session);
-        INSTANCE.apiHandler.runReport(authContext, new ReportConfigKey(configId, session.getQueryId()));
+        INSTANCE.apiHandler.runReport(authContext, new ReportConfigKey(config_id, session.getQueryId()));
     }
 }
