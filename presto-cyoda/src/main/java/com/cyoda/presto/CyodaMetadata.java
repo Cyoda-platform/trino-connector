@@ -20,8 +20,8 @@ package com.cyoda.presto;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.reporting.calls.DeleteReportsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.DynamicReportMetadataProvider;
+import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
-import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.SupplierLogger;
@@ -89,14 +89,24 @@ public class CyodaMetadata implements ConnectorMetadata {
 
     @Override
     public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName) {
-        if (!listSchemaNames(session).contains(tableName.getSchemaName())) {
-            return null;
-        }
-        String tableKey = tableName.getTableName();
-        if (staticMetadataProvider.contains(tableKey)){
-            return staticMetadataProvider.getTableHandle(tableKey);
-        } else {
-            return dynamicReportMetadataProvider.getTableHandle(auth.fromSession(session), tableKey);
+        String tableKey = null;
+        try {
+            if (!listSchemaNames(session).contains(tableName.getSchemaName())) {
+                return null;
+            }
+            tableKey = tableName.getTableName();
+            if (staticMetadataProvider.contains(tableKey)) {
+                return staticMetadataProvider.getTableHandle(tableKey);
+            } else {
+                return dynamicReportMetadataProvider.getTableHandle(auth.fromSession(session), tableKey);
+            }
+        } catch (Exception e){
+            LOG.error(e);
+            if (StaticReportTable.LOG_TABLE_NAME.equals(tableKey)) {
+                return staticMetadataProvider.getTableHandle(StaticReportTable.LOG_TABLE_NAME);
+            } else {
+                return null;
+            }
         }
     }
 
@@ -166,23 +176,28 @@ public class CyodaMetadata implements ConnectorMetadata {
 
     @Override
     public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> filterSchema) {
-        if ( filterSchema.isPresent() && !filterSchema.get().equals(config.getSchemaName()) ) {
-            return Collections.emptyList();
+        try {
+            if (filterSchema.isPresent() && !filterSchema.get().equals(config.getSchemaName())) {
+                return Collections.emptyList();
+            }
+            LOG.info("Getting tables for schema %s", () -> filterSchema.orElse("ALL"));
+            ImmutableList.Builder<SchemaTableName> builder = ImmutableList.builder();
+            for (String tableName : staticMetadataProvider.getTableList()) {
+                builder.add(new SchemaTableName(config.getSchemaName(), tableName));
+            }
+            for (String tableName : dynamicReportMetadataProvider.getTableList(auth.fromSession(session))) {
+                builder.add(new SchemaTableName(config.getSchemaName(), tableName));
+            }
+            return builder.build();
+        } catch (Exception e){
+            LOG.error(e);
+            return Collections.singletonList(new SchemaTableName(config.getSchemaName(),StaticReportTable.LOG_TABLE_NAME));
         }
-        LOG.info("Getting tables for schema %s",()->filterSchema.orElse("ALL"));
-        ImmutableList.Builder<SchemaTableName> builder = ImmutableList.builder();
-        for (String tableName : staticMetadataProvider.getTableList()) {
-            builder.add(new SchemaTableName(config.getSchemaName(), tableName));
-        }
-        for (String tableName : dynamicReportMetadataProvider.getTableList(auth.fromSession(session))) {
-            builder.add(new SchemaTableName(config.getSchemaName(), tableName));
-        }
-        return builder.build();
     }
 
     private List<SchemaTableName> listTables(ConnectorSession session, SchemaTablePrefix prefix) {
         // List all tables if schema or table is null
-        if (!prefix.getSchema().isPresent() || !prefix.getTable().isPresent()) {
+        if (prefix.getSchema().isEmpty() || prefix.getTable().isEmpty()) {
             return listTables(session, prefix.getSchema());
         }
 

@@ -90,6 +90,7 @@ public enum StaticReportTable implements TableDefinition {
             .add(new StandardColumnDefinition(3, StaticReportFields.ROW_GROUP_JSON_BASE64_VARIABLE, STRING))
             .build(), REPORT_ENDPOINT, CyodaTableHandle.TableType.DATA);
 
+    public static final String LOG_TABLE_NAME = "log";
     private final Map<String, ColumnDefinition> columns;
     private final String endpoint;
 
@@ -317,7 +318,6 @@ public enum StaticReportTable implements TableDefinition {
         DATE(3, DataType.DATE),
         LEVEL(4, STRING),
         CLASS(5, STRING),
-        METHOD(6, STRING),
         MESSAGE(7, STRING),
         STACKTRACE(8, STRING);
         @Override

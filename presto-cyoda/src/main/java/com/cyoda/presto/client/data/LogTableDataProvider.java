@@ -50,10 +50,7 @@ public class LogTableDataProvider extends VirtualTableDataProvider<LogRecord> {
                 return entity.getLevel().toString();
             }
             case CLASS -> {
-                return entity.getSourceClassName();
-            }
-            case METHOD -> {
-                return entity.getSourceMethodName();
+                return entity.getLoggerName();
             }
             case MESSAGE -> {
                 return entity.getMessage();
@@ -69,6 +66,14 @@ public class LogTableDataProvider extends VirtualTableDataProvider<LogRecord> {
         StringWriter sw = new StringWriter();
         t.printStackTrace(new PrintWriter(sw));
         return sw.toString();
+    }
+    private static String getStackTrace(Exception e) {
+        StringBuilder sb = new StringBuilder();
+        for (StackTraceElement stackTraceElement : e.getStackTrace()) {
+            sb.append("\n");
+            sb.append(stackTraceElement);
+        }
+        return sb.toString();
     }
 
     @Override
