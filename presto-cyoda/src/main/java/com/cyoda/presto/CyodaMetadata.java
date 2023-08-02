@@ -18,9 +18,9 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.auth.AuthService;
+import com.cyoda.presto.client.reporting.calls.DeleteReportsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.DynamicReportMetadataProvider;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
@@ -63,7 +63,7 @@ public class CyodaMetadata implements ConnectorMetadata {
     private final AuthService auth;
     private final StaticTableMetadataProvider staticMetadataProvider;
     private final DynamicReportMetadataProvider dynamicReportMetadataProvider;
-    private final CyodaApiRequestStatsMonitor apiRequestStatsMonitor;
+    private final DeleteReportsApiHandler deleteReportsApiHandler;
 
     @Inject
     public CyodaMetadata(
@@ -72,13 +72,13 @@ public class CyodaMetadata implements ConnectorMetadata {
             AuthService auth,
             StaticTableMetadataProvider staticMetadataProvider,
             DynamicReportMetadataProvider dynamicReportMetadataProvider,
-            CyodaApiRequestStatsMonitor apiRequestStatsMonitor) {
+            DeleteReportsApiHandler deleteReportsApiHandler) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
         this.config = requireNonNull(config,"confif is null");
         this.auth = auth;
         this.staticMetadataProvider = staticMetadataProvider;
         this.dynamicReportMetadataProvider = dynamicReportMetadataProvider;
-        this.apiRequestStatsMonitor = apiRequestStatsMonitor;
+        this.deleteReportsApiHandler = deleteReportsApiHandler;
     }
 
 
@@ -100,37 +100,14 @@ public class CyodaMetadata implements ConnectorMetadata {
         }
     }
 
-//    @Override
-//    public List<ConnectorTableLayoutResult> getTableLayouts(ConnectorSession session, ConnectorTableHandle table, Constraint<ColumnHandle> constraint, Optional<Set<ColumnHandle>> desiredColumns) {
-//        CyodaTableHandle tableHandle = (desiredColumns.isPresent()) ?
-//                ((CyodaTableHandle) table).withProjectedColumns(convertDesiredColumns(desiredColumns.orElse(Collections.emptySet()))) :
-//                ((CyodaTableHandle) table);
-//        TupleDomain<CyodaColumnHandle> summary = constraint.getSummary().transform(CyodaColumnHandle.class::cast);
-//        ConnectorTableLayout layout = new ConnectorTableLayout(
-//                new CyodaTableLayoutHandle(
-//                        tableHandle,
-//                        summary
-//                )
-//        );
-//        return ImmutableList.of(new ConnectorTableLayoutResult(layout, constraint.getSummary()));
-//    }
-//
-//    private List<CyodaColumnHandle> convertDesiredColumns(Set<ColumnHandle> desiredColumns) {
-//        return desiredColumns.stream().map(CyodaColumnHandle.class::cast).collect(Collectors.toList());
-//    }
-//
-//    @Override
-//    public ConnectorTableLayout getTableLayout(ConnectorSession session, ConnectorTableLayoutHandle handle) {
-//        return new ConnectorTableLayout(handle);
-//    }
-
 
     @Override
     public void truncateTable(ConnectorSession session, ConnectorTableHandle tableHandle) {
-        if (StaticReportTable.API_CALL_STATS.getTableName().equals(((CyodaTableHandle)tableHandle).getTableName())){
-            apiRequestStatsMonitor.truncate();
+        CyodaTableHandle cTableHandle = (CyodaTableHandle) tableHandle;
+        if (cTableHandle.getReportConfigId() != null){
+            deleteReportsApiHandler.deleteReports(session, cTableHandle.getReportConfigId());
         } else {
-            throw new TrinoException(NOT_SUPPORTED, "This table does not support truncate operation");
+            throw new TrinoException(NOT_SUPPORTED, "Truncate operation is available only for report-related tables. Use DELETE for cache and call stats.");
         }
     }
 

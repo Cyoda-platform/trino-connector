@@ -53,7 +53,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportTable.REPORT_HISTORIES;
 
 public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<ReportConfigKey, ReportHistoryFieldsView> {
@@ -117,11 +116,11 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Repor
                     .follow()
                     .toObject(typeReference);
             publishSize(listener, fieldsViews);
-            if (fieldsViews != null)
-                registerApiCall(requestKey.queryId(), apiCallTime, templatedUri.toString(), expansion);
             return Optional.ofNullable(fieldsViews);
         } catch (HttpClientErrorException e) {
-            throw requestFailedException(this, "retrieveCollection", e, templatedUri);
+            throw requestFailedException(this, e, templatedUri);
+        } finally {
+            registerApiCall(requestKey.queryId(), apiCallTime, templatedUri.toString(), expansion);
         }
     }
 

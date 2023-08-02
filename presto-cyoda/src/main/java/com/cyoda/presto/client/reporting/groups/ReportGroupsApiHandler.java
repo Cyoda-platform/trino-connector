@@ -56,7 +56,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.HISTORY_REPORT_ID_COLUMN;
-import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.GROUPING_VERSION_COLUMN;
 
 /**
@@ -138,11 +137,11 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
                         return PagedModel.of(handles, item.getMetadata());
                     });
             publishSize(listener, groupingHandles.orElse(PagedModel.empty()));
-            if (fieldsViews != null)
-                registerApiCall(requestKey.queryId(), apiCallTime, templatedUri.toString(), expansion);
             return groupingHandles;
         } catch (HttpClientErrorException e) {
-            throw requestFailedException(this, "retrieveCollection", e, templatedUri);
+            throw requestFailedException(this, e, templatedUri);
+        } finally {
+            registerApiCall(requestKey.queryId(), apiCallTime, templatedUri.toString(), expansion);
         }
     }
 

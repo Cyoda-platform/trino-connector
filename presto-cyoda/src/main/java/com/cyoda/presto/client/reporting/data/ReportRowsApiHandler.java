@@ -48,7 +48,6 @@ import java.util.Date;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-import static com.cyoda.presto.client.ExceptionsUtil.requestFailedException;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_GROUP_JSON_BASE64_VARIABLE;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_REPORT_ID_COLUMN;
 
@@ -65,7 +64,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler {
                                 RestTemplateCustomizer restTemplateCustomizer,
                                 AuthService authService,
                                 CyodaApiRequestStatsMonitor requestStatsMonitor) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
+        super(config, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
     }
 
 
@@ -118,7 +117,6 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler {
                     .follow()
                     .toObject(typeReference);
             if (fieldsViews == null) return Collections.emptyList();
-            registerApiCall(split.getQueryId(), apiCallTime, templatedUri.toString(), expansion);
             AtomicLong rowNum = new AtomicLong(rowNumHandle.offset);
             return fieldsViews.getContent().stream()
                     .map(reportRow ->
@@ -130,7 +128,9 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler {
                     .limit(rowNumHandle.size) // This to ringfence buggy API that sends one than the page size.
                     .collect(Collectors.toList());
         } catch (HttpClientErrorException e) {
-            throw requestFailedException(this, "retrieveCollection", e, templatedUri);
+            throw requestFailedException(this, e, templatedUri);
+        } finally {
+            registerApiCall(split.getQueryId(), apiCallTime, templatedUri.toString(), expansion);
         }
     }
 

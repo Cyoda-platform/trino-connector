@@ -25,9 +25,12 @@ import io.trino.spi.connector.ConnectorMetadata;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorTransactionHandle;
+import io.trino.spi.procedure.Procedure;
 import io.trino.spi.transaction.IsolationLevel;
 
 import javax.inject.Inject;
+
+import java.util.Set;
 
 import static java.util.Objects.requireNonNull;
 
@@ -39,19 +42,21 @@ public class CyodaConnector implements Connector {
     private final CyodaMetadata metadata;
     private final CyodaSplitManager splitManager;
     private final CyodaPageSourceProvider pageSourceProvider;
+    private final CyodaProcedureManager procedureManager;
 
     @Inject
     public CyodaConnector(
             LifeCycleManager lifeCycleManager,
             CyodaMetadata metadata,
             CyodaSplitManager splitManager,
-            CyodaPageSourceProvider pageSourceProvider
+            CyodaPageSourceProvider pageSourceProvider,
+            CyodaProcedureManager procedureManager
     ) {
         this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.splitManager = requireNonNull(splitManager, "splitManager is null");
         this.pageSourceProvider = requireNonNull(pageSourceProvider, "pageSourceProvider is null");
-
+        this.procedureManager = requireNonNull(procedureManager, "procedureManager is null");
     }
 
     @Override
@@ -72,6 +77,11 @@ public class CyodaConnector implements Connector {
     @Override
     public ConnectorPageSourceProvider getPageSourceProvider() {
         return pageSourceProvider;
+    }
+
+    @Override
+    public Set<Procedure> getProcedures() {
+        return procedureManager.getProcedures();
     }
 
     @Override

@@ -18,24 +18,30 @@
 package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.CyodaConfig;
-import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.logic.CompoundPredicateNode;
-import com.cyoda.presto.client.reporting.stats.ApiRequestStats;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.base.Preconditions;
-import io.trino.spi.type.TypeManager;
+import io.trino.spi.StandardErrorCode;
+import io.trino.spi.TrinoException;
 import org.springframework.hateoas.PagedModel;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.client.HttpClientErrorException;
 
 import javax.annotation.Nonnull;
+import java.net.URI;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import static com.cyoda.presto.CyodaErrorCode.CYODA_API_ERROR;
+import static com.cyoda.presto.CyodaErrorCode.CYODA_TOO_MANY_REQUESTS;
+import static com.google.common.base.MoreObjects.toStringHelper;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 // TODO: The API calls to Cyoda need to have some check on API version. Sasha might be able to say how he did it for UI
@@ -48,29 +54,48 @@ public abstract class BaseReportsApiHandler {
 
     public static final int DEFAULT_PAGE_SIZE = 10;
 
-    protected final CyodaConnectorId connectorId;
     protected final CyodaConfig config;
     protected final RestTemplateCustomizer restTemplateCustomizer;
-    protected final TypeManager typeManager;
     protected final SupplierLogger log;
     protected final AuthService auth;
 
     private final CyodaApiRequestStatsMonitor requestStatsMonitor;
 
-    protected BaseReportsApiHandler(CyodaConnectorId connectorId,
-                                    CyodaConfig config,
-                                    TypeManager typeManager,
+    protected BaseReportsApiHandler(CyodaConfig config,
                                     RestTemplateCustomizer restTemplateCustomizer,
                                     SupplierLogger log,
                                     AuthService authService,
                                     CyodaApiRequestStatsMonitor requestStatsMonitor) {
-        this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.config = requireNonNull(config, "config is null");
-        this.typeManager = requireNonNull(typeManager, "typeManager is null");
         this.restTemplateCustomizer = restTemplateCustomizer;
         this.log = log;
         this.auth = authService;
         this.requestStatsMonitor = requestStatsMonitor;
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    public RuntimeException requestFailedException(Object me, HttpClientErrorException e, URI uri) {
+        if (HttpStatus.UNAUTHORIZED.equals(e.getStatusCode())) {
+            return new TrinoException(StandardErrorCode.PERMISSION_DENIED, "Authentication failed : " + e.getStatusText());
+        }
+        if (HttpStatus.TOO_MANY_REQUESTS.equals(e.getStatusCode())) {
+            return new TrinoException(CYODA_TOO_MANY_REQUESTS, "Request throttled : " + e.getStatusText());
+        }
+
+        return new TrinoException(CYODA_API_ERROR,
+                format("[Cyoda] Error %s at %s returned an invalid response: %s [Error: %s]",
+                        getName(), uri.toASCIIString(), asString(me,e), e.getResponseBodyAsString()),
+                e
+        );
+    }
+
+    private static String asString(Object me, HttpClientErrorException e) {
+        return toStringHelper(me)
+                .add("statusCode", e.getStatusCode())
+                .add("statusMessage", e.getStatusText())
+                .add("headers", e.getResponseHeaders())
+                .omitNullValues()
+                .toString();
     }
 
     protected void registerApiCall(String queryId, Date callTime, String requestUrl, Map<String, Object> params){
