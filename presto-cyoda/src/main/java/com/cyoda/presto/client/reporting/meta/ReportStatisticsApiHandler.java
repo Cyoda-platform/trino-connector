@@ -73,7 +73,7 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Repo
                                       ReportHistoryApiHandler reportHistoryApiHandler,
                                       AuthService authService,
                                       CyodaApiRequestStatsMonitor requestStatsMonitor) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
+        super(config, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
         this.reportHistoryApiHandler = reportHistoryApiHandler;
     }
 

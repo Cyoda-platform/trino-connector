@@ -25,11 +25,8 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
 
     private final Map<String, StaticTableMetadata> standaloneTablesMap = new HashMap<>();
 
-    private final Reports reports;
-    private final ReportStats reportStats;
     private final ApiCallStats apiCallStats;
     private final CacheContent cacheContent;
-    private final ReportHistory reportHistory;
     private final ReportGroups reportGroups;
     private final ReportRows reportRows;
 
@@ -40,9 +37,9 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
     @Inject
     public StaticTableMetadataProvider(TypeManager typeManager, CyodaConfig config, CyodaConnectorId connectorId) {
         super(typeManager, config, connectorId);
-        reports = new Reports();
-        reportStats = new ReportStats();
-        reportHistory = new ReportHistory();
+        Reports reports = new Reports();
+        ReportStats reportStats = new ReportStats();
+        ReportHistory reportHistory = new ReportHistory();
         reportGroups = new ReportGroups();
         reportRows = new ReportRows();
         apiCallStats = new ApiCallStats();
@@ -84,10 +81,6 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
 
     public CacheContent getCacheContent() {
         return cacheContent;
-    }
-
-    public Reports getReports() {
-        return reports;
     }
 
     public ReportGroups getReportGroups(){

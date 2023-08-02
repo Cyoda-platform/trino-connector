@@ -25,7 +25,6 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
 
     private final ReportHistoryApiHandler reportHistoryApiHandler;
     private final ReportGroupsApiHandler reportGroupsApiHandler;
-    private final StaticTableMetadataProvider reportMetadataProvider;
 
     private final CyodaColumnHandle reportIdColumn;
 
@@ -35,7 +34,6 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
                                    StaticTableMetadataProvider reportMetadataProvider) {
         this.reportHistoryApiHandler = reportHistoryApiHandler;
         this.reportGroupsApiHandler = reportGroupsApiHandler;
-        this.reportMetadataProvider = reportMetadataProvider;
         reportIdColumn = reportMetadataProvider.getReportGroups().getReportIdColumn();
     }
 
