@@ -30,7 +30,7 @@ public class RestResponseInterceptor implements ClientHttpRequestInterceptor {
                     response.getBody(), StandardCharsets.UTF_8);
             String body = new BufferedReader(isr).lines()
                     .collect(Collectors.joining("\n"));
-            apiRequestStatsMonitor.addResponse(request.getURI().toString(), body);
+            apiRequestStatsMonitor.addResponse(request.getURI().toString(), response.getStatusCode() + ":" + body);
             return response;
         }
 
