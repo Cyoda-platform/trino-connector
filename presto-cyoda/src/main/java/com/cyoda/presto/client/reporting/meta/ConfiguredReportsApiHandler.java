@@ -19,7 +19,6 @@ package com.cyoda.presto.client.reporting.meta;
 
 import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.presto.CyodaConfig;
-import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
@@ -30,7 +29,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.spi.StandardErrorCode;
 import io.trino.spi.TrinoException;
-import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.TemplateVariable;
@@ -51,7 +49,7 @@ import java.util.Optional;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_TABLE_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler.HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER;
-import static com.cyoda.presto.client.reporting.metaproviders.StaticReportTable.REPORTS;
+import static com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.REPORTS;
 
 public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<ReportListKey, GridConfigFieldsView> {
 

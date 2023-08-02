@@ -15,6 +15,7 @@ import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableType;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.ImmutableMap;
@@ -22,7 +23,6 @@ import io.trino.spi.type.TypeManager;
 import reactor.core.publisher.Flux;
 
 import javax.inject.Inject;
-import javax.validation.constraints.NotNull;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -34,8 +34,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Optional;
 
 import static com.cyoda.presto.SizeListener.NOT_LISTENING;
 
@@ -94,8 +92,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
             columns.addAll(definitionHandle.getColumns());
             columns.sort(Comparator.comparingInt(CyodaColumnHandle::getOrdinalPosition));
             return new CyodaTableHandle(connectorId.toString(), config.getSchemaName(), tableName,
-                    columns, CyodaTableHandle.TableType.DATA, configId, definitionHandle.getDescription(),
-                    getUri(StaticReportTable.REPORT_ROWS),
+                    columns, CyodaTableType.DATA, configId, definitionHandle.getDescription(),
                     !definitionHandle.getGroupingColumns().isEmpty(),
                     !definitionHandle.isSingleton());
         } catch (Exception e) {

@@ -1,14 +1,12 @@
 package com.cyoda.presto.client.data;
 
 import com.cyoda.presto.CyodaSplit;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
-import com.cyoda.presto.client.reporting.stats.ApiRequestStats;
+import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.logging.LogRecordHandler;
 import io.trino.spi.NodeManager;
 import io.trino.spi.block.Block;
-import io.trino.spi.type.VarcharType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,7 +32,7 @@ public class LogTableDataProvider extends VirtualTableDataProvider<LogRecord> {
     @Nullable
     @Override
     protected Object getFieldValueFromEntity(@Nonnull LogRecord entity, CyodaColumnHandle columnHandle) {
-        StaticReportTable.LogTableColumnDef columnDef = StaticReportTable.LogTableColumnDef.valueOf(
+        StaticTableMetadata.LogTableColumnDef columnDef = StaticTableMetadata.LogTableColumnDef.valueOf(
                 columnHandle.getColumnName().toUpperCase());
         switch (columnDef) {
             case NODE_ID -> {

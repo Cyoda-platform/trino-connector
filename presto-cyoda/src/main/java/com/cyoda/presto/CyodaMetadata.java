@@ -20,10 +20,11 @@ package com.cyoda.presto;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.reporting.calls.DeleteReportsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.DynamicReportMetadataProvider;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
+import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableType;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.airlift.slice.Slice;
 import io.trino.spi.TrinoException;
@@ -102,8 +103,8 @@ public class CyodaMetadata implements ConnectorMetadata {
             }
         } catch (Exception e){
             LOG.error(e);
-            if (StaticReportTable.LOG_TABLE_NAME.equals(tableKey)) {
-                return staticMetadataProvider.getTableHandle(StaticReportTable.LOG_TABLE_NAME);
+            if (StaticTableMetadata.LOG_TABLE_NAME.equals(tableKey)) {
+                return staticMetadataProvider.getTableHandle(StaticTableMetadata.LOG_TABLE_NAME);
             } else {
                 return null;
             }
@@ -133,7 +134,7 @@ public class CyodaMetadata implements ConnectorMetadata {
 
     @Override
     public ColumnHandle getDeleteRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle) {
-        CyodaTableHandle.TableType tableType = ((CyodaTableHandle)tableHandle).getTableType();
+        CyodaTableType tableType = ((CyodaTableHandle)tableHandle).getTableType();
         return switch (tableType){
             case CALL_STATS -> staticMetadataProvider.getApiCallStats().getNodeIdColumn();
             case CACHE_CONTENT -> staticMetadataProvider.getCacheContent().getCacheKeyColumn();
@@ -191,7 +192,7 @@ public class CyodaMetadata implements ConnectorMetadata {
             return builder.build();
         } catch (Exception e){
             LOG.error(e);
-            return Collections.singletonList(new SchemaTableName(config.getSchemaName(),StaticReportTable.LOG_TABLE_NAME));
+            return Collections.singletonList(new SchemaTableName(config.getSchemaName(), StaticTableMetadata.LOG_TABLE_NAME));
         }
     }
 

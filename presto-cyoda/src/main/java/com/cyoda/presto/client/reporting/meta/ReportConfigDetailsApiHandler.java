@@ -22,7 +22,7 @@ import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
+import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
@@ -82,7 +82,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler {
 
     // These are also reserved words for column names coming from reports.
     // TODO This validation needs to be moved to platform
-    private static final List<String> RESERVED_COLUMN_NAMES = StaticReportTable.REPORT_ROWS.getFieldList();
+    private static final List<String> RESERVED_COLUMN_NAMES = StaticTableMetadata.REPORT_ROWS.getFieldList();
     protected final TypeManager typeManager;
 
     private final UriTemplate uriTemplate;

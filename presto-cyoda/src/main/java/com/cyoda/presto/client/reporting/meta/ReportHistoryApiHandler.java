@@ -53,7 +53,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import static com.cyoda.presto.client.reporting.metaproviders.StaticReportTable.REPORT_HISTORIES;
+import static com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.REPORT_HISTORIES;
 
 public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<ReportConfigKey, ReportHistoryFieldsView> {
 

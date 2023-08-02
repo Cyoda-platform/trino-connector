@@ -26,7 +26,7 @@
 //import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 //import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 //import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
-//import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
+//import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata;
 //import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 //import com.cyoda.presto.client.types.CompoundDataType;
 //import com.cyoda.presto.client.types.DataType;
@@ -61,7 +61,7 @@
 //@SuppressWarnings("UnstableApiUsage")
 //public class TestCyodaRecordSet {
 //    CyodaConnectorId connectorId = new CyodaConnectorId("conn-id-1");
-//    String requestHandlerKey = StaticReportTable.REPORTS.name();
+//    String requestHandlerKey = StaticTableMetadata.REPORTS.name();
 //    private LocalHttpServer ourHttpServer;
 //
 //    private CyodaApiRequestHandlerProvider setupHandlerProvider(CyodaConfig mockCyodaConfig) {

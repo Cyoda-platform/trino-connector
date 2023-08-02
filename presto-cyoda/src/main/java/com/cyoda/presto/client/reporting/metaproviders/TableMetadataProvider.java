@@ -18,15 +18,4 @@ public abstract class TableMetadataProvider {
         this.connectorId = connectorId;
     }
 
-    protected URI getUri(TableDefinition tableDefinition) {
-        if (tableDefinition.getEndpoint() == null) return null;
-        final URI uri;
-        try {
-            uri = config.getServerUrl().toURI().resolve(tableDefinition.getEndpoint());
-        } catch (URISyntaxException e) {
-            throw new IllegalArgumentException("Bad endpoint: " + tableDefinition.getEndpoint(), e);
-        }
-        return uri;
-    }
-
 }

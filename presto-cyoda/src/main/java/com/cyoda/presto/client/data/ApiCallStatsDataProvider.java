@@ -1,7 +1,7 @@
 package com.cyoda.presto.client.data;
 
 import com.cyoda.presto.CyodaSplit;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
+import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata;
 import com.cyoda.presto.client.reporting.stats.ApiRequestStats;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
@@ -12,9 +12,6 @@ import io.trino.spi.type.VarcharType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
-import static io.trino.spi.type.BigintType.BIGINT;
-import static java.lang.Math.toIntExact;
 
 public class ApiCallStatsDataProvider extends VirtualTableDataProvider<ApiRequestStats> {
 
@@ -33,7 +30,7 @@ public class ApiCallStatsDataProvider extends VirtualTableDataProvider<ApiReques
     @Nullable
     @Override
     protected Object getFieldValueFromEntity(@Nonnull ApiRequestStats entity, CyodaColumnHandle columnHandle) {
-        StaticReportTable.ApiCallStatsColumnDef columnDef = StaticReportTable.ApiCallStatsColumnDef.valueOf(
+        StaticTableMetadata.ApiCallStatsColumnDef columnDef = StaticTableMetadata.ApiCallStatsColumnDef.valueOf(
                 columnHandle.getColumnName().toUpperCase());
         switch (columnDef) {
             case QUERY_ID -> {
