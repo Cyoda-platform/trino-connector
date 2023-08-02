@@ -8,12 +8,13 @@ import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.type.TypeManager;
 
 import javax.inject.Inject;
+import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.GROUPING_VERSION_COLUMN;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.HISTORY_REPORT_ID_COLUMN;
@@ -23,13 +24,10 @@ import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields
 
 public class StaticTableMetadataProvider extends TableMetadataProvider {
 
-    private final Map<String, StaticTableMetadata> standaloneTablesMap = new HashMap<>();
+    private final Map<String, StaticTableMetadata> standaloneTablesMap;
 
-    private final Reports reports;
-    private final ReportStats reportStats;
     private final ApiCallStats apiCallStats;
     private final CacheContent cacheContent;
-    private final ReportHistory reportHistory;
     private final ReportGroups reportGroups;
     private final ReportRows reportRows;
 
@@ -40,24 +38,18 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
     @Inject
     public StaticTableMetadataProvider(TypeManager typeManager, CyodaConfig config, CyodaConnectorId connectorId) {
         super(typeManager, config, connectorId);
-        reports = new Reports();
-        reportStats = new ReportStats();
-        reportHistory = new ReportHistory();
+        standaloneTablesMap = Arrays.stream(com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.values())
+                .filter(t -> t.getStaticTableName() != null)
+                .collect(Collectors.toMap(com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata::getStaticTableName, StaticTableMetadataProvider.StaticTableMetadata::new));
+        apiCallStats = new ApiCallStats();
+        if (!config.getLogApiCallStats()) {
+            standaloneTablesMap.remove(apiCallStats.getTableHandle().getTableName());
+        }
         reportGroups = new ReportGroups();
         reportRows = new ReportRows();
-        apiCallStats = new ApiCallStats();
-        standaloneTablesMap.put(reports.getTableHandle().getTableName(), reports);
-        standaloneTablesMap.put(reportStats.getTableHandle().getTableName(), reportStats);
-        if (config.getLogApiCallStats()) {
-            standaloneTablesMap.put(apiCallStats.getTableHandle().getTableName(), apiCallStats);
-        }
-        StaticTableMetadata cacheStats = new StaticTableMetadata(StaticReportTable.CACHE_STATS);
-        standaloneTablesMap.put(cacheStats.getTableHandle().getTableName(), cacheStats);
         cacheContent = new CacheContent();
-        standaloneTablesMap.put(cacheContent.getTableHandle().getTableName(), cacheContent);
 
-
-        historyTableTemplate = CyodaTableHandle.Template.of(reportHistory.getTableHandle());
+        historyTableTemplate = CyodaTableHandle.Template.of(new StaticTableMetadata(com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.REPORT_HISTORIES).getTableHandle());
         groupsTableTemplate = CyodaTableHandle.Template.of(reportGroups.getTableHandle());
     }
 
@@ -83,10 +75,6 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
 
     public CacheContent getCacheContent() {
         return cacheContent;
-    }
-
-    public Reports getReports() {
-        return reports;
     }
 
     public ReportGroups getReportGroups(){
@@ -121,7 +109,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
 
         private final CyodaTableHandle tableHandle;
 
-        protected StaticTableMetadata(StaticReportTable table) {
+        protected StaticTableMetadata(com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata table) {
             tableHandle = createTableHandle(table);
         }
 
@@ -130,7 +118,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
             List<CyodaColumnHandle> columnHandles = getCyodaColumnHandles(tableDefinition);
             return new CyodaTableHandle(connectorId.toString(), config.getSchemaName(),
                     tableDefinition.getTableName(), columnHandles, tableDefinition.getTableType(),
-                    null, null, getUri(tableDefinition), false, false);
+                    null, null, false, false);
         }
 
         public CyodaTableHandle getTableHandle() {
@@ -142,8 +130,8 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
         private final CyodaColumnHandle typeColumn;
 
         public Reports() {
-            super(StaticReportTable.REPORTS);
-            typeColumn = getTableHandle().getColumn(StaticReportTable.ReportsColumnDef.TYPE.getFieldName());
+            super(com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.REPORTS);
+            typeColumn = getTableHandle().getColumn(com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.ReportsColumnDef.TYPE.getFieldName());
         }
 
         public CyodaColumnHandle getTypeColumn() {
@@ -154,15 +142,15 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
 
     public class ReportStats extends StaticTableMetadata {
         public ReportStats() {
-            super(StaticReportTable.REPORT_STATS);
+            super(com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.REPORT_STATS);
         }
     }
 
     public class ApiCallStats extends StaticTableMetadata {
         private final CyodaColumnHandle nodeIdColumn;
         public ApiCallStats() {
-            super(StaticReportTable.API_CALL_STATS);
-            nodeIdColumn = getTableHandle().getColumn(StaticReportTable.ApiCallStatsColumnDef.NODE_ID.getFieldName());
+            super(com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.API_CALL_STATS);
+            nodeIdColumn = getTableHandle().getColumn(com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.ApiCallStatsColumnDef.NODE_ID.getFieldName());
         }
         public CyodaColumnHandle getNodeIdColumn() {
             return nodeIdColumn;
@@ -172,32 +160,14 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
     public class CacheContent extends StaticTableMetadata {
         private final CyodaColumnHandle cacheKeyColumn;
         public CacheContent() {
-            super(StaticReportTable.CACHE_CONTENT);
-            cacheKeyColumn = getTableHandle().getColumn(StaticReportTable.CacheContentColumnDef.CONTENT_ID.getFieldName());
+            super(com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.CACHE_CONTENT);
+            cacheKeyColumn = getTableHandle().getColumn(com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.CacheContentColumnDef.CONTENT_ID.getFieldName());
         }
         public CyodaColumnHandle getCacheKeyColumn() {
             return cacheKeyColumn;
         }
     }
 
-    public class ReportHistory extends StaticTableMetadata {
-        private final CyodaColumnHandle typeColumn;
-        private final CyodaColumnHandle reportIdColumn;
-
-        public ReportHistory() {
-            super(StaticReportTable.REPORT_HISTORIES);
-            typeColumn = getTableHandle().getColumn(StaticReportTable.ReportHistoryColumnDef.TYPE.getFieldName());
-            reportIdColumn = getTableHandle().getColumn(StaticReportTable.ReportHistoryColumnDef.ID.getFieldName());
-        }
-
-        public CyodaColumnHandle getTypeColumn() {
-            return typeColumn;
-        }
-
-        public CyodaColumnHandle getReportIdColumn() {
-            return reportIdColumn;
-        }
-    }
 
     public class ReportGroups extends StaticTableMetadata {
         private final CyodaColumnHandle reportIdColumn;
@@ -205,7 +175,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
         private final CyodaColumnHandle groupJsonBase64Column;
 
         public ReportGroups() {
-            super(StaticReportTable.REPORT_GROUPS);
+            super(com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.REPORT_GROUPS);
             reportIdColumn = getTableHandle().getColumn(HISTORY_REPORT_ID_COLUMN);
             groupingVersionColumn = getTableHandle().getColumn(GROUPING_VERSION_COLUMN);
             groupJsonBase64Column = getTableHandle().getColumn(ROW_GROUP_JSON_BASE64_VARIABLE);
@@ -233,13 +203,13 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
         private final CyodaColumnHandle groupJsonBase64Column;
 
         protected ReportRows() {
-            super(StaticReportTable.REPORT_ROWS);
+            super(com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.REPORT_ROWS);
             rowNumberColumn = getTableHandle().getColumn(ROW_REPORT_ROW_NUMBER_COLUMN);
             reportIdColumn = getTableHandle().getColumn(ROW_REPORT_ID_COLUMN);
             groupingVersionColumn = getTableHandle().getColumn(GROUPING_VERSION_COLUMN);
             groupJsonBase64Column = getTableHandle().getColumn(ROW_GROUP_JSON_BASE64_VARIABLE);
             //we don't need this as a static table
-            standaloneTablesMap.remove(StaticReportTable.REPORT_ROWS.getTableName());
+            standaloneTablesMap.remove(com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.REPORT_ROWS.getTableName());
         }
 
         public CyodaColumnHandle getRowNumberColumn() {

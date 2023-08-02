@@ -10,7 +10,7 @@ import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
-import com.cyoda.presto.handles.CyodaTableHandle.TableType;
+import com.cyoda.presto.handles.CyodaTableType;
 import io.trino.spi.NodeManager;
 
 import javax.inject.Inject;
@@ -18,11 +18,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.cyoda.presto.handles.CyodaTableHandle.TableType.*;
+import static com.cyoda.presto.handles.CyodaTableType.*;
 
 public class TableDataProviderProvider {
 
-    private final Map<TableType, TableDataProvider<?>> providerMap;
+    private final Map<CyodaTableType, TableDataProvider<?>> providerMap;
     @Inject
     public TableDataProviderProvider(ConfiguredReportsApiHandler reportsApiHandler,
                                      ReportConfigDetailsApiHandler configDetailsApiHandler,
@@ -62,10 +62,6 @@ public class TableDataProviderProvider {
                         cyodaCacheMonitor)
         );
         providerMap.put(
-                DUMMY,
-                new DummyTableDataProvider()
-        );
-        providerMap.put(
                 CALL_STATS,
                 new ApiCallStatsDataProvider(statsMonitor, nodeManager)
         );
@@ -77,9 +73,13 @@ public class TableDataProviderProvider {
                 CACHE_CONTENT,
                 new CacheContentDataProvider(nodeManager, cyodaCacheMonitor)
         );
+        providerMap.put(
+                LOG_TABLE,
+                new LogTableDataProvider(nodeManager)
+        );
     }
 
-    public TableDataProvider<?> getDataProvider(TableType tableType){
+    public TableDataProvider<?> getDataProvider(CyodaTableType tableType){
         return Optional.ofNullable(providerMap.get(tableType)).orElseThrow(() ->
             new RuntimeException("Unknown table type " + tableType));
     }

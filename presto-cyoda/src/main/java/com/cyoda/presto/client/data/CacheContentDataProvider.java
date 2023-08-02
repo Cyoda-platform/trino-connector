@@ -1,22 +1,17 @@
 package com.cyoda.presto.client.data;
 
 import com.cyoda.presto.CyodaSplit;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable.CacheContentColumnDef;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable.CacheStatsColumnDef;
+import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.CacheContentColumnDef;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor.CacheContent;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
-import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import io.trino.spi.NodeManager;
 import io.trino.spi.block.Block;
 import io.trino.spi.type.UuidType;
-import io.trino.spi.type.VarcharType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Map;
 import java.util.UUID;
 
 public class CacheContentDataProvider extends VirtualTableDataProvider<CacheContent>{

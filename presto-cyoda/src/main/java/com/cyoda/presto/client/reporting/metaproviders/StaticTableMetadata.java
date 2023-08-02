@@ -22,7 +22,7 @@ import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.types.CompoundDataType;
 import com.cyoda.presto.client.types.DataType;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableType;
 import com.cyoda.service.api.beans.GroupHeader;
 import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
@@ -45,8 +45,6 @@ import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_HIERA
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_STATUS_NAME_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_TYPE_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_USER_NAME_COLUMN;
-import static com.cyoda.presto.client.reporting.BaseReportsApiHandler.REPORT_ENDPOINT;
-import static com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler.REPORT_DEFS_ENDPOINT;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_COLUMNS_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_CREATION_DATE_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_DESCRIPTION_COLUMN;
@@ -57,7 +55,6 @@ import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPO
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_TYPE_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_UPDATE_DATE_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_USER_ID_COLUMN;
-import static com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler.REPORT_HISTORY_ENDPOINT;
 import static com.cyoda.presto.client.types.DataType.BOOLEAN;
 import static com.cyoda.presto.client.types.DataType.DATE;
 import static com.cyoda.presto.client.types.DataType.INTEGER;
@@ -68,37 +65,42 @@ import static com.cyoda.presto.client.types.DataType.OBJECT;
 import static com.cyoda.presto.client.types.DataType.STRING;
 import static com.cyoda.presto.client.types.DataType.UUID_TYPE;
 
-public enum StaticReportTable implements TableDefinition {
-    REPORTS(Arrays.asList(ReportsColumnDef.values()), REPORT_DEFS_ENDPOINT, CyodaTableHandle.TableType.REPORTS),
-    REPORT_STATS(StandardColumnDefinition.builder()
-            .add(DistributedReportInfoView.meta())
-            .build(), REPORT_ENDPOINT, CyodaTableHandle.TableType.STATS),
-    API_CALL_STATS(Arrays.asList(ApiCallStatsColumnDef.values()), null, CyodaTableHandle.TableType.CALL_STATS),
-    CACHE_STATS(Arrays.asList(CacheStatsColumnDef.values()), null, CyodaTableHandle.TableType.CACHE_STATS),
-    CACHE_CONTENT(Arrays.asList(CacheContentColumnDef.values()), null, CyodaTableHandle.TableType.CACHE_CONTENT),
-    REPORT_HISTORIES(Arrays.asList(ReportHistoryColumnDef.values()), REPORT_HISTORY_ENDPOINT, CyodaTableHandle.TableType.HISTORY),
+public enum StaticTableMetadata implements TableDefinition {
+    API_CALL_STATS(Arrays.asList(ApiCallStatsColumnDef.values()), CyodaTableType.CALL_STATS, "_api_call_stats"),
+    CACHE_CONTENT(Arrays.asList(CacheContentColumnDef.values()), CyodaTableType.CACHE_CONTENT, "_cache_content"),
+    CACHE_STATS(Arrays.asList(CacheStatsColumnDef.values()), CyodaTableType.CACHE_STATS, "_cache_stats"),
+    LOG_TABLE(Arrays.asList(LogTableColumnDef.values()), CyodaTableType.LOG_TABLE, "_log"),
+    REPORTS(Arrays.asList(ReportsColumnDef.values()), CyodaTableType.REPORTS, "_reports"),
     REPORT_GROUPS(StandardColumnDefinition.builder()
             .add(new StandardColumnDefinition(0, StaticReportFields.HISTORY_REPORT_ID_COLUMN, STRING))
             .add(new StandardColumnDefinition(1, StaticReportFields.GROUPING_VERSION_COLUMN, UUID_TYPE))
             .add(GroupHeader.meta())
-            .build(), REPORT_ENDPOINT, CyodaTableHandle.TableType.GROUP),
+            .build(), CyodaTableType.GROUP),
+    REPORT_HISTORIES(Arrays.asList(ReportHistoryColumnDef.values()), CyodaTableType.HISTORY),
     REPORT_ROWS(StandardColumnDefinition.builder()
             .add(new StandardColumnDefinition(0, StaticReportFields.ROW_REPORT_ROW_NUMBER_COLUMN, LONG))
             .add(new StandardColumnDefinition(1, StaticReportFields.ROW_REPORT_ID_COLUMN, STRING))
             .add(new StandardColumnDefinition(2, StaticReportFields.GROUPING_VERSION_COLUMN, UUID_TYPE))
             .add(new StandardColumnDefinition(3, StaticReportFields.ROW_GROUP_JSON_BASE64_VARIABLE, STRING))
-            .build(), REPORT_ENDPOINT, CyodaTableHandle.TableType.DATA);
+            .build(), CyodaTableType.DATA),
+    REPORT_STATS(StandardColumnDefinition.builder()
+            .add(DistributedReportInfoView.meta())
+            .build(), CyodaTableType.STATS, "_report_stats");
 
+    public static final String LOG_TABLE_NAME = LOG_TABLE.staticTableName;
     private final Map<String, ColumnDefinition> columns;
-    private final String endpoint;
+    private final CyodaTableType tableType;
+    private final String staticTableName;
 
-    private final CyodaTableHandle.TableType tableType;
 
-
-    StaticReportTable(List<ColumnDefinition> columns, String endpoint, CyodaTableHandle.TableType tableType) {
+    StaticTableMetadata(List<ColumnDefinition> columns, CyodaTableType tableType, String staticTableName) {
         this.columns = columns.stream().collect(Collectors.toMap(ColumnDefinition::getFieldName, Function.identity()));
-        this.endpoint = endpoint;
         this.tableType = tableType;
+        this.staticTableName = staticTableName;
+    }
+
+    StaticTableMetadata(List<ColumnDefinition> columns, CyodaTableType tableType) {
+        this(columns, tableType, null);
     }
 
     @Override
@@ -106,10 +108,8 @@ public enum StaticReportTable implements TableDefinition {
         return name().toLowerCase(Locale.ROOT);
     }
 
-
-    @Override
-    public String getEndpoint() {
-        return endpoint;
+    public String getStaticTableName() {
+        return staticTableName;
     }
 
     @Override
@@ -124,7 +124,7 @@ public enum StaticReportTable implements TableDefinition {
     }
 
     @Override
-    public CyodaTableHandle.TableType getTableType() {
+    public CyodaTableType getTableType() {
         return tableType;
     }
 
@@ -184,12 +184,12 @@ public enum StaticReportTable implements TableDefinition {
         NODE_ID(1, STRING),
         NODE_ADDRESS(2, STRING),
         CALL_TIME(3, DATE),
-        CALL_MILLIS(4, INTEGER),
         DURATION_MILLIS(5, LONG),
         API_HANDLER(6, STRING),
         REQUEST_PARAMS(7, DataType.MAP, STRING, STRING),
         REQUEST_URL(8, STRING),
         RESPONSE(9, STRING);
+
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
@@ -198,6 +198,7 @@ public enum StaticReportTable implements TableDefinition {
                     .add("dataType", dataType)
                     .toString();
         }
+
         private final int pos;
         private final String fieldName;
         private final CompoundDataType dataType;
@@ -235,6 +236,7 @@ public enum StaticReportTable implements TableDefinition {
         TOTAL_LOAD_TIME(8, LONG),
         EVICTION_COUNT(9, LONG),
         EVICTION_WEIGHT(10, LONG);
+
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
@@ -243,6 +245,7 @@ public enum StaticReportTable implements TableDefinition {
                     .add("dataType", dataType)
                     .toString();
         }
+
         private final int pos;
         private final String fieldName;
         private final CompoundDataType dataType;
@@ -276,6 +279,7 @@ public enum StaticReportTable implements TableDefinition {
         CACHE_NAME(3, STRING),
         KEY(4, STRING),
         SIZE(5, LONG);
+
         @Override
         public String toString() {
             return MoreObjects.toStringHelper(this)
@@ -284,11 +288,56 @@ public enum StaticReportTable implements TableDefinition {
                     .add("dataType", dataType)
                     .toString();
         }
+
         private final int pos;
         private final String fieldName;
         private final CompoundDataType dataType;
 
         CacheContentColumnDef(int pos, DataType mainType, DataType... typeParams) {
+            this.pos = pos;
+            this.fieldName = name().toLowerCase();
+            this.dataType = new CompoundDataType(fieldName, mainType, typeParams);
+        }
+
+        @Override
+        public int getPos() {
+            return pos;
+        }
+
+        @Override
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        @Override
+        public CompoundDataType getDataType() {
+            return dataType;
+        }
+    }
+
+    public enum LogTableColumnDef implements ColumnDefinition {
+        NODE_ID(1, STRING),
+        NODE_ADDRESS(2, STRING),
+        DATE(3, DataType.DATE),
+        LEVEL(4, STRING),
+        CLASS(5, STRING),
+        MESSAGE(7, STRING),
+        STACKTRACE(8, STRING);
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("pos", pos)
+                    .add("fieldName", fieldName)
+                    .add("dataType", dataType)
+                    .toString();
+        }
+
+        private final int pos;
+        private final String fieldName;
+        private final CompoundDataType dataType;
+
+        LogTableColumnDef(int pos, DataType mainType, DataType... typeParams) {
             this.pos = pos;
             this.fieldName = name().toLowerCase();
             this.dataType = new CompoundDataType(fieldName, mainType, typeParams);

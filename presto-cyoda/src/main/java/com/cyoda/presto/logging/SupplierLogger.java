@@ -17,16 +17,15 @@
 
 package com.cyoda.presto.logging;
 
-import io.airlift.log.Logger;
 
 import java.util.Arrays;
 import java.util.function.Supplier;
 
 public class SupplierLogger {
 
-    private final Logger logger;
+    private final CyodaLogger logger;
 
-    private SupplierLogger(Logger logger) {
+    private SupplierLogger(CyodaLogger logger) {
         this.logger = logger;
     }
 
@@ -36,7 +35,7 @@ public class SupplierLogger {
     }
     public static SupplierLogger get(String name)
     {
-        return new SupplierLogger(Logger.get(name));
+        return new SupplierLogger(CyodaLogger.get(name));
     }
 
     public boolean isDebugEnabled() {

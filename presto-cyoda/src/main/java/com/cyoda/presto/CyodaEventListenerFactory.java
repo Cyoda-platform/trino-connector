@@ -18,7 +18,6 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.logging.SupplierLogger;
-import io.airlift.log.Logger;
 import io.trino.spi.eventlistener.EventListener;
 import io.trino.spi.eventlistener.EventListenerFactory;
 

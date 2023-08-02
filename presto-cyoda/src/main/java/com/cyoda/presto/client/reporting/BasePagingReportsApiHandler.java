@@ -18,7 +18,6 @@
 package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.CyodaConfig;
-import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
@@ -26,7 +25,6 @@ import com.cyoda.presto.client.paging.PagingFluxProvider;
 import com.cyoda.presto.client.paging.PagingHandle;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
-import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.PagedModel;
 import reactor.core.publisher.Flux;
 
@@ -35,9 +33,7 @@ import java.util.function.Function;
 
 public abstract class BasePagingReportsApiHandler<K, T> extends BaseReportsApiHandler {
 
-    protected BasePagingReportsApiHandler(CyodaConnectorId connectorId,
-                                          CyodaConfig config,
-                                          TypeManager typeManager,
+    protected BasePagingReportsApiHandler(CyodaConfig config,
                                           RestTemplateCustomizer restTemplateCustomizer,
                                           SupplierLogger log,
                                           AuthService authService,

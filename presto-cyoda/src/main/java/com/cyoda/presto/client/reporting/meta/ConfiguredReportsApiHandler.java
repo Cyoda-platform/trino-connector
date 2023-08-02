@@ -19,20 +19,16 @@ package com.cyoda.presto.client.reporting.meta;
 
 import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.presto.CyodaConfig;
-import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.BasePagingReportsApiHandler;
-import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
-import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.spi.StandardErrorCode;
 import io.trino.spi.TrinoException;
-import io.trino.spi.type.TypeManager;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.TemplateVariable;
@@ -53,28 +49,23 @@ import java.util.Optional;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_TABLE_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler.HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER;
-import static com.cyoda.presto.client.reporting.metaproviders.StaticReportTable.REPORTS;
+import static com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.REPORTS;
 
 public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<ReportListKey, GridConfigFieldsView> {
 
     protected static final SupplierLogger LOG = SupplierLogger.get(ConfiguredReportsApiHandler.class);
 
     public static final String REPORT_DEFS_ENDPOINT = "/api/platform-api/reporting/definitions";
-    private final CyodaColumnHandle typeColumn;
-
 
     public static final List<String> selectedFields = REPORTS.getFieldList();
 
 
     @Inject
-    public ConfiguredReportsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
+    public ConfiguredReportsApiHandler(CyodaConfig config,
                                        RestTemplateCustomizer restTemplateCustomizer,
-                                       StaticTableMetadataProvider staticTableMetadataProvider,
                                        AuthService authService,
                                        CyodaApiRequestStatsMonitor requestStatsMonitor) {
-        super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
-        this.typeColumn = staticTableMetadataProvider.getReports().getTypeColumn();
-
+        super(config, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
     }
 
 

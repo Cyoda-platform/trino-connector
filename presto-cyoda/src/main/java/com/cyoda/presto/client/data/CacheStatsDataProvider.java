@@ -1,8 +1,7 @@
 package com.cyoda.presto.client.data;
 
 import com.cyoda.presto.CyodaSplit;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable;
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportTable.CacheStatsColumnDef;
+import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.CacheStatsColumnDef;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
