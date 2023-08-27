@@ -15,9 +15,8 @@ import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvid
 import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.connector.Constraint;
 
@@ -71,7 +70,7 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
     }
 
     @Override
-    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
+    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableMeta tableHandle, Constraint constraint) {
         boolean hasReportIdConstraint = hasConstraint(reportIdColumn, constraint);
         boolean hasGroupIdConstraint = hasConstraint(groupIdColumn, constraint);
         boolean hasRowNumConstraint = hasConstraint(rowNumberColumn, constraint);
@@ -106,12 +105,12 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
     }
 
     @Override //this is used only while loading an uncached page
-    public Iterable<RowHandle> getIterable(CyodaTableHandle tableHandle, CyodaSplit split) {
+    public Iterable<RowHandle> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
         return reportRowsApiHandler.getIterable(split);
     }
 
     @Override //this is using cached pages
-    public ConnectorPageSource getPageSource(CyodaTableHandle tableHandle, List<CyodaColumnHandle> cyodaColumns, CyodaSplit split) {
+    public ConnectorPageSource getPageSource(CyodaTableMeta tableHandle, List<CyodaColumnHandle> cyodaColumns, CyodaSplit split) {
         return pageCache.get(new DataRequestKey(split, tableHandle)).mapNewPage(cyodaColumns);
     }
 

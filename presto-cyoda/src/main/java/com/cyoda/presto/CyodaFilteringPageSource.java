@@ -19,7 +19,7 @@ package com.cyoda.presto;
 
 import com.cyoda.presto.client.data.TableDataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.Page;
 import io.trino.spi.PageBuilder;
@@ -59,7 +59,7 @@ public class CyodaFilteringPageSource<T>
 
     public CyodaFilteringPageSource(
             TableDataProvider<T> dataProvider,
-            CyodaTableHandle tableHandle,
+            CyodaTableMeta tableHandle,
             List<CyodaColumnHandle> columnHandles,
             CyodaSplit split
     ) {

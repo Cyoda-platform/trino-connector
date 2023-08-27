@@ -17,15 +17,21 @@
 
 package com.cyoda.presto;
 
+import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.reporting.calls.DeleteReportsApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.DynamicReportMetadataProvider;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
+import com.cyoda.presto.client.reporting.metaproviders.TableMetadataProvider;
+import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
+import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import com.cyoda.presto.handles.CyodaTableType;
 import com.cyoda.presto.logging.SupplierLogger;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import io.airlift.slice.Slice;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ConnectorPartitioningHandle;
@@ -42,14 +48,18 @@ import io.trino.spi.connector.ConnectorMetadata;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
+import javax.annotation.Nonnull;
 import javax.inject.Inject;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalLong;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.google.common.base.Preconditions.checkArgument;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
@@ -65,6 +75,8 @@ public class CyodaMetadata implements ConnectorMetadata {
     private final StaticTableMetadataProvider staticMetadataProvider;
     private final DynamicReportMetadataProvider dynamicReportMetadataProvider;
     private final DeleteReportsApiHandler deleteReportsApiHandler;
+    private final ContentIdLoadingCache<AuthContext, Map<SchemaTableName, CyodaTableHandle>> tableByUserCache;
+    private final Map<SchemaTableName, CyodaTableHandle> defaultTableList;
 
     @Inject
     public CyodaMetadata(
@@ -73,42 +85,83 @@ public class CyodaMetadata implements ConnectorMetadata {
             AuthService auth,
             StaticTableMetadataProvider staticMetadataProvider,
             DynamicReportMetadataProvider dynamicReportMetadataProvider,
-            DeleteReportsApiHandler deleteReportsApiHandler) {
+            DeleteReportsApiHandler deleteReportsApiHandler,
+            CyodaCacheMonitor cacheMonitor) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
         this.config = requireNonNull(config,"confif is null");
         this.auth = auth;
         this.staticMetadataProvider = staticMetadataProvider;
         this.dynamicReportMetadataProvider = dynamicReportMetadataProvider;
         this.deleteReportsApiHandler = deleteReportsApiHandler;
+        tableByUserCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
+                .expireAfterWrite(Duration.ofSeconds(config.getCacheUserAuthSecAfterWrite()))
+                .recordStats()
+                .build(key -> {
+                    LOG.debug("Loading Tables Cache for user " + key.getUserId());
+                    return tableByUserCacheLoad(key);
+                }));
+        cacheMonitor.register("AUTH", tableByUserCache, AuthContext::getUserId, Map::size);
+        defaultTableList = new HashMap<>();
+        defaultTableList.put(new SchemaTableName(config.getSchemaName(), StaticTableMetadata.LOG_TABLE_NAME),
+                new CyodaTableHandle(config.getSchemaName(), StaticTableMetadata.LOG_TABLE_NAME, CyodaTableType.LOG_TABLE));
     }
 
+    @Nonnull
+    private Map<SchemaTableName, CyodaTableHandle> tableByUserCacheLoad(AuthContext key) {
+        try {
+            Map<SchemaTableName, List<CyodaTableHandle>> tableNameListMap = Stream.of(staticMetadataProvider, dynamicReportMetadataProvider)
+                    .flatMap(x -> x.listTables(key, Optional.empty()).stream())
+                    .collect(Collectors.groupingBy(tableHandle -> new SchemaTableName(tableHandle.getSchemaName(), tableHandle.getTableName())));
+            Map<SchemaTableName, CyodaTableHandle> result = tableNameListMap.entrySet().stream()
+                    .filter(e -> (e.getValue().size() == 1)).collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get(0)));
+            if (result.size() < tableNameListMap.size()) {
+                tableNameListMap.entrySet().stream().filter(e -> !result.containsKey(e.getKey())).forEach(entry -> {
+                    LOG.error("Unable to load table " + entry.getKey() + " amount of linked handles <> 1 \n\n" + entry.getValue());
+                });
+            }
+            return result;
+        } catch (Exception e) {
+            LOG.error(e,"Failed to load tables for user " + key.getUserId());
+            return defaultTableList;
+        }
+    }
+
+    private TableMetadataProvider getMetaProvider(CyodaTableHandle tableHandle){
+        switch (tableHandle.getTableType()) {
+            case DATA -> {
+                return dynamicReportMetadataProvider;
+            }
+//            case HISTORY, GROUP -> It is important to note that while handles for those types of tables are provided
+                                //   by dynamicReportMetadataProvider, their META is static and provided by staticMetadataProvider
+            default -> {
+                return staticMetadataProvider;
+            }
+        }
+    }
+
+    public CyodaTableMeta getTableMeta(CyodaTableHandle tableHandle){
+        return getMetaProvider(tableHandle).getTableMeta(tableHandle);
+    }
 
     @Override
     public List<String> listSchemaNames(ConnectorSession session) {
-        return ImmutableList.of(config.getSchemaName());
+        Map<SchemaTableName, CyodaTableHandle> schemaMap = getTableHandleMap(session);
+        return schemaMap.keySet().stream().map(SchemaTableName::getSchemaName).distinct().collect(Collectors.toList());
+    }
+
+    @Nonnull
+    private Map<SchemaTableName, CyodaTableHandle> getTableHandleMap(ConnectorSession session) {
+        Map<SchemaTableName, CyodaTableHandle> result = tableByUserCache.get(auth.fromSession(session));
+        requireNonNull(result);
+        return result;
     }
 
     @Override
     public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName) {
-        String tableKey = null;
-        try {
-            if (!listSchemaNames(session).contains(tableName.getSchemaName())) {
-                return null;
-            }
-            tableKey = tableName.getTableName();
-            if (staticMetadataProvider.contains(tableKey)) {
-                return staticMetadataProvider.getTableHandle(tableKey);
-            } else {
-                return dynamicReportMetadataProvider.getTableHandle(auth.fromSession(session), tableKey);
-            }
-        } catch (Exception e){
-            LOG.error(e);
-            if (StaticTableMetadata.LOG_TABLE_NAME.equals(tableKey)) {
-                return staticMetadataProvider.getTableHandle(StaticTableMetadata.LOG_TABLE_NAME);
-            } else {
-                return null;
-            }
-        }
+        Map<SchemaTableName, CyodaTableHandle> schemaMap = getTableHandleMap(session);
+        CyodaTableHandle handle = schemaMap.get(tableName);
+        requireNonNull(handle, "Unknown table " + tableName);
+        return handle;
     }
 
 
@@ -120,16 +173,6 @@ public class CyodaMetadata implements ConnectorMetadata {
         } else {
             throw new TrinoException(NOT_SUPPORTED, "Truncate operation is available only for report-related tables. Use DELETE for cache and call stats.");
         }
-    }
-
-    @Override
-    public OptionalLong executeDelete(ConnectorSession session, ConnectorTableHandle handle) {
-        return ConnectorMetadata.super.executeDelete(session, handle);
-    }
-
-    @Override
-    public Optional<ConnectorTableHandle> applyDelete(ConnectorSession session, ConnectorTableHandle handle) {
-        return ConnectorMetadata.super.applyDelete(session, handle);
     }
 
     @Override
@@ -158,14 +201,13 @@ public class CyodaMetadata implements ConnectorMetadata {
 
     @Override
     public ConnectorTableMetadata getTableMetadata(ConnectorSession session, ConnectorTableHandle table) {
-        CyodaTableHandle handle = (CyodaTableHandle) table;
+        CyodaTableMeta handle = getTableMeta((CyodaTableHandle) table);
         return handle.getMetadata();
     }
 
     @Override
     public Map<String, ColumnHandle> getColumnHandles(ConnectorSession session, ConnectorTableHandle tableHandle) {
-        CyodaTableHandle handle = (CyodaTableHandle) tableHandle;
-        checkArgument(handle.getConnectorId().equals(connectorId), "tableHandle is not for this connector");
+        CyodaTableMeta handle = getTableMeta((CyodaTableHandle) tableHandle);
         return ImmutableMap.copyOf(handle.getColumnHandleMap());
     }
 
@@ -177,50 +219,49 @@ public class CyodaMetadata implements ConnectorMetadata {
 
     @Override
     public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> filterSchema) {
+        LOG.info("Getting tables for schema %s", () -> filterSchema.orElse("ALL"));
         try {
-            if (filterSchema.isPresent() && !filterSchema.get().equals(config.getSchemaName())) {
-                return Collections.emptyList();
-            }
-            LOG.info("Getting tables for schema %s", () -> filterSchema.orElse("ALL"));
-            ImmutableList.Builder<SchemaTableName> builder = ImmutableList.builder();
-            for (String tableName : staticMetadataProvider.getTableList()) {
-                builder.add(new SchemaTableName(config.getSchemaName(), tableName));
-            }
-            for (String tableName : dynamicReportMetadataProvider.getTableList(auth.fromSession(session))) {
-                builder.add(new SchemaTableName(config.getSchemaName(), tableName));
-            }
-            return builder.build();
+            Map<SchemaTableName, CyodaTableHandle> tableMap = getTableHandleMap(session);
+            return filterSchema.map(s ->
+                    tableMap.keySet().stream()
+                            .filter(e -> s.equals(e.getSchemaName()))
+                            .collect(Collectors.toList()))
+                    .orElseGet(() -> ImmutableList.copyOf(tableMap.keySet()));
         } catch (Exception e){
             LOG.error(e);
-            return Collections.singletonList(new SchemaTableName(config.getSchemaName(), StaticTableMetadata.LOG_TABLE_NAME));
+            return defaultTableList.keySet().stream().toList();
         }
-    }
-
-    private List<SchemaTableName> listTables(ConnectorSession session, SchemaTablePrefix prefix) {
-        // List all tables if schema or table is null
-        if (prefix.getSchema().isEmpty() || prefix.getTable().isEmpty()) {
-            return listTables(session, prefix.getSchema());
-        }
-
-        // Make sure requested table exists, returning the single table of it does
-        SchemaTableName table = new SchemaTableName(prefix.getSchema().get(), prefix.getTable().get());
-        if (getTableHandle(session, table) != null) {
-            return ImmutableList.of(table);
-        }
-
-        // Else, return empty list
-        return ImmutableList.of();
     }
 
     @Override
     public Iterator<TableColumnsMetadata> streamTableColumns(ConnectorSession session, SchemaTablePrefix prefix) {
         requireNonNull(prefix, "prefix is null");
         ImmutableList.Builder<TableColumnsMetadata> columns = ImmutableList.builder();
-        for (SchemaTableName tableName : listTables(session, prefix)) {
-            CyodaTableHandle handle = (CyodaTableHandle) getTableHandle(session, tableName);
+        Map<SchemaTableName, CyodaTableHandle> tableMap = getTableHandleMap(session);
+        Map<SchemaTableName, CyodaTableHandle> selectedHandles;
+        if (prefix.getTable().isPresent()){
+            SchemaTableName schemaTableName = prefix.toSchemaTableName();
+            CyodaTableHandle tableHandle = tableMap.get(schemaTableName);
+            if (tableHandle != null){
+                selectedHandles = Collections.singletonMap(schemaTableName, tableHandle);
+            } else {
+                selectedHandles = Collections.emptyMap();
+            }
+        } else if (prefix.getSchema().isPresent()) {
+            String schema = prefix.getSchema().get();
+            selectedHandles = tableMap.entrySet().stream()
+                    .filter(e -> schema.equals(e.getKey().getSchemaName()))
+                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        } else {
+            selectedHandles = tableMap;
+        }
+
+
+        for (Map.Entry<SchemaTableName, CyodaTableHandle> en : selectedHandles.entrySet()) {
+            CyodaTableMeta tableMeta = getTableMeta(en.getValue());
             // table can disappear during listing operation
-            if (handle != null) {
-                columns.add(new TableColumnsMetadata(tableName, Optional.of(handle.getColumnMetadata())));
+            if (tableMeta != null) {
+                columns.add(new TableColumnsMetadata(en.getKey(), Optional.of(tableMeta.getColumnMetadata())));
             }
         }
         return columns.build().iterator();

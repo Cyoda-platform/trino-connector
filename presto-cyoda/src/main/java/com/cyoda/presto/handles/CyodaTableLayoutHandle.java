@@ -27,12 +27,12 @@
 ////TODO Interface is gone. Need to find out if this logic is necessary
 //public class CyodaTableLayoutHandle implements ConnectorTableLayoutHandle {
 //
-//    private final CyodaTableHandle table;
+//    private final CyodaTableMeta table;
 //    private final TupleDomain<CyodaColumnHandle> constraint;
 //
 //    @JsonCreator
 //    public CyodaTableLayoutHandle(
-//            @JsonProperty("table") CyodaTableHandle table,
+//            @JsonProperty("table") CyodaTableMeta table,
 //            @JsonProperty("constraint") TupleDomain<CyodaColumnHandle> constraint
 //    ) {
 //        this.table = table;
@@ -41,7 +41,7 @@
 //
 //
 //    @JsonProperty
-//    public CyodaTableHandle getTable() {
+//    public CyodaTableMeta getTable() {
 //        return table;
 //    }
 //

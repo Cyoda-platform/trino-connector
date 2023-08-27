@@ -2,7 +2,7 @@ package com.cyoda.presto;
 
 import com.cyoda.presto.client.data.TableDataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.collect.ImmutableList;
 import io.trino.spi.Page;
@@ -26,7 +26,7 @@ public class CyodaCachedPageSource<T> implements ConnectorPageSource {
     private final ThreadLocal<Integer> cursor = ThreadLocal.withInitial(() -> 0);
 
     public CyodaCachedPageSource(TableDataProvider<T> dataProvider,
-                                 CyodaTableHandle tableHandle,
+                                 CyodaTableMeta tableHandle,
                                  CyodaSplit split){
         List<CyodaColumnHandle> allColumns = tableHandle.getProjectedColumns();
         CyodaFilteringPageSource<T> source = new CyodaFilteringPageSource<>(

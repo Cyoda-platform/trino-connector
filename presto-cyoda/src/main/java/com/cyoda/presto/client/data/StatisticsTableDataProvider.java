@@ -7,7 +7,7 @@ import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import org.joda.beans.MetaProperty;
 import reactor.core.scheduler.Schedulers;
 
@@ -24,7 +24,7 @@ public class StatisticsTableDataProvider extends MultiConfigTableDataProvider<Di
     }
 
     @Override
-    public Iterable<DistributedReportInfoView> getIterable(CyodaTableHandle tableHandle, CyodaSplit split) {
+    public Iterable<DistributedReportInfoView> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
         SizeListener listener = SizeListener.NOT_LISTENING;
         return statisticsApiHandler.asFlux(new ReportConfigKey(split.getReportConfigId(), split.getQueryId()), listener)
                 .subscribeOn(Schedulers.parallel())

@@ -5,7 +5,7 @@ import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata;
 import com.cyoda.presto.client.reporting.stats.ApiRequestStats;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import io.trino.spi.NodeManager;
 import io.trino.spi.block.Block;
 import io.trino.spi.type.VarcharType;
@@ -23,7 +23,7 @@ public class ApiCallStatsDataProvider extends VirtualTableDataProvider<ApiReques
     }
 
     @Override
-    public Iterable<ApiRequestStats> getIterable(CyodaTableHandle tableHandle, CyodaSplit split) {
+    public Iterable<ApiRequestStats> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
         return statsMonitor.getIterable();
     }
 

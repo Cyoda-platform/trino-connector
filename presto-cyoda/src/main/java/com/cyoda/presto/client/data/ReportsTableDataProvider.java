@@ -10,7 +10,7 @@ import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle;
 import com.cyoda.presto.client.reporting.meta.ReportListKey;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import io.trino.spi.connector.Constraint;
 
 import javax.annotation.Nonnull;
@@ -33,7 +33,7 @@ public class ReportsTableDataProvider extends TableDataProvider<ReportsTableData
     }
 
     @Override
-    public Iterable<ReportsTableData> getIterable(CyodaTableHandle tableHandle, CyodaSplit split) {
+    public Iterable<ReportsTableData> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
         return split.getCustomData().entrySet().stream()
                 .map(entry -> {
                     ReportDefinitionHandle repDef = configDetailsApiHandler.getReportDefSingleHandle(
@@ -57,7 +57,7 @@ public class ReportsTableDataProvider extends TableDataProvider<ReportsTableData
     }
 
     @Override
-    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
+    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableMeta tableHandle, Constraint constraint) {
         Map<String, Map<String, String>> configFields = reportsApiHandler.asFlux(new ReportListKey(authContext, queryId), SizeListener.NOT_LISTENING)
                 .collectMap(GridConfigFieldsView::getId, GridConfigFieldsView::getGridConfigFields).block();
         return Collections.singletonList(CyodaSplit.emptyCoordinatorSplit(tableHandle.getTableName(), queryId, configFields));

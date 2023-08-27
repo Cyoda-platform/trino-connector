@@ -5,7 +5,7 @@ import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.Cache
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor.CacheContent;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import io.trino.spi.NodeManager;
 import io.trino.spi.block.Block;
 import io.trino.spi.type.UuidType;
@@ -24,7 +24,7 @@ public class CacheContentDataProvider extends VirtualTableDataProvider<CacheCont
     }
 
     @Override
-    public Iterable<CacheContent> getIterable(CyodaTableHandle tableHandle, CyodaSplit split) {
+    public Iterable<CacheContent> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
         return cacheMonitor.getContent();
     }
 

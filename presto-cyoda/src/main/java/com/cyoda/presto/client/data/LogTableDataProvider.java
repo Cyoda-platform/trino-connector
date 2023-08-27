@@ -3,7 +3,7 @@ package com.cyoda.presto.client.data;
 import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import com.cyoda.presto.logging.LogRecordHandler;
 import io.trino.spi.NodeManager;
 import io.trino.spi.block.Block;
@@ -25,7 +25,7 @@ public class LogTableDataProvider extends VirtualTableDataProvider<LogRecord> {
     }
 
     @Override
-    public Iterable<LogRecord> getIterable(CyodaTableHandle tableHandle, CyodaSplit split) {
+    public Iterable<LogRecord> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
         return logRecordHandler.getLogRecords();
     }
 

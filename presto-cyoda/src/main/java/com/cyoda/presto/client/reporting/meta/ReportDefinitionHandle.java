@@ -24,7 +24,7 @@ import java.util.List;
 
 public class ReportDefinitionHandle {
     public static final String REPORT_ID_COLUMN = "id";
-    public static final String REPORT_NAME_COLUMN = "reportName";
+    public static final String REPORT_SCHEMA_NAME_COLUMN = "schemaName";
     public static final String REPORT_TABLE_NAME_COLUMN = "tableName";
     public static final String REPORT_TYPE_COLUMN = "type";
     public static final String REPORT_DESCRIPTION_COLUMN = "description";
@@ -36,16 +36,14 @@ public class ReportDefinitionHandle {
     public static final String REPORT_JSON_COLUMN = "json";
 
     public final String reportConfigId;
-    public final String reportName;
     public final List<CyodaColumnHandle> columns;
     public final String json;
     public final String description;
     public final boolean isSingleton;
     public final List<String> groupingColumns;
 
-    public ReportDefinitionHandle(String reportConfigId, String reportName, String description, List<CyodaColumnHandle> columns, String json, boolean isSingleton, List<String> groupingColumns) {
+    public ReportDefinitionHandle(String reportConfigId, String description, List<CyodaColumnHandle> columns, String json, boolean isSingleton, List<String> groupingColumns) {
         this.reportConfigId = reportConfigId;
-        this.reportName = reportName;
         this.description = description;
         this.columns = columns;
         this.json = json;
@@ -65,10 +63,6 @@ public class ReportDefinitionHandle {
         return reportConfigId;
     }
 
-    public String getReportName() {
-        return reportName;
-    }
-
     public String getDescription() {
         return description;
     }
@@ -85,7 +79,6 @@ public class ReportDefinitionHandle {
     public String toString() {
         return MoreObjects.toStringHelper(this)
                 .add("reportConfigId", reportConfigId)
-                .add("reportName", reportName)
                 .add("description", description)
                 .toString();
     }

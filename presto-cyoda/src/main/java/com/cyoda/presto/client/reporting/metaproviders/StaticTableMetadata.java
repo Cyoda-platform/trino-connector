@@ -31,7 +31,6 @@ import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -50,14 +49,13 @@ import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPO
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_DESCRIPTION_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_ID_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_JSON_COLUMN;
-import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_NAME_COLUMN;
+import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_SCHEMA_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_TABLE_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_TYPE_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_UPDATE_DATE_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_USER_ID_COLUMN;
 import static com.cyoda.presto.client.types.DataType.BOOLEAN;
 import static com.cyoda.presto.client.types.DataType.DATE;
-import static com.cyoda.presto.client.types.DataType.INTEGER;
 import static com.cyoda.presto.client.types.DataType.LIST;
 import static com.cyoda.presto.client.types.DataType.LOCAL_DATE_TIME;
 import static com.cyoda.presto.client.types.DataType.LONG;
@@ -65,65 +63,69 @@ import static com.cyoda.presto.client.types.DataType.OBJECT;
 import static com.cyoda.presto.client.types.DataType.STRING;
 import static com.cyoda.presto.client.types.DataType.UUID_TYPE;
 
-public enum StaticTableMetadata implements TableDefinition {
-    API_CALL_STATS(Arrays.asList(ApiCallStatsColumnDef.values()), CyodaTableType.CALL_STATS, "_api_call_stats"),
-    CACHE_CONTENT(Arrays.asList(CacheContentColumnDef.values()), CyodaTableType.CACHE_CONTENT, "_cache_content"),
-    CACHE_STATS(Arrays.asList(CacheStatsColumnDef.values()), CyodaTableType.CACHE_STATS, "_cache_stats"),
-    LOG_TABLE(Arrays.asList(LogTableColumnDef.values()), CyodaTableType.LOG_TABLE, "_log"),
-    REPORTS(Arrays.asList(ReportsColumnDef.values()), CyodaTableType.REPORTS, "_reports"),
-    REPORT_GROUPS(StandardColumnDefinition.builder()
+public enum StaticTableMetadata {
+    API_CALL_STATS("Contains records on every API call to cyoda, made by connector. You can use SQL DELETE to clear it.",
+            Arrays.asList(ApiCallStatsColumnDef.values()), CyodaTableType.CALL_STATS, "api_call_stats"),
+    CACHE_CONTENT("Displays existing cache contents, one record - one cache key. You can use SQL DELETE to clear it or remove unwanted items",
+            Arrays.asList(CacheContentColumnDef.values()), CyodaTableType.CACHE_CONTENT, "cache_content"),
+    CACHE_STATS("Cache statistics, provided by Caffeine cache engine",
+            Arrays.asList(CacheStatsColumnDef.values()), CyodaTableType.CACHE_STATS, "cache_stats"),
+    LOG_TABLE("Mirrors log output until restart",
+            Arrays.asList(LogTableColumnDef.values()), CyodaTableType.LOG_TABLE, "log"),
+    REPORTS("List of reports, available for current user",
+            Arrays.asList(ReportsColumnDef.values()), CyodaTableType.REPORTS, "reports"),
+    REPORT_GROUPS("Records with group keys for reports of current report configuration",
+            StandardColumnDefinition.builder()
             .add(new StandardColumnDefinition(0, StaticReportFields.HISTORY_REPORT_ID_COLUMN, STRING))
             .add(new StandardColumnDefinition(1, StaticReportFields.GROUPING_VERSION_COLUMN, UUID_TYPE))
             .add(GroupHeader.meta())
             .build(), CyodaTableType.GROUP),
-    REPORT_HISTORIES(Arrays.asList(ReportHistoryColumnDef.values()), CyodaTableType.HISTORY),
-    REPORT_ROWS(StandardColumnDefinition.builder()
+    REPORT_HISTORIES("List of reports of current report configuration", Arrays.asList(ReportHistoryColumnDef.values()), CyodaTableType.HISTORY),
+    REPORT_ROWS("Report contents", StandardColumnDefinition.builder()
             .add(new StandardColumnDefinition(0, StaticReportFields.ROW_REPORT_ROW_NUMBER_COLUMN, LONG))
             .add(new StandardColumnDefinition(1, StaticReportFields.ROW_REPORT_ID_COLUMN, STRING))
             .add(new StandardColumnDefinition(2, StaticReportFields.GROUPING_VERSION_COLUMN, UUID_TYPE))
             .add(new StandardColumnDefinition(3, StaticReportFields.ROW_GROUP_JSON_BASE64_VARIABLE, STRING))
             .build(), CyodaTableType.DATA),
-    REPORT_STATS(StandardColumnDefinition.builder()
+    REPORT_STATS("List of all reports in system. Using in queries is NOT recommended", StandardColumnDefinition.builder()
             .add(DistributedReportInfoView.meta())
-            .build(), CyodaTableType.STATS, "_report_stats");
+            .build(), CyodaTableType.STATS, "report_stats");
 
     public static final String LOG_TABLE_NAME = LOG_TABLE.staticTableName;
     private final Map<String, ColumnDefinition> columns;
     private final CyodaTableType tableType;
     private final String staticTableName;
+    private final String description;
 
 
-    StaticTableMetadata(List<ColumnDefinition> columns, CyodaTableType tableType, String staticTableName) {
+    StaticTableMetadata(String description, List<ColumnDefinition> columns, CyodaTableType tableType, String staticTableName) {
         this.columns = columns.stream().collect(Collectors.toMap(ColumnDefinition::getFieldName, Function.identity()));
         this.tableType = tableType;
         this.staticTableName = staticTableName;
+        this.description = description;
     }
 
-    StaticTableMetadata(List<ColumnDefinition> columns, CyodaTableType tableType) {
-        this(columns, tableType, null);
-    }
-
-    @Override
-    public String getTableName() {
-        return name().toLowerCase(Locale.ROOT);
+    StaticTableMetadata(String description, List<ColumnDefinition> columns, CyodaTableType tableType) {
+        this(description, columns, tableType, null);
     }
 
     public String getStaticTableName() {
         return staticTableName;
     }
 
-    @Override
+    public String getDescription() {
+        return description;
+    }
+
     public Collection<ColumnDefinition> getColumns() {
         return columns.values();
     }
 
-    @Override
     public @Nonnull ColumnDefinition getColumn(String name) {
         return Optional.ofNullable(columns.get(name)).orElseThrow(() ->
                 new NoSuchElementException(String.format("No column with name %s in %s metadata", name, name())));
     }
 
-    @Override
     public CyodaTableType getTableType() {
         return tableType;
     }
@@ -134,7 +136,7 @@ public enum StaticTableMetadata implements TableDefinition {
 
     public enum ReportsColumnDef implements ColumnDefinition {
         ID(0, REPORT_ID_COLUMN, STRING),
-        NAME(1, REPORT_NAME_COLUMN, STRING),
+        SCHEMA_NAME(1, REPORT_SCHEMA_NAME_COLUMN, STRING),
         TABLE_NAME(2, REPORT_TABLE_NAME_COLUMN, STRING),
         DESCRIPTION(3, REPORT_DESCRIPTION_COLUMN, STRING),
         TYPE(4, REPORT_TYPE_COLUMN, STRING),

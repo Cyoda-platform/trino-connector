@@ -5,7 +5,7 @@ import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 import com.cyoda.presto.client.reporting.meta.ReportListKey;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import io.trino.spi.connector.Constraint;
 import reactor.core.scheduler.Schedulers;
 
@@ -19,7 +19,7 @@ public abstract class MultiConfigTableDataProvider<T> extends TableDataProvider<
     }
 
     @Override
-    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
+    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableMeta tableHandle, Constraint constraint) {
         SizeListener listener = SizeListener.NOT_LISTENING;
         return reportsApiHandler.asFlux(new ReportListKey(authContext, queryId), listener)
                 .map(confView -> CyodaSplit.configSplit(tableHandle.getTableName(), confView.getId(), queryId))

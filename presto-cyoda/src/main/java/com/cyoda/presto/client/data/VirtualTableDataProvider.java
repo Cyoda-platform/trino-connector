@@ -3,9 +3,8 @@ package com.cyoda.presto.client.data;
 import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.CyodaVirtualPageSource;
 import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.reporting.stats.ApiRequestStats;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import io.trino.spi.Node;
 import io.trino.spi.NodeManager;
 import io.trino.spi.block.Block;
@@ -27,7 +26,7 @@ public abstract class VirtualTableDataProvider<T> extends TableDataProvider<T> {
     protected abstract void deleteByIds(Block rowIds);
 
     @Override
-    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
+    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableMeta tableHandle, Constraint constraint) {
         return nodeManager.getAllNodes()
                 .stream()
                 .map(Node::getHttpUri)
@@ -37,7 +36,7 @@ public abstract class VirtualTableDataProvider<T> extends TableDataProvider<T> {
     }
 
     @Override
-    public ConnectorPageSource getPageSource(CyodaTableHandle tableHandle, List<CyodaColumnHandle> cyodaColumns, CyodaSplit split) {
+    public ConnectorPageSource getPageSource(CyodaTableMeta tableHandle, List<CyodaColumnHandle> cyodaColumns, CyodaSplit split) {
         return new CyodaVirtualPageSource<>(this, tableHandle, cyodaColumns, split, this::deleteByIds);
     }
 }
