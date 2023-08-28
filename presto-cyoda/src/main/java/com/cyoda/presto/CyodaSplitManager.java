@@ -19,6 +19,7 @@ package com.cyoda.presto;
 
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.data.TableDataProviderProvider;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.CyodaTableMeta;
 import io.trino.spi.NodeManager;
 import io.trino.spi.connector.ConnectorTableHandle;
@@ -63,8 +64,7 @@ public class CyodaSplitManager implements ConnectorSplitManager {
             ConnectorTableHandle connectorTableHandle,
             DynamicFilter dynamicFilter,
             Constraint constraint) {
-        CyodaTableMeta tableHandle = (CyodaTableMeta) connectorTableHandle;
-        Preconditions.checkArgument(tableHandle.getConnectorId().equals(connectorId),"This split manager is meant for connector id "+connectorId);
+        CyodaTableHandle tableHandle = (CyodaTableHandle) connectorTableHandle;
 
         if (constraint.predicate().isEmpty() && !constraint.getSummary().isAll()){
             throw new RuntimeException("Constraint summary is not blank, but predicate not present");

@@ -15,6 +15,7 @@ import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvid
 import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
+import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.CyodaTableMeta;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.trino.spi.connector.ConnectorPageSource;
@@ -70,7 +71,7 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
     }
 
     @Override
-    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableMeta tableHandle, Constraint constraint) {
+    public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
         boolean hasReportIdConstraint = hasConstraint(reportIdColumn, constraint);
         boolean hasGroupIdConstraint = hasConstraint(groupIdColumn, constraint);
         boolean hasRowNumConstraint = hasConstraint(rowNumberColumn, constraint);
