@@ -27,6 +27,7 @@ import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.base.Preconditions;
 import io.trino.spi.StandardErrorCode;
 import io.trino.spi.TrinoException;
+import io.trino.spi.connector.SchemaTableName;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
@@ -128,6 +129,15 @@ public abstract class BaseReportsApiHandler {
                 .toLowerCase(Locale.ROOT);
         Preconditions.checkArgument(!result.isEmpty(), "generated tableName is empty");
         return result;
+    }
+    public static @Nonnull SchemaTableName configIdToSchemaTableName(@Nonnull String reportConfigId){
+        int ownerIndex = reportConfigId.indexOf("-");
+        if (ownerIndex == -1) {
+            return new SchemaTableName("owner-unknown", reportConfigId.toLowerCase());
+        } else {
+            return new SchemaTableName(reportConfigId.substring(0, ownerIndex).toLowerCase(),
+                    reportConfigId.substring(ownerIndex + 1));
+        }
     }
 
     protected <S> void publishSize(SizeListener listener, PagedModel<S> pagedModel) {

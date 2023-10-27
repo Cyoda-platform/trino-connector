@@ -15,10 +15,12 @@ import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import com.cyoda.presto.handles.CyodaTableType;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.ImmutableMap;
+import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.type.TypeManager;
 import reactor.core.publisher.Flux;
 
@@ -34,6 +36,7 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import static com.cyoda.presto.SizeListener.NOT_LISTENING;
 
@@ -46,11 +49,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     private ReportConfigDetailsApiHandler reportConfigDetailsApiHandler;
     private final StaticTableMetadataProvider staticTableMetadataProvider;
 
-    /**
-     * TableName -> TableMetadata
-     */
-    private final ContentIdLoadingCache<AuthContext, Map<String, CyodaTableHandle>> tableByUserCache;
-    private final ContentIdLoadingCache<TableMetaCacheKey, CyodaTableHandle> tableMetaCache;
+    private final ContentIdLoadingCache<TableMetaCacheKey, CyodaTableMeta> tableMetaCache;
 
     @Inject
     public DynamicReportMetadataProvider(CyodaConnectorId connectorId, CyodaConfig config,
@@ -64,14 +63,6 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
         this.staticTableMetadataProvider = staticTableMetadataProvider;
         this.configuredReportsApiHandler = configuredReportsApiHandler;
         this.reportConfigDetailsApiHandler = reportConfigDetailsApiHandler;
-        tableByUserCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
-                .expireAfterWrite(Duration.ofSeconds(config.getCacheUserAuthSecAfterWrite()))
-                .recordStats()
-                .build(key -> {
-                    LOG.debug("Loading Tables Cache for user " + key.getUserId());
-                    return tableByUserCacheLoad(key);
-                }));
-        cacheMonitor.register("AUTH", tableByUserCache, AuthContext::getUserId, Map::size);
         tableMetaCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
                 .expireAfterAccess(Duration.ofHours(config.getCacheReportMetaHoursAfterAccess()))
                 .recordStats()
@@ -82,16 +73,53 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
         cacheMonitor.register("META", tableMetaCache, key -> key.configId, x->1);
     }
 
-    private CyodaTableHandle  getTableHandleFromCyoda(String configId) {
-        String tableName = BaseReportsApiHandler.reportNameToTableName(configId);
-        ReportDefinitionHandle definitionHandle = null;
+    @Override
+    //results of this method supposed to be cached outside
+    public List<CyodaTableHandle> listTables(AuthContext authContext, Optional<String> filterSchema) {
+        try {
+            List<CyodaTableHandle> result = new ArrayList<>();
+            Flux<GridConfigFieldsView> flux = configuredReportsApiHandler.asFlux(
+                    new ReportListKey(authContext, "META"),
+                    NOT_LISTENING
+            );
+            flux.doOnNext(item -> {
+                TableMetaCacheKey cacheKey = TableMetaCacheKey.of(item);
+                CyodaTableMeta tableMeta = tableMetaCache.get(cacheKey);
+                if (tableMeta == null) {
+                    LOG.error("Failed to get meta for table " + item.getId());
+                    return;
+                }
+                result.add(tableMeta.toMainHandle(cacheKey.createDate, cacheKey.lastUpdateDate));
+                if (tableMeta.hasHistory()) {
+                    result.add(tableMeta.toSuppHandle("_history", CyodaTableType.HISTORY));
+                }
+                if (tableMeta.hasGroups()) {
+                    result.add(tableMeta.toSuppHandle("_groups", CyodaTableType.GROUP));
+                }
+            }).blockLast();
+            // If there are duplicates, last write wins.
+            return result;
+        } catch (Exception e){
+            LOG.error(e, "Loading table list for a user failed with message " + e.getMessage());
+            return Collections.emptyList();
+        }
+    }
+
+    @Override
+    public CyodaTableMeta getTableMeta(CyodaTableHandle tableHandle) {
+        return tableMetaCache.get(TableMetaCacheKey.of(tableHandle));
+    }
+
+    private CyodaTableMeta getTableHandleFromCyoda(String configId) {
+        SchemaTableName tableName = BaseReportsApiHandler.configIdToSchemaTableName(configId);
+        ReportDefinitionHandle definitionHandle;
         try {
             definitionHandle = reportConfigDetailsApiHandler.getReportDefSingleHandle(new ReportConfigKey(configId, "META"));
 
-            List<CyodaColumnHandle> columns = new ArrayList<>(List.copyOf(staticTableMetadataProvider.getReportRows().getTableHandle().getProjectedColumns()));
+            List<CyodaColumnHandle> columns = new ArrayList<>(List.copyOf(staticTableMetadataProvider.getReportRows().getTableMeta().getProjectedColumns()));
             columns.addAll(definitionHandle.getColumns());
             columns.sort(Comparator.comparingInt(CyodaColumnHandle::getOrdinalPosition));
-            return new CyodaTableHandle(connectorId.toString(), config.getSchemaName(), tableName,
+            return new CyodaTableMeta(connectorId.toString(), tableName.getSchemaName(), tableName.getTableName(),
                     columns, CyodaTableType.DATA, configId, definitionHandle.getDescription(),
                     !definitionHandle.getGroupingColumns().isEmpty(),
                     !definitionHandle.isSingleton());
@@ -99,71 +127,6 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
             LOG.error(e);
             return null;
         }
-    }
-
-    protected Map<String, CyodaTableHandle> tableByUserCacheLoad(AuthContext authContext) {
-        try {
-            Map<String, CyodaTableHandle> result = new HashMap<>();
-            Flux<GridConfigFieldsView> flux = configuredReportsApiHandler.asFlux(
-                    new ReportListKey(authContext, "META"),
-                    NOT_LISTENING
-            );
-            flux.doOnNext(item -> {
-                TableMetaCacheKey cacheKey = TableMetaCacheKey.of(item);
-                CyodaTableHandle tableHandle = tableMetaCache.get(cacheKey);
-                if (tableHandle == null) {
-                    LOG.error("Failed to get meta for table " + item.getId());
-                    return;
-                }
-                result.put(tableHandle.getTableName(), tableHandle);
-                if (tableHandle.hasHistory()) {
-                    addHistoryTable(result, tableHandle);
-                }
-                if (tableHandle.hasGroups()) {
-                    addGroupsTable(result, tableHandle);
-                }
-            }).blockLast();
-            // If there are duplicates, last write wins.
-            return ImmutableMap.copyOf(result);
-        } catch (Exception e){
-            LOG.error(e, "Loading table list for a user failed with message " + e.getMessage());
-            return Collections.emptyMap();
-        }
-    }
-
-    private void addHistoryTable(Map<String, CyodaTableHandle> result, CyodaTableHandle tableHandle) {
-        String supName = tableHandle.getTableName() + "_history";
-        result.put(supName, staticTableMetadataProvider
-                .getHistoryTableTemplate().createTableHandle(
-                        supName,
-                        tableHandle.getReportConfigId(),
-                        tableHandle.getDescription()
-                ));
-    }
-    private void addGroupsTable(Map<String, CyodaTableHandle> result, CyodaTableHandle tableHandle) {
-        String supName = tableHandle.getTableName() + "_groups";
-        result.put(supName, staticTableMetadataProvider
-                .getGroupsTableTemplate().createTableHandle(
-                        supName,
-                        tableHandle.getReportConfigId(),
-                        tableHandle.getDescription()
-                ));
-    }
-
-    public CyodaTableHandle getTableHandle(AuthContext authContext, String tableName) {
-        Map<String, CyodaTableHandle> map = tableByUserCache.get(authContext);
-        CyodaTableHandle value = map.get(tableName);
-        if (value == null) {
-            LOG.error(String.format(
-                    "Metadata provider %s does not contain table with name %s, existing keys: %s",
-                    this.getClass().getSimpleName(), tableName, Arrays.toString(map.keySet().toArray())));
-        }
-        return value;
-    }
-
-    public List<String> getTableList(AuthContext authContext) {
-        Map<String, CyodaTableHandle> map = tableByUserCache.get(authContext);
-        return map.keySet().stream().toList();
     }
 
     private static class TableMetaCacheKey {
@@ -182,6 +145,11 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
                     view.getId(),
                     parseDate(view.getCreationDate()),
                     parseDate(view.getUpdateDate()));
+        }
+        public static TableMetaCacheKey of(CyodaTableHandle handle) {
+            return new TableMetaCacheKey(
+                    handle.getReportConfigId(), handle.getCreateDate(), handle.getLastUpdateDate()
+            );
         }
 
         private static long parseDate(String value) {

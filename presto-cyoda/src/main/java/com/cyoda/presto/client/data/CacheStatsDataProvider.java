@@ -4,7 +4,7 @@ import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.CacheStatsColumnDef;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import io.trino.spi.NodeManager;
 import io.trino.spi.block.Block;
@@ -23,7 +23,7 @@ public class CacheStatsDataProvider extends VirtualTableDataProvider<Map.Entry<S
     }
 
     @Override
-    public Iterable<Map.Entry<String, CacheStats>> getIterable(CyodaTableHandle tableHandle, CyodaSplit split) {
+    public Iterable<Map.Entry<String, CacheStats>> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
         return cacheMonitor.getStats().entrySet();
     }
 

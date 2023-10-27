@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.spi.StandardErrorCode;
 import io.trino.spi.TrinoException;
+import io.trino.spi.connector.SchemaTableName;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.TemplateVariable;
@@ -46,7 +47,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_NAME_COLUMN;
+import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_SCHEMA_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_TABLE_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler.HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.REPORTS;
@@ -119,10 +120,9 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Rep
         Collection<GridConfigFieldsView> content = gridConfigFieldsViews.getContent();
         content.forEach(it -> {
             String id = it.getId();
-            String repName = toReportName(id);
-            it.addField(REPORT_NAME_COLUMN, repName);
-            String tableName = reportNameToTableName(id).toLowerCase();
-            it.addField(REPORT_TABLE_NAME_COLUMN, tableName);
+            SchemaTableName tableName = configIdToSchemaTableName(id);
+            it.addField(REPORT_SCHEMA_NAME_COLUMN, tableName.getSchemaName());
+            it.addField(REPORT_TABLE_NAME_COLUMN, tableName.getTableName());
         });
     }
 

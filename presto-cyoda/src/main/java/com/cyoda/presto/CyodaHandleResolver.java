@@ -19,7 +19,7 @@
 //
 //
 //import com.cyoda.presto.handles.CyodaColumnHandle;
-//import com.cyoda.presto.handles.CyodaTableHandle;
+//import com.cyoda.presto.handles.CyodaTableMeta;
 //import com.cyoda.presto.handles.CyodaTableLayoutHandle;
 //import com.cyoda.presto.handles.CyodaTransactionHandle;
 //import io.trino.spi.connector.ColumnHandle;
@@ -39,7 +39,7 @@
 //
 //    @Override
 //    public Class<? extends ConnectorTableHandle> getTableHandleClass() {
-//        return CyodaTableHandle.class;
+//        return CyodaTableMeta.class;
 //    }
 //
 //    @Override

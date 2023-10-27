@@ -11,6 +11,7 @@ import com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle;
 import com.cyoda.presto.client.reporting.meta.ReportListKey;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import io.trino.spi.connector.Constraint;
 
 import javax.annotation.Nonnull;
@@ -33,7 +34,7 @@ public class ReportsTableDataProvider extends TableDataProvider<ReportsTableData
     }
 
     @Override
-    public Iterable<ReportsTableData> getIterable(CyodaTableHandle tableHandle, CyodaSplit split) {
+    public Iterable<ReportsTableData> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
         return split.getCustomData().entrySet().stream()
                 .map(entry -> {
                     ReportDefinitionHandle repDef = configDetailsApiHandler.getReportDefSingleHandle(

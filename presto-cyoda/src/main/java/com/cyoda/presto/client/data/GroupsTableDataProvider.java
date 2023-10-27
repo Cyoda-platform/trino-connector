@@ -10,6 +10,7 @@ import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import io.trino.spi.connector.Constraint;
 import org.joda.beans.MetaProperty;
 
@@ -65,7 +66,7 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
     }
 
     @Override
-    public Iterable<GroupingHandle> getIterable(CyodaTableHandle tableHandle, CyodaSplit split) {
+    public Iterable<GroupingHandle> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
         return reportGroupsApiHandler.getByKey(new GroupsRequestKey(split.getReportId(), split.getGroupingVersion(), split.getQueryId()));
     }
 

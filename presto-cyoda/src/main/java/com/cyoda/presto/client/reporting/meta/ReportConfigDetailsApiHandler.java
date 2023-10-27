@@ -107,7 +107,6 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler {
         Date callDate = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
         traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
-        String reportName = toReportName(reportConfigId);
 
         try {
             String jsonResult = Optional.ofNullable(traverson
@@ -115,7 +114,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler {
                             .toEntity(String.class)).map(ResponseEntity::getBody)
                     .orElseThrow(() -> new IllegalArgumentException("No body found at " + templatedUri));
             DocumentContext parse = JsonPath.parse(jsonResult, JSONPATHA_CONFIG);
-            List<CyodaColumnHandle> cols = extractColumns(reportName, parse);
+            List<CyodaColumnHandle> cols = extractColumns(reportConfigId, parse);
             String description = parse.read("$.content.description", String.class);
             boolean isSingleton = Optional.ofNullable(
                     parse.read("$.content.singletonReport", Boolean.class)
@@ -128,7 +127,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler {
                     .orElse(Collections.emptyList())
                     .stream().map(map -> map.get("name")).toList();
 
-            return new ReportDefinitionHandle(reportConfigId, reportName, description, cols, jsonResult, isSingleton, groupingColumns);
+            return new ReportDefinitionHandle(reportConfigId, description, cols, jsonResult, isSingleton, groupingColumns);
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, e, templatedUri);
         } finally {
@@ -136,29 +135,29 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler {
         }
     }
 
-    private List<CyodaColumnHandle> extractColumns(String reportName, DocumentContext context) {
+    private List<CyodaColumnHandle> extractColumns(String configId, DocumentContext context) {
 
         List<Map<String, String>> columns = Optional.ofNullable(context.read("$.content.columns", new TypeRef<List<Map<String, String>>>() {
                 }))
-                .orElseThrow(() -> new IllegalArgumentException(INVALID_REPORT_DEFINITION_FOR + reportName + ". columns missing"));
+                .orElseThrow(() -> new IllegalArgumentException(INVALID_REPORT_DEFINITION_FOR + configId + ". columns missing"));
 
         ImmutableList.Builder<CyodaColumnHandle> builder = ImmutableList.builder();
         AtomicInteger position = new AtomicInteger(RESERVED_COLUMN_NAMES.size());
         columns.forEach(column -> {
             String columnName = Optional.ofNullable(column.get("name"))
-                    .orElseThrow(() -> new IllegalArgumentException(INVALID_REPORT_DEFINITION_FOR + reportName + ". $.columns[*].name missing"));
+                    .orElseThrow(() -> new IllegalArgumentException(INVALID_REPORT_DEFINITION_FOR + configId + ". $.columns[*].name missing"));
             Preconditions.checkArgument(!RESERVED_COLUMN_NAMES.contains(columnName), "Report %s is using a reserved column name: %s." +
-                    " Reserved names are: %s", reportName, columnName, Joiner.on(", ").join(RESERVED_COLUMN_NAMES));
+                    " Reserved names are: %s", configId, columnName, Joiner.on(", ").join(RESERVED_COLUMN_NAMES));
             ReportColumnType reportColumnType = Optional.ofNullable(column.get("@bean")).map(this::getColType)
-                    .orElseThrow(() -> new IllegalArgumentException(INVALID_REPORT_DEFINITION_FOR + reportName + ". $.columns[*].@bean missing"));
+                    .orElseThrow(() -> new IllegalArgumentException(INVALID_REPORT_DEFINITION_FOR + configId + ". $.columns[*].@bean missing"));
 
             ParameterizedType colParType;
             switch (reportColumnType) {
                 case COLUMN:
-                    colParType = fromColDefs(reportName, context, columnName);
+                    colParType = fromColDefs(configId, context, columnName);
                     break;
                 case ALIAS:
-                    colParType = fromAliasDefs(reportName, context, columnName);
+                    colParType = fromAliasDefs(configId, context, columnName);
                     break;
                 default:
                     throw new IllegalArgumentException("Unsupported Cyoda report column type " + reportColumnType);

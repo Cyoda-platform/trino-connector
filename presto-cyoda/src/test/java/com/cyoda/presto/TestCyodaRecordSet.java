@@ -26,12 +26,12 @@
 //import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
 //import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 //import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
-//import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata;
+//import com.cyoda.presto.client.reporting.metaproviders.StaticTable;
 //import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
 //import com.cyoda.presto.client.types.CompoundDataType;
 //import com.cyoda.presto.client.types.DataType;
 //import com.cyoda.presto.handles.CyodaColumnHandle;
-//import com.cyoda.presto.handles.CyodaTableHandle;
+//import com.cyoda.presto.handles.CyodaTableMeta;
 //import io.trino.spi.Page;
 //import io.trino.spi.predicate.TupleDomain;
 //import io.trino.spi.type.TimestampType;
@@ -61,7 +61,7 @@
 //@SuppressWarnings("UnstableApiUsage")
 //public class TestCyodaRecordSet {
 //    CyodaConnectorId connectorId = new CyodaConnectorId("conn-id-1");
-//    String requestHandlerKey = StaticTableMetadata.REPORTS.name();
+//    String requestHandlerKey = StaticTable.REPORTS.name();
 //    private LocalHttpServer ourHttpServer;
 //
 //    private CyodaApiRequestHandlerProvider setupHandlerProvider(CyodaConfig mockCyodaConfig) {
@@ -128,7 +128,7 @@
 //
 //        setupReponseMapper();
 //
-//        CyodaTableHandle tableHandle = new CyodaTableHandle(connectorId.toString(), "schema", "table", Collections.emptyList(), requestHandlerKey, null, null, null);
+//        CyodaTableMeta tableHandle = new CyodaTableMeta(connectorId.toString(), "schema", "table", Collections.emptyList(), requestHandlerKey, null, null, null);
 //        CompoundPredicateNode predicates = ColumnPredicateBuilder.setupConstraintPredicates(TupleDomain.all());
 //        CyodaFilteringPageSource<Any, GridConfigFieldsView> pageSource =
 //                new CyodaFilteringPageSource<>(authContext, apiHandler, tableHandle, tableHandle.getProjectedColumns(), null, predicates);

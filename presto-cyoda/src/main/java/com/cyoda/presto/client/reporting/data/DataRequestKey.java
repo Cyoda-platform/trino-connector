@@ -1,7 +1,7 @@
 package com.cyoda.presto.client.reporting.data;
 
 import com.cyoda.presto.CyodaSplit;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -11,7 +11,7 @@ public final class DataRequestKey {
     private transient final String queryId;
 
     // actual payload
-    private transient final CyodaTableHandle tableHandle;
+    private transient final CyodaTableMeta tableHandle;
     private transient final CyodaSplit split;
 
     // extracted key fields of split to use in equals & hashCode
@@ -24,7 +24,7 @@ public final class DataRequestKey {
 
     private DataRequestKey(
             String queryId,
-            CyodaTableHandle tableHandle, CyodaSplit split, String reportConfigId,
+            CyodaTableMeta tableHandle, CyodaSplit split, String reportConfigId,
             String reportId,
             UUID groupingVersion,
             String groupJsonBase64,
@@ -41,7 +41,7 @@ public final class DataRequestKey {
         this.pageSize = pageSize;
     }
 
-    public DataRequestKey(CyodaSplit split, CyodaTableHandle tableHandle) {
+    public DataRequestKey(CyodaSplit split, CyodaTableMeta tableHandle) {
         this(
                 split.getQueryId(),
                 tableHandle,
@@ -74,7 +74,7 @@ public final class DataRequestKey {
         return queryId;
     }
 
-    public CyodaTableHandle getTableHandle() {
+    public CyodaTableMeta getTableHandle() {
         return tableHandle;
     }
 

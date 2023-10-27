@@ -2,7 +2,7 @@ package com.cyoda.presto;
 
 import com.cyoda.presto.client.data.TableDataProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
-import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import io.airlift.slice.Slice;
 import io.trino.spi.block.Block;
 import io.trino.spi.connector.UpdatablePageSource;
@@ -12,14 +12,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 public class CyodaVirtualPageSource<T,K> extends CyodaFilteringPageSource<T> implements UpdatablePageSource {
 
     private final Consumer<Block> deleteOperation;
 
     public CyodaVirtualPageSource(TableDataProvider<T> dataProvider,
-                                  CyodaTableHandle tableHandle,
+                                  CyodaTableMeta tableHandle,
                                   List<CyodaColumnHandle> columnHandles,
                                   CyodaSplit split,
                                   Consumer<Block> deleteOperation) {

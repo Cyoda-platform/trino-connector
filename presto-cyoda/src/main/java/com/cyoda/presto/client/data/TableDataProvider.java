@@ -22,6 +22,7 @@ import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
+import com.cyoda.presto.handles.CyodaTableMeta;
 import com.google.common.collect.ImmutableMap;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.connector.ConnectorPageSource;
@@ -48,11 +49,11 @@ public abstract class TableDataProvider<T> {
     }
 
     public abstract List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint);
-    public abstract Iterable<T> getIterable(CyodaTableHandle tableHandle, CyodaSplit split);
+    public abstract Iterable<T> getIterable(CyodaTableMeta tableHandle, CyodaSplit split);
 
     protected abstract @Nullable Object getFieldValueFromEntity(@Nonnull T entity, CyodaColumnHandle columnHandle);
 
-    public ConnectorPageSource getPageSource(CyodaTableHandle tableHandle,
+    public ConnectorPageSource getPageSource(CyodaTableMeta tableHandle,
                                              List<CyodaColumnHandle> cyodaColumns,
                                              CyodaSplit split){
         return new CyodaFilteringPageSource<>(
