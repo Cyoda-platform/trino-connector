@@ -9,5 +9,6 @@ public enum CyodaTableType {
     CALL_STATS,
     CACHE_STATS,
     CACHE_CONTENT,
-    LOG_TABLE
+    LOG_TABLE,
+    TREE_NODE_TABLE
 }

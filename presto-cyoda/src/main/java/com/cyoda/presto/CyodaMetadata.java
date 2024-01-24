@@ -110,7 +110,7 @@ public class CyodaMetadata implements ConnectorMetadata {
     private Map<SchemaTableName, CyodaTableHandle> tableByUserCacheLoad(AuthContext key) {
         try {
             Map<SchemaTableName, List<CyodaTableHandle>> tableNameListMap = Stream.of(staticMetadataProvider, dynamicReportMetadataProvider)
-                    .flatMap(x -> x.listTables(key, Optional.empty()).stream())
+                    .flatMap(x -> x.listTables(key).stream())
                     .collect(Collectors.groupingBy(tableHandle -> new SchemaTableName(tableHandle.getSchemaName(), tableHandle.getTableName())));
             Map<SchemaTableName, CyodaTableHandle> result = tableNameListMap.entrySet().stream()
                     .filter(e -> (e.getValue().size() == 1)).collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get(0)));

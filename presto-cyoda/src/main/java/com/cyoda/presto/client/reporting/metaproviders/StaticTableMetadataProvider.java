@@ -18,7 +18,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -96,10 +95,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
 //        ).getTableMeta();
 //    }
     @Override
-    public List<CyodaTableHandle> listTables(AuthContext authContext, Optional<String> filterSchema) {
-        if (filterSchema.isPresent() && !filterSchema.get().equals(config.getSchemaName()))
-            return Collections.emptyList();
-
+    public List<CyodaTableHandle> listTables(AuthContext authContext) {
         return standaloneTablesMap.keySet().stream().toList();
     }
 
