@@ -35,8 +35,8 @@ public class CyodaConfig {
     private static final boolean DEFAULT_HTTPS_OVERRIDE = false;
     private static final String DEFAULT_SCHEMA_NAME = "reporting";
     private static final int DEFAULT_REQUEST_PAGE_SIZE = 10;
-    private static final String DEFAULT_LOGIN_ENDPOINT = "/api/auth/login";
-    private static final String DEFAULT_REFERSH_ENDPOINT = "/api/auth/token";
+    private static final String DEFAULT_LOGIN_ENDPOINT = "api/auth/login";
+    private static final String DEFAULT_REFERSH_ENDPOINT = "api/auth/token";
 
     private URL serverUrl;
     private CyodaAuthenticationType cyodaAuthenticationType = CyodaAuthenticationType.NONE;

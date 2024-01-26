@@ -34,6 +34,7 @@ public class ReportDefinitionHandle {
 
     public static final String REPORT_COLUMNS_COLUMN = "columns";
     public static final String REPORT_JSON_COLUMN = "json";
+    public static final String REPORT_ERROR_COLUMN = "error";
 
     public final String reportConfigId;
     public final List<CyodaColumnHandle> columns;

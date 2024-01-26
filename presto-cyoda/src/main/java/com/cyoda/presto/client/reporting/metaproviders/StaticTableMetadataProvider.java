@@ -77,7 +77,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
                 .collect(Collectors.toMap(StaticTable::getTableHandle, StaticTable::getTableMeta));
         apiCallStats = new ApiCallStats();
         if (!config.getLogApiCallStats()) {
-            standaloneTablesMap.remove(apiCallStats.getTableMeta().getTableName());
+            standaloneTablesMap.remove(apiCallStats.getTableHandle());
         }
         reportGroups = new ReportGroups();
         reportRows = new ReportRows();

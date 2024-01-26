@@ -13,6 +13,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
 import org.joda.beans.MetaProperty;
 
+import java.lang.reflect.GenericArrayType;
 import java.lang.reflect.ParameterizedType;
 import java.util.Arrays;
 import java.util.List;
@@ -46,7 +47,7 @@ public class CompoundDataType {
     }
 
     private static CompoundDataType of(ParameterizedType type, String columnName, BiFunction<Class<?>, String, DataType> dataTypeFinder){
-        DataType mainType = dataTypeFinder.apply((Class<?>) type.getRawType(), columnName);
+        DataType mainType = plainTypeToDataType(type.getRawType(), columnName, dataTypeFinder);
         DataType[] typeParams = new DataType[mainType.getTypeParametersCount()];
         if (mainType.getTypeParametersCount() > 0) {
             java.lang.reflect.Type[] actualTypeArguments = type.getActualTypeArguments();
@@ -54,10 +55,21 @@ public class CompoundDataType {
                 throw new IllegalArgumentException(String.format("Error creating column \"%s\"(%s): Not matching type arguments for type %s",
                         columnName, mainType, type));
             for (int i = 0; i < mainType.getTypeParametersCount(); i++) {
-                typeParams[i] = dataTypeFinder.apply((Class<?>) actualTypeArguments[i],columnName);
+                typeParams[i] = plainTypeToDataType(actualTypeArguments[i], columnName, dataTypeFinder);
             }
         }
         return new CompoundDataType(columnName, mainType, typeParams);
+    }
+
+    private static DataType plainTypeToDataType(java.lang.reflect.Type type, String columnName, BiFunction<Class<?>, String, DataType> dataTypeFinder){
+        if (type instanceof Class<?>){
+            return dataTypeFinder.apply((Class<?>) type, columnName);
+        } else if (type instanceof GenericArrayType) {
+            java.lang.reflect.Type elementType = ((GenericArrayType)type).getGenericComponentType();
+            if (byte.class.equals(elementType))
+                return DataType.BYTE_ARRAY;
+        }
+        throw new RuntimeException("Type " + type.getTypeName() + " is not supported");
     }
 
     public static CompoundDataType of(MetaProperty<?> metaProperty){

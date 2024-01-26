@@ -47,6 +47,7 @@ import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_USER_
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_COLUMNS_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_CREATION_DATE_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_DESCRIPTION_COLUMN;
+import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_ERROR_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_ID_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_JSON_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_SCHEMA_NAME_COLUMN;
@@ -144,7 +145,8 @@ public enum StaticTableMetadata {
         CREATION_DATE(6, REPORT_CREATION_DATE_COLUMN, LOCAL_DATE_TIME),
         UPDATE_DATE(7, REPORT_UPDATE_DATE_COLUMN, LOCAL_DATE_TIME),
         REPORT_COLUMNS(8, REPORT_COLUMNS_COLUMN, LIST, OBJECT),
-        REPORT_JSON(9, REPORT_JSON_COLUMN, STRING);;
+        REPORT_JSON(9, REPORT_JSON_COLUMN, STRING),
+        ERROR(10, REPORT_ERROR_COLUMN, STRING);
 
         private final int pos;
         private final String fieldName;
