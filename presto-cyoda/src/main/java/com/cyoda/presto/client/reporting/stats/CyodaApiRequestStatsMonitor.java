@@ -2,6 +2,7 @@ package com.cyoda.presto.client.reporting.stats;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.logging.SupplierLogger;
+import com.google.common.base.Joiner;
 
 import javax.inject.Inject;
 import java.util.Date;
@@ -26,6 +27,10 @@ public class CyodaApiRequestStatsMonitor {
     };
 
     public void registerApiCall(String queryId, Date callTime, String requestUrl, Map<String, Object> params, String apiHandlerName){
+        String strParams = Joiner.on(";").withKeyValueSeparator("=").join(params);
+        registerApiCall(queryId,callTime,requestUrl,strParams,apiHandlerName);
+    }
+    public void registerApiCall(String queryId, Date callTime, String requestUrl, String params, String apiHandlerName){
         if (!config.getLogApiCallStats()) return;
 
         String response = tempResponseHolder.remove(requestUrl);

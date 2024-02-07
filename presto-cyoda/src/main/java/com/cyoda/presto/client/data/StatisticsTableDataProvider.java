@@ -26,7 +26,7 @@ public class StatisticsTableDataProvider extends MultiConfigTableDataProvider<Di
     @Override
     public Iterable<DistributedReportInfoView> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
         SizeListener listener = SizeListener.NOT_LISTENING;
-        return statisticsApiHandler.asFlux(new ReportConfigKey(split.getReportConfigId(), split.getQueryId()), listener)
+        return statisticsApiHandler.asFlux(new ReportConfigKey(split.getCyodaTableMetaId(), split.getQueryId()), listener)
                 .subscribeOn(Schedulers.parallel())
                 .toIterable();
     }

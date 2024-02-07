@@ -167,7 +167,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler {
                 CompoundDataType dataType = CompoundDataType.of(colParType, columnName);
                 CyodaColumnHandle columnHandle = new CyodaColumnHandle(
                         removeClassNamesFromPath(columnName),
-                        dataType.toPrestoType(typeManager),
+                        null, dataType.toPrestoType(typeManager),
                         dataType,
                         position.getAndIncrement(),
                         true

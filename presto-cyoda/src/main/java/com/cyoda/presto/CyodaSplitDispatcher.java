@@ -6,7 +6,6 @@ import io.trino.spi.HostAddress;
 import io.trino.spi.Node;
 import io.trino.spi.NodeManager;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -29,9 +28,9 @@ public class CyodaSplitDispatcher {
     }
 
     private void dispatchToWorkers(CyodaSplit split){
-        if (!split.getAddresses().isEmpty() || split.getReportConfigId() == null) return;
+        if (!split.getAddresses().isEmpty() || split.getCyodaTableMetaId() == null) return;
         refreshBuckets();
-        int hash = Math.abs(Objects.hash(split.getReportConfigId(), split.getReportId(), split.getGroupJsonBase64(), split.getPage()));
+        int hash = Math.abs(Objects.hash(split.getCyodaTableMetaId(), split.getReportId(), split.getGroupJsonBase64(), split.getPage()));
         split.getAddresses().add(HostAddress.fromUri(nodeBuckets.get(hash % nodeBuckets.size()).getHttpUri()));
     }
 

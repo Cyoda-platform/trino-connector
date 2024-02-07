@@ -1,51 +1,175 @@
 package com.cyoda.presto.client.treenode;
 
+import com.cyoda.core.conditions.GroupCondition;
+import com.cyoda.plugins.ValueMaps;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.treenode.dto.EntityContentDto;
-import com.cyoda.presto.client.treenode.dto.list.EntityKeyDto;
-import com.cyoda.presto.client.treenode.dto.list.EntityListDto;
 import com.cyoda.presto.client.treenode.dto.schema.FieldConfigDto;
 import com.cyoda.presto.client.treenode.dto.schema.SchemaConfigDto;
 import com.cyoda.presto.client.treenode.dto.schema.TableConfigDto;
+import com.cyoda.presto.client.types.DataType;
 
-import java.util.Arrays;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Random;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TreeNodeTrinoAPIMock {
-    private UUID metaClassId = UUID.randomUUID();
-    private UUID eId1 = UUID.randomUUID();
-    private UUID eId2 = UUID.randomUUID();
+    private static final UUID profileClassId = UUID.randomUUID();
+    private static final UUID productClassId = UUID.randomUUID();
+    private static final Map<String, DataType> profileTypeRefs = profileMockTypeRefs();
+    private static final Map<String, DataType> productTypeRefs = productMockTypeRefs();
+
+    private static final Map<UUID, List<EntityContentDto>> generatedData = generateData();
+
+    private static Map<String, DataType> productMockTypeRefs() {
+        Map<String, DataType> typeReferences = new HashMap<>();
+        typeReferences.put("product.externalId", DataType.UUID_TYPE);
+        typeReferences.put("product.name", DataType.STRING);
+        typeReferences.put("product.description", DataType.STRING);
+        typeReferences.put("product.category", DataType.STRING);
+        typeReferences.put("product.price", DataType.BIG_DECIMAL);
+        typeReferences.put("product.currency", DataType.STRING); // Assuming no direct DataType for currency
+        typeReferences.put("product.stockQuantity", DataType.INTEGER);
+        typeReferences.put("product.availability", DataType.BOOLEAN);
+        typeReferences.put("product.creationDate", DataType.LOCAL_DATE);
+        typeReferences.put("product.lastUpdateDateTime", DataType.LOCAL_DATE_TIME);
+        typeReferences.put("product.dimensions.length", DataType.DOUBLE);
+        typeReferences.put("product.dimensions.width", DataType.DOUBLE);
+        typeReferences.put("product.dimensions.height", DataType.DOUBLE);
+        typeReferences.put("product.weight", DataType.DOUBLE);
+        typeReferences.put("product.tags", DataType.STRING); // Could be an array of strings, but simplified here
+        typeReferences.put("product.rating", DataType.DOUBLE);
+        return typeReferences;
+    }
+    private static Map<String, DataType> profileMockTypeRefs(){
+        Map<String, DataType> typeReferences = new HashMap<>();
+
+        typeReferences.put("profile.name", DataType.STRING);
+        typeReferences.put("profile.age", DataType.INTEGER);
+        typeReferences.put("profile.email", DataType.STRING);
+        typeReferences.put("profile.birthDate", DataType.LOCAL_DATE);
+        typeReferences.put("profile.signupDateTime", DataType.LOCAL_DATE_TIME);
+        typeReferences.put("profile.lastLoginTime", DataType.LOCAL_TIME);
+        typeReferences.put("profile.isActive", DataType.BOOLEAN);
+        typeReferences.put("profile.balance", DataType.BIG_DECIMAL);
+        typeReferences.put("profile.heightInMeters", DataType.FLOAT);
+        typeReferences.put("profile.weight", DataType.DOUBLE);
+        typeReferences.put("profile.numberOfLogins", DataType.LONG);
+        typeReferences.put("profile.preferences.language", DataType.LOCALE);
+        typeReferences.put("profile.preferences.timezone", DataType.STRING); // Assuming no direct DataType for timezone
+        typeReferences.put("profile.address.country", DataType.STRING);
+        typeReferences.put("profile.address.city", DataType.STRING);
+        typeReferences.put("profile.address.postalCode", DataType.INTEGER);
+        typeReferences.put("profile.verificationStatus", DataType.BOOLEAN);
+        typeReferences.put("profile.uuid", DataType.UUID_TYPE);
+        return typeReferences;
+    }
     public List<SchemaConfigDto> getSchemas(AuthContext user){
         return Collections.singletonList(
                 new SchemaConfigDto("tree_node_schema", //maybe hashmap
-                        Collections.singletonList(new TableConfigDto("table", metaClassId,
-                                null, null))) //fields are filled at other point
+                        List.of(new TableConfigDto("profiles", profileClassId,
+                                null, null) //fields are filled at other point
+                                , new TableConfigDto("products", productClassId, null, null)))
         );
+    }
+    private FieldConfigDto fromTypeRef(String name, DataType type){
+        String trinoFieldName = name.substring(name.lastIndexOf(".")+1);
+        return new FieldConfigDto(trinoFieldName, name, type.toString());
     }
     public TableConfigDto getMetadata(UUID metadataClassId){
-        return new TableConfigDto(null, metaClassId, null,
-                Arrays.asList(new FieldConfigDto("strfield", "field1", "STRING"),
-                        new FieldConfigDto("intfield", "field2", "INTEGER")));
-    }
-    public EntityListDto getEntityList(UUID metadataClassId, long lastLoadTime){
-        return new EntityListDto(new Date(), Arrays.asList(
-                new EntityKeyDto(eId1, new Date()),
-                new EntityKeyDto(eId2, new Date())
-        ));
+        if (metadataClassId.equals(profileClassId))
+            return new TableConfigDto(null, profileClassId, null,
+                profileTypeRefs.entrySet().stream().map((e)-> fromTypeRef(e.getKey(), e.getValue()))
+                        .collect(Collectors.toList()));
+        if (metadataClassId.equals(productClassId))
+            return new TableConfigDto(null, productClassId, null,
+                    productTypeRefs.entrySet().stream().map((e)-> fromTypeRef(e.getKey(), e.getValue()))
+                            .collect(Collectors.toList()));
+        return null;
     }
 
-    public List<EntityContentDto> getEntities(UUID metadataClassId, List<UUID> ids){
-        Map<String, String> mockContents = new HashMap<>();
-        mockContents.put("field1", "val1");
-        mockContents.put("field2", "123");
-        return Arrays.asList(
-                new EntityContentDto(eId1, null, new Date(), mockContents),
-                new EntityContentDto(eId2, null, new Date(), mockContents)
-        );
+    public Iterable<EntityContentDto> getData(UUID metaClassId, GroupCondition condition){
+
+        return generatedData.get(metaClassId);
+    }
+
+    private static Map<UUID, List<EntityContentDto>> generateData(){
+        Map<UUID, List<EntityContentDto>> result = new HashMap<>();
+        UUID[] profileIds = new UUID[10];
+        List<EntityContentDto> profiles = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            UUID profileId = UUID.randomUUID();
+            profileIds[i] = profileId;
+            ValueMaps vm = new ValueMaps();
+            populateValueMapsSimple(vm, profileTypeRefs);
+            EntityContentDto contentDto = new EntityContentDto(profileId, null, new Date(), vm.consolidateMaps());
+            profiles.add(contentDto);
+        }
+        result.put(profileClassId, profiles);
+        List<EntityContentDto> products = new ArrayList<>();
+        for (int i = 0; i < 50; i++) {
+            ValueMaps vm = new ValueMaps();
+            populateValueMapsSimple(vm, productTypeRefs);
+            EntityContentDto contentDto = new EntityContentDto(UUID.randomUUID(),
+                    profileIds[i/5], new Date(), vm.consolidateMaps());
+            products.add(contentDto);
+        }
+        result.put(productClassId, products);
+        return result;
+    }
+
+    private static void populateValueMapsSimple(ValueMaps valueMaps, Map<String, DataType> typeReferences) {
+        Random random = new Random();
+        typeReferences.forEach((path, type) -> {
+            switch (type) {
+                case STRING -> valueMaps.getStrings().put(path, "Sample String for " + path);
+                case INTEGER -> valueMaps.getInts().put(path, random.nextInt());
+                case LOCAL_DATE -> valueMaps.getLocalDates().put(path, LocalDate.now());
+                case LOCAL_DATE_TIME -> valueMaps.getLocalDateTimes().put(path, LocalDateTime.now());
+                case LOCAL_TIME -> valueMaps.getLocalTimes().put(path, LocalTime.now());
+//                case LOCAL_DATE ->
+//                        valueMaps.getLocalDates().put(path, LocalDate.now().minusDays(random.nextInt(365 * 2)));
+//                case LOCAL_DATE_TIME ->
+//                        valueMaps.getLocalDateTimes().put(path, LocalDateTime.now().minusHours(random.nextInt(24 * 30)));
+//                case LOCAL_TIME ->
+//                        valueMaps.getLocalTimes().put(path, LocalTime.now().minusMinutes(random.nextInt(60)));
+                case BOOLEAN -> valueMaps.getBooleans().put(path, random.nextBoolean());
+                case BIG_DECIMAL ->
+                        valueMaps.getBigDecimals().put(path, new BigDecimal(Double.toString(random.nextDouble() * 10000)).setScale(2, BigDecimal.ROUND_HALF_UP));
+                case FLOAT -> valueMaps.getFloats().put(path, random.nextFloat() * 100);
+                case DOUBLE -> valueMaps.getDoubles().put(path, random.nextDouble() * 100);
+                case LONG -> valueMaps.getLongs().put(path, random.nextLong());
+                case LOCALE -> {
+                    Locale[] availableLocales = Locale.getAvailableLocales();
+                    valueMaps.getLocales().put(path, availableLocales[random.nextInt(availableLocales.length)]);
+                }
+                case UUID_TYPE -> valueMaps.getUuids().put(path, UUID.randomUUID());
+
+//                case INTEGER -> valueMaps.getInts().put(path, 42);
+//                case LOCAL_DATE -> valueMaps.getLocalDates().put(path, LocalDate.now());
+//                case LOCAL_DATE_TIME -> valueMaps.getLocalDateTimes().put(path, LocalDateTime.now());
+//                case LOCAL_TIME -> valueMaps.getLocalTimes().put(path, LocalTime.now());
+//                case BOOLEAN -> valueMaps.getBooleans().put(path, true);
+//                case BIG_DECIMAL -> valueMaps.getBigDecimals().put(path, new BigDecimal("123.45"));
+//                case FLOAT -> valueMaps.getFloats().put(path, 12.34f);
+//                case DOUBLE -> valueMaps.getDoubles().put(path, 123.456);
+//                case LONG -> valueMaps.getLongs().put(path, 123456789L);
+//                case LOCALE -> valueMaps.getLocales().put(path, Locale.US);
+//                case UUID_TYPE -> valueMaps.getUuids().put(path, UUID.randomUUID());
+
+            }
+        });
     }
 }

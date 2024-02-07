@@ -77,6 +77,10 @@ public class TableDataProviderProvider {
                 LOG_TABLE,
                 new LogTableDataProvider(nodeManager)
         );
+        providerMap.put(
+                TREE_NODE_TABLE,
+                new TreeNodeTableDataProvider(statsMonitor)
+        );
     }
 
     public TableDataProvider<?> getDataProvider(CyodaTableType tableType){

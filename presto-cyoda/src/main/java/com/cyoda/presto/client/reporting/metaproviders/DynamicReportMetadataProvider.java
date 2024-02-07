@@ -112,7 +112,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
             List<CyodaColumnHandle> columns = new ArrayList<>(List.copyOf(staticTableMetadataProvider.getReportRows().getTableMeta().getProjectedColumns()));
             columns.addAll(definitionHandle.getColumns());
             columns.sort(Comparator.comparingInt(CyodaColumnHandle::getOrdinalPosition));
-            return new CyodaTableMeta(connectorId.toString(), tableName.getSchemaName(), tableName.getTableName(),
+            return new CyodaTableMeta(tableName.getSchemaName(), tableName.getTableName(),
                     columns, CyodaTableType.DATA, configId, definitionHandle.getDescription(),
                     !definitionHandle.getGroupingColumns().isEmpty(),
                     !definitionHandle.isSingleton());
@@ -141,7 +141,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
         }
         public static TableMetaCacheKey of(CyodaTableHandle handle) {
             return new TableMetaCacheKey(
-                    handle.getReportConfigId(), handle.getCreateDate(), handle.getLastUpdateDate()
+                    handle.getTableMetaId(), handle.getCreateDate(), handle.getLastUpdateDate()
             );
         }
 

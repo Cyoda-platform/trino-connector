@@ -69,6 +69,8 @@ public class CyodaConfig {
     private String anonymousRefreshToken;
     private String anonymousUserName;
 
+    private int predicatePushdownThreshold;
+
     public CyodaConfig() {
         setDefaults();
     }
@@ -410,5 +412,14 @@ public class CyodaConfig {
     @Config("cyoda.cache.groups.haa")
     public void setCacheReportGroupsHoursAfterAccess(long cacheReportGroupsHoursAfterAccess) {
         this.cacheReportGroupsHoursAfterAccess = cacheReportGroupsHoursAfterAccess;
+    }
+
+    public int getPredicatePushdownThreshold() {
+        return predicatePushdownThreshold;
+    }
+
+    @Config("cyoda.presto.tree-node.pushdown-threshold")
+    public void setPredicatePushdownThreshold(int predicatePushdownThreshold) {
+        this.predicatePushdownThreshold = predicatePushdownThreshold;
     }
 }

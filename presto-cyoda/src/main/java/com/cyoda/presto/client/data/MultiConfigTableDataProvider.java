@@ -22,7 +22,7 @@ public abstract class MultiConfigTableDataProvider<T> extends TableDataProvider<
     public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
         SizeListener listener = SizeListener.NOT_LISTENING;
         return reportsApiHandler.asFlux(new ReportListKey(authContext, queryId), listener)
-                .map(confView -> CyodaSplit.configSplit(tableHandle.getTableName(), confView.getId(), queryId))
+                .map(confView -> CyodaSplit.configSplit(confView.getId(), queryId))
                 .subscribeOn(Schedulers.parallel())
                 .collectList()
                 .block();

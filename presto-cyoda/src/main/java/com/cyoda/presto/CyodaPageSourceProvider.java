@@ -63,8 +63,11 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
             DynamicFilter dynamicFilter
     ) {
         requireNonNull(split, "split is null");
-        CyodaTableMeta cyodaTableMeta = cyodaMetadata.getTableMeta((CyodaTableHandle) tableHandle);
-        Preconditions.checkArgument(connectorId.equals(cyodaTableMeta.getConnectorId()),"tableHandle not for this connectorId");
+        CyodaTableHandle handle = (CyodaTableHandle) tableHandle;
+        CyodaTableMeta cyodaTableMeta = cyodaMetadata.getTableMeta(handle);
+        if (handle.getTableType().isPushdownSupported()){
+            handle.setConstraint(handle.getConstraint().intersect(dynamicFilter.getCurrentPredicate()));
+        }
         List<CyodaColumnHandle> cyodaColumns = columns.stream().map(CyodaColumnHandle.class::cast).collect(Collectors.toList());
 
         return dataProviderProvider

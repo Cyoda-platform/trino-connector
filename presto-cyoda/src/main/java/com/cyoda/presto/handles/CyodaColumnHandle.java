@@ -39,6 +39,7 @@ import static java.util.Objects.requireNonNull;
 
 public class CyodaColumnHandle implements ColumnHandle {
     private final String columnName;
+    private final String externalName;
     private final Type columnType;
     private final int ordinalPosition;
     private final CompoundDataType dataType;
@@ -51,12 +52,14 @@ public class CyodaColumnHandle implements ColumnHandle {
     @JsonCreator
     public CyodaColumnHandle(
             @JsonProperty("columnName") String columnName,
+            @JsonProperty("externalName") String externalName,
             @JsonProperty("columnType") Type columnType,
             @JsonProperty("dataType") CompoundDataType dataType,
             @JsonProperty("ordinalPosition") int ordinalPosition,
             @JsonProperty("isNullable") boolean isNullable
     ) {
         this.columnName = requireNonNull(columnName, "columnName is null");
+        this.externalName = externalName;
         this.columnType = requireNonNull(columnType, "columnType is null");
         this.dataType = dataType;
         this.ordinalPosition = ordinalPosition;
@@ -70,7 +73,7 @@ public class CyodaColumnHandle implements ColumnHandle {
             DataType dataType,
             int ordinalPosition
     ) {
-        this(columnName, columnType, new CompoundDataType(columnName,dataType), ordinalPosition, true);
+        this(columnName, null, columnType, new CompoundDataType(columnName,dataType), ordinalPosition, true);
     }
 
     public PrestoValueConverter<?> getConverter(){
@@ -118,6 +121,11 @@ public class CyodaColumnHandle implements ColumnHandle {
     @JsonProperty
     public String getColumnName() {
         return columnName;
+    }
+
+    @JsonProperty
+    public String getExternalName() {
+        return externalName;
     }
 
     @JsonProperty

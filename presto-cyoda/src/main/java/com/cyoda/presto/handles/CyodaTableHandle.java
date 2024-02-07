@@ -2,9 +2,11 @@ package com.cyoda.presto.handles;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.SchemaTableName;
 import com.google.common.base.Joiner;
+import io.trino.spi.predicate.TupleDomain;
 
 import java.util.Objects;
 
@@ -14,9 +16,10 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     private final String schemaName;
     private final String tableName;
     private final CyodaTableType tableType;
-    private final String reportConfigId;
+    private final String tableMetaId;
     private final long createDate;
     private final long lastUpdateDate;
+    private TupleDomain<ColumnHandle> constraint;
 
 
     //    public static CyodaTableHandle of(SchemaTableName schemaTableName){
@@ -27,18 +30,21 @@ public class CyodaTableHandle implements ConnectorTableHandle {
             @JsonProperty("schemaName") String schemaName,
             @JsonProperty("tableName") String tableName,
             @JsonProperty("tableType") CyodaTableType tableType,
-            @JsonProperty("reportConfigId") String reportConfigId,
+            @JsonProperty("tableMetaId") String tableMetaId,
             @JsonProperty("createDate") long createDate,
-            @JsonProperty("lastUpdateDate") long lastUpdateDate) {
+            @JsonProperty("lastUpdateDate") long lastUpdateDate,
+            @JsonProperty("constraint")TupleDomain<ColumnHandle> constraint) {
         this.schemaName = requireNonNull(schemaName, "schemaName is null");
         this.tableName = requireNonNull(tableName, "tableName is null");
-        this.reportConfigId = reportConfigId;
+        this.tableMetaId = tableMetaId;
         this.tableType = tableType;
         this.createDate = createDate;
         this.lastUpdateDate = lastUpdateDate;
+        this.constraint = constraint;
     }
+    //for static tables
     public CyodaTableHandle(String schemaName, String tableName, CyodaTableType tableType){
-        this(schemaName, tableName, tableType, null, 0,0);
+        this(schemaName, tableName, tableType, null, 0,0, null);
     }
 
 
@@ -58,8 +64,8 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     }
 
     @JsonProperty
-    public String getReportConfigId() {
-        return reportConfigId;
+    public String getTableMetaId() {
+        return tableMetaId;
     }
 
     @JsonProperty
@@ -70,6 +76,14 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     @JsonProperty
     public long getLastUpdateDate() {
         return lastUpdateDate;
+    }
+
+    @JsonProperty
+    public TupleDomain<ColumnHandle> getConstraint() {
+        return constraint;
+    }
+    public void setConstraint(TupleDomain<ColumnHandle> constraint) {
+        this.constraint = constraint;
     }
 
     public SchemaTableName toSchemaTableName() {

@@ -46,7 +46,7 @@ public final class DataRequestKey {
                 split.getQueryId(),
                 tableHandle,
                 split,
-                split.getReportConfigId(),
+                split.getCyodaTableMetaId(),
                 split.getReportId(),
                 split.getGroupingVersion(),
                 split.getGroupJsonBase64(),

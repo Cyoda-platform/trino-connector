@@ -190,7 +190,7 @@ public enum StaticTableMetadata {
         CALL_TIME(3, DATE),
         DURATION_MILLIS(5, LONG),
         API_HANDLER(6, STRING),
-        REQUEST_PARAMS(7, DataType.MAP, STRING, STRING),
+        REQUEST_PARAMS(7, STRING),
         REQUEST_URL(8, STRING),
         RESPONSE(9, STRING);
 

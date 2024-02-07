@@ -25,11 +25,11 @@ public class EntityContentDto implements Bean {
     @PropertyDefinition
     private Date lastUpdateDate;
     @PropertyDefinition
-    private Map<String, String> contents;
+    private Map<String, Object> contents;
 
     public EntityContentDto(){}
 
-    public EntityContentDto(UUID id, UUID parentId, Date lastUpdateDate, Map<String, String> contents) {
+    public EntityContentDto(UUID id, UUID parentId, Date lastUpdateDate, Map<String, Object> contents) {
         this.id = id;
         this.parentId = parentId;
         this.lastUpdateDate = lastUpdateDate;
@@ -133,7 +133,7 @@ public class EntityContentDto implements Bean {
      * Gets the contents.
      * @return the value of the property
      */
-    public Map<String, String> getContents() {
+    public Map<String, Object> getContents() {
         return contents;
     }
 
@@ -141,7 +141,7 @@ public class EntityContentDto implements Bean {
      * Sets the contents.
      * @param contents  the new value of the property
      */
-    public void setContents(Map<String, String> contents) {
+    public void setContents(Map<String, Object> contents) {
         this.contents = contents;
     }
 
@@ -344,7 +344,7 @@ public class EntityContentDto implements Bean {
                     ((EntityContentDto) bean).setLastUpdateDate((Date) newValue);
                     return;
                 case -567321830:  // contents
-                    ((EntityContentDto) bean).setContents((Map<String, String>) newValue);
+                    ((EntityContentDto) bean).setContents((Map<String, Object>) newValue);
                     return;
             }
             super.propertySet(bean, propertyName, newValue, quiet);

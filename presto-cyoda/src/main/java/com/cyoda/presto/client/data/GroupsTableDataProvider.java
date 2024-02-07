@@ -58,10 +58,10 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
     @Override
     public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
         boolean hasReportIdConstraint = hasConstraint(reportIdColumn, constraint);
-        return reportHistoryApiHandler.getByKey(new ReportConfigKey(tableHandle.getReportConfigId(), queryId))
+        return reportHistoryApiHandler.getByKey(new ReportConfigKey(tableHandle.getTableMetaId(), queryId))
                 .stream()
                 .filter(fieldsView -> !hasReportIdConstraint || acceptVal(reportIdColumn, fieldsView.getReportId(), constraint))
-                .map(fieldsView -> new CyodaSplit(queryId, tableHandle.getTableName(), tableHandle.getReportConfigId(), fieldsView.getReportId(), fieldsView.getGroupingVersion(), null))
+                .map(fieldsView -> new CyodaSplit(queryId, tableHandle.getTableMetaId(), fieldsView.getReportId(), fieldsView.getGroupingVersion(), null))
                 .toList();
     }
 

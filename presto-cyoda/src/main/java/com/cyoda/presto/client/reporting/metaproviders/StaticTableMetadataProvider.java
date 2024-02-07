@@ -14,7 +14,6 @@ import javax.inject.Inject;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -144,7 +143,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
                 .sorted(Comparator.comparingInt(ColumnDefinition::getPos))
                 .map(fieldDef -> new CyodaColumnHandle(
                         fieldDef.getFieldName(),
-                        fieldDef.getDataType().toPrestoType(typeManager),
+                        null, fieldDef.getDataType().toPrestoType(typeManager),
                         fieldDef.getDataType(),
                         fieldDef.getPos(),
                         true
@@ -164,7 +163,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
 
         private CyodaTableMeta createTableMeta(StaticTableMetadata tableDefinition) {
             List<CyodaColumnHandle> columnHandles = getCyodaColumnHandles(tableDefinition);
-            return new CyodaTableMeta(connectorId.toString(), config.getSchemaName(),
+            return new CyodaTableMeta(config.getSchemaName(),
                     getTableName(tableDefinition),
                     columnHandles, tableDefinition.getTableType(),
                     null, tableDefinition.getDescription(), false, false);
