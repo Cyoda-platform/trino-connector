@@ -62,7 +62,7 @@ public class CyodaSplitManager implements ConnectorSplitManager {
         CyodaTableHandle tableHandle = (CyodaTableHandle) connectorTableHandle;
 
         if (tableHandle.getTableType().isPushdownSupported()){
-            tableHandle.setConstraint(tableHandle.getConstraint().intersect(dynamicFilter.getCurrentPredicate()));
+            tableHandle.setConstraint(tableHandle.getConstraint().intersect(dynamicFilter.getCurrentPredicate()).simplify());
         }
 
         if (constraint.predicate().isEmpty() && !constraint.getSummary().isAll()){

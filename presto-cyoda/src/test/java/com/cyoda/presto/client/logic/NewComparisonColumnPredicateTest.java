@@ -133,7 +133,7 @@ public class NewComparisonColumnPredicateTest {
     }
 
     private static CyodaColumnHandle newCyodaColumnHandle(String name, Type type, DataType dataType, int pos, boolean nullable){
-        return new CyodaColumnHandle(name, null, type, new CompoundDataType(name, dataType), pos, nullable);
+        return new CyodaColumnHandle(name, type, new CompoundDataType(name, dataType), pos, nullable);
     }
 
     private <T extends Comparable<T>> void testMerge(ColumnPredicate<T> a,

@@ -143,7 +143,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
                 .sorted(Comparator.comparingInt(ColumnDefinition::getPos))
                 .map(fieldDef -> new CyodaColumnHandle(
                         fieldDef.getFieldName(),
-                        null, fieldDef.getDataType().toPrestoType(typeManager),
+                        fieldDef.getDataType().toPrestoType(typeManager),
                         fieldDef.getDataType(),
                         fieldDef.getPos(),
                         true

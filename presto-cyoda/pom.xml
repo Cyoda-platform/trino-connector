@@ -59,6 +59,23 @@
             <artifactId>spring-web</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.rsocket</groupId>
+            <artifactId>rsocket-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.rsocket</groupId>
+            <artifactId>rsocket-transport-netty</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-messaging</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-webflux</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.joda</groupId>
             <artifactId>joda-beans</artifactId>
         </dependency>
@@ -143,18 +160,10 @@
             <groupId>io.trino</groupId>
             <artifactId>trino-main</artifactId>
         </dependency>
-
-<!--        <dependency>-->
-<!--            <groupId>io.trino</groupId>-->
-<!--            <artifactId>trino-common</artifactId>-->
-<!--            <scope>provided</scope>-->
-<!--        </dependency>-->
-
-<!--        <dependency>-->
-<!--            <groupId>io.airlift.drift</groupId>-->
-<!--            <artifactId>drift-api</artifactId>-->
-<!--            <scope>provided</scope>-->
-<!--        </dependency>-->
+        <dependency>
+            <groupId>io.trino</groupId>
+            <artifactId>trino-memory</artifactId>
+        </dependency>
 
         <dependency>
             <groupId>io.airlift</groupId>

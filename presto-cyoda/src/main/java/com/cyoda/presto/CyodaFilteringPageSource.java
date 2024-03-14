@@ -123,7 +123,7 @@ public class CyodaFilteringPageSource<T>
                 final T nextItem = responseIterator.next();
                 int totalRows = totalRowNumber.incrementAndGet();
                 int i = rowNumber.incrementAndGet();
-                LOG.debug("Retrieved row %s / %s (Total) with %s",()->i,()->totalRows,()->nextItem);
+//                LOG.debug("Retrieved row %s / %s (Total) with %s",()->i,()->totalRows,()->nextItem);
                 processNext(nextItem);
                 pageBuilder.declarePosition();
                 if (pageBuilder.isFull()) {

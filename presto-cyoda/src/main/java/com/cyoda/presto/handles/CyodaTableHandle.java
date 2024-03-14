@@ -17,6 +17,7 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     private final String tableName;
     private final CyodaTableType tableType;
     private final String tableMetaId;
+//    private final String subTableId;
     private final long createDate;
     private final long lastUpdateDate;
     private TupleDomain<ColumnHandle> constraint;
@@ -31,12 +32,14 @@ public class CyodaTableHandle implements ConnectorTableHandle {
             @JsonProperty("tableName") String tableName,
             @JsonProperty("tableType") CyodaTableType tableType,
             @JsonProperty("tableMetaId") String tableMetaId,
+//            @JsonProperty("subTableId") String subTableId,
             @JsonProperty("createDate") long createDate,
             @JsonProperty("lastUpdateDate") long lastUpdateDate,
             @JsonProperty("constraint")TupleDomain<ColumnHandle> constraint) {
         this.schemaName = requireNonNull(schemaName, "schemaName is null");
         this.tableName = requireNonNull(tableName, "tableName is null");
         this.tableMetaId = tableMetaId;
+//        this.subTableId = subTableId;
         this.tableType = tableType;
         this.createDate = createDate;
         this.lastUpdateDate = lastUpdateDate;
@@ -67,6 +70,11 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     public String getTableMetaId() {
         return tableMetaId;
     }
+//
+//    @JsonProperty
+//    public String getSubTableId() {
+//        return subTableId;
+//    }
 
     @JsonProperty
     public long getCreateDate() {

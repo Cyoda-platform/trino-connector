@@ -39,7 +39,7 @@ public class LogTableDataProvider extends VirtualTableDataProvider<LogRecord> {
                 return thisNode.getNodeIdentifier();
             }
             case NODE_ADDRESS -> {
-                return thisNode.getHttpUri();
+                return thisNode.getHttpUri().toString();
             }
             case DATE -> {
                 return Date.from(entity.getInstant());

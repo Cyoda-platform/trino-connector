@@ -32,6 +32,11 @@ import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvid
 import com.cyoda.presto.client.reporting.metaproviders.TreeNodeMetadataProvider;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
+import com.cyoda.presto.client.treenode.CyodaRSocketClient;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import io.trino.spi.NodeManager;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.type.Type;
@@ -41,6 +46,9 @@ import com.fasterxml.jackson.databind.deser.std.FromStringDeserializer;
 import com.google.inject.Binder;
 import com.google.inject.Module;
 import com.google.inject.Scopes;
+import org.springframework.http.codec.json.Jackson2JsonDecoder;
+import org.springframework.http.codec.json.Jackson2JsonEncoder;
+import org.springframework.messaging.rsocket.RSocketStrategies;
 
 import javax.inject.Inject;
 
@@ -87,6 +95,8 @@ public class CyodaModule implements Module {
         binder.bind(RunReportApiHandler.class).in(Scopes.SINGLETON);
         binder.bind(DeleteReportsApiHandler.class).in(Scopes.SINGLETON);
 
+        binder.bind(CyodaRSocketClient.class).in(Scopes.SINGLETON);
+
         binder.bind(ReportGroupsApiHandler.class).in(Scopes.SINGLETON);
         binder.bind(ReportRowsApiHandler.class).in(Scopes.SINGLETON);
 
@@ -103,6 +113,17 @@ public class CyodaModule implements Module {
 
         binder.bind(RestTemplateCustomizer.class).in(Scopes.SINGLETON);
 
+    }
+
+    @Provides
+    @Singleton
+    RSocketStrategies rSocketStrategies() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true);
+        return RSocketStrategies.builder()
+                .encoder(new Jackson2JsonEncoder(objectMapper))
+                .decoder(new Jackson2JsonDecoder(objectMapper))
+                .build();
     }
 
     public static final class TypeDeserializer

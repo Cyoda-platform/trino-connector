@@ -40,7 +40,7 @@ public class ApiCallStatsDataProvider extends VirtualTableDataProvider<ApiReques
                 return thisNode.getNodeIdentifier();
             }
             case NODE_ADDRESS -> {
-                return thisNode.getHttpUri();
+                return thisNode.getHttpUri().toString();
             }
             case CALL_TIME -> {
                 return entity.callTime();
