@@ -95,6 +95,7 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
                                             .anyMatch(row -> acceptVal(rowNumberColumn, row, constraint)))
                             .map(page -> new CyodaSplit(
                                     queryId,
+                                    authContext.getUserId(),
                                     new ArrayList<>(),
                                     false,
                                     tableHandle.getTableMetaId(),

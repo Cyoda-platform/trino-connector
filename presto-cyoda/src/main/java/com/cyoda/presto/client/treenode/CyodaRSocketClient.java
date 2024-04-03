@@ -119,10 +119,10 @@ public class CyodaRSocketClient {
                     .retrieveFlux(SchemaConfigDto.class).collectList().block();
         }
 
-        public TableConfigDto getMetadata(String metadataClassId) {
-            return rSocketRequester.route("treeNode.getMetadata")
-                    .data(metadataClassId)
-                    .retrieveMono(TableConfigDto.class).block();
+        public SchemaConfigDto getSchema(String schemaName) {
+            return rSocketRequester.route("treeNode.getSchema")
+                    .data(schemaName)
+                    .retrieveMono(SchemaConfigDto.class).block();
         }
 
         public Iterable<EntityContentDto> getData(DataRequestDto dataRequest) {

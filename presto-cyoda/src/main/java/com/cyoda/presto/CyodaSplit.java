@@ -36,6 +36,7 @@ import static java.util.Objects.requireNonNull;
 
 public class CyodaSplit implements ConnectorSplit {
     private final String queryId;
+    private final String userId;
     private final List<HostAddress> addresses;
 
     private final boolean assignToCoordinator;
@@ -57,8 +58,9 @@ public class CyodaSplit implements ConnectorSplit {
     private TupleDomain<ColumnHandle> constraint;
 
     @JsonCreator
-    public CyodaSplit(String queryId, List<HostAddress> addresses, boolean assignToCoordinator, String cyodaTableMetaId, String reportId, UUID groupingVersion, String groupJsonBase64, int page, int pageSize, Map<String, ?> customData, TupleDomain<ColumnHandle> constraint) {
+    public CyodaSplit(String queryId, String userId, List<HostAddress> addresses, boolean assignToCoordinator, String cyodaTableMetaId, String reportId, UUID groupingVersion, String groupJsonBase64, int page, int pageSize, Map<String, ?> customData, TupleDomain<ColumnHandle> constraint) {
         this.queryId = queryId;
+        this.userId = userId;
         this.addresses = addresses;
         this.assignToCoordinator = assignToCoordinator;
         this.cyodaTableMetaId = cyodaTableMetaId;
@@ -71,15 +73,15 @@ public class CyodaSplit implements ConnectorSplit {
         this.constraint = constraint;
     }
 
-    public CyodaSplit(String queryId, String cyodaTableMetaId, String reportId, UUID groupingVersion, String groupJsonBase64){
+    public CyodaSplit(String queryId, String userId, String cyodaTableMetaId, String reportId, UUID groupingVersion, String groupJsonBase64){
         this(queryId,
-                cyodaTableMetaId,
+                userId, cyodaTableMetaId,
                 reportId,
                 groupingVersion,
                 groupJsonBase64, null);
     }
-    public CyodaSplit(String queryId, String cyodaTableMetaId, String reportId, UUID groupingVersion, String groupJsonBase64, TupleDomain<ColumnHandle> constraint){
-        this(queryId,
+    public CyodaSplit(String queryId, String userId, String cyodaTableMetaId, String reportId, UUID groupingVersion, String groupJsonBase64, TupleDomain<ColumnHandle> constraint){
+        this(queryId, userId,
                 new ArrayList<>(),
                 true,
                 cyodaTableMetaId,
@@ -90,9 +92,9 @@ public class CyodaSplit implements ConnectorSplit {
                 Integer.MAX_VALUE, null, constraint);
     }
 
-    public static CyodaSplit emptyCoordinatorSplit(String queryId, Map<String, ?> customData){
+    public static CyodaSplit emptyCoordinatorSplit(String queryId, String userId, Map<String, ?> customData){
         return new CyodaSplit(queryId,
-                new ArrayList<>(),
+                userId, new ArrayList<>(),
                 true,
                 null,
                 null,
@@ -101,9 +103,9 @@ public class CyodaSplit implements ConnectorSplit {
                 0,
                 Integer.MAX_VALUE, customData, null);
     }
-    public static CyodaSplit configSplit(String reportConfigId, String queryId){
+    public static CyodaSplit configSplit(String reportConfigId, String userId, String queryId){
         return new CyodaSplit(queryId,
-                new ArrayList<>(),
+                userId, new ArrayList<>(),
                 false,
                 reportConfigId,
                 null,
@@ -112,9 +114,9 @@ public class CyodaSplit implements ConnectorSplit {
                 0, Integer.MAX_VALUE, null, null);
     }
 
-    public static CyodaSplit addressedEmptySplit(String queryId, URI nodeAddress){
+    public static CyodaSplit addressedEmptySplit(String queryId, String userId, URI nodeAddress){
         return new CyodaSplit(queryId,
-                Collections.singletonList(HostAddress.fromUri(nodeAddress)),
+                userId, Collections.singletonList(HostAddress.fromUri(nodeAddress)),
                 false,
                 null,
                 null,
@@ -126,6 +128,11 @@ public class CyodaSplit implements ConnectorSplit {
     @JsonProperty
     public String getQueryId() {
         return queryId;
+    }
+
+    @JsonProperty
+    public String getUserId() {
+        return userId;
     }
 
     @JsonProperty

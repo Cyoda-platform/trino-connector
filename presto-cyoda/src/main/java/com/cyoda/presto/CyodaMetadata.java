@@ -294,7 +294,7 @@ public class CyodaMetadata implements ConnectorMetadata {
         try {
             Map<SchemaTableName, CyodaTableHandle> tableMap = getTableHandleMap(session);
             return filterSchema.map(s ->
-                    Stream.of(tableMap.keySet(), rSocketClient.view().getViews(session.getUser()).keySet()).flatMap(Collection::stream)
+                    Stream.of(tableMap.keySet(), rSocketClient.view().getViews(auth.fromSession(session).getUserId()).keySet()).flatMap(Collection::stream)
                             .filter(e -> s.equals(e.getSchemaName()))
                             .collect(Collectors.toList()))
                     .orElseGet(() -> ImmutableList.copyOf(tableMap.keySet()));
@@ -334,7 +334,7 @@ public class CyodaMetadata implements ConnectorMetadata {
     @Override
     public synchronized List<SchemaTableName> listViews(ConnectorSession session, Optional<String> schemaName)
     {
-        return rSocketClient.view().getViews(session.getUser()).keySet().stream()
+        return rSocketClient.view().getViews(auth.fromSession(session).getUserId()).keySet().stream()
                 .filter(viewName -> schemaName.map(viewName.getSchemaName()::equals).orElse(true))
                 .collect(toImmutableList());
     }
@@ -342,12 +342,12 @@ public class CyodaMetadata implements ConnectorMetadata {
     public synchronized Map<SchemaTableName, ConnectorViewDefinition> getViews(ConnectorSession session, Optional<String> schemaName)
     {
         SchemaTablePrefix prefix = schemaName.map(SchemaTablePrefix::new).orElseGet(SchemaTablePrefix::new);
-        return ImmutableMap.copyOf(Maps.filterKeys(rSocketClient.view().getViews(session.getUser()), prefix::matches));
+        return ImmutableMap.copyOf(Maps.filterKeys(rSocketClient.view().getViews(auth.fromSession(session).getUserId()), prefix::matches));
     }
     @Override
     public synchronized Optional<ConnectorViewDefinition> getView(ConnectorSession session, SchemaTableName viewName)
     {
-        return Optional.ofNullable(rSocketClient.view().getViews(session.getUser()).get(viewName));
+        return Optional.ofNullable(rSocketClient.view().getViews(auth.fromSession(session).getUserId()).get(viewName));
     }
 
     @Override

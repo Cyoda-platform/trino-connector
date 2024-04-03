@@ -10,6 +10,7 @@ import com.cyoda.presto.client.treenode.DomainToCondition;
 import com.cyoda.presto.client.treenode.CyodaRSocketClient;
 import com.cyoda.presto.client.treenode.dto.DataRequestDto;
 import com.cyoda.presto.client.treenode.dto.EntityContentDto;
+import com.cyoda.presto.client.types.DataType;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.CyodaTableMeta;
@@ -51,7 +52,17 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         if ("parent_id".equals(columnHandle.getColumnName())) return entity.getParentId();
         if ("index".equals(columnHandle.getColumnName())) return entity.getIndex();
 
-        return entity.getContents().get(columnHandle.getColumnKey());
+        if (columnHandle.getDataType().getMainType() == DataType.LIST){
+            int count = 0;
+            List<Object> result = new ArrayList<>();
+            Object currentElement = entity.getContents().get(columnHandle.getColumnKey().replace("*", count++ + ""));
+            while (currentElement != null) {
+                result.add(currentElement);
+                currentElement = entity.getContents().get(columnHandle.getColumnKey().replace("*", count++ + ""));
+            }
+            return result;
+        } else
+            return entity.getContents().get(columnHandle.getColumnKey());
     }
 
     @Override
@@ -59,7 +70,7 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         TupleDomain<ColumnHandle> tupleDomain = tableHandle.getConstraint();
         if (tupleDomain == null || tupleDomain.isAll() || tupleDomain.getDomains().isEmpty())
             return Collections.singletonList(
-                    new CyodaSplit(queryId, tableHandle.getTableMetaId(), null, null, null, tupleDomain));
+                    new CyodaSplit(queryId, authContext.getUserId(), tableHandle.getTableMetaId(), null, null, null, tupleDomain));
 
         Map<ColumnHandle, Domain> columnDomains;
         columnDomains = tupleDomain.getDomains().get();
@@ -74,7 +85,7 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         }
         if (constraintSize.isEmpty())
             return Collections.singletonList(
-                    new CyodaSplit(queryId, tableHandle.getTableMetaId(), null, null, null, tupleDomain));
+                    new CyodaSplit(queryId, authContext.getUserId(), tableHandle.getTableMetaId(), null, null, null, tupleDomain));
 
         ColumnHandle splitColumn = Collections.max(constraintSize.entrySet(), Map.Entry.comparingByValue()).getKey();
         Domain domain = columnDomains.get(splitColumn);
@@ -87,7 +98,7 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
             replacerDomains.add(tupleDomain.intersect(TupleDomain.withColumnDomains(Map.of(splitColumn, partDomain))));
         }
         return replacerDomains.stream()
-                .map(td -> new CyodaSplit(queryId, tableHandle.getTableMetaId(), null, null, null, td))
+                .map(td -> new CyodaSplit(queryId, authContext.getUserId(), tableHandle.getTableMetaId(), null, null, null, td))
                 .toList();
     }
 
@@ -106,10 +117,10 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         } else {
             condition = DomainToCondition.convert(constraint);
         }
-        condition.addCondition(new Equals("metadataClassId", metaClassId));
+        condition.addCondition(new Equals("entityModelClassId", metaClassId));
         condition.addCondition(new Equals("uniformedPath", uniformedPath));
         String strCondition = JodaBeanSerUtil.compact().jsonWriter().write(condition);
-        Iterable<EntityContentDto> result = client.treeNode().getData(new DataRequestDto(metaClassId, uniformedPath, strCondition));
+        Iterable<EntityContentDto> result = client.treeNode().getData(new DataRequestDto(metaClassId, split.getUserId(), uniformedPath, strCondition));
         apiMonitor.registerApiCall(split.getQueryId(), new Date(), strTableId, strCondition, "TREE_NODE");
         return result;
     }

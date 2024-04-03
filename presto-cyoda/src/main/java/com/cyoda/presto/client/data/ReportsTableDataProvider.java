@@ -71,6 +71,6 @@ public class ReportsTableDataProvider extends TableDataProvider<ReportsTableData
     public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
         Map<String, Map<String, String>> configFields = reportsApiHandler.asFlux(new ReportListKey(authContext, queryId), SizeListener.NOT_LISTENING)
                 .collectMap(GridConfigFieldsView::getId, GridConfigFieldsView::getGridConfigFields).block();
-        return Collections.singletonList(CyodaSplit.emptyCoordinatorSplit(queryId, configFields));
+        return Collections.singletonList(CyodaSplit.emptyCoordinatorSplit(queryId, authContext.getUserId(), configFields));
     }
 }

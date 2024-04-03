@@ -61,7 +61,7 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
         return reportHistoryApiHandler.getByKey(new ReportConfigKey(tableHandle.getTableMetaId(), queryId))
                 .stream()
                 .filter(fieldsView -> !hasReportIdConstraint || acceptVal(reportIdColumn, fieldsView.getReportId(), constraint))
-                .map(fieldsView -> new CyodaSplit(queryId, tableHandle.getTableMetaId(), fieldsView.getReportId(), fieldsView.getGroupingVersion(), null))
+                .map(fieldsView -> new CyodaSplit(queryId, authContext.getUserId(), tableHandle.getTableMetaId(), fieldsView.getReportId(), fieldsView.getGroupingVersion(), null))
                 .toList();
     }
 

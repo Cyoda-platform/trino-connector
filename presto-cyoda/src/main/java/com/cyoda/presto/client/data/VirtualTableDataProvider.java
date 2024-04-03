@@ -31,7 +31,7 @@ public abstract class VirtualTableDataProvider<T> extends TableDataProvider<T> {
         return nodeManager.getAllNodes()
                 .stream()
                 .map(Node::getHttpUri)
-                .map(uri -> CyodaSplit.addressedEmptySplit(queryId, uri))
+                .map(uri -> CyodaSplit.addressedEmptySplit(queryId, authContext.getUserId(), uri))
                 .collect(Collectors.toList()
                 );
     }
