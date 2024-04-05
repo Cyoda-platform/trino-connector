@@ -75,8 +75,7 @@ public class CyodaColumnHandle implements ColumnHandle {
             CompoundDataType dataType,
             int ordinalPosition,
             boolean isNullable){
-//        this(columnName, columnName, columnName, columnType, dataType, ordinalPosition, isNullable);
-        this(columnName, null, null, columnType, dataType, ordinalPosition, isNullable);
+        this(columnName, columnName, columnName, columnType, dataType, ordinalPosition, isNullable);
     }
 
     @Deprecated
