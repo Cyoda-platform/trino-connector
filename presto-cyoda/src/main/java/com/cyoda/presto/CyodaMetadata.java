@@ -21,11 +21,7 @@ import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.logic.PredicatePushdownController;
 import com.cyoda.presto.client.reporting.calls.DeleteReportsApiHandler;
-import com.cyoda.presto.client.reporting.metaproviders.DynamicReportMetadataProvider;
-import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata;
-import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
-import com.cyoda.presto.client.reporting.metaproviders.TableMetadataProvider;
-import com.cyoda.presto.client.reporting.metaproviders.TreeNodeMetadataProvider;
+import com.cyoda.presto.client.reporting.metaproviders.*;
 import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.client.treenode.CyodaRSocketClient;
@@ -35,47 +31,25 @@ import com.cyoda.presto.handles.CyodaTableMeta;
 import com.cyoda.presto.handles.CyodaTableType;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.common.collect.Maps;
-import io.airlift.slice.Slice;
-import io.trino.spi.ErrorCode;
-import io.trino.spi.StandardErrorCode;
-import io.trino.spi.TrinoException;
-import io.trino.spi.connector.ConnectorPartitioningHandle;
-import io.trino.spi.connector.ConnectorViewDefinition;
-import io.trino.spi.connector.Constraint;
-import io.trino.spi.connector.ConstraintApplicationResult;
-import io.trino.spi.connector.RetryMode;
-import io.trino.spi.connector.TableColumnsMetadata;
-import io.trino.spi.connector.ColumnHandle;
-import io.trino.spi.connector.ColumnMetadata;
-import io.trino.spi.connector.ConnectorSession;
-import io.trino.spi.connector.ConnectorTableHandle;
-import io.trino.spi.connector.ConnectorTableMetadata;
-import io.trino.spi.connector.SchemaTableName;
-import io.trino.spi.connector.SchemaTablePrefix;
-import io.trino.spi.connector.ConnectorMetadata;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import io.airlift.slice.Slice;
+import io.trino.spi.StandardErrorCode;
+import io.trino.spi.TrinoException;
+import io.trino.spi.connector.*;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.collect.ImmutableList.toImmutableList;
-import static io.trino.plugin.base.expression.ConnectorExpressions.and;
-import static io.trino.spi.StandardErrorCode.ALREADY_EXISTS;
+import static io.trino.spi.StandardErrorCode.MISSING_SCHEMA_NAME;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 import static java.util.Objects.requireNonNull;
 
@@ -311,6 +285,9 @@ public class CyodaMetadata implements ConnectorMetadata {
 //            throw new TrinoException(ALREADY_EXISTS, "Table already exists: " + viewName);
 //        }
 
+        if (viewName.getSchemaName()==null) {
+            throw new TrinoException(MISSING_SCHEMA_NAME,"view is missing schema name: " + viewName.getTableName());
+        }
         String response = rSocketClient.view().addView(session.getUser(), viewName, definition, replace);
 
     }
