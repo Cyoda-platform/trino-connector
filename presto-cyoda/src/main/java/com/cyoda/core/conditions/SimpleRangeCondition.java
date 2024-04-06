@@ -44,26 +44,26 @@ public abstract class SimpleRangeCondition extends RangeCondition<Object, Compar
      * The meta-bean for {@code SimpleRangeCondition}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static SimpleRangeCondition.Meta meta() {
+        return SimpleRangeCondition.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(SimpleRangeCondition.Meta.INSTANCE);
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected SimpleRangeCondition(Builder builder) {
+    protected SimpleRangeCondition(SimpleRangeCondition.Builder builder) {
         super(builder);
         this.value = builder.value;
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public SimpleRangeCondition.Meta metaBean() {
+        return SimpleRangeCondition.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -146,7 +146,7 @@ public abstract class SimpleRangeCondition extends RangeCondition<Object, Compar
         }
 
         @Override
-        public Builder builder() {
+        public SimpleRangeCondition.Builder builder() {
             throw new UnsupportedOperationException("SimpleRangeCondition is an abstract class");
         }
 

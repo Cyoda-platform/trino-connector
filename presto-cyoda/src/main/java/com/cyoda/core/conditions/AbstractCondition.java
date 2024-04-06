@@ -52,8 +52,8 @@ public abstract class AbstractCondition<T> /*implements Serializable*/ implement
      * @return the meta-bean, not null
      */
     @SuppressWarnings("rawtypes")
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static AbstractCondition.Meta meta() {
+        return AbstractCondition.Meta.INSTANCE;
     }
 
     /**
@@ -63,25 +63,25 @@ public abstract class AbstractCondition<T> /*implements Serializable*/ implement
      * @return the meta-bean, not null
      */
     @SuppressWarnings("unchecked")
-    public static <R> Meta<R> metaAbstractCondition(Class<R> cls) {
-        return Meta.INSTANCE;
+    public static <R> AbstractCondition.Meta<R> metaAbstractCondition(Class<R> cls) {
+        return AbstractCondition.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(AbstractCondition.Meta.INSTANCE);
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected AbstractCondition(Builder<T> builder) {
+    protected AbstractCondition(AbstractCondition.Builder<T> builder) {
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Meta<T> metaBean() {
-        return Meta.INSTANCE;
+    public AbstractCondition.Meta<T> metaBean() {
+        return AbstractCondition.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -154,7 +154,7 @@ public abstract class AbstractCondition<T> /*implements Serializable*/ implement
         }
 
         @Override
-        public Builder<T> builder() {
+        public AbstractCondition.Builder<T> builder() {
             throw new UnsupportedOperationException("AbstractCondition is an abstract class");
         }
 

@@ -56,35 +56,35 @@ public class INotContains extends AbstractNonQueryableCondition<String> {
      * The meta-bean for {@code INotContains}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static INotContains.Meta meta() {
+        return INotContains.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(INotContains.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static INotContains.Builder builder() {
+        return new INotContains.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected INotContains(Builder builder) {
+    protected INotContains(INotContains.Builder builder) {
         super(builder);
         JodaBeanUtils.notNull(builder.icontains, "icontains");
         this.icontains = builder.icontains;
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public INotContains.Meta metaBean() {
+        return INotContains.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -174,8 +174,8 @@ public class INotContains extends AbstractNonQueryableCondition<String> {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public INotContains.Builder builder() {
+            return new INotContains.Builder();
         }
 
         @Override

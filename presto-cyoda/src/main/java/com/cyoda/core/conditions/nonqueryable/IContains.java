@@ -35,33 +35,33 @@ public class IContains extends AbstractNonQueryableCondition<String> {
      * The meta-bean for {@code IContains}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static IContains.Meta meta() {
+        return IContains.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(IContains.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static IContains.Builder builder() {
+        return new IContains.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected IContains(Builder builder) {
+    protected IContains(IContains.Builder builder) {
         super(builder);
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public IContains.Meta metaBean() {
+        return IContains.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -132,8 +132,8 @@ public class IContains extends AbstractNonQueryableCondition<String> {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public IContains.Builder builder() {
+            return new IContains.Builder();
         }
 
         @Override

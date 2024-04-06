@@ -51,35 +51,35 @@ public class INotStartsWith extends AbstractNonQueryableCondition<String> {
      * The meta-bean for {@code INotStartsWith}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static INotStartsWith.Meta meta() {
+        return INotStartsWith.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(INotStartsWith.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static INotStartsWith.Builder builder() {
+        return new INotStartsWith.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected INotStartsWith(Builder builder) {
+    protected INotStartsWith(INotStartsWith.Builder builder) {
         super(builder);
         JodaBeanUtils.notNull(builder.iStartsWith, "iStartsWith");
         this.iStartsWith = builder.iStartsWith;
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public INotStartsWith.Meta metaBean() {
+        return INotStartsWith.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -169,8 +169,8 @@ public class INotStartsWith extends AbstractNonQueryableCondition<String> {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public INotStartsWith.Builder builder() {
+            return new INotStartsWith.Builder();
         }
 
         @Override

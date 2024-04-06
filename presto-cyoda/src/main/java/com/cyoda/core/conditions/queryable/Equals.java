@@ -70,34 +70,34 @@ public final class Equals extends SimpleRangeCondition {
      * The meta-bean for {@code Equals}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static Equals.Meta meta() {
+        return Equals.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(Equals.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static Equals.Builder builder() {
+        return new Equals.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    private Equals(Builder builder) {
+    private Equals(Equals.Builder builder) {
         super(builder);
         this.queryable = builder.queryable;
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public Equals.Meta metaBean() {
+        return Equals.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -177,8 +177,8 @@ public final class Equals extends SimpleRangeCondition {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public Equals.Builder builder() {
+            return new Equals.Builder();
         }
 
         @Override

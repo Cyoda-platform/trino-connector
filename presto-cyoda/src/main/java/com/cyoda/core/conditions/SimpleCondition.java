@@ -21,6 +21,7 @@ import org.joda.beans.impl.direct.DirectMetaProperty;
 import org.joda.beans.impl.direct.DirectMetaPropertyMap;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -50,8 +51,8 @@ public abstract class SimpleCondition<T, V> extends AbstractCondition<T> {
 
     protected SimpleCondition(String fieldName, Operation operation, boolean rangeField) {
         super();
-        this.fieldName = fieldName;
-        this.operation = operation;
+        this.fieldName = Objects.requireNonNull(fieldName);
+        this.operation = Objects.requireNonNull(operation);
         //this.rangeField = rangeField;
         this.rangeField = new AtomicBoolean(rangeField);
     }
@@ -125,8 +126,8 @@ public abstract class SimpleCondition<T, V> extends AbstractCondition<T> {
      * @return the meta-bean, not null
      */
     @SuppressWarnings("rawtypes")
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static SimpleCondition.Meta meta() {
+        return SimpleCondition.Meta.INSTANCE;
     }
 
     /**
@@ -138,19 +139,19 @@ public abstract class SimpleCondition<T, V> extends AbstractCondition<T> {
      * @return the meta-bean, not null
      */
     @SuppressWarnings("unchecked")
-    public static <R, S> Meta<R, S> metaSimpleCondition(Class<R> cls1, Class<S> cls2) {
-        return Meta.INSTANCE;
+    public static <R, S> SimpleCondition.Meta<R, S> metaSimpleCondition(Class<R> cls1, Class<S> cls2) {
+        return SimpleCondition.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(SimpleCondition.Meta.INSTANCE);
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected SimpleCondition(Builder<T, V> builder) {
+    protected SimpleCondition(SimpleCondition.Builder<T, V> builder) {
         super(builder);
         JodaBeanUtils.notNull(builder.fieldName, "fieldName");
         JodaBeanUtils.notNull(builder.operation, "operation");
@@ -162,8 +163,8 @@ public abstract class SimpleCondition<T, V> extends AbstractCondition<T> {
 
     @SuppressWarnings("unchecked")
     @Override
-    public Meta<T, V> metaBean() {
-        return Meta.INSTANCE;
+    public SimpleCondition.Meta<T, V> metaBean() {
+        return SimpleCondition.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -263,7 +264,7 @@ public abstract class SimpleCondition<T, V> extends AbstractCondition<T> {
         }
 
         @Override
-        public Builder<T, V> builder() {
+        public SimpleCondition.Builder<T, V> builder() {
             throw new UnsupportedOperationException("SimpleCondition is an abstract class");
         }
 

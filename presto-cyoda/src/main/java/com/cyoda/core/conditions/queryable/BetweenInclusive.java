@@ -67,8 +67,8 @@ public class BetweenInclusive<T> extends BetweenRangeCondition<T> {
      * @return the meta-bean, not null
      */
     @SuppressWarnings("rawtypes")
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static BetweenInclusive.Meta meta() {
+        return BetweenInclusive.Meta.INSTANCE;
     }
 
     /**
@@ -78,12 +78,12 @@ public class BetweenInclusive<T> extends BetweenRangeCondition<T> {
      * @return the meta-bean, not null
      */
     @SuppressWarnings("unchecked")
-    public static <R> Meta<R> metaBetweenInclusive(Class<R> cls) {
-        return Meta.INSTANCE;
+    public static <R> BetweenInclusive.Meta<R> metaBetweenInclusive(Class<R> cls) {
+        return BetweenInclusive.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(BetweenInclusive.Meta.INSTANCE);
     }
 
     /**
@@ -91,22 +91,22 @@ public class BetweenInclusive<T> extends BetweenRangeCondition<T> {
      * @param <T>  the type
      * @return the builder, not null
      */
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
+    public static <T> BetweenInclusive.Builder<T> builder() {
+        return new BetweenInclusive.Builder<>();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected BetweenInclusive(Builder<T> builder) {
+    protected BetweenInclusive(BetweenInclusive.Builder<T> builder) {
         super(builder);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Meta<T> metaBean() {
-        return Meta.INSTANCE;
+    public BetweenInclusive.Meta<T> metaBean() {
+        return BetweenInclusive.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -161,8 +161,8 @@ public class BetweenInclusive<T> extends BetweenRangeCondition<T> {
         }
 
         @Override
-        public Builder<T> builder() {
-            return new Builder<>();
+        public BetweenInclusive.Builder<T> builder() {
+            return new BetweenInclusive.Builder<>();
         }
 
         @SuppressWarnings({"unchecked", "rawtypes" })

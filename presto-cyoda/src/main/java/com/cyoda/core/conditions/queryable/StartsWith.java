@@ -102,27 +102,27 @@ public class StartsWith extends RangeCondition<Object, String> {
      * The meta-bean for {@code StartsWith}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static StartsWith.Meta meta() {
+        return StartsWith.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(StartsWith.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static StartsWith.Builder builder() {
+        return new StartsWith.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected StartsWith(Builder builder) {
+    protected StartsWith(StartsWith.Builder builder) {
         super(builder);
         JodaBeanUtils.notNull(builder.value, "value");
         JodaBeanUtils.notNull(builder.valueTo, "valueTo");
@@ -131,8 +131,8 @@ public class StartsWith extends RangeCondition<Object, String> {
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public StartsWith.Meta metaBean() {
+        return StartsWith.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -231,8 +231,8 @@ public class StartsWith extends RangeCondition<Object, String> {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public StartsWith.Builder builder() {
+            return new StartsWith.Builder();
         }
 
         @Override

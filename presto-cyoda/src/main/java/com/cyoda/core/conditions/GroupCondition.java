@@ -138,27 +138,27 @@ public class GroupCondition extends AbstractCondition<Object> {
      * The meta-bean for {@code GroupCondition}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static GroupCondition.Meta meta() {
+        return GroupCondition.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(GroupCondition.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static GroupCondition.Builder builder() {
+        return new GroupCondition.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected GroupCondition(Builder builder) {
+    protected GroupCondition(GroupCondition.Builder builder) {
         super(builder);
         JodaBeanUtils.notNull(builder.operator, "operator");
         JodaBeanUtils.notNull(builder.conditions, "conditions");
@@ -167,8 +167,8 @@ public class GroupCondition extends AbstractCondition<Object> {
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public GroupCondition.Meta metaBean() {
+        return GroupCondition.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -246,8 +246,8 @@ public class GroupCondition extends AbstractCondition<Object> {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public GroupCondition.Builder builder() {
+            return new GroupCondition.Builder();
         }
 
         @Override

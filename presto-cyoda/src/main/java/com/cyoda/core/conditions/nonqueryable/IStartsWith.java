@@ -34,33 +34,33 @@ public class IStartsWith extends AbstractNonQueryableCondition<String> {
      * The meta-bean for {@code IStartsWith}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static IStartsWith.Meta meta() {
+        return IStartsWith.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(IStartsWith.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static IStartsWith.Builder builder() {
+        return new IStartsWith.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected IStartsWith(Builder builder) {
+    protected IStartsWith(IStartsWith.Builder builder) {
         super(builder);
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public IStartsWith.Meta metaBean() {
+        return IStartsWith.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -131,8 +131,8 @@ public class IStartsWith extends AbstractNonQueryableCondition<String> {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public IStartsWith.Builder builder() {
+            return new IStartsWith.Builder();
         }
 
         @Override

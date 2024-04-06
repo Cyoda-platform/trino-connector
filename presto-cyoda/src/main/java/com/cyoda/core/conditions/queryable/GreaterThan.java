@@ -55,33 +55,33 @@ public class GreaterThan extends SimpleRangeCondition {
      * The meta-bean for {@code GreaterThan}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static GreaterThan.Meta meta() {
+        return GreaterThan.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(GreaterThan.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static GreaterThan.Builder builder() {
+        return new GreaterThan.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected GreaterThan(Builder builder) {
+    protected GreaterThan(GreaterThan.Builder builder) {
         super(builder);
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public GreaterThan.Meta metaBean() {
+        return GreaterThan.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -134,8 +134,8 @@ public class GreaterThan extends SimpleRangeCondition {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public GreaterThan.Builder builder() {
+            return new GreaterThan.Builder();
         }
 
         @Override

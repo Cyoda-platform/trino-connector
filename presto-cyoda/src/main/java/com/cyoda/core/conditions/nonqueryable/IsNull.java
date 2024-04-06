@@ -33,8 +33,8 @@ public class IsNull<T> extends SimpleCondition<Object, T> {
      * @return the meta-bean, not null
      */
     @SuppressWarnings("rawtypes")
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static IsNull.Meta meta() {
+        return IsNull.Meta.INSTANCE;
     }
 
     /**
@@ -44,12 +44,12 @@ public class IsNull<T> extends SimpleCondition<Object, T> {
      * @return the meta-bean, not null
      */
     @SuppressWarnings("unchecked")
-    public static <R> Meta<R> metaIsNull(Class<R> cls) {
-        return Meta.INSTANCE;
+    public static <R> IsNull.Meta<R> metaIsNull(Class<R> cls) {
+        return IsNull.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(IsNull.Meta.INSTANCE);
     }
 
     /**
@@ -57,22 +57,22 @@ public class IsNull<T> extends SimpleCondition<Object, T> {
      * @param <T>  the type
      * @return the builder, not null
      */
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
+    public static <T> IsNull.Builder<T> builder() {
+        return new IsNull.Builder<>();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected IsNull(Builder<T> builder) {
+    protected IsNull(IsNull.Builder<T> builder) {
         super(builder);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Meta<T> metaBean() {
-        return Meta.INSTANCE;
+    public IsNull.Meta<T> metaBean() {
+        return IsNull.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -145,8 +145,8 @@ public class IsNull<T> extends SimpleCondition<Object, T> {
         }
 
         @Override
-        public Builder<T> builder() {
-            return new Builder<>();
+        public IsNull.Builder<T> builder() {
+            return new IsNull.Builder<>();
         }
 
         @SuppressWarnings({"unchecked", "rawtypes" })

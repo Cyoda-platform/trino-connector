@@ -35,33 +35,33 @@ public class Contains extends AbstractNonQueryableCondition<String> {
      * The meta-bean for {@code Contains}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static Contains.Meta meta() {
+        return Contains.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(Contains.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static Contains.Builder builder() {
+        return new Contains.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected Contains(Builder builder) {
+    protected Contains(Contains.Builder builder) {
         super(builder);
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public Contains.Meta metaBean() {
+        return Contains.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -132,8 +132,8 @@ public class Contains extends AbstractNonQueryableCondition<String> {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public Contains.Builder builder() {
+            return new Contains.Builder();
         }
 
         @Override

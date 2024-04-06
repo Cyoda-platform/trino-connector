@@ -60,8 +60,8 @@ public abstract class BetweenRangeCondition<T> extends RangeCondition<T, Compara
      * @return the meta-bean, not null
      */
     @SuppressWarnings("rawtypes")
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static BetweenRangeCondition.Meta meta() {
+        return BetweenRangeCondition.Meta.INSTANCE;
     }
 
     /**
@@ -71,19 +71,19 @@ public abstract class BetweenRangeCondition<T> extends RangeCondition<T, Compara
      * @return the meta-bean, not null
      */
     @SuppressWarnings("unchecked")
-    public static <R> Meta<R> metaBetweenRangeCondition(Class<R> cls) {
-        return Meta.INSTANCE;
+    public static <R> BetweenRangeCondition.Meta<R> metaBetweenRangeCondition(Class<R> cls) {
+        return BetweenRangeCondition.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(BetweenRangeCondition.Meta.INSTANCE);
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected BetweenRangeCondition(Builder<T> builder) {
+    protected BetweenRangeCondition(BetweenRangeCondition.Builder<T> builder) {
         super(builder);
         JodaBeanUtils.notNull(builder.from, "from");
         JodaBeanUtils.notNull(builder.to, "to");
@@ -93,8 +93,8 @@ public abstract class BetweenRangeCondition<T> extends RangeCondition<T, Compara
 
     @SuppressWarnings("unchecked")
     @Override
-    public Meta<T> metaBean() {
-        return Meta.INSTANCE;
+    public BetweenRangeCondition.Meta<T> metaBean() {
+        return BetweenRangeCondition.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -200,7 +200,7 @@ public abstract class BetweenRangeCondition<T> extends RangeCondition<T, Compara
         }
 
         @Override
-        public Builder<T> builder() {
+        public BetweenRangeCondition.Builder<T> builder() {
             throw new UnsupportedOperationException("BetweenRangeCondition is an abstract class");
         }
 

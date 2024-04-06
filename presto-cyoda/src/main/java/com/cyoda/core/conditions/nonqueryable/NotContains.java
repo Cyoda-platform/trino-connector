@@ -55,35 +55,35 @@ public class NotContains extends AbstractNonQueryableCondition<String> {
      * The meta-bean for {@code NotContains}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static NotContains.Meta meta() {
+        return NotContains.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(NotContains.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static NotContains.Builder builder() {
+        return new NotContains.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected NotContains(Builder builder) {
+    protected NotContains(NotContains.Builder builder) {
         super(builder);
         JodaBeanUtils.notNull(builder.contains, "contains");
         this.contains = builder.contains;
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public NotContains.Meta metaBean() {
+        return NotContains.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -173,8 +173,8 @@ public class NotContains extends AbstractNonQueryableCondition<String> {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public NotContains.Builder builder() {
+            return new NotContains.Builder();
         }
 
         @Override

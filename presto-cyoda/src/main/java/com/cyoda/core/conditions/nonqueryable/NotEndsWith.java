@@ -51,35 +51,35 @@ public class NotEndsWith extends AbstractNonQueryableCondition<String>{
      * The meta-bean for {@code NotEndsWith}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static NotEndsWith.Meta meta() {
+        return NotEndsWith.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(NotEndsWith.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static NotEndsWith.Builder builder() {
+        return new NotEndsWith.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected NotEndsWith(Builder builder) {
+    protected NotEndsWith(NotEndsWith.Builder builder) {
         super(builder);
         JodaBeanUtils.notNull(builder.endsWith, "endsWith");
         this.endsWith = builder.endsWith;
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public NotEndsWith.Meta metaBean() {
+        return NotEndsWith.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -169,8 +169,8 @@ public class NotEndsWith extends AbstractNonQueryableCondition<String>{
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public NotEndsWith.Builder builder() {
+            return new NotEndsWith.Builder();
         }
 
         @Override

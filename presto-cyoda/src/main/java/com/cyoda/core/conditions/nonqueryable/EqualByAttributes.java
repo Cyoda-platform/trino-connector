@@ -74,35 +74,35 @@ public class EqualByAttributes extends AbstractNonQueryableCondition<Comparable>
      * The meta-bean for {@code EqualByAttributes}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static EqualByAttributes.Meta meta() {
+        return EqualByAttributes.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(EqualByAttributes.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static EqualByAttributes.Builder builder() {
+        return new EqualByAttributes.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected EqualByAttributes(Builder builder) {
+    protected EqualByAttributes(EqualByAttributes.Builder builder) {
         super(builder);
         JodaBeanUtils.notNull(builder.attrsToCheck, "attrsToCheck");
         this.attrsToCheck = ImmutableSet.copyOf(builder.attrsToCheck);
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public EqualByAttributes.Meta metaBean() {
+        return EqualByAttributes.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -193,8 +193,8 @@ public class EqualByAttributes extends AbstractNonQueryableCondition<Comparable>
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public EqualByAttributes.Builder builder() {
+            return new EqualByAttributes.Builder();
         }
 
         @Override

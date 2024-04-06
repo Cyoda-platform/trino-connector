@@ -57,33 +57,33 @@ public class LessThanEquals extends SimpleRangeCondition {
      * The meta-bean for {@code LessThanEquals}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static LessThanEquals.Meta meta() {
+        return LessThanEquals.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(LessThanEquals.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static LessThanEquals.Builder builder() {
+        return new LessThanEquals.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected LessThanEquals(Builder builder) {
+    protected LessThanEquals(LessThanEquals.Builder builder) {
         super(builder);
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public LessThanEquals.Meta metaBean() {
+        return LessThanEquals.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -136,8 +136,8 @@ public class LessThanEquals extends SimpleRangeCondition {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public LessThanEquals.Builder builder() {
+            return new LessThanEquals.Builder();
         }
 
         @Override

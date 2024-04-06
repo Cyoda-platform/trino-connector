@@ -282,27 +282,27 @@ public class Like extends RangeCondition<Object, String> {
      * The meta-bean for {@code Like}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static Like.Meta meta() {
+        return Like.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(Like.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static Like.Builder builder() {
+        return new Like.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected Like(Builder builder) {
+    protected Like(Like.Builder builder) {
         super(builder);
         this.regexp = builder.regexp;
         this.rangePossible = builder.rangePossible;
@@ -312,8 +312,8 @@ public class Like extends RangeCondition<Object, String> {
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public Like.Meta metaBean() {
+        return Like.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -469,8 +469,8 @@ public class Like extends RangeCondition<Object, String> {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public Like.Builder builder() {
+            return new Like.Builder();
         }
 
         @Override

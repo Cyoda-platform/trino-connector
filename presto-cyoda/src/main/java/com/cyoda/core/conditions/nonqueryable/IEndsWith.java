@@ -32,33 +32,33 @@ public class IEndsWith extends AbstractNonQueryableCondition<String>{
      * The meta-bean for {@code IEndsWith}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static IEndsWith.Meta meta() {
+        return IEndsWith.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(IEndsWith.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static IEndsWith.Builder builder() {
+        return new IEndsWith.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected IEndsWith(Builder builder) {
+    protected IEndsWith(IEndsWith.Builder builder) {
         super(builder);
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public IEndsWith.Meta metaBean() {
+        return IEndsWith.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -129,8 +129,8 @@ public class IEndsWith extends AbstractNonQueryableCondition<String>{
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public IEndsWith.Builder builder() {
+            return new IEndsWith.Builder();
         }
 
         @Override

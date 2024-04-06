@@ -42,8 +42,8 @@ public abstract class AbstractNonQueryableCondition<T> extends SimpleCondition<O
      * @return the meta-bean, not null
      */
     @SuppressWarnings("rawtypes")
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static AbstractNonQueryableCondition.Meta meta() {
+        return AbstractNonQueryableCondition.Meta.INSTANCE;
     }
 
     /**
@@ -53,19 +53,19 @@ public abstract class AbstractNonQueryableCondition<T> extends SimpleCondition<O
      * @return the meta-bean, not null
      */
     @SuppressWarnings("unchecked")
-    public static <R> Meta<R> metaAbstractNonQueryableCondition(Class<R> cls) {
-        return Meta.INSTANCE;
+    public static <R> AbstractNonQueryableCondition.Meta<R> metaAbstractNonQueryableCondition(Class<R> cls) {
+        return AbstractNonQueryableCondition.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(AbstractNonQueryableCondition.Meta.INSTANCE);
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected AbstractNonQueryableCondition(Builder<T> builder) {
+    protected AbstractNonQueryableCondition(AbstractNonQueryableCondition.Builder<T> builder) {
         super(builder);
         JodaBeanUtils.notNull(builder.value, "value");
         this.value = builder.value;
@@ -73,8 +73,8 @@ public abstract class AbstractNonQueryableCondition<T> extends SimpleCondition<O
 
     @SuppressWarnings("unchecked")
     @Override
-    public Meta<T> metaBean() {
-        return Meta.INSTANCE;
+    public AbstractNonQueryableCondition.Meta<T> metaBean() {
+        return AbstractNonQueryableCondition.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -160,7 +160,7 @@ public abstract class AbstractNonQueryableCondition<T> extends SimpleCondition<O
         }
 
         @Override
-        public Builder<T> builder() {
+        public AbstractNonQueryableCondition.Builder<T> builder() {
             throw new UnsupportedOperationException("AbstractNonQueryableCondition is an abstract class");
         }
 

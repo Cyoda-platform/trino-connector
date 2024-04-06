@@ -57,35 +57,35 @@ public class NotEquals extends AbstractNonQueryableCondition<Comparable> {
      * The meta-bean for {@code NotEquals}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static NotEquals.Meta meta() {
+        return NotEquals.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(NotEquals.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static NotEquals.Builder builder() {
+        return new NotEquals.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected NotEquals(Builder builder) {
+    protected NotEquals(NotEquals.Builder builder) {
         super(builder);
         JodaBeanUtils.notNull(builder.equals, "equals");
         this.equals = builder.equals;
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public NotEquals.Meta metaBean() {
+        return NotEquals.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -175,8 +175,8 @@ public class NotEquals extends AbstractNonQueryableCondition<Comparable> {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public NotEquals.Builder builder() {
+            return new NotEquals.Builder();
         }
 
         @Override

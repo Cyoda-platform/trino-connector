@@ -51,8 +51,8 @@ public class NotNull<T> extends SimpleCondition<Object, T>{
      * @return the meta-bean, not null
      */
     @SuppressWarnings("rawtypes")
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static NotNull.Meta meta() {
+        return NotNull.Meta.INSTANCE;
     }
 
     /**
@@ -62,12 +62,12 @@ public class NotNull<T> extends SimpleCondition<Object, T>{
      * @return the meta-bean, not null
      */
     @SuppressWarnings("unchecked")
-    public static <R> Meta<R> metaNotNull(Class<R> cls) {
-        return Meta.INSTANCE;
+    public static <R> NotNull.Meta<R> metaNotNull(Class<R> cls) {
+        return NotNull.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(NotNull.Meta.INSTANCE);
     }
 
     /**
@@ -75,15 +75,15 @@ public class NotNull<T> extends SimpleCondition<Object, T>{
      * @param <T>  the type
      * @return the builder, not null
      */
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
+    public static <T> NotNull.Builder<T> builder() {
+        return new NotNull.Builder<>();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected NotNull(Builder<T> builder) {
+    protected NotNull(NotNull.Builder<T> builder) {
         super(builder);
         JodaBeanUtils.notNull(builder.isNull, "isNull");
         this.isNull = builder.isNull;
@@ -91,8 +91,8 @@ public class NotNull<T> extends SimpleCondition<Object, T>{
 
     @SuppressWarnings("unchecked")
     @Override
-    public Meta<T> metaBean() {
-        return Meta.INSTANCE;
+    public NotNull.Meta<T> metaBean() {
+        return NotNull.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -185,8 +185,8 @@ public class NotNull<T> extends SimpleCondition<Object, T>{
         }
 
         @Override
-        public Builder<T> builder() {
-            return new Builder<>();
+        public NotNull.Builder<T> builder() {
+            return new NotNull.Builder<>();
         }
 
         @SuppressWarnings({"unchecked", "rawtypes" })

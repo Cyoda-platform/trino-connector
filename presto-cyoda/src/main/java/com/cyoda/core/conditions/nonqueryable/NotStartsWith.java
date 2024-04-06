@@ -52,35 +52,35 @@ public class NotStartsWith extends AbstractNonQueryableCondition<String> {
      * The meta-bean for {@code NotStartsWith}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static NotStartsWith.Meta meta() {
+        return NotStartsWith.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(NotStartsWith.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static NotStartsWith.Builder builder() {
+        return new NotStartsWith.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected NotStartsWith(Builder builder) {
+    protected NotStartsWith(NotStartsWith.Builder builder) {
         super(builder);
         JodaBeanUtils.notNull(builder.startsWith, "startsWith");
         this.startsWith = builder.startsWith;
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public NotStartsWith.Meta metaBean() {
+        return NotStartsWith.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -170,8 +170,8 @@ public class NotStartsWith extends AbstractNonQueryableCondition<String> {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public NotStartsWith.Builder builder() {
+            return new NotStartsWith.Builder();
         }
 
         @Override

@@ -35,33 +35,33 @@ public class IEquals extends AbstractNonQueryableCondition<String> {
      * The meta-bean for {@code IEquals}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static IEquals.Meta meta() {
+        return IEquals.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(IEquals.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static IEquals.Builder builder() {
+        return new IEquals.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected IEquals(Builder builder) {
+    protected IEquals(IEquals.Builder builder) {
         super(builder);
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public IEquals.Meta metaBean() {
+        return IEquals.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -132,8 +132,8 @@ public class IEquals extends AbstractNonQueryableCondition<String> {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public IEquals.Builder builder() {
+            return new IEquals.Builder();
         }
 
         @Override

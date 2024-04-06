@@ -67,8 +67,8 @@ public class Between<T> extends BetweenRangeCondition<T> {
      * @return the meta-bean, not null
      */
     @SuppressWarnings("rawtypes")
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static Between.Meta meta() {
+        return Between.Meta.INSTANCE;
     }
 
     /**
@@ -78,12 +78,12 @@ public class Between<T> extends BetweenRangeCondition<T> {
      * @return the meta-bean, not null
      */
     @SuppressWarnings("unchecked")
-    public static <R> Meta<R> metaBetween(Class<R> cls) {
-        return Meta.INSTANCE;
+    public static <R> Between.Meta<R> metaBetween(Class<R> cls) {
+        return Between.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(Between.Meta.INSTANCE);
     }
 
     /**
@@ -91,22 +91,22 @@ public class Between<T> extends BetweenRangeCondition<T> {
      * @param <T>  the type
      * @return the builder, not null
      */
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
+    public static <T> Between.Builder<T> builder() {
+        return new Between.Builder<>();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected Between(Builder<T> builder) {
+    protected Between(Between.Builder<T> builder) {
         super(builder);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Meta<T> metaBean() {
-        return Meta.INSTANCE;
+    public Between.Meta<T> metaBean() {
+        return Between.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -161,8 +161,8 @@ public class Between<T> extends BetweenRangeCondition<T> {
         }
 
         @Override
-        public Builder<T> builder() {
-            return new Builder<>();
+        public Between.Builder<T> builder() {
+            return new Between.Builder<>();
         }
 
         @SuppressWarnings({"unchecked", "rawtypes" })

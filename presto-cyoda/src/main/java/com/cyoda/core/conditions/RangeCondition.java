@@ -37,8 +37,8 @@ public abstract class RangeCondition<T, V> extends SimpleCondition<T, V> {
      * @return the meta-bean, not null
      */
     @SuppressWarnings("rawtypes")
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static RangeCondition.Meta meta() {
+        return RangeCondition.Meta.INSTANCE;
     }
 
     /**
@@ -50,26 +50,26 @@ public abstract class RangeCondition<T, V> extends SimpleCondition<T, V> {
      * @return the meta-bean, not null
      */
     @SuppressWarnings("unchecked")
-    public static <R, S> Meta<R, S> metaRangeCondition(Class<R> cls1, Class<S> cls2) {
-        return Meta.INSTANCE;
+    public static <R, S> RangeCondition.Meta<R, S> metaRangeCondition(Class<R> cls1, Class<S> cls2) {
+        return RangeCondition.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(RangeCondition.Meta.INSTANCE);
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected RangeCondition(Builder<T, V> builder) {
+    protected RangeCondition(RangeCondition.Builder<T, V> builder) {
         super(builder);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public Meta<T, V> metaBean() {
-        return Meta.INSTANCE;
+    public RangeCondition.Meta<T, V> metaBean() {
+        return RangeCondition.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -146,7 +146,7 @@ public abstract class RangeCondition<T, V> extends SimpleCondition<T, V> {
         }
 
         @Override
-        public Builder<T, V> builder() {
+        public RangeCondition.Builder<T, V> builder() {
             throw new UnsupportedOperationException("RangeCondition is an abstract class");
         }
 

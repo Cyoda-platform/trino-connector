@@ -31,33 +31,33 @@ public class ObjectEquals extends AbstractNonQueryableCondition<Object> {
      * The meta-bean for {@code ObjectEquals}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static ObjectEquals.Meta meta() {
+        return ObjectEquals.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(ObjectEquals.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static ObjectEquals.Builder builder() {
+        return new ObjectEquals.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected ObjectEquals(Builder builder) {
+    protected ObjectEquals(ObjectEquals.Builder builder) {
         super(builder);
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public ObjectEquals.Meta metaBean() {
+        return ObjectEquals.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -128,8 +128,8 @@ public class ObjectEquals extends AbstractNonQueryableCondition<Object> {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public ObjectEquals.Builder builder() {
+            return new ObjectEquals.Builder();
         }
 
         @Override

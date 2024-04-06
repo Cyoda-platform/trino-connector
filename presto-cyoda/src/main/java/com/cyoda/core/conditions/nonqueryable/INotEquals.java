@@ -51,35 +51,35 @@ public class INotEquals  extends AbstractNonQueryableCondition<String> {
      * The meta-bean for {@code INotEquals}.
      * @return the meta-bean, not null
      */
-    public static Meta meta() {
-        return Meta.INSTANCE;
+    public static INotEquals.Meta meta() {
+        return INotEquals.Meta.INSTANCE;
     }
 
     static {
-        MetaBean.register(Meta.INSTANCE);
+        MetaBean.register(INotEquals.Meta.INSTANCE);
     }
 
     /**
      * Returns a builder used to create an instance of the bean.
      * @return the builder, not null
      */
-    public static Builder builder() {
-        return new Builder();
+    public static INotEquals.Builder builder() {
+        return new INotEquals.Builder();
     }
 
     /**
      * Restricted constructor.
      * @param builder  the builder to copy from, not null
      */
-    protected INotEquals(Builder builder) {
+    protected INotEquals(INotEquals.Builder builder) {
         super(builder);
         JodaBeanUtils.notNull(builder.iEquals, "iEquals");
         this.iEquals = builder.iEquals;
     }
 
     @Override
-    public Meta metaBean() {
-        return Meta.INSTANCE;
+    public INotEquals.Meta metaBean() {
+        return INotEquals.Meta.INSTANCE;
     }
 
     //-----------------------------------------------------------------------
@@ -169,8 +169,8 @@ public class INotEquals  extends AbstractNonQueryableCondition<String> {
         }
 
         @Override
-        public Builder builder() {
-            return new Builder();
+        public INotEquals.Builder builder() {
+            return new INotEquals.Builder();
         }
 
         @Override
