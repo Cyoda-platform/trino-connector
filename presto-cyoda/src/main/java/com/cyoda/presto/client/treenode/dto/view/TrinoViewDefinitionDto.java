@@ -16,12 +16,16 @@ package com.cyoda.presto.client.treenode.dto.view;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.spi.connector.ConnectorViewDefinition;
+import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.type.TypeId;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.StringJoiner;
 import java.util.stream.Collectors;
+
+import static com.cyoda.presto.CyodaConnectorFactory.CATALOG_NAME;
 
 
 public class TrinoViewDefinitionDto
@@ -45,8 +49,8 @@ public class TrinoViewDefinitionDto
             @JsonProperty("runAsInvoker") boolean runAsInvoker)
     {
         this.originalSql = originalSql;
-        this.catalog = catalog;
-        this.schema = schema;
+        this.catalog = Objects.requireNonNull(catalog);
+        this.schema = Objects.requireNonNull(schema);
         this.columns = columns;
         this.comment = comment;
         this.owner = owner;
@@ -95,15 +99,15 @@ public class TrinoViewDefinitionDto
         return runAsInvoker;
     }
 
-    public static TrinoViewDefinitionDto fromModel(ConnectorViewDefinition connectorView) {
+    public static TrinoViewDefinitionDto fromModel(ConnectorViewDefinition connectorView, SchemaTableName schemaTableName) {
         List<TrinoViewColumn> columns = connectorView.getColumns().stream()
                 .map(c -> new TrinoViewColumn(c.getName(), c.getType().getId(), c.getComment().orElse(null)))
                 .collect(Collectors.toList());
 
         return new TrinoViewDefinitionDto(
                 connectorView.getOriginalSql(),
-                connectorView.getCatalog().orElse(null),
-                connectorView.getSchema().orElse(null),
+                connectorView.getCatalog().orElse(CATALOG_NAME),
+                connectorView.getSchema().orElse(schemaTableName.getSchemaName()),
                 columns,
                 connectorView.getComment().orElse(null),
                 connectorView.getOwner().orElse(null),
@@ -118,8 +122,8 @@ public class TrinoViewDefinitionDto
 
         return new ConnectorViewDefinition(
                 dto.originalSql,
-                Optional.ofNullable(dto.catalog),
-                Optional.ofNullable(dto.schema),
+                Optional.of(dto.catalog),
+                Optional.of(dto.schema),
                 columns,
                 Optional.ofNullable(dto.comment),
                 Optional.ofNullable(dto.owner),
