@@ -62,45 +62,45 @@ public class CyodaEventListener implements EventListener {
 
     @Override
     public void queryCreated(QueryCreatedEvent queryCreatedEvent) {
-//        try {
-//            getQueryMetaMessage(queryCreatedEvent.getMetadata()).ifPresent(msg ->
-//                    log.debug("QueryMetadata: \n%s",msg)
-//            );
-//        } catch (JsonProcessingException e) {
-//            log.error(e,"Cannot log QueryMetadata");
-//        }
-//        try {
-//            getQueryContextMessage(queryCreatedEvent.getContext()).ifPresent(msg -> log.debug("QueryContext: \n%s",msg));
-//        } catch (JsonProcessingException e) {
-//            log.error(e,"Cannot log QueryContext");
-//        }
+        try {
+            getQueryMetaMessage(queryCreatedEvent.getMetadata()).ifPresent(msg ->
+                    log.debug("QueryMetadata: \n%s",msg)
+            );
+        } catch (JsonProcessingException e) {
+            log.error(e,"Cannot log QueryMetadata");
+        }
+        try {
+            getQueryContextMessage(queryCreatedEvent.getContext()).ifPresent(msg -> log.debug("QueryContext: \n%s",msg));
+        } catch (JsonProcessingException e) {
+            log.error(e,"Cannot log QueryContext");
+        }
     }
 
     @Override
     public void queryCompleted(QueryCompletedEvent queryCompletedEvent) {
-//        log.debug("Completed Query %s",queryCompletedEvent.getMetadata().getQueryId());
-//
+        log.debug("Completed Query %s",queryCompletedEvent.getMetadata().getQueryId());
+
         try {
             getFailureInfoMessage(queryCompletedEvent).ifPresent(msg -> log.warn("Query Fails: \n%s",msg));
         } catch (JsonProcessingException e) {
             log.error(e,"Cannot log QueryFailureInfo");
         }
-//
-//        try {
-//            getQueryStatisticsMessage(queryCompletedEvent).ifPresent(msg -> log.debug("Query Stats: \n%s", msg));
-//        } catch (JsonProcessingException e) {
-//            log.error(e,"Cannot log QueryStatistics");
-//        }
+
+        try {
+            getQueryStatisticsMessage(queryCompletedEvent).ifPresent(msg -> log.debug("Query Stats: \n%s", msg));
+        } catch (JsonProcessingException e) {
+            log.error(e,"Cannot log QueryStatistics");
+        }
     }
 
     @Override
     public void splitCompleted(SplitCompletedEvent splitCompletedEvent) {
-//        log.debug("Completed Query Split for %s", splitCompletedEvent.getQueryId());
-//        try {
-//            getSplitStatisticsMessage(splitCompletedEvent).ifPresent(msg -> log.debug("Split Statistics: \n%s", msg));
-//        } catch (JsonProcessingException e) {
-//            log.error(e,"Cannot log SplitCompletedEvent");
-//        }
+        log.debug("Completed Query Split for %s", splitCompletedEvent.getQueryId());
+        try {
+            getSplitStatisticsMessage(splitCompletedEvent).ifPresent(msg -> log.debug("Split Statistics: \n%s", msg));
+        } catch (JsonProcessingException e) {
+            log.error(e,"Cannot log SplitCompletedEvent");
+        }
     }
 
     private Optional<String> getFailureInfoMessage(QueryCompletedEvent queryCompletedEvent) throws JsonProcessingException {
