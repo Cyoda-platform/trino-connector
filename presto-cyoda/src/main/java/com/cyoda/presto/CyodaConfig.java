@@ -35,8 +35,8 @@ public class CyodaConfig {
     private static final boolean DEFAULT_HTTPS_OVERRIDE = false;
     private static final String DEFAULT_SCHEMA_NAME = "reporting";
     private static final int DEFAULT_REQUEST_PAGE_SIZE = 10;
-    private static final String DEFAULT_LOGIN_ENDPOINT = "api/auth/login";
-    private static final String DEFAULT_REFERSH_ENDPOINT = "api/auth/token";
+    private static final String DEFAULT_LOGIN_ENDPOINT = "/api/auth/login";
+    private static final String DEFAULT_REFERSH_ENDPOINT = "/api/auth/token";
 
     private URL serverUrl;
     private CyodaAuthenticationType cyodaAuthenticationType = CyodaAuthenticationType.NONE;
@@ -71,6 +71,9 @@ public class CyodaConfig {
 
     private int predicatePushdownThreshold;
 
+    private String rSocketBindAddress;
+    private int rSocketPort;
+
     public CyodaConfig() {
         setDefaults();
     }
@@ -100,6 +103,8 @@ public class CyodaConfig {
         cacheReportMetaHoursAfterAccess = 24;
         cacheReportPagesHoursAfterAccess = 24;
         cacheReportGroupsHoursAfterAccess = 24;
+        rSocketBindAddress="localhost";
+        rSocketPort=7000;
     }
 
     @NotNull
@@ -422,4 +427,21 @@ public class CyodaConfig {
     public void setPredicatePushdownThreshold(int predicatePushdownThreshold) {
         this.predicatePushdownThreshold = predicatePushdownThreshold;
     }
+
+    public String getRSocketBindAddress() {
+        return this.rSocketBindAddress;
+    }
+    @Config("cyoda.presto.rsocket.bind-address")
+    public void setRSocketBindAddress(String bindAddress) {
+        this.rSocketBindAddress = bindAddress;
+    }
+
+    public int getRSocketPort() {
+        return this.rSocketPort;
+    }
+    @Config("cyoda.presto.rsocket.port")
+    public void setRSocketPort(int port) {
+        this.rSocketPort = port;
+    }
+
 }

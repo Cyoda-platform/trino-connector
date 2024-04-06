@@ -1,16 +1,15 @@
 package com.cyoda.presto.client.treenode;
 
+import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.client.treenode.dto.DataRequestDto;
 import com.cyoda.presto.client.treenode.dto.EntityContentDto;
+import com.cyoda.presto.client.treenode.dto.schema.SchemaConfigDto;
 import com.cyoda.presto.client.treenode.dto.view.TrinoViewDefinitionDto;
 import com.cyoda.presto.client.treenode.dto.view.TrinoViewDto;
-import com.cyoda.presto.client.treenode.dto.schema.SchemaConfigDto;
-import com.cyoda.presto.client.treenode.dto.schema.TableConfigDto;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.inject.Inject;
-import io.rsocket.core.Resume;
 import io.rsocket.transport.netty.client.TcpClientTransport;
 import io.trino.spi.connector.ConnectorViewDefinition;
 import io.trino.spi.connector.SchemaTableName;
@@ -18,12 +17,10 @@ import org.springframework.messaging.rsocket.RSocketRequester;
 import org.springframework.messaging.rsocket.RSocketStrategies;
 import reactor.util.retry.Retry;
 
-
 import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -37,7 +34,8 @@ public class CyodaRSocketClient {
     private final CyodaCacheMonitor cacheMonitor;
     @Inject
     public CyodaRSocketClient(RSocketStrategies strategies,
-                              CyodaCacheMonitor cacheMonitor) {
+                              CyodaCacheMonitor cacheMonitor,
+                              CyodaConfig cyodaConfig) {
 
 
         this.rSocketRequester = RSocketRequester.builder()
@@ -53,7 +51,7 @@ public class CyodaRSocketClient {
                                 Duration.ofSeconds(20)
                         )
                 )
-                .transport(TcpClientTransport.create("localhost", 7000));
+                .transport(TcpClientTransport.create(cyodaConfig.getRSocketBindAddress(),cyodaConfig.getRSocketPort()));
 //                .connect(TcpClientTransport.create("localhost", 7000))
 //                .retryWhen(Retry.fixedDelay(Long.MAX_VALUE, Duration.ofSeconds(2))).block();
         this.cacheMonitor = cacheMonitor;
@@ -95,7 +93,7 @@ public class CyodaRSocketClient {
 
         public String addView(String userId, SchemaTableName viewName, ConnectorViewDefinition definition, boolean replace) {
             return rSocketRequester.route("view.addView")
-                    .data(new TrinoViewDto(userId, viewName, TrinoViewDefinitionDto.fromModel(definition), null, replace))
+                    .data(new TrinoViewDto(userId, viewName, TrinoViewDefinitionDto.fromModel(definition,viewName), null, replace))
                     .retrieveMono(String.class).block();
         }
 
