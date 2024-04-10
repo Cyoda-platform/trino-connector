@@ -133,9 +133,9 @@ public abstract class BaseReportsApiHandler {
     public static @Nonnull SchemaTableName configIdToSchemaTableName(@Nonnull String reportConfigId){
         int ownerIndex = reportConfigId.indexOf("-");
         if (ownerIndex == -1) {
-            return new SchemaTableName("owner-unknown", reportConfigId.toLowerCase());
+            return new SchemaTableName("reports_owner_unknown", reportConfigId.toLowerCase());
         } else {
-            return new SchemaTableName(reportConfigId.substring(0, ownerIndex).toLowerCase(),
+            return new SchemaTableName("reports_" + reportConfigId.substring(0, ownerIndex).toLowerCase(),
                     reportConfigId.substring(ownerIndex + 1));
         }
     }

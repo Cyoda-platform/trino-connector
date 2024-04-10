@@ -47,14 +47,14 @@ public class PredicateTraversal<T extends Comparable<? super T>> {
 
     private final CompoundPredicateNode conjunctions;
 
-    private PredicateTraversal(@Nonnull CompoundPredicateNode node, Class<T> clazz) {
+    private PredicateTraversal(@Nonnull CompoundPredicateNode node) {
         this.conjunctions = node;
     }
 
     public static @Nonnull <T extends Comparable<? super T>> PredicateTraversal<T> of(@Nonnull CompoundPredicateNode predicateNodes, Class<T> clazz) {
         Preconditions.checkNotNull(predicateNodes, "conjunctions is null");
         Preconditions.checkArgument(predicateNodes.getConnective() == Connective.AND || predicateNodes.isEmpty(), "Not a conjunction");
-        return new PredicateTraversal<>(predicateNodes, clazz);
+        return new PredicateTraversal<>(predicateNodes);
     }
 
     /**

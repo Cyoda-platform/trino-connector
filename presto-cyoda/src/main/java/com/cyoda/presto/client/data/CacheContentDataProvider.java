@@ -40,7 +40,7 @@ public class CacheContentDataProvider extends VirtualTableDataProvider<CacheCont
                 return thisNode.getNodeIdentifier();
             }
             case NODE_ADDRESS -> {
-                return thisNode.getHttpUri();
+                return thisNode.getHttpUri().toString();
             }
             case CACHE_NAME -> {
                 return entity.cacheName();

@@ -18,6 +18,7 @@
 package com.cyoda.presto.client.types;
 
 import com.cyoda.presto.client.logic.Any;
+import com.cyoda.presto.client.logic.PredicatePushdownController;
 import com.cyoda.presto.client.logic.converters.impl.BigDecimalPrestoValueConverter;
 import com.cyoda.presto.client.logic.converters.impl.UUIDPrestoValueConverter;
 import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
@@ -85,7 +86,7 @@ public enum DataType implements IDataType {
     ZONED_DATE_TIME (ZonedDateTime.class,   StandardTypes.TIMESTAMP_WITH_TIME_ZONE, true, 0),
     YEAR            (Year.class,            StandardTypes.INTEGER,      true, 0),
     YEAR_MONTH      (YearMonth.class,       StandardTypes.DATE,         true, 0),
-    LOCAL_TIME      (LocalTime.class,       StandardTypes.TIME,         true, 0), // Unsure
+    LOCAL_TIME      (LocalTime.class,       StandardTypes.TIME,         true, 0, 9),
     UUID_TYPE       (UUID.class,            StandardTypes.UUID,         true, 0),
     BYTE_ARRAY      (byte[].class,          StandardTypes.VARBINARY,    false, 0),
     BYTE_BUFFER     (ByteBuffer.class,      StandardTypes.VARBINARY,    false, 0),
@@ -132,6 +133,9 @@ public enum DataType implements IDataType {
 
     public boolean isComparable() {
         return comparable;
+    }
+    public PredicatePushdownController getPushDownController(){
+        return isComparable() ? PredicatePushdownController.FULL_PUSHDOWN : PredicatePushdownController.DISABLE_PUSHDOWN;
     }
 
     public static final Map<Class<?>, DataType> objectClassToDataType = ImmutableMap.copyOf(

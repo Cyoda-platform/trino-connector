@@ -19,49 +19,37 @@ package com.cyoda.presto;
 
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthService;
+import com.cyoda.presto.client.logic.PredicatePushdownController;
 import com.cyoda.presto.client.reporting.calls.DeleteReportsApiHandler;
-import com.cyoda.presto.client.reporting.metaproviders.DynamicReportMetadataProvider;
-import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata;
-import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
-import com.cyoda.presto.client.reporting.metaproviders.TableMetadataProvider;
+import com.cyoda.presto.client.reporting.metaproviders.*;
 import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
+import com.cyoda.presto.client.treenode.CyodaRSocketClient;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.CyodaTableMeta;
 import com.cyoda.presto.handles.CyodaTableType;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import io.airlift.slice.Slice;
-import io.trino.spi.TrinoException;
-import io.trino.spi.connector.ConnectorPartitioningHandle;
-import io.trino.spi.connector.RetryMode;
-import io.trino.spi.connector.TableColumnsMetadata;
-import io.trino.spi.connector.ColumnHandle;
-import io.trino.spi.connector.ColumnMetadata;
-import io.trino.spi.connector.ConnectorSession;
-import io.trino.spi.connector.ConnectorTableHandle;
-import io.trino.spi.connector.ConnectorTableMetadata;
-import io.trino.spi.connector.SchemaTableName;
-import io.trino.spi.connector.SchemaTablePrefix;
-import io.trino.spi.connector.ConnectorMetadata;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+import io.airlift.slice.Slice;
+import io.trino.spi.StandardErrorCode;
+import io.trino.spi.TrinoException;
+import io.trino.spi.connector.*;
+import io.trino.spi.predicate.Domain;
+import io.trino.spi.predicate.TupleDomain;
 
 import javax.annotation.Nonnull;
 import javax.inject.Inject;
 import java.time.Duration;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.collect.ImmutableList.toImmutableList;
+import static io.trino.spi.StandardErrorCode.MISSING_SCHEMA_NAME;
 import static io.trino.spi.StandardErrorCode.NOT_SUPPORTED;
 import static java.util.Objects.requireNonNull;
 
@@ -74,9 +62,11 @@ public class CyodaMetadata implements ConnectorMetadata {
     private final AuthService auth;
     private final StaticTableMetadataProvider staticMetadataProvider;
     private final DynamicReportMetadataProvider dynamicReportMetadataProvider;
+    private final TreeNodeMetadataProvider treeNodeMetadataProvider;
     private final DeleteReportsApiHandler deleteReportsApiHandler;
     private final ContentIdLoadingCache<AuthContext, Map<SchemaTableName, CyodaTableHandle>> tableByUserCache;
     private final Map<SchemaTableName, CyodaTableHandle> defaultTableList;
+    private final CyodaRSocketClient rSocketClient;
 
     @Inject
     public CyodaMetadata(
@@ -85,13 +75,16 @@ public class CyodaMetadata implements ConnectorMetadata {
             AuthService auth,
             StaticTableMetadataProvider staticMetadataProvider,
             DynamicReportMetadataProvider dynamicReportMetadataProvider,
+            TreeNodeMetadataProvider treeNodeMetadataProvider,
             DeleteReportsApiHandler deleteReportsApiHandler,
-            CyodaCacheMonitor cacheMonitor) {
+            CyodaCacheMonitor cacheMonitor,
+            CyodaRSocketClient rSocketClient) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
         this.config = requireNonNull(config,"confif is null");
         this.auth = auth;
         this.staticMetadataProvider = staticMetadataProvider;
         this.dynamicReportMetadataProvider = dynamicReportMetadataProvider;
+        this.treeNodeMetadataProvider = treeNodeMetadataProvider;
         this.deleteReportsApiHandler = deleteReportsApiHandler;
         tableByUserCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
                 .expireAfterWrite(Duration.ofSeconds(config.getCacheUserAuthSecAfterWrite()))
@@ -104,13 +97,17 @@ public class CyodaMetadata implements ConnectorMetadata {
         defaultTableList = new HashMap<>();
         defaultTableList.put(new SchemaTableName(config.getSchemaName(), StaticTableMetadata.LOG_TABLE_NAME),
                 new CyodaTableHandle(config.getSchemaName(), StaticTableMetadata.LOG_TABLE_NAME, CyodaTableType.LOG_TABLE));
+        this.rSocketClient = rSocketClient;
     }
 
     @Nonnull
     private Map<SchemaTableName, CyodaTableHandle> tableByUserCacheLoad(AuthContext key) {
         try {
-            Map<SchemaTableName, List<CyodaTableHandle>> tableNameListMap = Stream.of(staticMetadataProvider, dynamicReportMetadataProvider)
-                    .flatMap(x -> x.listTables(key, Optional.empty()).stream())
+            Map<SchemaTableName, List<CyodaTableHandle>> tableNameListMap = Stream.of(
+                    staticMetadataProvider,
+                    dynamicReportMetadataProvider,
+                    treeNodeMetadataProvider)
+                    .flatMap(x -> x.listTables(key).stream())
                     .collect(Collectors.groupingBy(tableHandle -> new SchemaTableName(tableHandle.getSchemaName(), tableHandle.getTableName())));
             Map<SchemaTableName, CyodaTableHandle> result = tableNameListMap.entrySet().stream()
                     .filter(e -> (e.getValue().size() == 1)).collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().get(0)));
@@ -130,6 +127,9 @@ public class CyodaMetadata implements ConnectorMetadata {
         switch (tableHandle.getTableType()) {
             case DATA -> {
                 return dynamicReportMetadataProvider;
+            }
+            case TREE_NODE_TABLE -> {
+                return treeNodeMetadataProvider;
             }
 //            case HISTORY, GROUP -> It is important to note that while handles for those types of tables are provided
                                 //   by dynamicReportMetadataProvider, their META is static and provided by staticMetadataProvider
@@ -159,17 +159,15 @@ public class CyodaMetadata implements ConnectorMetadata {
     @Override
     public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName) {
         Map<SchemaTableName, CyodaTableHandle> schemaMap = getTableHandleMap(session);
-        CyodaTableHandle handle = schemaMap.get(tableName);
-        requireNonNull(handle, "Unknown table " + tableName);
-        return handle;
+        return schemaMap.get(tableName);
     }
 
 
     @Override
     public void truncateTable(ConnectorSession session, ConnectorTableHandle tableHandle) {
         CyodaTableHandle cTableHandle = (CyodaTableHandle) tableHandle;
-        if (cTableHandle.getReportConfigId() != null){
-            deleteReportsApiHandler.deleteReports(session, cTableHandle.getReportConfigId());
+        if (cTableHandle.getTableMetaId() != null){
+            deleteReportsApiHandler.deleteReports(session, cTableHandle.getTableMetaId());
         } else {
             throw new TrinoException(NOT_SUPPORTED, "Truncate operation is available only for report-related tables. Use DELETE for cache and call stats.");
         }
@@ -216,6 +214,53 @@ public class CyodaMetadata implements ConnectorMetadata {
         return ((CyodaColumnHandle) columnHandle).getColumnMetadata();
     }
 
+    @Override
+    public Optional<ConstraintApplicationResult<ConnectorTableHandle>> applyFilter(ConnectorSession session, ConnectorTableHandle handle, Constraint constraint) {
+
+        CyodaTableHandle tableHandle = (CyodaTableHandle) handle;
+        if(!tableHandle.getTableType().isPushdownSupported()) return Optional.empty();
+        TupleDomain<ColumnHandle> oldDomain = tableHandle.getConstraint();
+        TupleDomain<ColumnHandle> newDomain = oldDomain.intersect(constraint.getSummary());
+        TupleDomain<ColumnHandle> remainingFilter;
+        if (newDomain.isNone()) {
+            remainingFilter = TupleDomain.all();
+        } else {
+            Map<ColumnHandle, Domain> domains = newDomain.getDomains().orElseThrow();
+            List<CyodaColumnHandle> columnHandles = domains.keySet().stream()
+                    .map(CyodaColumnHandle.class::cast)
+                    .collect(toImmutableList());
+
+
+            Map<ColumnHandle, Domain> supported = new HashMap<>();
+            Map<ColumnHandle, Domain> unsupported = new HashMap<>();
+            for (CyodaColumnHandle column : columnHandles) {
+                PredicatePushdownController.DomainPushdownResult pushdownResult =
+                        column.getDataType().getMainType().getPushDownController()
+                                .apply(config.getPredicatePushdownThreshold(), domains.get(column));
+                supported.put(column, pushdownResult.getPushedDown());
+                unsupported.put(column, pushdownResult.getRemainingFilter());
+            }
+
+            newDomain = TupleDomain.withColumnDomains(supported);
+            remainingFilter = TupleDomain.withColumnDomains(unsupported);
+
+        }
+
+        if (oldDomain.equals(newDomain)) {
+            return Optional.empty();
+        }
+
+        tableHandle = new CyodaTableHandle(
+                tableHandle.getSchemaName(),
+                tableHandle.getTableName(),
+                tableHandle.getTableType(),
+                tableHandle.getTableMetaId(),
+                tableHandle.getCreateDate(),
+                tableHandle.getLastUpdateDate(),
+                newDomain);
+
+        return Optional.of(new ConstraintApplicationResult<>(tableHandle, remainingFilter, true));
+    }
 
     @Override
     public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> filterSchema) {
@@ -223,7 +268,7 @@ public class CyodaMetadata implements ConnectorMetadata {
         try {
             Map<SchemaTableName, CyodaTableHandle> tableMap = getTableHandleMap(session);
             return filterSchema.map(s ->
-                    tableMap.keySet().stream()
+                    Stream.of(tableMap.keySet(), rSocketClient.view().getViews(auth.fromSession(session).getUserId()).keySet()).flatMap(Collection::stream)
                             .filter(e -> s.equals(e.getSchemaName()))
                             .collect(Collectors.toList()))
                     .orElseGet(() -> ImmutableList.copyOf(tableMap.keySet()));
@@ -231,6 +276,55 @@ public class CyodaMetadata implements ConnectorMetadata {
             LOG.error(e);
             return defaultTableList.keySet().stream().toList();
         }
+    }
+
+    @Override
+    public synchronized void createView(ConnectorSession session, SchemaTableName viewName, ConnectorViewDefinition definition, boolean replace)
+    {
+//        if (tableIds.containsKey(viewName)) {
+//            throw new TrinoException(ALREADY_EXISTS, "Table already exists: " + viewName);
+//        }
+
+        if (viewName.getSchemaName()==null) {
+            throw new TrinoException(MISSING_SCHEMA_NAME,"view is missing schema name: " + viewName.getTableName());
+        }
+        String response = rSocketClient.view().addView(session.getUser(), viewName, definition, replace);
+
+    }
+
+    @Override
+    public synchronized void renameView(ConnectorSession session, SchemaTableName viewName, SchemaTableName newViewName)
+    {
+        String userId = session.getUser();
+        String response = rSocketClient.view().renameView(viewName, newViewName, userId);
+        if (response != null) throw new TrinoException(StandardErrorCode.REMOTE_TASK_FAILED, response);
+    }
+
+    @Override
+    public synchronized void dropView(ConnectorSession session, SchemaTableName viewName)
+    {
+        String userId = session.getUser();
+        String response = rSocketClient.view().dropView(viewName, userId);
+        if (response != null) throw new TrinoException(StandardErrorCode.REMOTE_TASK_FAILED, response);
+    }
+
+    @Override
+    public synchronized List<SchemaTableName> listViews(ConnectorSession session, Optional<String> schemaName)
+    {
+        return rSocketClient.view().getViews(auth.fromSession(session).getUserId()).keySet().stream()
+                .filter(viewName -> schemaName.map(viewName.getSchemaName()::equals).orElse(true))
+                .collect(toImmutableList());
+    }
+    @Override
+    public synchronized Map<SchemaTableName, ConnectorViewDefinition> getViews(ConnectorSession session, Optional<String> schemaName)
+    {
+        SchemaTablePrefix prefix = schemaName.map(SchemaTablePrefix::new).orElseGet(SchemaTablePrefix::new);
+        return ImmutableMap.copyOf(Maps.filterKeys(rSocketClient.view().getViews(auth.fromSession(session).getUserId()), prefix::matches));
+    }
+    @Override
+    public synchronized Optional<ConnectorViewDefinition> getView(ConnectorSession session, SchemaTableName viewName)
+    {
+        return Optional.ofNullable(rSocketClient.view().getViews(auth.fromSession(session).getUserId()).get(viewName));
     }
 
     @Override

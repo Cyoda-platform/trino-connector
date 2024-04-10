@@ -20,7 +20,6 @@ package com.cyoda.presto;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.data.TableDataProviderProvider;
 import com.cyoda.presto.handles.CyodaTableHandle;
-import com.cyoda.presto.handles.CyodaTableMeta;
 import io.trino.spi.NodeManager;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.Constraint;
@@ -29,7 +28,6 @@ import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplitSource;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorTransactionHandle;
-import com.google.common.base.Preconditions;
 import io.trino.spi.connector.FixedSplitSource;
 
 import javax.inject.Inject;
@@ -40,18 +38,15 @@ import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaSplitManager implements ConnectorSplitManager {
-    private final String connectorId;
     private final TableDataProviderProvider dataProviderProvider;
     private final AuthService auth;
     private final CyodaSplitDispatcher splitDispatcher;
 
 
     @Inject
-    public CyodaSplitManager(CyodaConnectorId connectorId,
-                             TableDataProviderProvider dataProviderProvider,
+    public CyodaSplitManager(TableDataProviderProvider dataProviderProvider,
                              AuthService auth,
                              NodeManager nodeManager) {
-        this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
         this.dataProviderProvider = dataProviderProvider;
         this.auth = auth;
         splitDispatcher = new CyodaSplitDispatcher(nodeManager);
@@ -65,6 +60,10 @@ public class CyodaSplitManager implements ConnectorSplitManager {
             DynamicFilter dynamicFilter,
             Constraint constraint) {
         CyodaTableHandle tableHandle = (CyodaTableHandle) connectorTableHandle;
+
+        if (tableHandle.getTableType().isPushdownSupported()){
+            tableHandle.setConstraint(tableHandle.getConstraint().intersect(dynamicFilter.getCurrentPredicate()).simplify());
+        }
 
         if (constraint.predicate().isEmpty() && !constraint.getSummary().isAll()){
             throw new RuntimeException("Constraint summary is not blank, but predicate not present");

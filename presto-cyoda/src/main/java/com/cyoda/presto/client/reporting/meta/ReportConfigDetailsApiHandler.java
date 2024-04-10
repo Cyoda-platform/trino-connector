@@ -144,34 +144,39 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler {
         ImmutableList.Builder<CyodaColumnHandle> builder = ImmutableList.builder();
         AtomicInteger position = new AtomicInteger(RESERVED_COLUMN_NAMES.size());
         columns.forEach(column -> {
-            String columnName = Optional.ofNullable(column.get("name"))
-                    .orElseThrow(() -> new IllegalArgumentException(INVALID_REPORT_DEFINITION_FOR + configId + ". $.columns[*].name missing"));
-            Preconditions.checkArgument(!RESERVED_COLUMN_NAMES.contains(columnName), "Report %s is using a reserved column name: %s." +
-                    " Reserved names are: %s", configId, columnName, Joiner.on(", ").join(RESERVED_COLUMN_NAMES));
-            ReportColumnType reportColumnType = Optional.ofNullable(column.get("@bean")).map(this::getColType)
-                    .orElseThrow(() -> new IllegalArgumentException(INVALID_REPORT_DEFINITION_FOR + configId + ". $.columns[*].@bean missing"));
+            try {
+                String columnName = Optional.ofNullable(column.get("name"))
+                        .orElseThrow(() -> new IllegalArgumentException(INVALID_REPORT_DEFINITION_FOR + configId + ". $.columns[*].name missing"));
+                Preconditions.checkArgument(!RESERVED_COLUMN_NAMES.contains(columnName), "Report %s is using a reserved column name: %s." +
+                        " Reserved names are: %s", configId, columnName, Joiner.on(", ").join(RESERVED_COLUMN_NAMES));
+                ReportColumnType reportColumnType = Optional.ofNullable(column.get("@bean")).map(this::getColType)
+                        .orElseThrow(() -> new IllegalArgumentException(INVALID_REPORT_DEFINITION_FOR + configId + ". $.columns[*].@bean missing"));
 
-            ParameterizedType colParType;
-            switch (reportColumnType) {
-                case COLUMN:
-                    colParType = fromColDefs(configId, context, columnName);
-                    break;
-                case ALIAS:
-                    colParType = fromAliasDefs(configId, context, columnName);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unsupported Cyoda report column type " + reportColumnType);
+                ParameterizedType colParType;
+                switch (reportColumnType) {
+                    case COLUMN:
+                        colParType = fromColDefs(configId, context, columnName);
+                        break;
+                    case ALIAS:
+                        colParType = fromAliasDefs(configId, context, columnName);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unsupported Cyoda report column type " + reportColumnType);
+                }
+
+                CompoundDataType dataType = CompoundDataType.of(colParType, columnName);
+                CyodaColumnHandle columnHandle = new CyodaColumnHandle(
+                        removeClassNamesFromPath(columnName),
+                        dataType.toPrestoType(typeManager),
+                        dataType,
+                        position.getAndIncrement(),
+                        true
+                );
+                builder.add(columnHandle);
+            } catch (Exception e) {
+                log.error(e);
+                throw new RuntimeException("Mapping column to data type FAILED. Column:\n" + column.toString(), e);
             }
-
-            CompoundDataType dataType = CompoundDataType.of(colParType, columnName);
-            CyodaColumnHandle columnHandle = new CyodaColumnHandle(
-                    removeClassNamesFromPath(columnName),
-                    dataType.toPrestoType(typeManager),
-                    dataType,
-                    position.getAndIncrement(),
-                    true
-            );
-            builder.add(columnHandle);
         });
         return builder.build();
     }

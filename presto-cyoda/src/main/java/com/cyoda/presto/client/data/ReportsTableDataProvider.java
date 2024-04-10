@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_COLUMNS_COLUMN;
+import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_ERROR_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_JSON_COLUMN;
 
 public class ReportsTableDataProvider extends TableDataProvider<ReportsTableData> {
@@ -37,20 +38,29 @@ public class ReportsTableDataProvider extends TableDataProvider<ReportsTableData
     public Iterable<ReportsTableData> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
         return split.getCustomData().entrySet().stream()
                 .map(entry -> {
-                    ReportDefinitionHandle repDef = configDetailsApiHandler.getReportDefSingleHandle(
-                            new ReportConfigKey(entry.getKey(), split.getQueryId()));
-                    return new ReportsTableData((Map<String, String>)entry.getValue(), repDef);
+                    try {
+                        ReportDefinitionHandle repDef = configDetailsApiHandler.getReportDefSingleHandle(
+                                new ReportConfigKey(entry.getKey(), split.getQueryId()));
+                        return new ReportsTableData((Map<String, String>) entry.getValue(), repDef, null);
+                    } catch (Exception e){
+                        return new ReportsTableData((Map<String, String>) entry.getValue(), null, e.getMessage());
+                    }
                 }).toList();
     }
 
     @Nullable
     @Override
     protected Object getFieldValueFromEntity(@Nonnull ReportsTableData entity, CyodaColumnHandle columnHandle) {
-        if (REPORT_JSON_COLUMN.equals(columnHandle.getColumnName())) {
-            return entity.config().json;
+        if (entity.config() != null) {
+            if (REPORT_JSON_COLUMN.equals(columnHandle.getColumnName())) {
+                return entity.config().json;
+            }
+            if (REPORT_COLUMNS_COLUMN.equals(columnHandle.getColumnName())) {
+                return entity.config().columns;
+            }
         }
-        if (REPORT_COLUMNS_COLUMN.equals(columnHandle.getColumnName())) {
-            return entity.config().columns;
+        if (REPORT_ERROR_COLUMN.equals(columnHandle.getColumnName())){
+            return entity.error();
         }
 
         Map<String, String> fields = entity.reportFields();
@@ -61,6 +71,6 @@ public class ReportsTableDataProvider extends TableDataProvider<ReportsTableData
     public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
         Map<String, Map<String, String>> configFields = reportsApiHandler.asFlux(new ReportListKey(authContext, queryId), SizeListener.NOT_LISTENING)
                 .collectMap(GridConfigFieldsView::getId, GridConfigFieldsView::getGridConfigFields).block();
-        return Collections.singletonList(CyodaSplit.emptyCoordinatorSplit(tableHandle.getTableName(), queryId, configFields));
+        return Collections.singletonList(CyodaSplit.emptyCoordinatorSplit(queryId, authContext.getUserId(), configFields));
     }
 }

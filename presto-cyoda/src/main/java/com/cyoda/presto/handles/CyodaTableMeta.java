@@ -23,6 +23,7 @@ import io.trino.spi.connector.SchemaTableName;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Joiner;
+import io.trino.spi.predicate.TupleDomain;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -36,7 +37,6 @@ import java.util.Optional;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaTableMeta {
-    private final String connectorId;
     private final String schemaName;
     private final String tableName;
     private final Map<String,CyodaColumnHandle> columnHandleMap;
@@ -51,7 +51,6 @@ public class CyodaTableMeta {
 
     @JsonCreator
     public CyodaTableMeta(
-            @JsonProperty("connectorId") String connectorId,
             @JsonProperty("schemaName") String schemaName,
             @JsonProperty("tableName") String tableName,
             @JsonProperty("projectedColumns") List<CyodaColumnHandle> projectedColumns,
@@ -60,7 +59,6 @@ public class CyodaTableMeta {
             @JsonProperty("description") String description,
             @JsonProperty("hasGroups") boolean hasGroups,
             @JsonProperty("hasHistory") boolean hasHistory) {
-        this.connectorId = requireNonNull(connectorId, "connectorId is null");
         this.schemaName = requireNonNull(schemaName, "schemaName is null");
         this.tableName = requireNonNull(tableName, "tableName is null");
         this.reportConfigId = reportConfigId;
@@ -87,11 +85,6 @@ public class CyodaTableMeta {
     @JsonProperty("hasHistory")
     public boolean hasHistory() {
         return hasHistory;
-    }
-
-    @JsonProperty
-    public String getConnectorId() {
-        return connectorId;
     }
 
     @JsonProperty
@@ -146,10 +139,10 @@ public class CyodaTableMeta {
         return new SchemaTableName(schemaName, tableName);
     }
     public CyodaTableHandle toMainHandle(long createDate, long lastUpdateDate) {
-        return new CyodaTableHandle(schemaName, tableName, tableType, reportConfigId, createDate, lastUpdateDate);
+        return new CyodaTableHandle(schemaName, tableName, tableType, reportConfigId, createDate, lastUpdateDate, TupleDomain.all());
     }
     public CyodaTableHandle toSuppHandle(String tablePostfix, CyodaTableType tableType) {
-        return new CyodaTableHandle(schemaName, tableName + tablePostfix, tableType, reportConfigId, 0, 0);
+        return new CyodaTableHandle(schemaName, tableName + tablePostfix, tableType, reportConfigId, 0, 0, TupleDomain.all());
     }
 
     @Override
@@ -157,43 +150,39 @@ public class CyodaTableMeta {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CyodaTableMeta that = (CyodaTableMeta) o;
-        return connectorId.equals(that.connectorId)
-                && schemaName.equals(that.schemaName)
+        return schemaName.equals(that.schemaName)
                 && tableName.equals(that.tableName);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(connectorId, schemaName, tableName);
+        return Objects.hash(schemaName, tableName);
     }
 
     @Override
     public String toString() {
-        return Joiner.on(":").join(connectorId, schemaName);
+        return Joiner.on(":").join(schemaName, tableName);
     }
 
     public static class Template{
-        private final String connectorId;
         private final String description;
         private final List<CyodaColumnHandle> columnHandles;
         private final CyodaTableType tableType;
 
-        public Template(String connectorId, String description, List<CyodaColumnHandle> columnHandles, CyodaTableType tableType) {
-            this.connectorId = connectorId;
+        public Template(String description, List<CyodaColumnHandle> columnHandles, CyodaTableType tableType) {
             this.description = description;
             this.columnHandles = columnHandles;
             this.tableType = tableType;
         }
         public static Template of(CyodaTableMeta tableHandle){
-            return new Template(tableHandle.connectorId,
-                    tableHandle.getDescription(),
+            return new Template(tableHandle.getDescription(),
                     tableHandle.getProjectedColumns(),
                     tableHandle.tableType);
         }
 
         public CyodaTableMeta createTableMeta(CyodaTableHandle tableHandle){
-            return new CyodaTableMeta(connectorId, tableHandle.getSchemaName(), tableHandle.getTableName(), columnHandles,
-                    tableType, tableHandle.getReportConfigId(), description, false, false);
+            return new CyodaTableMeta(tableHandle.getSchemaName(), tableHandle.getTableName(), columnHandles,
+                    tableType, tableHandle.getTableMetaId(), description, false, false);
         }
     }
 

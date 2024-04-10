@@ -6,10 +6,12 @@ import io.trino.spi.HostAddress;
 import io.trino.spi.Node;
 import io.trino.spi.NodeManager;
 
-import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class CyodaSplitDispatcher {
 
@@ -17,8 +19,9 @@ public class CyodaSplitDispatcher {
 
     private final NodeManager nodeManager;
     private final Node coordinator;
-
     private volatile List<Node> nodeBuckets;
+    // Map to track worker load
+    private final Map<Node, Integer> workerLoadMap = new ConcurrentHashMap<>();
 
     public CyodaSplitDispatcher(NodeManager nodeManager) {
         this.nodeManager = nodeManager;
@@ -26,13 +29,26 @@ public class CyodaSplitDispatcher {
                 .filter(Node::isCoordinator)
                 .findAny()
                 .orElseThrow();
+        refreshBuckets(); // Initialize nodeBuckets and workerLoadMap
     }
 
-    private void dispatchToWorkers(CyodaSplit split){
-        if (!split.getAddresses().isEmpty() || split.getReportConfigId() == null) return;
+    private void dispatchToWorkers(CyodaSplit split) {
+        if (!split.getAddresses().isEmpty() || split.getCyodaTableMetaId() == null) return;
         refreshBuckets();
-        int hash = Math.abs(Objects.hash(split.getReportConfigId(), split.getReportId(), split.getGroupJsonBase64(), split.getPage()));
-        split.getAddresses().add(HostAddress.fromUri(nodeBuckets.get(hash % nodeBuckets.size()).getHttpUri()));
+        Node dispatched;
+        int weight;
+        if (split.getReportId() != null){
+            int hash = Math.abs(Objects.hash(split.getCyodaTableMetaId(), split.getReportId(), split.getGroupJsonBase64(), split.getPage()));
+            dispatched = nodeBuckets.get(hash % nodeBuckets.size());
+            weight = 1;
+        } else {
+            dispatched = Collections.min(workerLoadMap.entrySet(), Map.Entry.comparingByValue()).getKey();
+            weight = split.getConstraint() != null && !split.getConstraint().isAll() ? 1 : 5;
+        }
+        split.getAddresses().add(HostAddress.fromUri(dispatched.getHttpUri()));
+        // Update the load of the worker node
+        Integer currentLoad = workerLoadMap.getOrDefault(dispatched, 0);
+        workerLoadMap.put(dispatched, currentLoad + weight);
     }
 
     private void dispatchToCoordinator(CyodaSplit split){
@@ -41,7 +57,7 @@ public class CyodaSplitDispatcher {
 
     public void dispatch(List<CyodaSplit> splits){
         for (CyodaSplit split : splits) {
-            if (split.isAssignToCoordinator()){
+            if (split.isAssignToCoordinator()) {
                 dispatchToCoordinator(split);
             } else {
                 dispatchToWorkers(split);

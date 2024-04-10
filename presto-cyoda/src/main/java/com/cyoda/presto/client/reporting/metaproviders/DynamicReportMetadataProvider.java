@@ -19,7 +19,6 @@ import com.cyoda.presto.handles.CyodaTableMeta;
 import com.cyoda.presto.handles.CyodaTableType;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.common.collect.ImmutableMap;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.type.TypeManager;
 import reactor.core.publisher.Flux;
@@ -30,13 +29,9 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 import static com.cyoda.presto.SizeListener.NOT_LISTENING;
 
@@ -44,9 +39,8 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     private static final SupplierLogger LOG = SupplierLogger.get(DynamicReportMetadataProvider.class);
 
 
-    private final AuthService auth;
     private final ConfiguredReportsApiHandler configuredReportsApiHandler;
-    private ReportConfigDetailsApiHandler reportConfigDetailsApiHandler;
+    private final ReportConfigDetailsApiHandler reportConfigDetailsApiHandler;
     private final StaticTableMetadataProvider staticTableMetadataProvider;
 
     private final ContentIdLoadingCache<TableMetaCacheKey, CyodaTableMeta> tableMetaCache;
@@ -59,7 +53,6 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
                                          ReportConfigDetailsApiHandler reportConfigDetailsApiHandler,
                                          CyodaCacheMonitor cacheMonitor) {
         super(typeManager, config, connectorId);
-        this.auth = auth;
         this.staticTableMetadataProvider = staticTableMetadataProvider;
         this.configuredReportsApiHandler = configuredReportsApiHandler;
         this.reportConfigDetailsApiHandler = reportConfigDetailsApiHandler;
@@ -75,7 +68,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
 
     @Override
     //results of this method supposed to be cached outside
-    public List<CyodaTableHandle> listTables(AuthContext authContext, Optional<String> filterSchema) {
+    public List<CyodaTableHandle> listTables(AuthContext authContext) {
         try {
             List<CyodaTableHandle> result = new ArrayList<>();
             Flux<GridConfigFieldsView> flux = configuredReportsApiHandler.asFlux(
@@ -119,7 +112,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
             List<CyodaColumnHandle> columns = new ArrayList<>(List.copyOf(staticTableMetadataProvider.getReportRows().getTableMeta().getProjectedColumns()));
             columns.addAll(definitionHandle.getColumns());
             columns.sort(Comparator.comparingInt(CyodaColumnHandle::getOrdinalPosition));
-            return new CyodaTableMeta(connectorId.toString(), tableName.getSchemaName(), tableName.getTableName(),
+            return new CyodaTableMeta(tableName.getSchemaName(), tableName.getTableName(),
                     columns, CyodaTableType.DATA, configId, definitionHandle.getDescription(),
                     !definitionHandle.getGroupingColumns().isEmpty(),
                     !definitionHandle.isSingleton());
@@ -148,7 +141,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
         }
         public static TableMetaCacheKey of(CyodaTableHandle handle) {
             return new TableMetaCacheKey(
-                    handle.getReportConfigId(), handle.getCreateDate(), handle.getLastUpdateDate()
+                    handle.getTableMetaId(), handle.getCreateDate(), handle.getLastUpdateDate()
             );
         }
 

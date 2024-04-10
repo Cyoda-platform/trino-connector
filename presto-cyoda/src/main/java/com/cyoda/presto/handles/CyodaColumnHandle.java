@@ -39,6 +39,8 @@ import static java.util.Objects.requireNonNull;
 
 public class CyodaColumnHandle implements ColumnHandle {
     private final String columnName;
+    private final String columnKey;
+    private final String externalName;
     private final Type columnType;
     private final int ordinalPosition;
     private final CompoundDataType dataType;
@@ -51,16 +53,29 @@ public class CyodaColumnHandle implements ColumnHandle {
     @JsonCreator
     public CyodaColumnHandle(
             @JsonProperty("columnName") String columnName,
+            @JsonProperty("columnKey") String columnKey,
+            @JsonProperty("externalName") String externalName,
             @JsonProperty("columnType") Type columnType,
             @JsonProperty("dataType") CompoundDataType dataType,
             @JsonProperty("ordinalPosition") int ordinalPosition,
             @JsonProperty("isNullable") boolean isNullable
     ) {
         this.columnName = requireNonNull(columnName, "columnName is null");
+        this.columnKey = columnKey;
+        this.externalName = externalName;
         this.columnType = requireNonNull(columnType, "columnType is null");
         this.dataType = dataType;
         this.ordinalPosition = ordinalPosition;
         this.isNullable = isNullable;
+    }
+
+    public CyodaColumnHandle(
+            String columnName,
+            Type columnType,
+            CompoundDataType dataType,
+            int ordinalPosition,
+            boolean isNullable){
+        this(columnName, columnName, columnName, columnType, dataType, ordinalPosition, isNullable);
     }
 
     @Deprecated
@@ -70,7 +85,7 @@ public class CyodaColumnHandle implements ColumnHandle {
             DataType dataType,
             int ordinalPosition
     ) {
-        this(columnName, columnType, new CompoundDataType(columnName,dataType), ordinalPosition, true);
+        this(columnName, null, null, columnType, new CompoundDataType(columnName,dataType), ordinalPosition, true);
     }
 
     public PrestoValueConverter<?> getConverter(){
@@ -118,6 +133,16 @@ public class CyodaColumnHandle implements ColumnHandle {
     @JsonProperty
     public String getColumnName() {
         return columnName;
+    }
+
+    @JsonProperty
+    public String getColumnKey() {
+        return columnKey;
+    }
+
+    @JsonProperty
+    public String getExternalName() {
+        return externalName;
     }
 
     @JsonProperty

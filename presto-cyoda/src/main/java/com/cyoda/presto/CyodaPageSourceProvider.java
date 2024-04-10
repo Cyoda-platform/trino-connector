@@ -22,6 +22,7 @@ import com.cyoda.presto.client.data.TableDataProviderProvider;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.CyodaTableMeta;
+import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.DynamicFilter;
 import io.trino.spi.connector.ColumnHandle;
@@ -34,13 +35,14 @@ import com.google.common.base.Preconditions;
 
 import javax.inject.Inject;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static java.util.Objects.requireNonNull;
 
 public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
 
-    private final String connectorId;
+    private static final SupplierLogger LOG = SupplierLogger.get(CyodaPageSourceProvider.class);
     private final TableDataProviderProvider dataProviderProvider;
     private final CyodaMetadata cyodaMetadata;
 
@@ -48,7 +50,6 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
     public CyodaPageSourceProvider(CyodaConnectorId connectorId,
                                    TableDataProviderProvider dataProviderProvider,
                                    CyodaMetadata cyodaMetadata) {
-        this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
         this.dataProviderProvider = requireNonNull(dataProviderProvider, "dataProviderProvider is null");
         this.cyodaMetadata = cyodaMetadata;
     }
@@ -63,13 +64,29 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
             DynamicFilter dynamicFilter
     ) {
         requireNonNull(split, "split is null");
-        CyodaTableMeta cyodaTableMeta = cyodaMetadata.getTableMeta((CyodaTableHandle) tableHandle);
-        Preconditions.checkArgument(connectorId.equals(cyodaTableMeta.getConnectorId()),"tableHandle not for this connectorId");
+        CyodaTableHandle handle = (CyodaTableHandle) tableHandle;
+        CyodaTableMeta cyodaTableMeta = cyodaMetadata.getTableMeta(handle);
+        CyodaSplit cyodaSplit = (CyodaSplit) split;
+        if (handle.getTableType().isPushdownSupported()){
+            if (dynamicFilter.isAwaitable()) {
+                int cnt = 0;
+                while (!dynamicFilter.isComplete() && cnt++ < 100) try {
+                    Thread.sleep(100);
+                } catch (InterruptedException e){
+                    throw new RuntimeException(e);
+                }
+                if (dynamicFilter.isComplete()){
+                    cyodaSplit.setConstraint(cyodaSplit.getConstraint().intersect(dynamicFilter.getCurrentPredicate()));
+                } else LOG.error("Exceeded 10s timeout for dynamic filter await");
+            } else {
+                cyodaSplit.setConstraint(cyodaSplit.getConstraint().intersect(dynamicFilter.getCurrentPredicate()));
+            }
+        }
         List<CyodaColumnHandle> cyodaColumns = columns.stream().map(CyodaColumnHandle.class::cast).collect(Collectors.toList());
 
         return dataProviderProvider
                 .getDataProvider(cyodaTableMeta.getTableType())
-                .getPageSource(cyodaTableMeta, cyodaColumns, ((CyodaSplit) split));
+                .getPageSource(cyodaTableMeta, cyodaColumns, cyodaSplit);
 
     }
 }

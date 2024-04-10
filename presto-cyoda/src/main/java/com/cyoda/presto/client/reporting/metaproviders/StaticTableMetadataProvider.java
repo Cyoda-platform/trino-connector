@@ -14,11 +14,9 @@ import javax.inject.Inject;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -78,7 +76,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
                 .collect(Collectors.toMap(StaticTable::getTableHandle, StaticTable::getTableMeta));
         apiCallStats = new ApiCallStats();
         if (!config.getLogApiCallStats()) {
-            standaloneTablesMap.remove(apiCallStats.getTableMeta().getTableName());
+            standaloneTablesMap.remove(apiCallStats.getTableHandle());
         }
         reportGroups = new ReportGroups();
         reportRows = new ReportRows();
@@ -96,10 +94,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
 //        ).getTableMeta();
 //    }
     @Override
-    public List<CyodaTableHandle> listTables(AuthContext authContext, Optional<String> filterSchema) {
-        if (filterSchema.isPresent() && !filterSchema.get().equals(config.getSchemaName()))
-            return Collections.emptyList();
-
+    public List<CyodaTableHandle> listTables(AuthContext authContext) {
         return standaloneTablesMap.keySet().stream().toList();
     }
 
@@ -168,7 +163,7 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
 
         private CyodaTableMeta createTableMeta(StaticTableMetadata tableDefinition) {
             List<CyodaColumnHandle> columnHandles = getCyodaColumnHandles(tableDefinition);
-            return new CyodaTableMeta(connectorId.toString(), config.getSchemaName(),
+            return new CyodaTableMeta(config.getSchemaName(),
                     getTableName(tableDefinition),
                     columnHandles, tableDefinition.getTableType(),
                     null, tableDefinition.getDescription(), false, false);

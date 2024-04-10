@@ -10,7 +10,7 @@ public record ApiRequestStats(
         Date callTime,
         String requestUrl,
         String handlerName,
-        Map<String, Object> params,
+        Object params,
         long duration,
         String response
 ) {

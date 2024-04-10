@@ -20,6 +20,7 @@ import com.cyoda.presto.handles.CyodaTableMeta;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.connector.Constraint;
+import io.trino.spi.predicate.TupleDomain;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -75,7 +76,7 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
         boolean hasReportIdConstraint = hasConstraint(reportIdColumn, constraint);
         boolean hasGroupIdConstraint = hasConstraint(groupIdColumn, constraint);
         boolean hasRowNumConstraint = hasConstraint(rowNumberColumn, constraint);
-        return reportHistoryApiHandler.getByKey(new ReportConfigKey(tableHandle.getReportConfigId(), queryId))
+        return reportHistoryApiHandler.getByKey(new ReportConfigKey(tableHandle.getTableMetaId(), queryId))
                 .stream()
                 .filter(fieldsView -> !hasReportIdConstraint || acceptVal(reportIdColumn, fieldsView.getReportId(), constraint))
                 .flatMap(fieldsView -> reportGroupsApiHandler.getByKey(
@@ -94,13 +95,14 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
                                             .anyMatch(row -> acceptVal(rowNumberColumn, row, constraint)))
                             .map(page -> new CyodaSplit(
                                     queryId,
+                                    authContext.getUserId(),
                                     new ArrayList<>(),
-                                    false, tableHandle.getTableName(),
-                                    tableHandle.getReportConfigId(),
+                                    false,
+                                    tableHandle.getTableMetaId(),
                                     groupingHandle.reportId,
                                     groupingHandle.groupingVersion,
                                     groupingHandle.groupHeader.getGroupValuesJsonBase64(),
-                                    page, pageSize, null));
+                                    page, pageSize, null, TupleDomain.all()));
                 })
                 .toList();
     }

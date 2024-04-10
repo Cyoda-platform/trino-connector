@@ -69,6 +69,11 @@ public class CyodaConfig {
     private String anonymousRefreshToken;
     private String anonymousUserName;
 
+    private int predicatePushdownThreshold;
+
+    private String rSocketBindAddress;
+    private int rSocketPort;
+
     public CyodaConfig() {
         setDefaults();
     }
@@ -98,6 +103,8 @@ public class CyodaConfig {
         cacheReportMetaHoursAfterAccess = 24;
         cacheReportPagesHoursAfterAccess = 24;
         cacheReportGroupsHoursAfterAccess = 24;
+        rSocketBindAddress="localhost";
+        rSocketPort=7000;
     }
 
     @NotNull
@@ -411,4 +418,30 @@ public class CyodaConfig {
     public void setCacheReportGroupsHoursAfterAccess(long cacheReportGroupsHoursAfterAccess) {
         this.cacheReportGroupsHoursAfterAccess = cacheReportGroupsHoursAfterAccess;
     }
+
+    public int getPredicatePushdownThreshold() {
+        return predicatePushdownThreshold;
+    }
+
+    @Config("cyoda.presto.tree-node.pushdown-threshold")
+    public void setPredicatePushdownThreshold(int predicatePushdownThreshold) {
+        this.predicatePushdownThreshold = predicatePushdownThreshold;
+    }
+
+    public String getRSocketBindAddress() {
+        return this.rSocketBindAddress;
+    }
+    @Config("cyoda.presto.rsocket.bind-address")
+    public void setRSocketBindAddress(String bindAddress) {
+        this.rSocketBindAddress = bindAddress;
+    }
+
+    public int getRSocketPort() {
+        return this.rSocketPort;
+    }
+    @Config("cyoda.presto.rsocket.port")
+    public void setRSocketPort(int port) {
+        this.rSocketPort = port;
+    }
+
 }
