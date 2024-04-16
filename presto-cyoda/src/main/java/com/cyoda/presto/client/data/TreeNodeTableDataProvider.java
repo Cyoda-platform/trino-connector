@@ -49,7 +49,7 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
     @Override
     protected Object getFieldValueFromEntity(@Nonnull EntityContentDto entity, CyodaColumnHandle columnHandle) {
         if ("id".equals(columnHandle.getColumnName())) return entity.getId();
-        if ("parent_id".equals(columnHandle.getColumnName())) return entity.getParentId();
+        if ("parent".equals(columnHandle.getColumnName())) return entity.getParentId();
         if ("index".equals(columnHandle.getColumnName())) return entity.getIndex();
 
         if (columnHandle.getDataType().getMainType() == DataType.LIST){
