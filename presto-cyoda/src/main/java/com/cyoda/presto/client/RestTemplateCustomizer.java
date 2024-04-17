@@ -77,12 +77,12 @@ public class RestTemplateCustomizer {
     public static final Duration TOKEN_EXPIRY_OFFSET = Duration.ofSeconds(10);
 
     private final CyodaConfig config;
-    private final AuthService authService;
     private final CyodaApiRequestStatsMonitor apiRequestStatsMonitor;
-    private final ContentIdLoadingCache<AuthContext,RestTemplate> restTemplateCache;
-    private final ContentIdLoadingCache<AuthContext,RestTemplate> refreshRestTemplateCache;
+    private final LoadingCache<AuthContext,RestTemplate> restTemplateCache;
+    private final LoadingCache<AuthContext,RestTemplate> refreshRestTemplateCache;
     private final RestTemplate unauthorizedRestTemplate;
     private final URI refreshUri;
+    private final boolean logResponce;
 
     private static final List<HttpMessageConverter<?>> HAL_CONVERTERS = Traverson.getDefaultMessageConverters(MediaTypes.HAL_JSON);
     static {
@@ -91,26 +91,24 @@ public class RestTemplateCustomizer {
                 .forEach(conv -> ((AbstractJackson2HttpMessageConverter)conv).getObjectMapper().configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true));
     }
     @Inject
-    public RestTemplateCustomizer(CyodaConfig config, AuthService authService, CyodaApiRequestStatsMonitor apiRequestStatsMonitor, CyodaCacheMonitor cacheMonitor) {
+    public RestTemplateCustomizer(CyodaConfig config, CyodaApiRequestStatsMonitor apiRequestStatsMonitor) {
         this.config = config;
-        this.authService = authService;
         this.apiRequestStatsMonitor = apiRequestStatsMonitor;
-        restTemplateCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
+        logResponce = apiRequestStatsMonitor != null && config.getLogApiCallStats() && config.getLogApiCallResponse();
+        restTemplateCache = Caffeine.newBuilder()
                 .maximumSize(100)
                 .recordStats()
                 .build(key -> {
                     LOG.debug(()->"creating RestTemplate for "+key.getPayload().getUsername());
                     return newRestTemplate(ACCESS,key,HAL_CONVERTERS);
-                }));
-        cacheMonitor.register("REST_TEMPLATE", restTemplateCache, AuthContext::getUserId, x -> 1);
-        refreshRestTemplateCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
+                });
+        refreshRestTemplateCache = Caffeine.newBuilder()
                 .maximumSize(100)
                 .recordStats()
                 .build(key -> {
                     LOG.debug(()->"creating refresh RestTemplate for "+key.getPayload().getUsername());
                     return newRestTemplate(REFRESH,key,null);
-                }));
-        cacheMonitor.register("REST_REFRESH", refreshRestTemplateCache, AuthContext::getUserId, x -> 1);
+                });
         this.unauthorizedRestTemplate = newRestTemplate(ACCESS,null,null);
 
         try {
@@ -128,9 +126,6 @@ public class RestTemplateCustomizer {
 
     public RestTemplate getRestTemplate(AuthContext authContext) {
             return restTemplateCache.get(authContext);
-    }
-    public RestTemplate getRestTemplateWithTechAuth() {
-        return restTemplateCache.get(authService.getTechnicalAuth());
     }
 
     public RestTemplate getUnauthorizedRestTemplate() {
@@ -159,7 +154,7 @@ public class RestTemplateCustomizer {
         }
 
         template.setRequestFactory(new OkHttp3ClientHttpRequestFactory(builder.build()));
-        if (config.getLogApiCallStats() && config.getLogApiCallResponse()){
+        if (logResponce){
             ClientHttpRequestFactory factory =
                     new BufferingClientHttpRequestFactory(template.getRequestFactory());
             template.setRequestFactory(factory);
@@ -221,7 +216,7 @@ public class RestTemplateCustomizer {
         }
     }
 
-    public static Interceptor basicAuth(String user, String password) {
+    private static Interceptor basicAuth(String user, String password) {
         requireNonNull(user, "user is null");
         requireNonNull(password, "password is null");
         if (user.contains(":")) {
@@ -234,7 +229,7 @@ public class RestTemplateCustomizer {
                 .build());
     }
 
-    public Interceptor tokenAuth(TemplateType templateType, AuthContext authContext) {
+    private Interceptor tokenAuth(TemplateType templateType, AuthContext authContext) {
         requireNonNull(authContext, "accessToken is null");
 
         switch(templateType) {
@@ -309,15 +304,15 @@ public class RestTemplateCustomizer {
         return tokenExpiry.isBefore(ZonedDateTime.now().minus(TOKEN_EXPIRY_OFFSET));
     }
 
-    public static void setupSocksProxy(OkHttpClient.Builder clientBuilder, CyodaConfig config) {
+    private static void setupSocksProxy(OkHttpClient.Builder clientBuilder, CyodaConfig config) {
         setupProxy(clientBuilder, config.getSocksProxy(), SOCKS);
     }
 
-    public static void setupHttpProxy(OkHttpClient.Builder clientBuilder, CyodaConfig config) {
+    private static void setupHttpProxy(OkHttpClient.Builder clientBuilder, CyodaConfig config) {
         setupProxy(clientBuilder, config.getHttpProxy(), HTTP);
     }
 
-    public static void setupProxy(OkHttpClient.Builder clientBuilder, HostAndPort proxy, Proxy.Type type) {
+    private static void setupProxy(OkHttpClient.Builder clientBuilder, HostAndPort proxy, Proxy.Type type) {
         Optional.ofNullable(proxy).map(RestTemplateCustomizer::toUnresolvedAddress)
                 .map(address -> new Proxy(type, address))
                 .ifPresent(clientBuilder::proxy);

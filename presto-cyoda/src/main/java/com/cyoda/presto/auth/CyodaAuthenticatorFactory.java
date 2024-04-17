@@ -19,6 +19,7 @@ package com.cyoda.presto.auth;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.client.RestTemplateCustomizer;
+import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import io.airlift.bootstrap.Bootstrap;
 import io.trino.spi.security.PasswordAuthenticator;
 import io.trino.spi.security.PasswordAuthenticatorFactory;
@@ -42,7 +43,10 @@ public class CyodaAuthenticatorFactory implements PasswordAuthenticatorFactory {
             Bootstrap app = new Bootstrap(
                     binder -> {
                         configBinder(binder).bindConfig(CyodaConfig.class);
-                        configBinder(binder).bindConfig(RestTemplateCustomizer.class);
+//                        configBinder(binder).bindConfig(CyodaApiRequestStatsMonitor.class);
+//                        configBinder(binder).bindConfig(RestTemplateCustomizer.class);
+                        binder.bind(CyodaApiRequestStatsMonitor.class).in(Scopes.SINGLETON);
+                        binder.bind(RestTemplateCustomizer.class).in(Scopes.SINGLETON);
                         binder.bind(CyodaAuthenticator.class).in(Scopes.SINGLETON);
                     });
 

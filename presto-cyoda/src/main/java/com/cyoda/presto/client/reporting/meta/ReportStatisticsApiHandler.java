@@ -119,7 +119,7 @@ public class ReportStatisticsApiHandler extends BasePagingReportsApiHandler<Repo
             URI templatedUri = uriTemplate.expand(expansion);
             Date callTime = new Date();
             Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-            traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
+            traverson.setRestOperations(getTechRestTemplate());
 
             TypeReferences.EntityModelType<WrappedEntityModel<DistributedReportInfoView>> typeReference
                     = new TypeReferences.EntityModelType<WrappedEntityModel<DistributedReportInfoView>>() {

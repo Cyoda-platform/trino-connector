@@ -119,7 +119,7 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
 
         Date apiCallTime = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-        traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
+        traverson.setRestOperations(getTechRestTemplate());
 
         TypeReferences.PagedModelType<WrappedEntityModel<GroupHeader>> typeReference =
                 new TypeReferences.PagedModelType<WrappedEntityModel<GroupHeader>>() {

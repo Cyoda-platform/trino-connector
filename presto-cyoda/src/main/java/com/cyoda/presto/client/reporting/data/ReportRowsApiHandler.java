@@ -106,7 +106,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler {
 
         Date apiCallTime = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-        traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
+        traverson.setRestOperations(getTechRestTemplate());
 
         TypeReferences.PagedModelType<ReportRow> typeReference =
                 new TypeReferences.PagedModelType<ReportRow>() {

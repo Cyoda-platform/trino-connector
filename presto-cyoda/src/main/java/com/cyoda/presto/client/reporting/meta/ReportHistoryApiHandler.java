@@ -105,7 +105,7 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Repor
 
         Date apiCallTime = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-        traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
+        traverson.setRestOperations(getTechRestTemplate());
 
         TypeReferences.PagedModelType<ReportHistoryFieldsView> typeReference =
                 new TypeReferences.PagedModelType<ReportHistoryFieldsView>() {

@@ -30,6 +30,7 @@ import org.testng.annotations.Test;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Optional;
 
 import static org.mockito.Mockito.mock;
 
@@ -41,7 +42,7 @@ public class DistributedReportInfoViewTest {
         CyodaConfig config = new CyodaConfig();
         config.setServerUrl(new URL("http://localhost"));
 
-        RestTemplateCustomizer customizer = new RestTemplateCustomizer(config, new AuthService(config), new CyodaApiRequestStatsMonitor(config), new CyodaCacheMonitor());
+        RestTemplateCustomizer customizer = new RestTemplateCustomizer(config, null);
         AuthContext authContext = mock(AuthContext.class);
         RestTemplate restTemplate = customizer.getRestTemplate(authContext);
         MappingJackson2HttpMessageConverter converter = (MappingJackson2HttpMessageConverter) restTemplate.getMessageConverters().stream().filter(it -> it instanceof MappingJackson2HttpMessageConverter).findAny()

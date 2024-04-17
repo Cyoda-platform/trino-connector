@@ -43,6 +43,9 @@ public class CyodaAuthenticator implements PasswordAuthenticator {
 
     private static final SupplierLogger LOG = SupplierLogger.get(CyodaAuthenticator.class);
     private static final HttpHeaders HEADERS = standardHeader();
+    static {
+        HEADERS.add("X-Requested-With", "XMLHttpRequest");
+    }
 
     private final RestTemplateCustomizer restTemplateCustomizer;
     private final URI loginUri;
@@ -51,7 +54,9 @@ public class CyodaAuthenticator implements PasswordAuthenticator {
     public CyodaAuthenticator(CyodaConfig config, RestTemplateCustomizer restTemplateCustomizer) {
         this.restTemplateCustomizer = restTemplateCustomizer;
         try {
-            this.loginUri = config.getServerUrl().toURI().resolve(config.getUserLoginEndpoint());
+            URI serverUri = config.getServerUrl().toURI();
+            this.loginUri = serverUri.resolve(config.getUserLoginEndpoint());
+
         } catch (URISyntaxException e) {
             throw new TrinoException(CYODA_BOOTSTRAPPING_FAILURE,"Cannot resolve URI",e);
         }

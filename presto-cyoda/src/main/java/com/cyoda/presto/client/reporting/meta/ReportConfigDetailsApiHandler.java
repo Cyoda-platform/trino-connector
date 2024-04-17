@@ -106,7 +106,7 @@ public class ReportConfigDetailsApiHandler extends BaseReportsApiHandler {
 
         Date callDate = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-        traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
+        traverson.setRestOperations(getTechRestTemplate());
 
         try {
             String jsonResult = Optional.ofNullable(traverson
