@@ -51,10 +51,10 @@ public class ApiCallStatsDataProvider extends VirtualTableDataProvider<ApiReques
             case API_HANDLER -> {
                 return entity.handlerName();
             }
-            case REQUEST_PARAMS -> {
-                return entity.params();
+            case REQUEST -> {
+                return entity.request();
             }
-            case REQUEST_URL -> {
+            case REQUEST_ROUTE -> {
                 return entity.requestUrl();
             }
             case RESPONSE -> {

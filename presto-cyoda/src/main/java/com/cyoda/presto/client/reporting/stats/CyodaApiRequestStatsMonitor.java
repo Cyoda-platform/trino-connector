@@ -6,6 +6,7 @@ import com.google.common.base.Joiner;
 
 import javax.inject.Inject;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
@@ -27,21 +28,22 @@ public class CyodaApiRequestStatsMonitor {
     };
 
     public void registerApiCall(String queryId, Date callTime, String requestUrl, Map<String, Object> params, String apiHandlerName){
-        String strParams = Joiner.on(";").withKeyValueSeparator("=").join(params);
-        registerApiCall(queryId,callTime,requestUrl,strParams,apiHandlerName);
-    }
-    public void registerApiCall(String queryId, Date callTime, String requestUrl, String params, String apiHandlerName){
         if (!config.getLogApiCallStats()) return;
-
+//        String strParams = Joiner.on(";").withKeyValueSeparator("=").join(params);
         String response = tempResponseHolder.remove(requestUrl);
+        Map<String, String> strParams = params.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().toString()));
+        registerApiCall(queryId,callTime,requestUrl, apiHandlerName, strParams, response);
+    }
+    public void registerApiCall(String queryId, Date callTime, String requestUrl, String apiHandlerName, Map<String, String> request, Object response){
+
         add(
                 new ApiRequestStats(
                         queryId,
                         callTime,
                         requestUrl,
                         apiHandlerName,
-                        params,
                         System.currentTimeMillis() - callTime.getTime(),
+                        request,
                         response));
     }
     public void add(ApiRequestStats requestStat){

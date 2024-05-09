@@ -17,7 +17,7 @@
 
 package com.cyoda.presto.client.reporting.metaproviders;
 
-import com.cyoda.core.model.reports.DistributedReportInfoView;
+import com.cyoda.core.reports.DistributedReportInfoDto;
 import com.cyoda.presto.client.jodabeans.StandardColumnDefinition;
 import com.cyoda.presto.client.reporting.ColumnDefinition;
 import com.cyoda.presto.client.types.CompoundDataType;
@@ -60,6 +60,7 @@ import static com.cyoda.presto.client.types.DataType.DATE;
 import static com.cyoda.presto.client.types.DataType.LIST;
 import static com.cyoda.presto.client.types.DataType.LOCAL_DATE_TIME;
 import static com.cyoda.presto.client.types.DataType.LONG;
+import static com.cyoda.presto.client.types.DataType.MAP;
 import static com.cyoda.presto.client.types.DataType.OBJECT;
 import static com.cyoda.presto.client.types.DataType.STRING;
 import static com.cyoda.presto.client.types.DataType.UUID_TYPE;
@@ -89,7 +90,7 @@ public enum StaticTableMetadata {
             .add(new StandardColumnDefinition(3, StaticReportFields.ROW_GROUP_JSON_BASE64_VARIABLE, STRING))
             .build(), CyodaTableType.DATA),
     REPORT_STATS("List of all reports in system. Using in queries is NOT recommended", StandardColumnDefinition.builder()
-            .add(DistributedReportInfoView.meta())
+            .add(DistributedReportInfoDto.meta())
             .build(), CyodaTableType.STATS, "report_stats");
 
     public static final String LOG_TABLE_NAME = LOG_TABLE.staticTableName;
@@ -190,9 +191,9 @@ public enum StaticTableMetadata {
         CALL_TIME(3, DATE),
         DURATION_MILLIS(5, LONG),
         API_HANDLER(6, STRING),
-        REQUEST_PARAMS(7, STRING),
-        REQUEST_URL(8, STRING),
-        RESPONSE(9, STRING);
+        REQUEST_ROUTE(7, STRING),
+        REQUEST(8, MAP, STRING, STRING),
+        RESPONSE(9, OBJECT);
 
         @Override
         public String toString() {

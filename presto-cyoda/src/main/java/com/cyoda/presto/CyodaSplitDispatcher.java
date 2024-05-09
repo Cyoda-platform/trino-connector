@@ -21,7 +21,7 @@ public class CyodaSplitDispatcher {
     private final Node coordinator;
     private volatile List<Node> nodeBuckets;
     // Map to track worker load
-    private final Map<Node, Integer> workerLoadMap = new ConcurrentHashMap<>();
+//    private final Map<Node, Integer> workerLoadMap = new ConcurrentHashMap<>();
 
     public CyodaSplitDispatcher(NodeManager nodeManager) {
         this.nodeManager = nodeManager;
@@ -34,21 +34,24 @@ public class CyodaSplitDispatcher {
 
     private void dispatchToWorkers(CyodaSplit split) {
         if (!split.getAddresses().isEmpty() || split.getCyodaTableMetaId() == null) return;
+        if (split.getReportId() == null) return;
         refreshBuckets();
         Node dispatched;
         int weight;
-        if (split.getReportId() != null){
+//        if (split.getReportId() != null){
             int hash = Math.abs(Objects.hash(split.getCyodaTableMetaId(), split.getReportId(), split.getGroupJsonBase64(), split.getPage()));
             dispatched = nodeBuckets.get(hash % nodeBuckets.size());
-            weight = 1;
-        } else {
-            dispatched = Collections.min(workerLoadMap.entrySet(), Map.Entry.comparingByValue()).getKey();
-            weight = split.getConstraint() != null && !split.getConstraint().isAll() ? 1 : 5;
-        }
+//            weight = 1;
+//        }
+//        else {
+//            dispatched = Collections.min(workerLoadMap.entrySet(), Map.Entry.comparingByValue()).getKey();
+//            weight = split.getConstraint() != null && !split.getConstraint().isAll() ? 1 : 5;
+//        }
+//        // Update the load of the worker node
+//        Integer currentLoad = workerLoadMap.getOrDefault(dispatched, 0);
+//        workerLoadMap.put(dispatched, currentLoad + weight);
+//
         split.getAddresses().add(HostAddress.fromUri(dispatched.getHttpUri()));
-        // Update the load of the worker node
-        Integer currentLoad = workerLoadMap.getOrDefault(dispatched, 0);
-        workerLoadMap.put(dispatched, currentLoad + weight);
     }
 
     private void dispatchToCoordinator(CyodaSplit split){

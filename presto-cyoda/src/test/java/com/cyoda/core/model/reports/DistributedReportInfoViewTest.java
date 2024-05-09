@@ -19,10 +19,8 @@ package com.cyoda.core.model.reports;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.auth.AuthService;
+import com.cyoda.presto.auth.AuthContextWithToken;
 import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
-import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
@@ -30,7 +28,6 @@ import org.testng.annotations.Test;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Optional;
 
 import static org.mockito.Mockito.mock;
 
@@ -43,7 +40,7 @@ public class DistributedReportInfoViewTest {
         config.setServerUrl(new URL("http://localhost"));
 
         RestTemplateCustomizer customizer = new RestTemplateCustomizer(config, null);
-        AuthContext authContext = mock(AuthContext.class);
+        AuthContext authContext = mock(AuthContextWithToken.class);
         RestTemplate restTemplate = customizer.getRestTemplate(authContext);
         MappingJackson2HttpMessageConverter converter = (MappingJackson2HttpMessageConverter) restTemplate.getMessageConverters().stream().filter(it -> it instanceof MappingJackson2HttpMessageConverter).findAny()
                 .orElseThrow(() -> new RuntimeException("Cannot find converter"));

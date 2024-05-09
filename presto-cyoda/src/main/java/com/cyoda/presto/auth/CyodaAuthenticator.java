@@ -22,6 +22,7 @@ import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.TrinoException;
 import io.trino.spi.security.AccessDeniedException;
+import io.trino.spi.security.BasicPrincipal;
 import io.trino.spi.security.PasswordAuthenticator;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -68,11 +69,11 @@ public class CyodaAuthenticator implements PasswordAuthenticator {
 
         Login payload = new Login(user,password);
         HttpEntity<Login> requestEntity = new HttpEntity<>(payload, HEADERS);
-        ResponseEntity<AuthContext> response =
+        ResponseEntity<AuthContextWithToken> response =
                 restTemplateCustomizer.getUnauthorizedRestTemplate()
-                        .exchange(loginUri, HttpMethod.POST, requestEntity, AuthContext.class);
-        if ( response.getStatusCode().is2xxSuccessful() ) {
-            return new JWTPrinciple(response.getBody());
+                        .exchange(loginUri, HttpMethod.POST, requestEntity, AuthContextWithToken.class);
+        if ( response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            return new BasicPrincipal(response.getBody().getUserId());
         } else {
             LOG.warn("access denied to "+user+" with reason: "+response.toString());
             throw new AccessDeniedException("Unauthorized");

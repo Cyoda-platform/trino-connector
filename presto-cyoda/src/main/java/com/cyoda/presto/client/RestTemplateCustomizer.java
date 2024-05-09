@@ -19,12 +19,10 @@ package com.cyoda.presto.client;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.auth.AuthContext;
+import com.cyoda.presto.auth.AuthContextWithToken;
 import com.cyoda.presto.auth.AuthPayload;
-import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.auth.RefreshContext;
-import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
-import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.TrinoException;
 import io.trino.spi.security.AccessDeniedException;
@@ -41,7 +39,6 @@ import org.springframework.hateoas.client.Traverson;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpRequestFactory;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
@@ -78,8 +75,8 @@ public class RestTemplateCustomizer {
 
     private final CyodaConfig config;
     private final CyodaApiRequestStatsMonitor apiRequestStatsMonitor;
-    private final LoadingCache<AuthContext,RestTemplate> restTemplateCache;
-    private final LoadingCache<AuthContext,RestTemplate> refreshRestTemplateCache;
+    private final LoadingCache<AuthContextWithToken,RestTemplate> restTemplateCache;
+    private final LoadingCache<AuthContextWithToken,RestTemplate> refreshRestTemplateCache;
     private final RestTemplate unauthorizedRestTemplate;
     private final URI refreshUri;
     private final boolean logResponce;
@@ -97,14 +94,12 @@ public class RestTemplateCustomizer {
         logResponce = apiRequestStatsMonitor != null && config.getLogApiCallStats() && config.getLogApiCallResponse();
         restTemplateCache = Caffeine.newBuilder()
                 .maximumSize(100)
-                .recordStats()
                 .build(key -> {
                     LOG.debug(()->"creating RestTemplate for "+key.getPayload().getUsername());
                     return newRestTemplate(ACCESS,key,HAL_CONVERTERS);
                 });
         refreshRestTemplateCache = Caffeine.newBuilder()
                 .maximumSize(100)
-                .recordStats()
                 .build(key -> {
                     LOG.debug(()->"creating refresh RestTemplate for "+key.getPayload().getUsername());
                     return newRestTemplate(REFRESH,key,null);
@@ -124,15 +119,18 @@ public class RestTemplateCustomizer {
         REFRESH
     }
 
+    public RestTemplate getRestTemplate(AuthContextWithToken authContext) {
+        return restTemplateCache.get(authContext);
+    }
     public RestTemplate getRestTemplate(AuthContext authContext) {
-            return restTemplateCache.get(authContext);
+            return getRestTemplate((AuthContextWithToken) authContext);
     }
 
     public RestTemplate getUnauthorizedRestTemplate() {
         return unauthorizedRestTemplate;
     }
 
-    private RestTemplate newRestTemplate(TemplateType templateType, AuthContext authContext,
+    private RestTemplate newRestTemplate(TemplateType templateType, AuthContextWithToken authContext,
                                          List<HttpMessageConverter<?>> messageConverters) {
 
         RestTemplate template = new RestTemplate();
@@ -170,7 +168,7 @@ public class RestTemplateCustomizer {
 
     private void setupAuthentication(
             TemplateType templateType,
-            AuthContext authContext,
+            AuthContextWithToken authContext,
             OkHttpClient.Builder clientBuilder,
             CyodaConfig config) {
         switch (config.getCyodaAuthenticationType()) {
@@ -203,7 +201,7 @@ public class RestTemplateCustomizer {
 
     private void setupTokenAuth(
             TemplateType templateType,
-            AuthContext authContext,
+            AuthContextWithToken authContext,
             OkHttpClient.Builder clientBuilder,
             CyodaConfig config) {
 
@@ -229,7 +227,7 @@ public class RestTemplateCustomizer {
                 .build());
     }
 
-    private Interceptor tokenAuth(TemplateType templateType, AuthContext authContext) {
+    private Interceptor tokenAuth(TemplateType templateType, AuthContextWithToken authContext) {
         requireNonNull(authContext, "accessToken is null");
 
         switch(templateType) {
@@ -248,7 +246,7 @@ public class RestTemplateCustomizer {
         }
     }
 
-    private String getRefreshToken(AuthContext authContext) {
+    private String getRefreshToken(AuthContextWithToken authContext) {
         ZonedDateTime refreshTokenExpiry = authContext.getPayload().getRefreshTokenExpiry();
         if (isTokenExpired(authContext.getPayload().getUsername(),refreshTokenExpiry)) {
             String message =
@@ -268,7 +266,7 @@ public class RestTemplateCustomizer {
         }
     }
 
-    private String getAccessToken(AuthContext authContext) {
+    private String getAccessToken(AuthContextWithToken authContext) {
         if (needANewToken(authContext)) {
             RestTemplate restTemplate = Optional.ofNullable(refreshRestTemplateCache.get(authContext))
                     .orElseThrow(()->new IllegalArgumentException("Cannot get RestTemplate"));
@@ -279,7 +277,7 @@ public class RestTemplateCustomizer {
                 ).orElseThrow(()->new IllegalStateException(
                         "No body returned from refresh token endpoint"+config.getRefreshTokenEndpoint())
                 );
-                AuthContext newAuthContext = authContext.withContext(refreshContext);
+                AuthContextWithToken newAuthContext = authContext.withContext(refreshContext);
                 restTemplateCache.refresh(newAuthContext);
                 return refreshContext.getToken();
             } else {
@@ -291,7 +289,7 @@ public class RestTemplateCustomizer {
         }
     }
 
-    private boolean needANewToken(AuthContext authContext) {
+    private boolean needANewToken(AuthContextWithToken authContext) {
         AuthPayload payload = authContext.getPayload();
         return payload.getToken() == null || isTokenExpired(payload.getUsername(), payload.getTokenExpiry());
     }

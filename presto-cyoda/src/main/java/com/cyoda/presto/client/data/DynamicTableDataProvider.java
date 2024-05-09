@@ -5,12 +5,12 @@ import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.reporting.data.DataRequestKey;
-import com.cyoda.presto.client.reporting.data.ReportRowsApiHandler;
+import com.cyoda.presto.client.reporting.data.ReportRowsApi;
 import com.cyoda.presto.client.reporting.data.RowHandle;
 import com.cyoda.presto.client.reporting.groups.GroupsRequestKey;
-import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
+import com.cyoda.presto.client.reporting.groups.ReportGroupsApi;
 import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
-import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
+import com.cyoda.presto.client.reporting.meta.ReportHistoryApi;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
@@ -35,9 +35,9 @@ import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_REPORT_ROW_NUMBER_COLUMN;
 
 public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
-    private final ReportHistoryApiHandler reportHistoryApiHandler;
-    private final ReportGroupsApiHandler reportGroupsApiHandler;
-    private final ReportRowsApiHandler reportRowsApiHandler;
+    private final ReportHistoryApi reportHistoryApiHandler;
+    private final ReportGroupsApi reportGroupsApiHandler;
+    private final ReportRowsApi reportRowsApiHandler;
     private final CyodaConfig config;
     private final CyodaColumnHandle reportIdColumn;
     private final CyodaColumnHandle groupIdColumn;
@@ -45,9 +45,9 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
 
     private final ContentIdLoadingCache<DataRequestKey, CyodaCachedPageSource<RowHandle>> pageCache;
 
-    public DynamicTableDataProvider(ReportHistoryApiHandler reportHistoryApiHandler,
-                                    ReportGroupsApiHandler reportGroupsApiHandler,
-                                    ReportRowsApiHandler reportRowsApiHandler,
+    public DynamicTableDataProvider(ReportHistoryApi reportHistoryApiHandler,
+                                    ReportGroupsApi reportGroupsApiHandler,
+                                    ReportRowsApi reportRowsApiHandler,
                                     StaticTableMetadataProvider reportMetadataProvider,
                                     CyodaConfig config,
                                     CyodaCacheMonitor cacheMonitor) {

@@ -5,7 +5,6 @@ import com.cyoda.core.conditions.queryable.Equals;
 import com.cyoda.core.util.JodaBeanSerUtil;
 import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.client.treenode.DomainToCondition;
 import com.cyoda.presto.client.treenode.CyodaRSocketClient;
 import com.cyoda.presto.client.treenode.dto.DataRequestDto;
@@ -26,7 +25,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,11 +34,9 @@ import java.util.UUID;
 public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDto> {
 
     public static final int BATCH_SIZE = 10;
-    private final CyodaApiRequestStatsMonitor apiMonitor;
     private final CyodaRSocketClient client;
 
-    public TreeNodeTableDataProvider(CyodaApiRequestStatsMonitor apiMonitor, CyodaRSocketClient client) {
-        this.apiMonitor = apiMonitor;
+    public TreeNodeTableDataProvider(CyodaRSocketClient client) {
         this.client = client;
     }
 
@@ -120,8 +116,9 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         condition.addCondition(new Equals("entityModelClassId", metaClassId));
         condition.addCondition(new Equals("uniformedPath", uniformedPath));
         String strCondition = JodaBeanSerUtil.compact().jsonWriter().write(condition);
-        Iterable<EntityContentDto> result = client.treeNode().getData(new DataRequestDto(metaClassId, split.getUserId(), uniformedPath, strCondition));
-        apiMonitor.registerApiCall(split.getQueryId(), new Date(), strTableId, strCondition, "TREE_NODE");
+        String queryId = split.getQueryId();
+        DataRequestDto dataRequest = new DataRequestDto(metaClassId, split.getUserId(), uniformedPath, strCondition);
+        Iterable<EntityContentDto> result = client.treeNodeClient.dataRequester.retrieveData(queryId, dataRequest).toIterable();
         return result;
     }
 }

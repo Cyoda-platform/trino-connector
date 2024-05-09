@@ -17,12 +17,12 @@
 
 package com.cyoda.presto.client.reporting.data;
 
-import com.cyoda.service.api.beans.ReportRow;
 import com.google.common.base.MoreObjects;
 
+import java.util.Map;
 import java.util.UUID;
 
-public record RowHandle(String reportId, UUID groupingVersion, String groupJsonBase64, ReportRow reportRow,
+public record RowHandle(String reportId, UUID groupingVersion, String groupJsonBase64, Map<String, Object> reportRow,
                         long rowNum) {
 
     @Override

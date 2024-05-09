@@ -25,8 +25,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -62,7 +60,7 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
     }
 
     public Map<SchemaTableName, CyodaTableMeta> loadSchema(String schemaName){
-        SchemaConfigDto schemaConfigDto = rSocketClient.treeNode().getSchema(schemaName);
+        SchemaConfigDto schemaConfigDto = rSocketClient.treeNodeClient.schemaRequester.retrieveData(null, schemaName).block();
         return mapSchema(schemaConfigDto);
     }
 
@@ -74,7 +72,7 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
 
     public List<String> loadSchemas(String userId){
         List<String> result = new ArrayList<>();
-        List<SchemaConfigDto> schemas = rSocketClient.treeNode().getSchemas(userId);
+        List<SchemaConfigDto> schemas = rSocketClient.treeNodeClient.schemaListRequester.retrieveData(null, userId).collectList().block();
         schemas.forEach(schemaConfigDto -> {
             String schemaName = schemaConfigDto.getSchemaName();
             result.add(schemaName);

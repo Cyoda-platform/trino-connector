@@ -23,18 +23,22 @@ public class TableConfigDto {
         this.fields = fields;
     }
 
+    @JsonProperty
     public String getTableName() {
         return tableName;
     }
 
+    @JsonProperty
     public UUID getMetadataClassId() {
         return metadataClassId;
     }
 
+    @JsonProperty
     public String getUniformedPath() {
         return uniformedPath;
     }
 
+    @JsonProperty
     public List<FieldConfigDto> getFields() {
         return fields;
     }

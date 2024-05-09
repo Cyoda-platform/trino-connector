@@ -1,12 +1,12 @@
 package com.cyoda.presto.client.data;
 
 import com.cyoda.presto.CyodaConfig;
-import com.cyoda.presto.client.reporting.data.ReportRowsApiHandler;
-import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
-import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
-import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
-import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
-import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
+import com.cyoda.presto.client.reporting.data.ReportRowsApi;
+import com.cyoda.presto.client.reporting.groups.ReportGroupsApi;
+import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApi;
+import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApi;
+import com.cyoda.presto.client.reporting.meta.ReportHistoryApi;
+import com.cyoda.presto.client.reporting.meta.ReportStatisticsApi;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
@@ -25,12 +25,12 @@ public class TableDataProviderProvider {
 
     private final Map<CyodaTableType, TableDataProvider<?>> providerMap;
     @Inject
-    public TableDataProviderProvider(ConfiguredReportsApiHandler reportsApiHandler,
-                                     ReportConfigDetailsApiHandler configDetailsApiHandler,
-                                     ReportStatisticsApiHandler statisticsApiHandler,
-                                     ReportHistoryApiHandler historyApiHandler,
-                                     ReportGroupsApiHandler groupsApiHandler,
-                                     ReportRowsApiHandler rowsApiHandler,
+    public TableDataProviderProvider(ConfiguredReportsApi reportsApiHandler,
+                                     ReportConfigDetailsApi configDetailsApiHandler,
+                                     ReportStatisticsApi statisticsApiHandler,
+                                     ReportHistoryApi historyApiHandler,
+                                     ReportGroupsApi groupsApiHandler,
+                                     ReportRowsApi rowsApiHandler,
                                      StaticTableMetadataProvider reportMetadataProvider,
                                      CyodaApiRequestStatsMonitor statsMonitor,
                                      CyodaConfig config,
@@ -81,7 +81,7 @@ public class TableDataProviderProvider {
         );
         providerMap.put(
                 TREE_NODE_TABLE,
-                new TreeNodeTableDataProvider(statsMonitor, treeNodeAPIClient)
+                new TreeNodeTableDataProvider(treeNodeAPIClient)
         );
     }
 

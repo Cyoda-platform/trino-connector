@@ -1,7 +1,7 @@
 package com.cyoda.presto;
 
 import com.cyoda.presto.auth.AuthService;
-import com.cyoda.presto.client.reporting.calls.RunReportApiHandler;
+import com.cyoda.presto.client.reporting.calls.RunReportApi;
 import com.cyoda.presto.procedures.CyodaProcedure;
 import com.cyoda.presto.procedures.RunReportProcedure;
 import io.trino.spi.procedure.Procedure;
@@ -16,7 +16,7 @@ public class CyodaProcedureManager {
     private final CyodaConfig config;
 
     @Inject
-    public CyodaProcedureManager(CyodaConfig config, AuthService auth, RunReportApiHandler runReportApiHandler){
+    public CyodaProcedureManager(CyodaConfig config, AuthService auth, RunReportApi runReportApiHandler){
         this.config = config;
         registerProcedure(RunReportProcedure.getInstance(auth, runReportApiHandler));
     }

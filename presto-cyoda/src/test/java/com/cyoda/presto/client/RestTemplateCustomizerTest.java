@@ -17,7 +17,7 @@
 
 package com.cyoda.presto.client;
 
-import com.cyoda.core.model.reports.DistributedReportInfoView;
+import com.cyoda.core.reports.DistributedReportInfoDto;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.testng.annotations.Test;
@@ -29,13 +29,13 @@ public class RestTemplateCustomizerTest {
     @Test
     public void testAnnotation() throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
-        DistributedReportInfoView view = DistributedReportInfoView.builder()
+        DistributedReportInfoDto view = DistributedReportInfoDto.builder()
                 .id("my ID")
                 .build();
 
 
         String json = mapper.writeValueAsString(view);
-        DistributedReportInfoView reloaded = mapper.readValue(json,DistributedReportInfoView.class);
+        DistributedReportInfoDto reloaded = mapper.readValue(json, DistributedReportInfoDto.class);
         assertNotNull(json);
     }
 

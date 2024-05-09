@@ -3,7 +3,7 @@ package com.cyoda.presto.client.data;
 import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
+import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApi;
 import com.cyoda.presto.client.reporting.meta.ReportListKey;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import io.trino.spi.connector.Constraint;
@@ -12,9 +12,9 @@ import reactor.core.scheduler.Schedulers;
 import java.util.List;
 
 public abstract class MultiConfigTableDataProvider<T> extends TableDataProvider<T> {
-    protected final ConfiguredReportsApiHandler reportsApiHandler;
+    protected final ConfiguredReportsApi reportsApiHandler;
 
-    public MultiConfigTableDataProvider(ConfiguredReportsApiHandler reportsApiHandler) {
+    public MultiConfigTableDataProvider(ConfiguredReportsApi reportsApiHandler) {
         this.reportsApiHandler = reportsApiHandler;
     }
 

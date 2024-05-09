@@ -20,11 +20,13 @@ package com.cyoda.presto;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.logic.PredicatePushdownController;
-import com.cyoda.presto.client.reporting.calls.DeleteReportsApiHandler;
+import com.cyoda.presto.client.reporting.calls.DeleteReportsApi;
 import com.cyoda.presto.client.reporting.metaproviders.*;
 import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.client.treenode.CyodaRSocketClient;
+import com.cyoda.presto.client.treenode.dto.view.TrinoViewDefinitionDto;
+import com.cyoda.presto.client.treenode.dto.view.TrinoViewDto;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.CyodaTableMeta;
@@ -63,7 +65,7 @@ public class CyodaMetadata implements ConnectorMetadata {
     private final StaticTableMetadataProvider staticMetadataProvider;
     private final DynamicReportMetadataProvider dynamicReportMetadataProvider;
     private final TreeNodeMetadataProvider treeNodeMetadataProvider;
-    private final DeleteReportsApiHandler deleteReportsApiHandler;
+    private final DeleteReportsApi deleteReportsApiHandler;
     private final ContentIdLoadingCache<AuthContext, Map<SchemaTableName, CyodaTableHandle>> tableByUserCache;
     private final Map<SchemaTableName, CyodaTableHandle> defaultTableList;
     private final CyodaRSocketClient rSocketClient;
@@ -76,7 +78,7 @@ public class CyodaMetadata implements ConnectorMetadata {
             StaticTableMetadataProvider staticMetadataProvider,
             DynamicReportMetadataProvider dynamicReportMetadataProvider,
             TreeNodeMetadataProvider treeNodeMetadataProvider,
-            DeleteReportsApiHandler deleteReportsApiHandler,
+            DeleteReportsApi deleteReportsApiHandler,
             CyodaCacheMonitor cacheMonitor,
             CyodaRSocketClient rSocketClient) {
         this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
@@ -268,9 +270,9 @@ public class CyodaMetadata implements ConnectorMetadata {
         try {
             Map<SchemaTableName, CyodaTableHandle> tableMap = getTableHandleMap(session);
             return filterSchema.map(s ->
-                    Stream.of(tableMap.keySet(), rSocketClient.view().getViews(auth.fromSession(session).getUserId()).keySet()).flatMap(Collection::stream)
-                            .filter(e -> s.equals(e.getSchemaName()))
-                            .collect(Collectors.toList()))
+                            Stream.of(tableMap.keySet(), rSocketClient.viewClient.getViews(auth.fromSession(session).getUserId()).keySet()).flatMap(Collection::stream)
+                                    .filter(e -> s.equals(e.getSchemaName()))
+                                    .collect(Collectors.toList()))
                     .orElseGet(() -> ImmutableList.copyOf(tableMap.keySet()));
         } catch (Exception e){
             LOG.error(e);
@@ -281,22 +283,24 @@ public class CyodaMetadata implements ConnectorMetadata {
     @Override
     public synchronized void createView(ConnectorSession session, SchemaTableName viewName, ConnectorViewDefinition definition, boolean replace)
     {
-//        if (tableIds.containsKey(viewName)) {
-//            throw new TrinoException(ALREADY_EXISTS, "Table already exists: " + viewName);
-//        }
 
         if (viewName.getSchemaName()==null) {
             throw new TrinoException(MISSING_SCHEMA_NAME,"view is missing schema name: " + viewName.getTableName());
         }
-        String response = rSocketClient.view().addView(session.getUser(), viewName, definition, replace);
-
+        String queryId = session.getQueryId();
+        String userId = session.getUser();
+        TrinoViewDto data = new TrinoViewDto(userId, viewName, TrinoViewDefinitionDto.fromModel(definition, viewName), null, replace);
+        String response = rSocketClient.viewClient.addRequester.retrieveData(queryId, data).block();
+        if (response != null)
+            throw new RuntimeException(response);
     }
 
     @Override
     public synchronized void renameView(ConnectorSession session, SchemaTableName viewName, SchemaTableName newViewName)
     {
         String userId = session.getUser();
-        String response = rSocketClient.view().renameView(viewName, newViewName, userId);
+        TrinoViewDto data = new TrinoViewDto(userId, viewName, null, newViewName, false);
+        String response = rSocketClient.viewClient.renameRequester.retrieveData(session.getQueryId(), data).block();
         if (response != null) throw new TrinoException(StandardErrorCode.REMOTE_TASK_FAILED, response);
     }
 
@@ -304,14 +308,15 @@ public class CyodaMetadata implements ConnectorMetadata {
     public synchronized void dropView(ConnectorSession session, SchemaTableName viewName)
     {
         String userId = session.getUser();
-        String response = rSocketClient.view().dropView(viewName, userId);
+        TrinoViewDto data = new TrinoViewDto(userId, viewName, null, null, true);
+        String response = rSocketClient.viewClient.deleteRequester.retrieveData(session.getQueryId(), data).block();
         if (response != null) throw new TrinoException(StandardErrorCode.REMOTE_TASK_FAILED, response);
     }
 
     @Override
     public synchronized List<SchemaTableName> listViews(ConnectorSession session, Optional<String> schemaName)
     {
-        return rSocketClient.view().getViews(auth.fromSession(session).getUserId()).keySet().stream()
+        return rSocketClient.viewClient.getViews(auth.fromSession(session).getUserId()).keySet().stream()
                 .filter(viewName -> schemaName.map(viewName.getSchemaName()::equals).orElse(true))
                 .collect(toImmutableList());
     }
@@ -319,12 +324,12 @@ public class CyodaMetadata implements ConnectorMetadata {
     public synchronized Map<SchemaTableName, ConnectorViewDefinition> getViews(ConnectorSession session, Optional<String> schemaName)
     {
         SchemaTablePrefix prefix = schemaName.map(SchemaTablePrefix::new).orElseGet(SchemaTablePrefix::new);
-        return ImmutableMap.copyOf(Maps.filterKeys(rSocketClient.view().getViews(auth.fromSession(session).getUserId()), prefix::matches));
+        return ImmutableMap.copyOf(Maps.filterKeys(rSocketClient.viewClient.getViews(auth.fromSession(session).getUserId()), prefix::matches));
     }
     @Override
     public synchronized Optional<ConnectorViewDefinition> getView(ConnectorSession session, SchemaTableName viewName)
     {
-        return Optional.ofNullable(rSocketClient.view().getViews(auth.fromSession(session).getUserId()).get(viewName));
+        return Optional.ofNullable(rSocketClient.viewClient.getViews(auth.fromSession(session).getUserId()).get(viewName));
     }
 
     @Override

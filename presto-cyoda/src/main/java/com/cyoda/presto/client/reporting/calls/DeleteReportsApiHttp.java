@@ -5,12 +5,12 @@ import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
-import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.collect.ImmutableList;
 import io.trino.spi.StandardErrorCode;
 import io.trino.spi.TrinoException;
+import io.trino.spi.connector.ConnectorSession;
 import org.springframework.hateoas.TemplateVariable;
 import org.springframework.hateoas.TemplateVariables;
 import org.springframework.hateoas.UriTemplate;
@@ -23,27 +23,32 @@ import org.springframework.web.client.RestTemplate;
 import javax.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 
-public class RunReportApiHandler extends BaseReportsApiHandler {
+public class DeleteReportsApiHttp extends BaseReportsApiHandler implements DeleteReportsApi {
 
-    public static final String RUN_REPORT_ENDPOINT = "/api/platform-api/reporting/pre";
+    public static final String RUN_REPORT_ENDPOINT = "/api/platform-api/reporting/definitions/";
 
-    protected static final SupplierLogger LOG = SupplierLogger.get(RunReportApiHandler.class);
+    protected static final SupplierLogger LOG = SupplierLogger.get(DeleteReportsApiHttp.class);
 
     private final UriTemplate uriTemplate;
+    private final AuthService auth;
     @Inject
-    protected RunReportApiHandler(CyodaConfig config, RestTemplateCustomizer restTemplateCustomizer, AuthService authService, CyodaApiRequestStatsMonitor requestStatsMonitor) {
+    protected DeleteReportsApiHttp(CyodaConfig config, RestTemplateCustomizer restTemplateCustomizer, AuthService authService, CyodaApiRequestStatsMonitor requestStatsMonitor, AuthService auth) {
         super(config, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
+        this.auth = auth;
         uriTemplate = setupUriTemplate();
     }
 
 
-    public String runReport(AuthContext authContext, ReportConfigKey reportConfigKey) {
-        String reportConfigId = reportConfigKey.configId();
-        Map<String, Object> expansion = Collections.singletonMap("gridConfig", reportConfigId);
+    @Override
+    public String deleteReports(ConnectorSession session, String configId) {
+        AuthContext authContext = auth.fromSession(session);
+        Map<String, Object> expansion = new HashMap<>();
+        expansion.put("configId", configId);
+        expansion.put("mode", "reports");
         URI templatedUri = uriTemplate.expand(expansion);
 
         Date callDate = new Date();
@@ -51,12 +56,12 @@ public class RunReportApiHandler extends BaseReportsApiHandler {
 
         ResponseEntity<String> response;
         try {
-            response = restTemplate.exchange(templatedUri, HttpMethod.POST, HttpEntity.EMPTY, String.class);
+            response = restTemplate.exchange(templatedUri, HttpMethod.DELETE, HttpEntity.EMPTY, String.class);
             LOG.info("CALLed run report, response: " + response);
         } catch (HttpClientErrorException e) {
             throw requestFailedException(this, e, templatedUri);
         } finally {
-            registerApiCall(reportConfigKey.queryId(), callDate, templatedUri.toString(), expansion);
+            registerApiCall(session.getQueryId(), callDate, templatedUri.toString(), expansion);
         }
         return response.toString();
     }
@@ -69,7 +74,8 @@ public class RunReportApiHandler extends BaseReportsApiHandler {
             throw new TrinoException(StandardErrorCode.GENERIC_INTERNAL_ERROR, e);
         }
         final ImmutableList.Builder<TemplateVariable> builder = ImmutableList.builder();
-        builder.add(TemplateVariable.requestParameter("gridConfig"));
+        builder.add(TemplateVariable.pathVariable("configId"));
+        builder.add(TemplateVariable.requestParameter("mode"));
         builder.add();
 
         TemplateVariables vars = new TemplateVariables(builder.build());
