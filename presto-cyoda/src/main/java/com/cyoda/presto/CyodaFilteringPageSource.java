@@ -56,6 +56,7 @@ public class CyodaFilteringPageSource<T>
     private final PageBuilder pageBuilder;
     private final AtomicInteger totalRowNumber;
     private final AtomicInteger pages;
+    private final CyodaTableMeta tableHandle;
 
     public CyodaFilteringPageSource(
             TableDataProvider<T> dataProvider,
@@ -79,6 +80,7 @@ public class CyodaFilteringPageSource<T>
                 tableHandle,
                         split);
 
+        this.tableHandle = tableHandle;
     }
 
     @Override
@@ -171,7 +173,7 @@ public class CyodaFilteringPageSource<T>
         for (int i = 0; i < columnHandles.size(); i++) {
             BlockBuilder blockBuilder = pageBuilder.getBlockBuilder(i);
             CyodaColumnHandle columnHandle = columnHandles.get(i);
-            dataProvider.writeValue(item, columnHandle, blockBuilder);
+            dataProvider.writeValue(item, columnHandle, blockBuilder, tableHandle.toSchemaTableName());
         }
     }
 

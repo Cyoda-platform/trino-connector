@@ -18,59 +18,30 @@
 package com.cyoda.presto.client.reporting;
 
 import com.cyoda.presto.CyodaConfig;
-import com.cyoda.presto.CyodaConnectorId;
-import com.cyoda.presto.SizeListener;
-import com.cyoda.presto.auth.AuthService;
-import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.paging.PagingFluxProvider;
-import com.cyoda.presto.client.paging.PagingHandle;
 import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
-import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
-import com.cyoda.presto.logging.SupplierLogger;
+import com.cyoda.presto.client.treenode.CyodaRSocketClient;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.LoadingCache;
-import io.trino.spi.type.TypeManager;
-import org.springframework.hateoas.PagedModel;
-import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 
-public abstract class CachedRSocketReportsApiHandler<K, T> extends BaseReportsApiHandler implements CachedReportsApi<K, T> {
+public abstract class CachedRSocketReportsApiHandler<K, T> extends BaseRSocketReportsApiHandler implements CachedReportsApi<K, T> {
 
+    protected final CyodaConfig config;
     protected final ContentIdLoadingCache<K, List<T>> cache;
 
-    public abstract Optional<PagedModel<T>> retrievePage(
-            K requestKey,
-            int page,
-            int pageSize,
-            SizeListener listener);
+    public abstract List<T> loadByKey(K requestKey);
 
     protected abstract LoadingCache<K, List<T>> setupCache(CacheLoader<K, List<T>> loader);
     protected abstract void registerCache(CyodaCacheMonitor cacheMonitor, ContentIdLoadingCache<K, List<T>> cache);
 
-    protected CachedRSocketReportsApiHandler(CyodaConnectorId connectorId,
-                                             CyodaConfig config,
-                                             TypeManager typeManager,
-                                             RestTemplateCustomizer restTemplateCustomizer,
-                                             SupplierLogger log,
-                                             AuthService authService,
-                                             CyodaApiRequestStatsMonitor requestStatsMonitor,
-                                             CyodaCacheMonitor cacheMonitor) {
-        super(config, restTemplateCustomizer, log, authService, requestStatsMonitor);
+    protected CachedRSocketReportsApiHandler(CyodaRSocketClient rSocketClient,
+                                             CyodaCacheMonitor cacheMonitor, CyodaConfig config) {
+        super(rSocketClient);
+        this.config = config;
         cache = new ContentIdLoadingCache<>(setupCache(this::loadByKey));
         registerCache(cacheMonitor, cache);
-    }
-
-    protected List<T> loadByKey(K requestKey){
-
-        int pageSize = config.getRequestPageSize();
-        logCreation(pageSize, log);
-        Function<Integer, PagingHandle<?, T>> pagingHandleGetter = page ->
-                new PagingHandle<>(retrievePage(requestKey, page, pageSize, SizeListener.NOT_LISTENING));
-        return new PagingFluxProvider<>(pagingHandleGetter).generate(0).subscribeOn(Schedulers.immediate(), false).collectList().block();
     }
 
     @Override

@@ -12,6 +12,7 @@ import com.cyoda.presto.client.treenode.dto.ReportRequestDto;
 import com.cyoda.presto.client.treenode.dto.schema.SchemaConfigDto;
 import com.cyoda.presto.client.treenode.dto.view.TrinoViewDefinitionDto;
 import com.cyoda.presto.client.treenode.dto.view.TrinoViewDto;
+import com.cyoda.presto.logging.SupplierLogger;
 import com.cyoda.service.api.beans.GroupHeader;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.benmanes.caffeine.cache.Caffeine;
@@ -40,6 +41,8 @@ import java.util.stream.Collectors;
 import static com.cyoda.presto.client.logic.converters.structure.SingleValueConverter.OBJECT_MAPPER_SUPPLIER;
 
 public class CyodaRSocketClient {
+
+    private static SupplierLogger LOG = SupplierLogger.get(CyodaRSocketClient.class);
     private final RSocketRequester rSocketRequester;
     private final CyodaCacheMonitor cacheMonitor;
     private final CyodaApiRequestStatsMonitor statsMonitor;
@@ -61,14 +64,14 @@ public class CyodaRSocketClient {
                 .rsocketStrategies(strategies)
                 .rsocketConnector(connector -> connector
 //                        .reconnect(Retry.fixedDelay(Long.MAX_VALUE, Duration.ofSeconds(2))) // Reconnect on failure
-                        .reconnect(Retry.backoff(Long.MAX_VALUE, Duration.ofSeconds(1))
-                                .maxBackoff(Duration.ofSeconds(30)) // Adjust based on server start time
-//                                .doBeforeRetry(retrySignal -> log.info("Attempting to reconnect...")))
-                        )
-                        .keepAlive(
-                                Duration.ofSeconds(5), // KeepAlive interval
-                                Duration.ofSeconds(20)
-                        )
+                                .reconnect(Retry.backoff(Long.MAX_VALUE, Duration.ofSeconds(1))
+                                        .maxBackoff(Duration.ofSeconds(30))
+                                        .doBeforeRetry(retrySignal -> LOG.info("Attempting to reconnect...")))
+
+                                .keepAlive(
+                                        Duration.ofSeconds(5), // KeepAlive interval
+                                        Duration.ofSeconds(20)
+                                )
                 )
                 .transport(TcpClientTransport.create(cyodaConfig.getRSocketBindAddress(),cyodaConfig.getRSocketPort()));
 //                .connect(TcpClientTransport.create("localhost", 7000))
@@ -218,7 +221,7 @@ public class CyodaRSocketClient {
         }
 
         private Map<SchemaTableName, ConnectorViewDefinition> getViewsInternal(String userId) {
-            List<TrinoViewDto> viewDtos = getRequester.retrieveData(null, userId).collectList().block();
+            List<TrinoViewDto> viewDtos = getRequester.retrieveData("META", userId).collectList().block();
             if (viewDtos == null) return Collections.emptyMap();
             return viewDtos.stream()
                     .collect(Collectors.toMap(TrinoViewDto::getSchemaTableName,

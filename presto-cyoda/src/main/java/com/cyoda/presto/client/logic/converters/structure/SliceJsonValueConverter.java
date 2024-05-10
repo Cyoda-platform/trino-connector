@@ -18,6 +18,7 @@
 package com.cyoda.presto.client.logic.converters.structure;
 
 import com.cyoda.presto.client.types.IDataType;
+import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.type.Type;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -28,19 +29,23 @@ import javax.annotation.Nonnull;
 
 public abstract class SliceJsonValueConverter<T> extends SingleValueConverter<T> {
 
+    private static final SupplierLogger LOG = SupplierLogger.get(SliceJsonValueConverter.class);
 
     public SliceJsonValueConverter(IDataType<T> dataType) {
         super(dataType);
     }
 
     public Slice toSlice(@Nonnull T value) {
+        String res;
         try {
             String json = OBJECT_MAPPER_SUPPLIER.get().writerFor(getClazz()).writeValueAsString(value);
-            String clean = cleanUpJson(json);
-            return Slices.utf8Slice(clean);
+            res = cleanUpJson(json);
+
         } catch (JsonProcessingException e) {
-            throw new IllegalStateException("Cannot convert to json",e);
+            LOG.error(e,"Cannot convert to json");
+            res = value.toString();
         }
+        return Slices.utf8Slice(res);
     }
 
     @Nonnull
