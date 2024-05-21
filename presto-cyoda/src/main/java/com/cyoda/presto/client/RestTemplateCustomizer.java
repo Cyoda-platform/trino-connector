@@ -45,7 +45,7 @@ import org.springframework.http.converter.json.AbstractJackson2HttpMessageConver
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;

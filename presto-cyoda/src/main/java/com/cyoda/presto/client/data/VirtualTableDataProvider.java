@@ -30,7 +30,7 @@ public abstract class VirtualTableDataProvider<T> extends TableDataProvider<T> {
     public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
         return nodeManager.getAllNodes()
                 .stream()
-                .map(Node::getHttpUri)
+                .map(Node::getHostAndPort)
                 .map(uri -> CyodaSplit.addressedEmptySplit(queryId, authContext.getUserId(), uri))
                 .collect(Collectors.toList()
                 );

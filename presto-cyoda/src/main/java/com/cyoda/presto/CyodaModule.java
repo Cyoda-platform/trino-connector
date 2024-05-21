@@ -47,6 +47,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Tracer;
+import io.trino.server.PluginManager;
 import io.trino.spi.NodeManager;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.type.Type;
@@ -60,7 +63,7 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.messaging.rsocket.RSocketStrategies;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.util.Collections;
 
@@ -73,25 +76,32 @@ public class CyodaModule implements Module {
     private final String connectorId;
     private final TypeManager typeManager;
     private final NodeManager nodeManager;
+    private final OpenTelemetry telemetry;
+    private final Tracer tracer;
 
 
     public CyodaModule(String connectorId, ConnectorContext context) {
         this.connectorId = requireNonNull(connectorId, "connector id is null");
         typeManager = requireNonNull(context.getTypeManager(), "typeManager is null");
         nodeManager = requireNonNull(context.getNodeManager(), "nodeManager is null");
+        telemetry = requireNonNull(context.getOpenTelemetry(), "openTelemetry is null");
+        tracer = requireNonNull(context.getTracer(), "tracer is null");
     }
 
     @Override
     public void configure(Binder binder) {
         binder.bind(TypeManager.class).toInstance(typeManager);
         binder.bind(NodeManager.class).toInstance(nodeManager);
+        binder.bind(OpenTelemetry.class).toInstance(telemetry);
+        binder.bind(Tracer.class).toInstance(tracer);
 
-        binder.bind(CyodaConnector.class).in(Scopes.SINGLETON);
         binder.bind(CyodaConnectorId.class).toInstance(new CyodaConnectorId(connectorId));
         binder.bind(CyodaMetadata.class).in(Scopes.SINGLETON);
         binder.bind(CyodaSplitManager.class).in(Scopes.SINGLETON);
         binder.bind(CyodaPageSourceProvider.class).in(Scopes.SINGLETON);
         binder.bind(CyodaProcedureManager.class).in(Scopes.SINGLETON);
+        binder.bind(CyodaNodePartitioningProvider.class).in(Scopes.SINGLETON);
+        binder.bind(CyodaConnector.class).in(Scopes.SINGLETON);
 
         binder.bind(StaticTableMetadataProvider.class).in(Scopes.SINGLETON);
         binder.bind(DynamicReportMetadataProvider.class).in(Scopes.SINGLETON);

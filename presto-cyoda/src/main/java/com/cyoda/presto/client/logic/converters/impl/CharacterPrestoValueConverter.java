@@ -23,7 +23,7 @@ import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.nio.charset.StandardCharsets;
 
 public class CharacterPrestoValueConverter extends StringTypeValueConverter<Character> {

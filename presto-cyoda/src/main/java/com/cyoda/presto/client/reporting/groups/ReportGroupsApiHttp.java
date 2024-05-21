@@ -46,7 +46,7 @@ import org.springframework.hateoas.client.Traverson;
 import org.springframework.hateoas.server.core.TypeReferences;
 import org.springframework.web.client.HttpClientErrorException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;

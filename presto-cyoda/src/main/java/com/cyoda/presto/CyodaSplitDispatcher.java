@@ -27,8 +27,11 @@ public class CyodaSplitDispatcher {
         this.nodeManager = nodeManager;
         this.coordinator = nodeManager.getAllNodes().stream()
                 .filter(Node::isCoordinator)
-                .findAny()
-                .orElseThrow();
+                .findAny().orElseGet(() -> {
+                    LOG.error("\n\n=====NO COORDINATOR PRESENT======\n\n");
+                    return null;
+                });
+//                .orElseThrow(()->new RuntimeException("Unable to locate coordinator"));
         refreshBuckets(); // Initialize nodeBuckets and workerLoadMap
     }
 
@@ -37,25 +40,13 @@ public class CyodaSplitDispatcher {
         if (split.getReportId() == null) return;
         refreshBuckets();
         Node dispatched;
-        int weight;
-//        if (split.getReportId() != null){
-            int hash = Math.abs(Objects.hash(split.getCyodaTableMetaId(), split.getReportId(), split.getGroupJsonBase64(), split.getPage()));
-            dispatched = nodeBuckets.get(hash % nodeBuckets.size());
-//            weight = 1;
-//        }
-//        else {
-//            dispatched = Collections.min(workerLoadMap.entrySet(), Map.Entry.comparingByValue()).getKey();
-//            weight = split.getConstraint() != null && !split.getConstraint().isAll() ? 1 : 5;
-//        }
-//        // Update the load of the worker node
-//        Integer currentLoad = workerLoadMap.getOrDefault(dispatched, 0);
-//        workerLoadMap.put(dispatched, currentLoad + weight);
-//
-        split.getAddresses().add(HostAddress.fromUri(dispatched.getHttpUri()));
+        int hash = Math.abs(Objects.hash(split.getCyodaTableMetaId(), split.getReportId(), split.getGroupJsonBase64(), split.getPage()));
+        dispatched = nodeBuckets.get(hash % nodeBuckets.size());
+        split.getAddresses().add(dispatched.getHostAndPort());
     }
 
     private void dispatchToCoordinator(CyodaSplit split){
-        split.getAddresses().add(HostAddress.fromUri(coordinator.getHttpUri()));
+        split.getAddresses().add(coordinator.getHostAndPort());
     }
 
     public void dispatch(List<CyodaSplit> splits){

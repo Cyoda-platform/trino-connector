@@ -26,14 +26,9 @@ import io.airlift.slice.Slice;
 import io.trino.spi.type.UuidType;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.math.BigInteger;
 import java.util.UUID;
-
-import static io.trino.spi.block.Int128ArrayBlock.INT128_BYTES;
-import static io.airlift.slice.SizeOf.SIZE_OF_LONG;
-import static io.airlift.slice.Slices.wrappedLongArray;
-import static java.lang.String.format;
 
 public class UUIDPrestoValueConverter extends LongDecimalTypeValueConverter<UUID> {
 
@@ -70,49 +65,11 @@ public class UUIDPrestoValueConverter extends LongDecimalTypeValueConverter<UUID
         return UuidType.trinoUuidToJavaUuid((Slice) nativeValue);
     }
 
-    //    public Slice toSliceForPresto(@Nonnull UUID value) {
-//        return Slices.utf8Slice(value.toString());
-//    }
-//    public Slice toSliceForTrino(@Nonnull UUID value) {
-//        return javaUuidToPrestoUuid(value);
-//    }
-//    public UUID fromSliceForPresto(Slice value) {
-//        return UUID.fromString(value.toStringUtf8());
-//    }
-//    public UUID fromSliceForTrino(Slice value) {
-//        return prestoUuidToJavaUuid(value);
-//    }
+
     @Override
     public UUID fromOtherCyodaType(Object value, String columnName) {
         return UUID.fromString((String) value);
     }
-//
-//    // This is only useful for Trino. Presto can only handle Strings for UUID
-//
-//    public static byte[] uuidToBytes(UUID uuid)
-//    {
-//        return ByteBuffer.allocate(16)
-//                .putLong(uuid.getMostSignificantBits())
-//                .putLong(uuid.getLeastSignificantBits())
-//                .array();
-//    }
-//
-//    public static Slice javaUuidToPrestoUuid(UUID uuid)
-//    {
-//        return wrappedLongArray(
-//                uuid.getMostSignificantBits(),
-//                uuid.getLeastSignificantBits());
-//    }
-//
-//    public static UUID prestoUuidToJavaUuid(Slice uuid)
-//    {
-//        if (uuid.length() != INT128_BYTES) {
-//            throw new IllegalStateException(format("Expected value to be exactly %d bytes but was %d", INT128_BYTES, uuid.length()));
-//        }
-//        return new UUID(
-//                uuid.getLong(0),
-//                uuid.getLong(SIZE_OF_LONG));
-//    }
 
     public static BigInteger convertToBigInteger(UUID id)
     {

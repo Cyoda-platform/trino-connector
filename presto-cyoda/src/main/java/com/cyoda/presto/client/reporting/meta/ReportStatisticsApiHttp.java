@@ -42,7 +42,7 @@ import org.springframework.hateoas.server.core.TypeReferences;
 import org.springframework.web.client.HttpClientErrorException;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;

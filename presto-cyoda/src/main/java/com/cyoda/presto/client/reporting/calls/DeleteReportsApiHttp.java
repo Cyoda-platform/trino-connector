@@ -20,7 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;

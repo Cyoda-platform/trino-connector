@@ -20,7 +20,7 @@ import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.type.TypeManager;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;

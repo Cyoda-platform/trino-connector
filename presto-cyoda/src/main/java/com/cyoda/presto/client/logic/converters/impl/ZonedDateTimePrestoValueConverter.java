@@ -23,7 +23,7 @@ import io.trino.spi.type.DateTimeEncoding;
 import io.trino.spi.type.TimeZoneKey;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;

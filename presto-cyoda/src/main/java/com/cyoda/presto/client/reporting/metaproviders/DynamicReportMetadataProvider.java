@@ -23,7 +23,7 @@ import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.type.TypeManager;
 import reactor.core.publisher.Flux;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;

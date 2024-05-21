@@ -32,11 +32,14 @@ import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.CyodaTableMeta;
 import com.cyoda.presto.handles.CyodaTableType;
 import com.cyoda.presto.logging.SupplierLogger;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Maps;
 import io.airlift.slice.Slice;
+import io.jsonwebtoken.lang.Strings;
 import io.trino.spi.StandardErrorCode;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.*;
@@ -44,7 +47,9 @@ import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
+
+import io.trino.spi.statistics.ComputedStatistics;
+import jakarta.inject.Inject;
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -171,33 +176,51 @@ public class CyodaMetadata implements ConnectorMetadata {
         if (cTableHandle.getTableMetaId() != null){
             deleteReportsApiHandler.deleteReports(session, cTableHandle.getTableMetaId());
         } else {
-            throw new TrinoException(NOT_SUPPORTED, "Truncate operation is available only for report-related tables. Use DELETE for cache and call stats.");
+            throw new TrinoException(NOT_SUPPORTED, "Truncate operation is available only for report-related tables, cache_content and api_call_stats.");
         }
     }
 
-    @Override
-    public ColumnHandle getDeleteRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle) {
-        CyodaTableType tableType = ((CyodaTableHandle)tableHandle).getTableType();
-        return switch (tableType){
-            case CALL_STATS -> staticMetadataProvider.getApiCallStats().getNodeIdColumn();
-            case CACHE_CONTENT -> staticMetadataProvider.getCacheContent().getCacheKeyColumn();
-            default -> ConnectorMetadata.super.getDeleteRowIdColumnHandle(session, tableHandle);
-        };
-    }
+//    @Override
+//    public ColumnHandle getDeleteRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle) {
+//        CyodaTableType tableType = ((CyodaTableHandle)tableHandle).getTableType();
+//        return switch (tableType){
+//            case CALL_STATS -> staticMetadataProvider.getApiCallStats().getNodeIdColumn();
+//            case CACHE_CONTENT -> staticMetadataProvider.getCacheContent().getCacheKeyColumn();
+//            default -> ConnectorMetadata.super.getDeleteRowIdColumnHandle(session, tableHandle);
+//        };
+//    }
 
-    @Override
-    public Optional<ConnectorPartitioningHandle> getUpdateLayout(ConnectorSession session, ConnectorTableHandle tableHandle) {
-        return Optional.of(new ConnectorPartitioningHandle(){});
-    }
 
-    @Override
-    public ConnectorTableHandle beginDelete(ConnectorSession session, ConnectorTableHandle tableHandle, RetryMode retryMode) {
-        return tableHandle;
-    }
-
-    @Override
-    public void finishDelete(ConnectorSession session, ConnectorTableHandle tableHandle, Collection<Slice> fragments) {
-    }
+//    @Override
+//    public RowChangeParadigm getRowChangeParadigm(ConnectorSession session, ConnectorTableHandle tableHandle) {
+//        return RowChangeParadigm.DELETE_ROW_AND_INSERT_ROW;
+//    }
+//
+//    @Override
+//    public ColumnHandle getMergeRowIdColumnHandle(ConnectorSession session, ConnectorTableHandle tableHandle) {
+//        CyodaTableType tableType = ((CyodaTableHandle)tableHandle).getTableType();
+//        return switch (tableType){
+//            case CALL_STATS -> staticMetadataProvider.getApiCallStats().getNodeIdColumn();
+//            case CACHE_CONTENT -> staticMetadataProvider.getCacheContent().getCacheKeyColumn();
+//            default -> ConnectorMetadata.super.getMergeRowIdColumnHandle(session, tableHandle);
+//        };
+//    }
+//
+//    @Override
+//    public Optional<ConnectorPartitioningHandle> getUpdateLayout(ConnectorSession session, ConnectorTableHandle tableHandle) {
+//        return Optional.empty();
+//    }
+//
+//    @Override
+//    public ConnectorMergeTableHandle beginMerge(ConnectorSession session, ConnectorTableHandle tableHandle, RetryMode retryMode) {
+//        return new CyodaMergeTableHandle(tableHandle);
+//    }
+//
+//    @Override
+//    public void finishMerge(ConnectorSession session, ConnectorMergeTableHandle mergeTableHandle, Collection<Slice> fragments, Collection<ComputedStatistics> computedStatistics) {
+//        LOG.debug("-=FRAGMENTS" + Strings.collectionToCommaDelimitedString(fragments));
+//        LOG.debug("-=STATS" + Strings.collectionToCommaDelimitedString(computedStatistics));
+//    }
 
     @Override
     public ConnectorTableMetadata getTableMetadata(ConnectorSession session, ConnectorTableHandle table) {
@@ -364,5 +387,20 @@ public class CyodaMetadata implements ConnectorMetadata {
             }
         }
         return columns.build().iterator();
+    }
+
+    public static class CyodaMergeTableHandle implements ConnectorMergeTableHandle {
+        private final ConnectorTableHandle tableHandle;
+
+        @JsonCreator
+        public CyodaMergeTableHandle(@JsonProperty ConnectorTableHandle tableHandle) {
+            this.tableHandle = tableHandle;
+        }
+
+        @Override
+        @JsonProperty
+        public ConnectorTableHandle getTableHandle() {
+            return tableHandle;
+        }
     }
 }

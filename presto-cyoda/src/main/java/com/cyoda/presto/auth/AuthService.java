@@ -4,7 +4,7 @@ import com.cyoda.presto.CyodaConfig;
 import io.trino.spi.connector.ConnectorSession;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.security.Principal;
 
 public class AuthService {

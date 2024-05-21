@@ -15,6 +15,7 @@ package com.cyoda.presto.client.treenode.dto.view;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.trino.spi.connector.CatalogSchemaName;
 import io.trino.spi.connector.ConnectorViewDefinition;
 import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.type.TypeId;
@@ -37,6 +38,7 @@ public class TrinoViewDefinitionDto
     private final String comment;
     private final String owner;
     private final boolean runAsInvoker;
+    private final List<CatalogSchemaName> path;
 
     @JsonCreator
     public TrinoViewDefinitionDto(
@@ -46,7 +48,8 @@ public class TrinoViewDefinitionDto
             @JsonProperty("columns") List<TrinoViewColumn> columns,
             @JsonProperty("comment") String comment,
             @JsonProperty("owner") String owner,
-            @JsonProperty("runAsInvoker") boolean runAsInvoker)
+            @JsonProperty("runAsInvoker") boolean runAsInvoker,
+            @JsonProperty("path") List<CatalogSchemaName> path)
     {
         this.originalSql = originalSql;
         this.catalog = Objects.requireNonNull(catalog);
@@ -55,6 +58,7 @@ public class TrinoViewDefinitionDto
         this.comment = comment;
         this.owner = owner;
         this.runAsInvoker = runAsInvoker;
+        this.path = path;
     }
 
     @JsonProperty
@@ -99,6 +103,11 @@ public class TrinoViewDefinitionDto
         return runAsInvoker;
     }
 
+    @JsonProperty
+    public List<CatalogSchemaName> getPath() {
+        return path;
+    }
+
     public static TrinoViewDefinitionDto fromModel(ConnectorViewDefinition connectorView, SchemaTableName schemaTableName) {
         List<TrinoViewColumn> columns = connectorView.getColumns().stream()
                 .map(c -> new TrinoViewColumn(c.getName(), c.getType().getId(), c.getComment().orElse(null)))
@@ -111,7 +120,8 @@ public class TrinoViewDefinitionDto
                 columns,
                 connectorView.getComment().orElse(null),
                 connectorView.getOwner().orElse(null),
-                connectorView.isRunAsInvoker()
+                connectorView.isRunAsInvoker(),
+                connectorView.getPath()
         );
     }
 
@@ -127,7 +137,8 @@ public class TrinoViewDefinitionDto
                 columns,
                 Optional.ofNullable(dto.comment),
                 Optional.ofNullable(dto.owner),
-                dto.runAsInvoker
+                dto.runAsInvoker,
+                dto.path
         );
     }
 

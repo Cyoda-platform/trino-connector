@@ -6,7 +6,7 @@ import com.cyoda.presto.procedures.CyodaProcedure;
 import com.cyoda.presto.procedures.RunReportProcedure;
 import io.trino.spi.procedure.Procedure;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.HashSet;
 import java.util.Set;
 

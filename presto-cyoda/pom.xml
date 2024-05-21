@@ -23,16 +23,16 @@
     <parent>
         <artifactId>presto-cyoda-root</artifactId>
         <groupId>com.cyoda.trino</groupId>
-        <version>402</version>
+        <version>445</version>
     </parent>
 
     <artifactId>presto-cyoda</artifactId>
     <packaging>trino-plugin</packaging>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <enforcer.skip>true</enforcer.skip>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+<!--        <enforcer.skip>true</enforcer.skip>-->
     </properties>
 
     <profiles>
@@ -154,15 +154,11 @@
             <artifactId>guice</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>javax.validation</groupId>
-            <artifactId>validation-api</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>jakarta.validation</groupId>-->
+<!--            <artifactId>validation-api</artifactId>-->
+<!--        </dependency>-->
 
-        <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
@@ -254,11 +250,11 @@
 <!--            <scope>test</scope>-->
         </dependency>
 
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
+<!--        <dependency>-->
+<!--            <groupId>jakarta.servlet</groupId>-->
+<!--            <artifactId>jakarta.servlet-api</artifactId>-->
 <!--            <scope>test</scope>-->
-        </dependency>
+<!--        </dependency>-->
     </dependencies>
 
     <build>

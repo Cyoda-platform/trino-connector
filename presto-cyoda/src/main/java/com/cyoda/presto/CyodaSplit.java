@@ -114,9 +114,9 @@ public class CyodaSplit implements ConnectorSplit {
                 0, Integer.MAX_VALUE, null, null);
     }
 
-    public static CyodaSplit addressedEmptySplit(String queryId, String userId, URI nodeAddress){
+    public static CyodaSplit addressedEmptySplit(String queryId, String userId, HostAddress nodeAddress){
         return new CyodaSplit(queryId,
-                userId, Collections.singletonList(HostAddress.fromUri(nodeAddress)),
+                userId, Collections.singletonList(nodeAddress),
                 false,
                 null,
                 null,
@@ -190,11 +190,6 @@ public class CyodaSplit implements ConnectorSplit {
     }
     public List<HostAddress> getAddresses() {
         return addresses;
-    }
-
-    @Override
-    public Object getInfo() {
-        return this;
     }
 
     @Override

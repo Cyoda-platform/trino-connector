@@ -5,6 +5,7 @@ import com.google.common.base.MoreObjects;
 import com.google.common.base.StandardSystemProperty;
 import com.google.common.base.Strings;
 import com.google.common.primitives.Ints;
+import io.trino.server.Server;
 
 public final class TrinoDevTestingServerForWindows {
     private TrinoDevTestingServerForWindows() {
@@ -21,5 +22,6 @@ public final class TrinoDevTestingServerForWindows {
 
         String version = TrinoDevTestingServerForWindows.class.getPackage().getImplementationVersion();
         (new DevTestingServerForWindows()).start((String)MoreObjects.firstNonNull(version, "unknown"));
+//        (new Server()).start((String)MoreObjects.firstNonNull(version, "unknown"));
     }
 }

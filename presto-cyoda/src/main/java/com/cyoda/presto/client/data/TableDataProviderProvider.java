@@ -14,7 +14,7 @@ import com.cyoda.presto.client.treenode.CyodaRSocketClient;
 import com.cyoda.presto.handles.CyodaTableType;
 import io.trino.spi.NodeManager;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;

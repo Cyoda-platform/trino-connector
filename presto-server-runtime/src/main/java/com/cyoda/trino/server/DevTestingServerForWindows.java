@@ -1,4 +1,3 @@
-package com.cyoda.trino.server;
 /*
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,6 +11,7 @@ package com.cyoda.trino.server;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.cyoda.trino.server;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.StandardSystemProperty;
@@ -36,12 +36,15 @@ import io.airlift.json.JsonModule;
 import io.airlift.log.LogJmxModule;
 import io.airlift.log.Logger;
 import io.airlift.node.NodeModule;
+import io.airlift.openmetrics.JmxOpenMetricsModule;
 import io.airlift.tracetoken.TraceTokenModule;
+import io.airlift.tracing.TracingModule;
+import io.airlift.units.Duration;
 import io.trino.client.NodeVersion;
-import io.trino.connector.CatalogHandle;
 import io.trino.connector.CatalogManagerConfig;
 import io.trino.connector.CatalogManagerConfig.CatalogMangerKind;
 import io.trino.connector.CatalogManagerModule;
+import io.trino.connector.CatalogStoreManager;
 import io.trino.connector.ConnectorServices;
 import io.trino.connector.ConnectorServicesProvider;
 import io.trino.eventlistener.EventListenerManager;
@@ -55,14 +58,21 @@ import io.trino.metadata.CatalogManager;
 import io.trino.security.AccessControlManager;
 import io.trino.security.AccessControlModule;
 import io.trino.security.GroupProviderManager;
-import io.trino.server.*;
+import io.trino.server.CoordinatorDiscoveryModule;
+import io.trino.server.GracefulShutdownModule;
+import io.trino.server.PluginInstaller;
+import io.trino.server.PrefixObjectNameGeneratorModule;
+import io.trino.server.ServerMainModule;
+import io.trino.server.SessionPropertyDefaults;
+import io.trino.server.StartupStatus;
 import io.trino.server.security.CertificateAuthenticatorManager;
 import io.trino.server.security.HeaderAuthenticatorManager;
 import io.trino.server.security.PasswordAuthenticatorManager;
 import io.trino.server.security.ServerSecurityModule;
 import io.trino.server.security.oauth2.OAuth2Client;
+import io.trino.spi.connector.CatalogHandle;
 import io.trino.transaction.TransactionManagerModule;
-import io.trino.version.EmbedVersion;
+import io.trino.util.EmbedVersion;
 import org.weakref.jmx.guice.MBeanModule;
 
 import java.io.IOException;
@@ -71,26 +81,19 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.cyoda.trino.server.TrinoSystemRequirementsForWindowsDevTest.verifyJvmRequirements;
-import static com.cyoda.trino.server.TrinoSystemRequirementsForWindowsDevTest.verifySystemTimeIsReasonable;
 import static io.airlift.discovery.client.ServiceAnnouncement.ServiceAnnouncementBuilder;
 import static io.airlift.discovery.client.ServiceAnnouncement.serviceAnnouncement;
+import static com.cyoda.trino.server.TrinoSystemRequirementsForWindowsDevTest.verifyJvmRequirements;
+import static com.cyoda.trino.server.TrinoSystemRequirementsForWindowsDevTest.verifySystemTimeIsReasonable;
 import static java.lang.String.format;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 
-/**
- * A copy of {@link Server} without doing system checks
- * so that it can be used for local testing on a developers PC on Windows
- * <p<
- * No guarantee that all aspects of Trino will work!
- * It will certainly not work if all Trino plugins were to be activated.
- * <p>
- * But it should be usable for testing our trino-cyoda connector
- */
 public class DevTestingServerForWindows
 {
     public final void start(String trinoVersion)
@@ -100,10 +103,15 @@ public class DevTestingServerForWindows
 
     private void doStart(String trinoVersion)
     {
+        // Trino server behavior does not depend on locale settings.
+        // Use en_US as this is what Trino is tested with.
+        Locale.setDefault(Locale.US);
+
+        long startTime = System.nanoTime();
         verifyJvmRequirements();
         verifySystemTimeIsReasonable();
 
-        Logger log = Logger.get(io.trino.server.Server.class);
+        Logger log = Logger.get(DevTestingServerForWindows.class);
         log.info("Java version: %s", StandardSystemProperty.JAVA_VERSION.value());
 
         ImmutableList.Builder<Module> modules = ImmutableList.builder();
@@ -117,8 +125,10 @@ public class DevTestingServerForWindows
                 new PrefixObjectNameGeneratorModule("io.trino"),
                 new JmxModule(),
                 new JmxHttpModule(),
+                new JmxOpenMetricsModule(),
                 new LogJmxModule(),
                 new TraceTokenModule(),
+                new TracingModule("trino", trinoVersion),
                 new EventModule(),
                 new JsonEventModule(),
                 new ServerSecurityModule(),
@@ -143,7 +153,12 @@ public class DevTestingServerForWindows
             logLocation(log, "Working directory", Paths.get("."));
             logLocation(log, "Etc directory", Paths.get("etc"));
 
-            injector.getInstance(PluginManager.class).loadPlugins();
+            injector.getInstance(PluginInstaller.class).loadPlugins();
+
+            var catalogStoreManager = injector.getInstance(optionalKey(CatalogStoreManager.class));
+            if (catalogStoreManager.isPresent()) {
+                catalogStoreManager.get().loadConfiguredCatalogStore();
+            }
 
             ConnectorServicesProvider connectorServicesProvider = injector.getInstance(ConnectorServicesProvider.class);
             connectorServicesProvider.loadInitialCatalogs();
@@ -180,6 +195,7 @@ public class DevTestingServerForWindows
 
             injector.getInstance(StartupStatus.class).startupComplete();
 
+            log.info("Server startup completed in %s", Duration.nanosSince(startTime).convertToMostSuccinctTimeUnit());
             log.info("======== SERVER STARTED ========");
         }
         catch (ApplicationConfigurationException e) {
@@ -191,11 +207,11 @@ public class DevTestingServerForWindows
             message.append("\n");
             message.append("==========");
             log.error("%s", message);
-            System.exit(1);
+            System.exit(100);
         }
         catch (Throwable e) {
             log.error(e);
-            System.exit(1);
+            System.exit(100);
         }
     }
 
@@ -208,6 +224,7 @@ public class DevTestingServerForWindows
         catalogManager.getCatalogNames().stream()
                 .map(catalogManager::getCatalog)
                 .flatMap(Optional::stream)
+                .filter(not(Catalog::isFailed))
                 .map(Catalog::getCatalogHandle)
                 .map(connectorServicesProvider::getConnectorServices)
                 .map(ConnectorServices::getEventListeners)

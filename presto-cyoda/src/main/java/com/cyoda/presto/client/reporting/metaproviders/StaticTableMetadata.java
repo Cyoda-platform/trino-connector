@@ -41,7 +41,6 @@ import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_CREAT
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_GROUPING_COLUMNS_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_GROUPING_VERSION_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_HIERARHY_ENABLE_COLUMN;
-import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_STATUS_NAME_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_TYPE_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_USER_NAME_COLUMN;
 import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_COLUMNS_COLUMN;
@@ -369,7 +368,6 @@ public enum StaticTableMetadata {
         ID(1, StaticReportFields.HISTORY_REPORT_ID_COLUMN, STRING),
         CREATION_DATE(2, HISTORY_CREATE_TIME_COLUMN, LOCAL_DATE_TIME),
         TYPE(3, HISTORY_TYPE_COLUMN, STRING),
-        STATUS(4, HISTORY_STATUS_NAME_COLUMN, STRING),
         HIERARCHY_ENABLE(5, HISTORY_HIERARHY_ENABLE_COLUMN, BOOLEAN),
         GROUPING_VERSION(6, HISTORY_GROUPING_VERSION_COLUMN, UUID_TYPE),
         GROUPING_COLUMNS(7, HISTORY_GROUPING_COLUMNS_COLUMN, LIST, STRING),

@@ -4,7 +4,7 @@ import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.base.Joiner;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;

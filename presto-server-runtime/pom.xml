@@ -25,11 +25,11 @@
 
     <groupId>com.cyoda.trino</groupId>
     <artifactId>presto-server-runtime</artifactId>
-    <version>402</version>
+    <version>445</version>
 
     <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
         <sonar.skip>true</sonar.skip>
     </properties>
     <dependencies>

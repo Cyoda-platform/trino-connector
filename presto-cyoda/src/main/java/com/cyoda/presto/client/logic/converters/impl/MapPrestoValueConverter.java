@@ -20,9 +20,12 @@ package com.cyoda.presto.client.logic.converters.impl;
 import com.cyoda.presto.client.logic.converters.structure.MultiValueConverter;
 import com.cyoda.presto.client.logic.converters.structure.SingleValueConverter;
 import com.cyoda.presto.client.types.DataType;
+import io.trino.spi.block.Block;
 import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.block.MapBlockBuilder;
 import io.trino.spi.type.MapType;
 import io.trino.spi.type.Type;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -48,11 +51,12 @@ public class MapPrestoValueConverter<K, V> extends MultiValueConverter<Map<K,V>,
     }
 
     @Override
-    protected void writeElement(MapType type, BlockBuilder elementBuilder, Map.Entry<K, V> value) {
-        Type keyType = type.getKeyType();
-        Type valueType = type.getValueType();
-        keyConverter.writeCyodaNativeFromCollection(keyType, elementBuilder, value.getKey(), getColumnName());
-        valueConverter.writeCyodaNativeFromCollection(valueType, elementBuilder, value.getValue(), getColumnName());
-    }
+    public void writeValue(Type type, BlockBuilder builder, @NotNull Map<K, V> value) {
+        MapType mapType = (MapType)type;
 
+        ((MapBlockBuilder) builder).buildEntry((keyBuilder, valueBuilder) -> value.forEach((key, mapValue) -> {
+            keyConverter.writeCyodaNativeFromCollection(mapType.getKeyType(), keyBuilder, key, getColumnName() + "(key)");
+            valueConverter.writeCyodaNativeFromCollection(mapType.getValueType(), valueBuilder, mapValue, getColumnName() + "(value)");
+        }));
+    }
 }

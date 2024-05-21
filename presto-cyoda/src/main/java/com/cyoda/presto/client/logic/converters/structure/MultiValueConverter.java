@@ -18,8 +18,6 @@ public abstract class MultiValueConverter<T,E,P extends Type> extends AbstractVa
     protected abstract Iterator<E> getIterator(T value);
     protected abstract String stringifyElement(E element);
 
-    protected abstract void writeElement(P type, BlockBuilder elementBuilder, E value);
-
     protected String getColumnName() {
         return columnName;
     }
@@ -39,13 +37,4 @@ public abstract class MultiValueConverter<T,E,P extends Type> extends AbstractVa
         return sb.toString();
     }
 
-    public void writeValue(Type type, BlockBuilder builder, @Nonnull T value){
-        BlockBuilder elementBuilder = builder.beginBlockEntry();
-        Iterator<E> iterator = getIterator(value);
-        while (iterator.hasNext()) {
-            E element = iterator.next();
-            writeElement((P) type, elementBuilder, element);
-        }
-        builder.closeEntry();
-    }
 }
