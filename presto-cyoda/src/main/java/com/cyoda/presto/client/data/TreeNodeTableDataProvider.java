@@ -113,8 +113,8 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         } else {
             condition = DomainToCondition.convert(constraint);
         }
-        condition.addCondition(new Equals("entityModelClassId", metaClassId));
-        condition.addCondition(new Equals("uniformedPath", uniformedPath));
+        condition.addCondition(new Equals("entityModelClassId", metaClassId,true));
+        condition.addCondition(new Equals("uniformedPath", uniformedPath,true));
         String strCondition = JodaBeanSerUtil.compact().jsonWriter().write(condition);
         String queryId = split.getQueryId();
         DataRequestDto dataRequest = new DataRequestDto(metaClassId, split.getUserId(), uniformedPath, strCondition);
