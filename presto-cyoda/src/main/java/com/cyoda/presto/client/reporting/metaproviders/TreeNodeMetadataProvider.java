@@ -100,6 +100,7 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
         CompoundDataType uuidType = new CompoundDataType("id", DataType.UUID_TYPE);
         CompoundDataType indexType = new CompoundDataType("index", DataType.INTEGER);
         columns.add(new CyodaColumnHandle("id", uuidType.toPrestoType(typeManager), uuidType, 1, false));
+        columns.add(new CyodaColumnHandle("root", uuidType.toPrestoType(typeManager), uuidType, 2, true));
         columns.add(new CyodaColumnHandle("parent", uuidType.toPrestoType(typeManager), uuidType, 2, true));
         columns.add(new CyodaColumnHandle("index", indexType.toPrestoType(typeManager), indexType, 3, true));
         columns.addAll(tableConfigDto.getFields().stream().map(dto -> {
