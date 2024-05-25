@@ -20,28 +20,29 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Map;
 
-public class RunReportApiHandler extends BaseReportsApiHandler {
+public class RunReportApiHttp extends BaseReportsApiHandler implements RunReportApi {
 
     public static final String RUN_REPORT_ENDPOINT = "/api/platform-api/reporting/pre";
 
-    protected static final SupplierLogger LOG = SupplierLogger.get(RunReportApiHandler.class);
+    protected static final SupplierLogger LOG = SupplierLogger.get(RunReportApiHttp.class);
 
     private final UriTemplate uriTemplate;
     @Inject
-    protected RunReportApiHandler(CyodaConfig config, RestTemplateCustomizer restTemplateCustomizer, AuthService authService, CyodaApiRequestStatsMonitor requestStatsMonitor) {
+    protected RunReportApiHttp(CyodaConfig config, RestTemplateCustomizer restTemplateCustomizer, AuthService authService, CyodaApiRequestStatsMonitor requestStatsMonitor) {
         super(config, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
         uriTemplate = setupUriTemplate();
     }
 
 
-    public String runReport(AuthContext authContext, ReportConfigKey reportConfigKey) {
+    @Override
+    public String runReport(String queryId, AuthContext authContext, ReportConfigKey reportConfigKey) {
         String reportConfigId = reportConfigKey.configId();
         Map<String, Object> expansion = Collections.singletonMap("gridConfig", reportConfigId);
         URI templatedUri = uriTemplate.expand(expansion);

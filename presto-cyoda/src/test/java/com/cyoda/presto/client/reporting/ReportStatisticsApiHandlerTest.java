@@ -26,7 +26,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 
-import static com.cyoda.presto.client.reporting.BaseReportsApiHandler.REPORT_ENDPOINT;
+import static com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHttp.REPORT_ENDPOINT;
 import static org.testng.Assert.assertEquals;
 
 public class ReportStatisticsApiHandlerTest {

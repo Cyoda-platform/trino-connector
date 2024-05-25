@@ -20,6 +20,12 @@ package com.cyoda.presto.client.logic.converters.impl;
 import com.cyoda.presto.client.logic.converters.structure.CollectionConverter;
 import com.cyoda.presto.client.logic.converters.structure.SingleValueConverter;
 import com.cyoda.presto.client.types.DataType;
+import io.trino.spi.block.ArrayBlockBuilder;
+import io.trino.spi.block.Block;
+import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.type.ArrayType;
+import io.trino.spi.type.Type;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 

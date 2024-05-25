@@ -22,7 +22,7 @@ import com.cyoda.presto.client.logic.converters.structure.TimestampTypeValueConv
 import com.cyoda.presto.client.types.DataType;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;

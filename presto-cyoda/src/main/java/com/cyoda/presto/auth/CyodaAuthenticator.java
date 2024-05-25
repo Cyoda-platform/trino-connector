@@ -22,6 +22,7 @@ import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.TrinoException;
 import io.trino.spi.security.AccessDeniedException;
+import io.trino.spi.security.BasicPrincipal;
 import io.trino.spi.security.PasswordAuthenticator;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -31,7 +32,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.Principal;
@@ -43,6 +44,9 @@ public class CyodaAuthenticator implements PasswordAuthenticator {
 
     private static final SupplierLogger LOG = SupplierLogger.get(CyodaAuthenticator.class);
     private static final HttpHeaders HEADERS = standardHeader();
+    static {
+        HEADERS.add("X-Requested-With", "XMLHttpRequest");
+    }
 
     private final RestTemplateCustomizer restTemplateCustomizer;
     private final URI loginUri;
@@ -51,7 +55,9 @@ public class CyodaAuthenticator implements PasswordAuthenticator {
     public CyodaAuthenticator(CyodaConfig config, RestTemplateCustomizer restTemplateCustomizer) {
         this.restTemplateCustomizer = restTemplateCustomizer;
         try {
-            this.loginUri = config.getServerUrl().toURI().resolve(config.getUserLoginEndpoint());
+            URI serverUri = config.getServerUrl().toURI();
+            this.loginUri = serverUri.resolve(config.getUserLoginEndpoint());
+
         } catch (URISyntaxException e) {
             throw new TrinoException(CYODA_BOOTSTRAPPING_FAILURE,"Cannot resolve URI",e);
         }
@@ -63,11 +69,11 @@ public class CyodaAuthenticator implements PasswordAuthenticator {
 
         Login payload = new Login(user,password);
         HttpEntity<Login> requestEntity = new HttpEntity<>(payload, HEADERS);
-        ResponseEntity<AuthContext> response =
+        ResponseEntity<AuthContextWithToken> response =
                 restTemplateCustomizer.getUnauthorizedRestTemplate()
-                        .exchange(loginUri, HttpMethod.POST, requestEntity, AuthContext.class);
-        if ( response.getStatusCode().is2xxSuccessful() ) {
-            return new JWTPrinciple(response.getBody());
+                        .exchange(loginUri, HttpMethod.POST, requestEntity, AuthContextWithToken.class);
+        if ( response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+            return new BasicPrincipal(response.getBody().getUserId());
         } else {
             LOG.warn("access denied to "+user+" with reason: "+response.toString());
             throw new AccessDeniedException("Unauthorized");

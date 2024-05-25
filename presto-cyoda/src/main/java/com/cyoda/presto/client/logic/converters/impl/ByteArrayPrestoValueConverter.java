@@ -32,7 +32,7 @@ public class ByteArrayPrestoValueConverter extends SliceUncomparableValueConvert
 
     @Override
     public Slice toSlice(@Nonnull byte[] value) {
-        return Slices.wrappedBuffer(ByteBuffer.wrap(value));
+        return Slices.wrappedBuffer(value);
     }
 
     @Nonnull

@@ -4,8 +4,8 @@ import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.SizeListener;
 import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
-import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
+import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApi;
+import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApi;
 import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle;
 import com.cyoda.presto.client.reporting.meta.ReportListKey;
@@ -26,10 +26,10 @@ import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPO
 
 public class ReportsTableDataProvider extends TableDataProvider<ReportsTableData> {
 
-    private final ConfiguredReportsApiHandler reportsApiHandler;
-    private final ReportConfigDetailsApiHandler configDetailsApiHandler;
+    private final ConfiguredReportsApi reportsApiHandler;
+    private final ReportConfigDetailsApi configDetailsApiHandler;
 
-    public ReportsTableDataProvider(ConfiguredReportsApiHandler reportsApiHandler, ReportConfigDetailsApiHandler configDetailsApiHandler) {
+    public ReportsTableDataProvider(ConfiguredReportsApi reportsApiHandler, ReportConfigDetailsApi configDetailsApiHandler) {
         this.reportsApiHandler = reportsApiHandler;
         this.configDetailsApiHandler = configDetailsApiHandler;
     }

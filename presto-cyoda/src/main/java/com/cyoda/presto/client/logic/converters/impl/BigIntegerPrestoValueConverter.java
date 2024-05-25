@@ -21,7 +21,7 @@ import com.cyoda.presto.client.logic.converters.structure.LongDecimalTypeValueCo
 import com.cyoda.presto.client.types.DataType;
 import io.trino.spi.type.Int128;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.math.BigInteger;
 
 public class BigIntegerPrestoValueConverter extends LongDecimalTypeValueConverter<BigInteger> {

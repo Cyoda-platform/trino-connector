@@ -30,13 +30,16 @@ public class ReportHistoryFieldsView {
 
     public static final String HISTORY_CREATE_TIME_COLUMN = "createTime";
     public static final String HISTORY_TYPE_COLUMN = "type";
-    public static final String HISTORY_STATUS_NAME_COLUMN = "status";
     public static final String HISTORY_HIERARHY_ENABLE_COLUMN = "hierarhyEnable";
     public static final String HISTORY_GROUPING_VERSION_COLUMN = "groupingVersion";
     public static final String HISTORY_GROUPING_COLUMNS_COLUMN = "groupingColumns";
     public static final String HISTORY_USER_NAME_COLUMN = "userId";
 
-    private final Map<String, Object> reportHistoryFields = new HashMap<>();
+    private final Map<String, Object> reportHistoryFields;
+
+    public ReportHistoryFieldsView(Map<String, Object> reportHistoryFields) {
+        this.reportHistoryFields = reportHistoryFields;
+    }
 
     public Map<String, Object> getReportHistoryFields() {
         return reportHistoryFields;

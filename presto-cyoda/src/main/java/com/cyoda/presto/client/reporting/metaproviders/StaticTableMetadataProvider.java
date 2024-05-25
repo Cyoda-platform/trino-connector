@@ -10,7 +10,7 @@ import com.cyoda.presto.handles.CyodaTableMeta;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.type.TypeManager;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;

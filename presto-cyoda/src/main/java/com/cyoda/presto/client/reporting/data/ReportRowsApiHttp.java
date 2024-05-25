@@ -25,7 +25,6 @@ import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
-import com.cyoda.service.api.beans.ReportRow;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.spi.StandardErrorCode;
@@ -40,30 +39,31 @@ import org.springframework.hateoas.client.Traverson;
 import org.springframework.hateoas.server.core.TypeReferences;
 import org.springframework.web.client.HttpClientErrorException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_GROUP_JSON_BASE64_VARIABLE;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields.ROW_REPORT_ID_COLUMN;
 
-public class ReportRowsApiHandler extends BaseReportsApiHandler {
+public class ReportRowsApiHttp extends BaseReportsApiHandler implements ReportRowsApi {
 
-    protected static final SupplierLogger LOG = SupplierLogger.get(ReportRowsApiHandler.class);
+    protected static final SupplierLogger LOG = SupplierLogger.get(ReportRowsApiHttp.class);
 
     static final String REPORT_ROWS_TEMPLATE = "/{" + ROW_REPORT_ID_COLUMN + "" +
             "}/group_rows/{" +
             ROW_GROUP_JSON_BASE64_VARIABLE + "}";
 
     @Inject
-    public ReportRowsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
-                                RestTemplateCustomizer restTemplateCustomizer,
-                                AuthService authService,
-                                CyodaApiRequestStatsMonitor requestStatsMonitor) {
+    public ReportRowsApiHttp(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
+                             RestTemplateCustomizer restTemplateCustomizer,
+                             AuthService authService,
+                             CyodaApiRequestStatsMonitor requestStatsMonitor) {
         super(config, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
     }
 
@@ -88,6 +88,7 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler {
     }
 
 
+    @Override
     public Iterable<RowHandle> getIterable(CyodaSplit split) {
 
         UriTemplate uriTemplate = setupUriTemplate();
@@ -106,14 +107,14 @@ public class ReportRowsApiHandler extends BaseReportsApiHandler {
 
         Date apiCallTime = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-        traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
+        traverson.setRestOperations(getTechRestTemplate());
 
-        TypeReferences.PagedModelType<ReportRow> typeReference =
-                new TypeReferences.PagedModelType<ReportRow>() {
+        TypeReferences.PagedModelType<HashMap<String, Object>> typeReference =
+                new TypeReferences.PagedModelType<HashMap<String, Object>>() {
                 };
 
         try {
-            final PagedModel<ReportRow> fieldsViews = traverson
+            final PagedModel<HashMap<String, Object>> fieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
             if (fieldsViews == null) return Collections.emptyList();

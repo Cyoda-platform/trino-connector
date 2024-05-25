@@ -44,7 +44,7 @@ public class DomainToCondition {
                 for (Range range : ranges.getOrderedRanges()) {
                     if (range.isSingleValue()) {
                         Comparable objValue = converter.fromPrestoNative(range.getHighValue().get());
-                        conditions.add(new Equals(column.getExternalName(), objValue, determineRangeField(objValue)));
+                        conditions.add(new Equals(column.getExternalName(), objValue, determineRangeFieldForEquals(objValue)));
                     } else {
                         if (!range.isHighUnbounded()) {
                             RangeCondition condition;
@@ -72,7 +72,7 @@ public class DomainToCondition {
             }, discreteValues -> {
                 for (Object value : discreteValues.getValues()){
                     Comparable<?> objValue = converter.fromPrestoNative(value);
-                    conditions.add(new Equals(column.getExternalName(), objValue, determineRangeField(objValue)));
+                    conditions.add(new Equals(column.getExternalName(), objValue, determineRangeFieldForEquals(objValue)));
                 }
                 return new GroupCondition(GroupCondition.Operator.OR, conditions.toArray(AbstractCondition[]::new));
             }, ignored -> null);
@@ -112,7 +112,11 @@ public class DomainToCondition {
         }
         return RANGE_TYPES.contains(type);
     }
-    private static boolean determineRangeField(Object value) {
-       return isRangeType(value.getClass());
+    private static boolean determineRangeFieldForEquals(Object value) {
+        if ( value instanceof String ) {
+            return true;
+        } else {
+            return isRangeType(value.getClass());
+        }
     }
 }

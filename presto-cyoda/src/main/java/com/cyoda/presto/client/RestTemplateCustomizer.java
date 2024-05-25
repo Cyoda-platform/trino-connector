@@ -19,12 +19,10 @@ package com.cyoda.presto.client;
 
 import com.cyoda.presto.CyodaConfig;
 import com.cyoda.presto.auth.AuthContext;
+import com.cyoda.presto.auth.AuthContextWithToken;
 import com.cyoda.presto.auth.AuthPayload;
-import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.auth.RefreshContext;
-import com.cyoda.presto.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
-import com.cyoda.presto.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import io.trino.spi.TrinoException;
 import io.trino.spi.security.AccessDeniedException;
@@ -41,14 +39,13 @@ import org.springframework.hateoas.client.Traverson;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.BufferingClientHttpRequestFactory;
 import org.springframework.http.client.ClientHttpRequestFactory;
-import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.OkHttp3ClientHttpRequestFactory;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.AbstractJackson2HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.URI;
@@ -77,12 +74,12 @@ public class RestTemplateCustomizer {
     public static final Duration TOKEN_EXPIRY_OFFSET = Duration.ofSeconds(10);
 
     private final CyodaConfig config;
-    private final AuthService authService;
     private final CyodaApiRequestStatsMonitor apiRequestStatsMonitor;
-    private final ContentIdLoadingCache<AuthContext,RestTemplate> restTemplateCache;
-    private final ContentIdLoadingCache<AuthContext,RestTemplate> refreshRestTemplateCache;
+    private final LoadingCache<AuthContextWithToken,RestTemplate> restTemplateCache;
+    private final LoadingCache<AuthContextWithToken,RestTemplate> refreshRestTemplateCache;
     private final RestTemplate unauthorizedRestTemplate;
     private final URI refreshUri;
+    private final boolean logResponce;
 
     private static final List<HttpMessageConverter<?>> HAL_CONVERTERS = Traverson.getDefaultMessageConverters(MediaTypes.HAL_JSON);
     static {
@@ -91,26 +88,22 @@ public class RestTemplateCustomizer {
                 .forEach(conv -> ((AbstractJackson2HttpMessageConverter)conv).getObjectMapper().configure(DeserializationFeature.USE_BIG_DECIMAL_FOR_FLOATS, true));
     }
     @Inject
-    public RestTemplateCustomizer(CyodaConfig config, AuthService authService, CyodaApiRequestStatsMonitor apiRequestStatsMonitor, CyodaCacheMonitor cacheMonitor) {
+    public RestTemplateCustomizer(CyodaConfig config, CyodaApiRequestStatsMonitor apiRequestStatsMonitor) {
         this.config = config;
-        this.authService = authService;
         this.apiRequestStatsMonitor = apiRequestStatsMonitor;
-        restTemplateCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
+        logResponce = apiRequestStatsMonitor != null && config.getLogApiCallStats() && config.getLogApiCallResponse();
+        restTemplateCache = Caffeine.newBuilder()
                 .maximumSize(100)
-                .recordStats()
                 .build(key -> {
                     LOG.debug(()->"creating RestTemplate for "+key.getPayload().getUsername());
                     return newRestTemplate(ACCESS,key,HAL_CONVERTERS);
-                }));
-        cacheMonitor.register("REST_TEMPLATE", restTemplateCache, AuthContext::getUserId, x -> 1);
-        refreshRestTemplateCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
+                });
+        refreshRestTemplateCache = Caffeine.newBuilder()
                 .maximumSize(100)
-                .recordStats()
                 .build(key -> {
                     LOG.debug(()->"creating refresh RestTemplate for "+key.getPayload().getUsername());
                     return newRestTemplate(REFRESH,key,null);
-                }));
-        cacheMonitor.register("REST_REFRESH", refreshRestTemplateCache, AuthContext::getUserId, x -> 1);
+                });
         this.unauthorizedRestTemplate = newRestTemplate(ACCESS,null,null);
 
         try {
@@ -126,18 +119,18 @@ public class RestTemplateCustomizer {
         REFRESH
     }
 
-    public RestTemplate getRestTemplate(AuthContext authContext) {
-            return restTemplateCache.get(authContext);
+    public RestTemplate getRestTemplate(AuthContextWithToken authContext) {
+        return restTemplateCache.get(authContext);
     }
-    public RestTemplate getRestTemplateWithTechAuth() {
-        return restTemplateCache.get(authService.getTechnicalAuth());
+    public RestTemplate getRestTemplate(AuthContext authContext) {
+            return getRestTemplate((AuthContextWithToken) authContext);
     }
 
     public RestTemplate getUnauthorizedRestTemplate() {
         return unauthorizedRestTemplate;
     }
 
-    private RestTemplate newRestTemplate(TemplateType templateType, AuthContext authContext,
+    private RestTemplate newRestTemplate(TemplateType templateType, AuthContextWithToken authContext,
                                          List<HttpMessageConverter<?>> messageConverters) {
 
         RestTemplate template = new RestTemplate();
@@ -159,7 +152,7 @@ public class RestTemplateCustomizer {
         }
 
         template.setRequestFactory(new OkHttp3ClientHttpRequestFactory(builder.build()));
-        if (config.getLogApiCallStats() && config.getLogApiCallResponse()){
+        if (logResponce){
             ClientHttpRequestFactory factory =
                     new BufferingClientHttpRequestFactory(template.getRequestFactory());
             template.setRequestFactory(factory);
@@ -175,7 +168,7 @@ public class RestTemplateCustomizer {
 
     private void setupAuthentication(
             TemplateType templateType,
-            AuthContext authContext,
+            AuthContextWithToken authContext,
             OkHttpClient.Builder clientBuilder,
             CyodaConfig config) {
         switch (config.getCyodaAuthenticationType()) {
@@ -208,7 +201,7 @@ public class RestTemplateCustomizer {
 
     private void setupTokenAuth(
             TemplateType templateType,
-            AuthContext authContext,
+            AuthContextWithToken authContext,
             OkHttpClient.Builder clientBuilder,
             CyodaConfig config) {
 
@@ -221,7 +214,7 @@ public class RestTemplateCustomizer {
         }
     }
 
-    public static Interceptor basicAuth(String user, String password) {
+    private static Interceptor basicAuth(String user, String password) {
         requireNonNull(user, "user is null");
         requireNonNull(password, "password is null");
         if (user.contains(":")) {
@@ -234,7 +227,7 @@ public class RestTemplateCustomizer {
                 .build());
     }
 
-    public Interceptor tokenAuth(TemplateType templateType, AuthContext authContext) {
+    private Interceptor tokenAuth(TemplateType templateType, AuthContextWithToken authContext) {
         requireNonNull(authContext, "accessToken is null");
 
         switch(templateType) {
@@ -253,7 +246,7 @@ public class RestTemplateCustomizer {
         }
     }
 
-    private String getRefreshToken(AuthContext authContext) {
+    private String getRefreshToken(AuthContextWithToken authContext) {
         ZonedDateTime refreshTokenExpiry = authContext.getPayload().getRefreshTokenExpiry();
         if (isTokenExpired(authContext.getPayload().getUsername(),refreshTokenExpiry)) {
             String message =
@@ -273,7 +266,7 @@ public class RestTemplateCustomizer {
         }
     }
 
-    private String getAccessToken(AuthContext authContext) {
+    private String getAccessToken(AuthContextWithToken authContext) {
         if (needANewToken(authContext)) {
             RestTemplate restTemplate = Optional.ofNullable(refreshRestTemplateCache.get(authContext))
                     .orElseThrow(()->new IllegalArgumentException("Cannot get RestTemplate"));
@@ -284,7 +277,7 @@ public class RestTemplateCustomizer {
                 ).orElseThrow(()->new IllegalStateException(
                         "No body returned from refresh token endpoint"+config.getRefreshTokenEndpoint())
                 );
-                AuthContext newAuthContext = authContext.withContext(refreshContext);
+                AuthContextWithToken newAuthContext = authContext.withContext(refreshContext);
                 restTemplateCache.refresh(newAuthContext);
                 return refreshContext.getToken();
             } else {
@@ -296,7 +289,7 @@ public class RestTemplateCustomizer {
         }
     }
 
-    private boolean needANewToken(AuthContext authContext) {
+    private boolean needANewToken(AuthContextWithToken authContext) {
         AuthPayload payload = authContext.getPayload();
         return payload.getToken() == null || isTokenExpired(payload.getUsername(), payload.getTokenExpiry());
     }
@@ -309,15 +302,15 @@ public class RestTemplateCustomizer {
         return tokenExpiry.isBefore(ZonedDateTime.now().minus(TOKEN_EXPIRY_OFFSET));
     }
 
-    public static void setupSocksProxy(OkHttpClient.Builder clientBuilder, CyodaConfig config) {
+    private static void setupSocksProxy(OkHttpClient.Builder clientBuilder, CyodaConfig config) {
         setupProxy(clientBuilder, config.getSocksProxy(), SOCKS);
     }
 
-    public static void setupHttpProxy(OkHttpClient.Builder clientBuilder, CyodaConfig config) {
+    private static void setupHttpProxy(OkHttpClient.Builder clientBuilder, CyodaConfig config) {
         setupProxy(clientBuilder, config.getHttpProxy(), HTTP);
     }
 
-    public static void setupProxy(OkHttpClient.Builder clientBuilder, HostAndPort proxy, Proxy.Type type) {
+    private static void setupProxy(OkHttpClient.Builder clientBuilder, HostAndPort proxy, Proxy.Type type) {
         Optional.ofNullable(proxy).map(RestTemplateCustomizer::toUnresolvedAddress)
                 .map(address -> new Proxy(type, address))
                 .ifPresent(clientBuilder::proxy);

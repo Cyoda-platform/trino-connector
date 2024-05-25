@@ -26,7 +26,7 @@ import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
@@ -85,7 +85,7 @@ public class ByteBufferPrestoValueConverter extends SliceComparableValueConverte
 
     @Override
     public Slice toSlice(@Nonnull ByteBuffer value) {
-        return Slices.wrappedBuffer(value);
+        return Slices.wrappedHeapBuffer(value);
     }
 
     @Nonnull

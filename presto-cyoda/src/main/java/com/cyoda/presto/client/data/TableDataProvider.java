@@ -27,6 +27,7 @@ import com.google.common.collect.ImmutableMap;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.connector.Constraint;
+import io.trino.spi.connector.SchemaTableName;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -62,13 +63,13 @@ public abstract class TableDataProvider<T> {
                 cyodaColumns, split);
     }
 
-    public final void writeValue(@Nullable T entity, CyodaColumnHandle columnHandle, BlockBuilder blockBuilder) {
+    public final void writeValue(@Nullable T entity, CyodaColumnHandle columnHandle, BlockBuilder blockBuilder, SchemaTableName tableName) {
         if (entity == null) {
             blockBuilder.appendNull();
             return;
         }
         Object value = getFieldValueFromEntity(entity, columnHandle);
-        columnHandle.writeValue(blockBuilder, value);
+        columnHandle.writeValue(blockBuilder, value, tableName);
     }
 
 }

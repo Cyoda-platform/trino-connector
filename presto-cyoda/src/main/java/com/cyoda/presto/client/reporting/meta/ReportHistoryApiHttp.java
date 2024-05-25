@@ -45,7 +45,7 @@ import org.springframework.hateoas.client.Traverson;
 import org.springframework.hateoas.server.core.TypeReferences;
 import org.springframework.web.client.HttpClientErrorException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -55,9 +55,9 @@ import java.util.Optional;
 
 import static com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.REPORT_HISTORIES;
 
-public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<ReportConfigKey, ReportHistoryFieldsView> {
+public class ReportHistoryApiHttp extends CachedPagingReportsApiHandler<ReportConfigKey, ReportHistoryFieldsView> implements ReportHistoryApi {
 
-    private static final SupplierLogger LOG = SupplierLogger.get(ReportHistoryApiHandler.class);
+    private static final SupplierLogger LOG = SupplierLogger.get(ReportHistoryApiHttp.class);
 
     public static final String REPORT_HISTORY_ENDPOINT = "/api/platform-api/reporting/history";
     public static final String HISTORY_REPORT_NAME_REQUEST_PARAMETER = "report_name";
@@ -71,11 +71,11 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Repor
     public static final List<String> selectedFields = REPORT_HISTORIES.getFieldList();
 
     @Inject
-    public ReportHistoryApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
-                                   RestTemplateCustomizer restTemplateCustomizer,
-                                   AuthService authService,
-                                   CyodaApiRequestStatsMonitor requestStatsMonitor,
-                                   CyodaCacheMonitor cacheMonitor) {
+    public ReportHistoryApiHttp(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
+                                RestTemplateCustomizer restTemplateCustomizer,
+                                AuthService authService,
+                                CyodaApiRequestStatsMonitor requestStatsMonitor,
+                                CyodaCacheMonitor cacheMonitor) {
         super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor, cacheMonitor);
 //        this.typeColumn = staticMetaProvider.getReportHistory().getTypeColumn();
 //        this.reportNameColumn = staticMetaProvider.getReportHistory().getReportNameColumn();
@@ -105,7 +105,7 @@ public class ReportHistoryApiHandler extends CachedPagingReportsApiHandler<Repor
 
         Date apiCallTime = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-        traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
+        traverson.setRestOperations(getTechRestTemplate());
 
         TypeReferences.PagedModelType<ReportHistoryFieldsView> typeReference =
                 new TypeReferences.PagedModelType<ReportHistoryFieldsView>() {

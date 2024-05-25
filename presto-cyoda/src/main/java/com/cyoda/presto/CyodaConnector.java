@@ -22,13 +22,15 @@ import com.cyoda.presto.logging.SupplierLogger;
 import io.airlift.bootstrap.LifeCycleManager;
 import io.trino.spi.connector.Connector;
 import io.trino.spi.connector.ConnectorMetadata;
+import io.trino.spi.connector.ConnectorNodePartitioningProvider;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
+import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.procedure.Procedure;
 import io.trino.spi.transaction.IsolationLevel;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.util.Set;
 
@@ -43,6 +45,7 @@ public class CyodaConnector implements Connector {
     private final CyodaSplitManager splitManager;
     private final CyodaPageSourceProvider pageSourceProvider;
     private final CyodaProcedureManager procedureManager;
+    private final CyodaNodePartitioningProvider nodePartitioningProvider;
 
     @Inject
     public CyodaConnector(
@@ -50,23 +53,29 @@ public class CyodaConnector implements Connector {
             CyodaMetadata metadata,
             CyodaSplitManager splitManager,
             CyodaPageSourceProvider pageSourceProvider,
-            CyodaProcedureManager procedureManager
+            CyodaProcedureManager procedureManager,
+            CyodaNodePartitioningProvider nodePartitioningProvider
     ) {
         this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
         this.metadata = requireNonNull(metadata, "metadata is null");
         this.splitManager = requireNonNull(splitManager, "splitManager is null");
         this.pageSourceProvider = requireNonNull(pageSourceProvider, "pageSourceProvider is null");
         this.procedureManager = requireNonNull(procedureManager, "procedureManager is null");
+        this.nodePartitioningProvider = nodePartitioningProvider;
     }
-
     @Override
-    public ConnectorTransactionHandle beginTransaction(IsolationLevel isolationLevel, boolean readOnly) {
+    public ConnectorTransactionHandle beginTransaction(IsolationLevel isolationLevel, boolean readOnly, boolean autoCommit) {
         return CyodaTransactionHandle.INSTANCE;
     }
 
     @Override
-    public ConnectorMetadata getMetadata(ConnectorTransactionHandle transactionHandle) {
+    public ConnectorMetadata getMetadata(ConnectorSession session, ConnectorTransactionHandle transactionHandle) {
         return metadata;
+    }
+
+    @Override
+    public ConnectorNodePartitioningProvider getNodePartitioningProvider() {
+        return nodePartitioningProvider;
     }
 
     @Override

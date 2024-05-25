@@ -19,14 +19,24 @@ package com.cyoda.presto;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.data.TableDataProviderProvider;
-import com.cyoda.presto.client.reporting.calls.DeleteReportsApiHandler;
-import com.cyoda.presto.client.reporting.calls.RunReportApiHandler;
-import com.cyoda.presto.client.reporting.data.ReportRowsApiHandler;
-import com.cyoda.presto.client.reporting.groups.ReportGroupsApiHandler;
-import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
-import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
-import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
-import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
+import com.cyoda.presto.client.reporting.calls.DeleteReportsApi;
+import com.cyoda.presto.client.reporting.calls.DeleteReportsApiHttp;
+import com.cyoda.presto.client.reporting.calls.DeleteReportsApiRSocket;
+import com.cyoda.presto.client.reporting.calls.RunReportApi;
+import com.cyoda.presto.client.reporting.calls.RunReportApiHttp;
+import com.cyoda.presto.client.reporting.calls.RunReportApiRSocket;
+import com.cyoda.presto.client.reporting.data.ReportRowsApi;
+import com.cyoda.presto.client.reporting.data.ReportRowsApiRSocket;
+import com.cyoda.presto.client.reporting.groups.ReportGroupsApi;
+import com.cyoda.presto.client.reporting.groups.ReportGroupsApiRSocket;
+import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApi;
+import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiRSocket;
+import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApi;
+import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiRSocket;
+import com.cyoda.presto.client.reporting.meta.ReportHistoryApi;
+import com.cyoda.presto.client.reporting.meta.ReportHistoryApiRSocket;
+import com.cyoda.presto.client.reporting.meta.ReportStatisticsApi;
+import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiRSocket;
 import com.cyoda.presto.client.reporting.metaproviders.DynamicReportMetadataProvider;
 import com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.presto.client.reporting.metaproviders.TreeNodeMetadataProvider;
@@ -37,6 +47,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Tracer;
+import io.trino.server.PluginManager;
 import io.trino.spi.NodeManager;
 import io.trino.spi.connector.ConnectorContext;
 import io.trino.spi.type.Type;
@@ -50,7 +63,7 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.messaging.rsocket.RSocketStrategies;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.util.Collections;
 
@@ -63,42 +76,57 @@ public class CyodaModule implements Module {
     private final String connectorId;
     private final TypeManager typeManager;
     private final NodeManager nodeManager;
+    private final OpenTelemetry telemetry;
+    private final Tracer tracer;
 
 
     public CyodaModule(String connectorId, ConnectorContext context) {
         this.connectorId = requireNonNull(connectorId, "connector id is null");
         typeManager = requireNonNull(context.getTypeManager(), "typeManager is null");
         nodeManager = requireNonNull(context.getNodeManager(), "nodeManager is null");
+        telemetry = requireNonNull(context.getOpenTelemetry(), "openTelemetry is null");
+        tracer = requireNonNull(context.getTracer(), "tracer is null");
     }
 
     @Override
     public void configure(Binder binder) {
         binder.bind(TypeManager.class).toInstance(typeManager);
         binder.bind(NodeManager.class).toInstance(nodeManager);
+        binder.bind(OpenTelemetry.class).toInstance(telemetry);
+        binder.bind(Tracer.class).toInstance(tracer);
 
-        binder.bind(CyodaConnector.class).in(Scopes.SINGLETON);
         binder.bind(CyodaConnectorId.class).toInstance(new CyodaConnectorId(connectorId));
         binder.bind(CyodaMetadata.class).in(Scopes.SINGLETON);
         binder.bind(CyodaSplitManager.class).in(Scopes.SINGLETON);
         binder.bind(CyodaPageSourceProvider.class).in(Scopes.SINGLETON);
         binder.bind(CyodaProcedureManager.class).in(Scopes.SINGLETON);
+        binder.bind(CyodaNodePartitioningProvider.class).in(Scopes.SINGLETON);
+        binder.bind(CyodaConnector.class).in(Scopes.SINGLETON);
 
         binder.bind(StaticTableMetadataProvider.class).in(Scopes.SINGLETON);
         binder.bind(DynamicReportMetadataProvider.class).in(Scopes.SINGLETON);
         binder.bind(TreeNodeMetadataProvider.class).in(Scopes.SINGLETON);
 
-        binder.bind(ConfiguredReportsApiHandler.class).in(Scopes.SINGLETON);
-        binder.bind(ReportConfigDetailsApiHandler.class).in(Scopes.SINGLETON);
-        binder.bind(ReportStatisticsApiHandler.class).in(Scopes.SINGLETON);
-        binder.bind(ReportHistoryApiHandler.class).in(Scopes.SINGLETON);
-        binder.bind(ReportGroupsApiHandler.class).in(Scopes.SINGLETON);
-        binder.bind(RunReportApiHandler.class).in(Scopes.SINGLETON);
-        binder.bind(DeleteReportsApiHandler.class).in(Scopes.SINGLETON);
+        binder.bind(ConfiguredReportsApi.class).to(ConfiguredReportsApiRSocket.class).in(Scopes.SINGLETON);
+        binder.bind(ReportConfigDetailsApi.class).to(ReportConfigDetailsApiRSocket.class).in(Scopes.SINGLETON);
+        binder.bind(ReportStatisticsApi.class).to(ReportStatisticsApiRSocket.class).in(Scopes.SINGLETON);
+        binder.bind(ReportHistoryApi.class).to(ReportHistoryApiRSocket.class).in(Scopes.SINGLETON);
+        binder.bind(ReportGroupsApi.class).to(ReportGroupsApiRSocket.class).in(Scopes.SINGLETON);
+        binder.bind(ReportRowsApi.class).to(ReportRowsApiRSocket.class).in(Scopes.SINGLETON);
+        binder.bind(RunReportApi.class).to(RunReportApiRSocket.class).in(Scopes.SINGLETON);
+        binder.bind(DeleteReportsApi.class).to(DeleteReportsApiRSocket.class).in(Scopes.SINGLETON);
+
+//        binder.bind(ConfiguredReportsApi.class).to(ConfiguredReportsApiHttp.class).in(Scopes.SINGLETON);
+//        binder.bind(ReportConfigDetailsApi.class).to(ReportConfigDetailsApiHttp.class).in(Scopes.SINGLETON);
+//        binder.bind(ReportStatisticsApi.class).to(ReportStatisticsApiHttp.class).in(Scopes.SINGLETON);
+//        binder.bind(ReportHistoryApi.class).to(ReportHistoryApiHttp.class).in(Scopes.SINGLETON);
+//        binder.bind(ReportGroupsApi.class).to(ReportGroupsApiHttp.class).in(Scopes.SINGLETON);
+//        binder.bind(ReportRowsApi.class).to(ReportRowsApiHttp.class).in(Scopes.SINGLETON);
+//        binder.bind(RunReportApi.class).to(RunReportApiHttp.class).in(Scopes.SINGLETON);
+//        binder.bind(DeleteReportsApi.class).to(DeleteReportsApiHttp.class).in(Scopes.SINGLETON);
 
         binder.bind(CyodaRSocketClient.class).in(Scopes.SINGLETON);
 
-        binder.bind(ReportGroupsApiHandler.class).in(Scopes.SINGLETON);
-        binder.bind(ReportRowsApiHandler.class).in(Scopes.SINGLETON);
 
         binder.bind(CyodaApiRequestStatsMonitor.class).in(Scopes.SINGLETON);
         binder.bind(CyodaCacheMonitor.class).in(Scopes.SINGLETON);

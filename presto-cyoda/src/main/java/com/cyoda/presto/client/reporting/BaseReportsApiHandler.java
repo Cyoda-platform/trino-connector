@@ -31,6 +31,7 @@ import io.trino.spi.connector.SchemaTableName;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.RestTemplate;
 
 import javax.annotation.Nonnull;
 import java.net.URI;
@@ -160,5 +161,9 @@ public abstract class BaseReportsApiHandler {
                 getClass()::getSimpleName,
                 () -> pageSize
         );
+    }
+
+    protected RestTemplate getTechRestTemplate() {
+        return restTemplateCustomizer.getRestTemplate(auth.getTechnicalAuth());
     }
 }

@@ -1,8 +1,5 @@
 package com.cyoda.presto.client.reporting.groups;
 
-import com.cyoda.core.model.reports.DistributedReportInfoView;
-
-import javax.annotation.Nonnull;
 import java.util.UUID;
 
 public record GroupsRequestKey(String reportId, UUID groupingVersion, String queryId) {

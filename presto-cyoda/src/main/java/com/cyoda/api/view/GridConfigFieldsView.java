@@ -32,7 +32,14 @@ import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPO
 
 public class GridConfigFieldsView {
 
-    private final Map<String, String> gridConfigFields = new HashMap<>();
+    private final Map<String, String> gridConfigFields;
+
+    public GridConfigFieldsView() {
+        gridConfigFields = new HashMap<>();
+    }
+    public GridConfigFieldsView(Map<String, String> fields){
+        gridConfigFields = fields;
+    }
 
     public void addField(String fieldName, String fieldValue) {
         gridConfigFields.put(fieldName, fieldValue);

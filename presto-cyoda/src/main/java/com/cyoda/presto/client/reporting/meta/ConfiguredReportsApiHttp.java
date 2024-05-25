@@ -29,7 +29,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import io.trino.spi.StandardErrorCode;
 import io.trino.spi.TrinoException;
-import io.trino.spi.connector.SchemaTableName;
 import org.springframework.hateoas.MediaTypes;
 import org.springframework.hateoas.PagedModel;
 import org.springframework.hateoas.TemplateVariable;
@@ -39,7 +38,7 @@ import org.springframework.hateoas.client.Traverson;
 import org.springframework.hateoas.server.core.TypeReferences;
 import org.springframework.web.client.HttpClientErrorException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collection;
@@ -47,14 +46,12 @@ import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
-import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_SCHEMA_NAME_COLUMN;
-import static com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle.REPORT_TABLE_NAME_COLUMN;
-import static com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler.HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER;
+import static com.cyoda.presto.client.reporting.meta.ReportHistoryApiHttp.HISTORY_FILTER_BY_TYPE_REQUEST_PARAMETER;
 import static com.cyoda.presto.client.reporting.metaproviders.StaticTableMetadata.REPORTS;
 
-public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<ReportListKey, GridConfigFieldsView> {
+public class ConfiguredReportsApiHttp extends BasePagingReportsApiHandler<ReportListKey, GridConfigFieldsView> implements ConfiguredReportsApi {
 
-    protected static final SupplierLogger LOG = SupplierLogger.get(ConfiguredReportsApiHandler.class);
+    protected static final SupplierLogger LOG = SupplierLogger.get(ConfiguredReportsApiHttp.class);
 
     public static final String REPORT_DEFS_ENDPOINT = "/api/platform-api/reporting/definitions";
 
@@ -62,16 +59,16 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Rep
 
 
     @Inject
-    public ConfiguredReportsApiHandler(CyodaConfig config,
-                                       RestTemplateCustomizer restTemplateCustomizer,
-                                       AuthService authService,
-                                       CyodaApiRequestStatsMonitor requestStatsMonitor) {
+    public ConfiguredReportsApiHttp(CyodaConfig config,
+                                    RestTemplateCustomizer restTemplateCustomizer,
+                                    AuthService authService,
+                                    CyodaApiRequestStatsMonitor requestStatsMonitor) {
         super(config, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
     }
 
 
     @Override
-    public Optional<PagedModel<GridConfigFieldsView>> retrievePage(
+    protected Optional<PagedModel<GridConfigFieldsView>> retrievePage(
             ReportListKey requestKey, int page,
             int pageSize,
             SizeListener listener
@@ -105,7 +102,10 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Rep
             final PagedModel<GridConfigFieldsView> gridConfigFieldsViews = traverson
                     .follow()
                     .toObject(typeReference);
-            addReportAndTableName(gridConfigFieldsViews);
+            if (gridConfigFieldsViews != null) {
+                Collection<GridConfigFieldsView> content = gridConfigFieldsViews.getContent();
+                content.forEach(ConfiguredReportsApi::addSchemaTableName);
+            }
             publishSize(listener, gridConfigFieldsViews);
             return Optional.ofNullable(gridConfigFieldsViews);
         } catch (HttpClientErrorException e) {
@@ -113,17 +113,6 @@ public class ConfiguredReportsApiHandler extends BasePagingReportsApiHandler<Rep
         } finally {
             registerApiCall(requestKey.queryId(), callTime, templatedUri.toString(), expansion);
         }
-    }
-
-    private void addReportAndTableName(PagedModel<GridConfigFieldsView> gridConfigFieldsViews) {
-        if (gridConfigFieldsViews == null) return;
-        Collection<GridConfigFieldsView> content = gridConfigFieldsViews.getContent();
-        content.forEach(it -> {
-            String id = it.getId();
-            SchemaTableName tableName = configIdToSchemaTableName(id);
-            it.addField(REPORT_SCHEMA_NAME_COLUMN, tableName.getSchemaName());
-            it.addField(REPORT_TABLE_NAME_COLUMN, tableName.getTableName());
-        });
     }
 
     private UriTemplate setupUriTemplate() {

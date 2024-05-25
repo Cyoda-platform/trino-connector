@@ -28,6 +28,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ColumnMetadata;
+import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.predicate.DiscreteValues;
 import io.trino.spi.type.Type;
 
@@ -94,8 +95,8 @@ public class CyodaColumnHandle implements ColumnHandle {
         return converter;
     }
 
-    public void writeValue(BlockBuilder blockBuilder, Object cyodaNative){
-        getConverter().writeCyodaNative(columnType, blockBuilder, cyodaNative, columnName);
+    public void writeValue(BlockBuilder blockBuilder, Object cyodaNative, SchemaTableName tableName){
+        getConverter().writeCyodaNative(columnType, blockBuilder, cyodaNative, tableName.toString() + "." + columnName);
     }
 
     @JsonIgnore

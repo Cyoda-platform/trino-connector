@@ -38,7 +38,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApiHandler {
+public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApiHandler implements CachedReportsApi<K, T> {
 
     protected final ContentIdLoadingCache<K, List<T>> cache;
 
@@ -73,6 +73,7 @@ public abstract class CachedPagingReportsApiHandler<K, T> extends BaseReportsApi
         return new PagingFluxProvider<>(pagingHandleGetter).generate(0).subscribeOn(Schedulers.immediate(), false).collectList().block();
     }
 
+    @Override
     public List<T> getByKey(K requestKey) {
         return cache.get(requestKey);
     }

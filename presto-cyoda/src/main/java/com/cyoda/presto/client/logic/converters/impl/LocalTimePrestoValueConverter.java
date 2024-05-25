@@ -21,7 +21,7 @@ import com.cyoda.presto.client.logic.converters.structure.LongComparedTypeValueC
 import com.cyoda.presto.client.types.DataType;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 

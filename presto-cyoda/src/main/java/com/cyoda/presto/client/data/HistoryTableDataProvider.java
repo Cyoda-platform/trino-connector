@@ -4,7 +4,7 @@ import com.cyoda.core.model.reports.ReportHistoryFieldsView;
 import com.cyoda.presto.CyodaSplit;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
-import com.cyoda.presto.client.reporting.meta.ReportHistoryApiHandler;
+import com.cyoda.presto.client.reporting.meta.ReportHistoryApi;
 import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableHandle;
 import com.cyoda.presto.handles.CyodaTableMeta;
@@ -20,10 +20,10 @@ import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields
 
 public class HistoryTableDataProvider extends TableDataProvider<ReportHistoryFieldsView> {
 
-    private final ReportHistoryApiHandler reportHistoryApiHandler;
+    private final ReportHistoryApi reportHistoryApiHandler;
 
 
-    public HistoryTableDataProvider(ReportHistoryApiHandler reportHistoryApiHandler) {
+    public HistoryTableDataProvider(ReportHistoryApi reportHistoryApiHandler) {
         this.reportHistoryApiHandler = reportHistoryApiHandler;
     }
 
@@ -34,9 +34,9 @@ public class HistoryTableDataProvider extends TableDataProvider<ReportHistoryFie
         Map<String, Object> fields = entity.getReportHistoryFields();
 
         String columnName = columnHandle.getColumnName();
-        if (HISTORY_REPORT_ID_COLUMN.equals(columnName)) {
-            columnName = "id";
-        }
+//        if (HISTORY_REPORT_ID_COLUMN.equals(columnName)) {
+//            columnName = "id";
+//        }
         return fields.get(columnName);
     }
 

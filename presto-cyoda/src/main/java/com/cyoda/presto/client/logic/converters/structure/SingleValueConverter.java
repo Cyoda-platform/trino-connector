@@ -52,14 +52,14 @@ public abstract class SingleValueConverter<T> extends AbstractValueConverter<T> 
     public T fromCyodaNative(@Nonnull Object cyodaNative, String columnName) {
         return fromCyodaNative(cyodaNative, columnName, false);
     }
-    private T fromCyodaNative(@Nonnull Object cyodaNative, String columnName, boolean fromCollection) {
-        if (!fromCollection && cyodaNative instanceof List){
-            List<?> list = (List<?>) cyodaNative;
+    private T fromCyodaNative(Object cyodaNative, String columnName, boolean fromCollection) {
+        if (cyodaNative == null) return null;
+        if (!fromCollection && cyodaNative instanceof List<?> list){
             if (list.size() == 1)
                 return super.fromCyodaNative(list.get(0), columnName);
         }
         if (!getClazz().isAssignableFrom(cyodaNative.getClass())) {
-            LOG.debug(String.format("Column \"%s\": type mismatch %s <-> %s. Trying to convert...",
+            LOG.debug(String.format("Column type mismatch \"%s\"\nExpected %s \nReceived: %s. \nTrying to convert...",
                     columnName, getClazz().getName(), cyodaNative.getClass().getName()));
             return fromOtherCyodaType(cyodaNative, columnName);
         }
@@ -67,7 +67,11 @@ public abstract class SingleValueConverter<T> extends AbstractValueConverter<T> 
     }
 
     public void writeCyodaNativeFromCollection(Type type, BlockBuilder builder, Object cyodaNative, String columnName){
-        writeValue(type, builder, fromCyodaNative(cyodaNative, columnName, true));
+        if (cyodaNative == null) {
+            builder.appendNull();
+        } else {
+            writeValue(type, builder, fromCyodaNative(cyodaNative, columnName, true));
+        }
     }
 
     @Override

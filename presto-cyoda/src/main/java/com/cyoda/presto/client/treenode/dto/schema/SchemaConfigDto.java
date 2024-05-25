@@ -21,14 +21,17 @@ public class SchemaConfigDto {
         this.tables = tables;
     }
 
+    @JsonProperty
     public String getSchemaName() {
         return schemaName;
     }
 
+    @JsonProperty
     public List<TableConfigDto> getTables() {
         return tables;
     }
 
+    @JsonProperty
     public UUID getId() {
         return id;
     }

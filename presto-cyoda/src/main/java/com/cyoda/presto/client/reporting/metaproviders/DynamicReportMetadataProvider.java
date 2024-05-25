@@ -6,8 +6,8 @@ import com.cyoda.presto.CyodaConnectorId;
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
-import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApiHandler;
-import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApiHandler;
+import com.cyoda.presto.client.reporting.meta.ConfiguredReportsApi;
+import com.cyoda.presto.client.reporting.meta.ReportConfigDetailsApi;
 import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.meta.ReportDefinitionHandle;
 import com.cyoda.presto.client.reporting.meta.ReportListKey;
@@ -23,7 +23,7 @@ import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.type.TypeManager;
 import reactor.core.publisher.Flux;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.sql.Timestamp;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -39,8 +39,8 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     private static final SupplierLogger LOG = SupplierLogger.get(DynamicReportMetadataProvider.class);
 
 
-    private final ConfiguredReportsApiHandler configuredReportsApiHandler;
-    private final ReportConfigDetailsApiHandler reportConfigDetailsApiHandler;
+    private final ConfiguredReportsApi configuredReportsApiHandler;
+    private final ReportConfigDetailsApi reportConfigDetailsApiHandler;
     private final StaticTableMetadataProvider staticTableMetadataProvider;
 
     private final ContentIdLoadingCache<TableMetaCacheKey, CyodaTableMeta> tableMetaCache;
@@ -49,8 +49,8 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     public DynamicReportMetadataProvider(CyodaConnectorId connectorId, CyodaConfig config,
                                          TypeManager typeManager, AuthService auth,
                                          StaticTableMetadataProvider staticTableMetadataProvider,
-                                         ConfiguredReportsApiHandler configuredReportsApiHandler,
-                                         ReportConfigDetailsApiHandler reportConfigDetailsApiHandler,
+                                         ConfiguredReportsApi configuredReportsApiHandler,
+                                         ReportConfigDetailsApi reportConfigDetailsApiHandler,
                                          CyodaCacheMonitor cacheMonitor) {
         super(typeManager, config, connectorId);
         this.staticTableMetadataProvider = staticTableMetadataProvider;
@@ -75,7 +75,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
                     new ReportListKey(authContext, "META"),
                     NOT_LISTENING
             );
-            flux.doOnNext(item -> {
+            flux.toIterable().forEach(item -> {
                 TableMetaCacheKey cacheKey = TableMetaCacheKey.of(item);
                 CyodaTableMeta tableMeta = tableMetaCache.get(cacheKey);
                 if (tableMeta == null) {
@@ -89,7 +89,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
                 if (tableMeta.hasGroups()) {
                     result.add(tableMeta.toSuppHandle("_groups", CyodaTableType.GROUP));
                 }
-            }).blockLast();
+            });
             // If there are duplicates, last write wins.
             return result;
         } catch (Exception e){

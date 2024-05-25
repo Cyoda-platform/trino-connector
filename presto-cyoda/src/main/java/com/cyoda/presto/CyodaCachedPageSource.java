@@ -5,9 +5,9 @@ import com.cyoda.presto.handles.CyodaColumnHandle;
 import com.cyoda.presto.handles.CyodaTableMeta;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.collect.ImmutableList;
+import io.trino.plugin.base.MappedPageSource;
 import io.trino.spi.Page;
 import io.trino.spi.connector.ConnectorPageSource;
-import io.trino.split.MappedPageSource;
 
 import java.io.IOException;
 import java.util.ArrayList;

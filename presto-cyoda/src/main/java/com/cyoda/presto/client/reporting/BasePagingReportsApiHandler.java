@@ -31,7 +31,7 @@ import reactor.core.publisher.Flux;
 import java.util.Optional;
 import java.util.function.Function;
 
-public abstract class BasePagingReportsApiHandler<K, T> extends BaseReportsApiHandler {
+public abstract class BasePagingReportsApiHandler<K, T> extends BaseReportsApiHandler implements FluxApiHandler<K, T> {
 
     protected BasePagingReportsApiHandler(CyodaConfig config,
                                           RestTemplateCustomizer restTemplateCustomizer,
@@ -41,12 +41,13 @@ public abstract class BasePagingReportsApiHandler<K, T> extends BaseReportsApiHa
         super(config, restTemplateCustomizer, log, authService, requestStatsMonitor);
     }
 
-    public abstract Optional<PagedModel<T>> retrievePage(
+    protected abstract Optional<PagedModel<T>> retrievePage(
             K requestKey,
             int page,
             int pageSize,
             SizeListener listener);
 
+    @Override
     public Flux<T> asFlux(K requestKey, SizeListener listener) {
 
         int pageSize = config.getRequestPageSize();

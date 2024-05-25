@@ -26,7 +26,7 @@ import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.type.Type;
 
 import javax.annotation.Nonnull;
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 
 import java.math.BigDecimal;
 

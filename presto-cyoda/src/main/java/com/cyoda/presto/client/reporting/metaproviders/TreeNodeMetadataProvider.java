@@ -20,13 +20,11 @@ import io.trino.spi.connector.SchemaTableName;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.type.TypeManager;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -62,7 +60,7 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
     }
 
     public Map<SchemaTableName, CyodaTableMeta> loadSchema(String schemaName){
-        SchemaConfigDto schemaConfigDto = rSocketClient.treeNode().getSchema(schemaName);
+        SchemaConfigDto schemaConfigDto = rSocketClient.treeNodeClient.schemaRequester.retrieveData("META", schemaName).block();
         return mapSchema(schemaConfigDto);
     }
 
@@ -74,7 +72,7 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
 
     public List<String> loadSchemas(String userId){
         List<String> result = new ArrayList<>();
-        List<SchemaConfigDto> schemas = rSocketClient.treeNode().getSchemas(userId);
+        List<SchemaConfigDto> schemas = rSocketClient.treeNodeClient.schemaListRequester.retrieveData("META", userId).collectList().block();
         schemas.forEach(schemaConfigDto -> {
             String schemaName = schemaConfigDto.getSchemaName();
             result.add(schemaName);
@@ -102,6 +100,7 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
         CompoundDataType uuidType = new CompoundDataType("id", DataType.UUID_TYPE);
         CompoundDataType indexType = new CompoundDataType("index", DataType.INTEGER);
         columns.add(new CyodaColumnHandle("id", uuidType.toPrestoType(typeManager), uuidType, 1, false));
+        columns.add(new CyodaColumnHandle("root", uuidType.toPrestoType(typeManager), uuidType, 2, true));
         columns.add(new CyodaColumnHandle("parent", uuidType.toPrestoType(typeManager), uuidType, 2, true));
         columns.add(new CyodaColumnHandle("index", indexType.toPrestoType(typeManager), indexType, 3, true));
         columns.addAll(tableConfigDto.getFields().stream().map(dto -> {

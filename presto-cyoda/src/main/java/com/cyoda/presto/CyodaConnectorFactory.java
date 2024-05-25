@@ -19,6 +19,8 @@ package com.cyoda.presto;
 
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.json.JsonModule;
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Tracer;
 import io.trino.server.ServerMainModule;
 import io.trino.spi.type.TypeManager;
 import io.trino.spi.TrinoException;
@@ -51,6 +53,8 @@ public class CyodaConnectorFactory implements ConnectorFactory {
                     new CyodaModule(catalogName, context),
                     binder -> {
                         binder.bind(TypeManager.class).toInstance(context.getTypeManager());
+                        binder.bind(OpenTelemetry.class).toInstance(context.getOpenTelemetry());
+                        binder.bind(Tracer.class).toInstance(context.getTracer());
                     });
 
             //noinspection UnstableApiUsage

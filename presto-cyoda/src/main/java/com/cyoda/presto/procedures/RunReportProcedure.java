@@ -2,7 +2,7 @@ package com.cyoda.presto.procedures;
 
 import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthService;
-import com.cyoda.presto.client.reporting.calls.RunReportApiHandler;
+import com.cyoda.presto.client.reporting.calls.RunReportApi;
 import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import io.trino.spi.connector.ConnectorSession;
 import io.trino.spi.procedure.Procedure;
@@ -18,13 +18,13 @@ public class RunReportProcedure implements CyodaProcedure{
     private static volatile RunReportProcedure INSTANCE = null;
 
     private final AuthService auth;
-    private final RunReportApiHandler apiHandler;
-    private RunReportProcedure(AuthService auth, RunReportApiHandler apiHandler){
+    private final RunReportApi apiHandler;
+    private RunReportProcedure(AuthService auth, RunReportApi apiHandler){
         this.auth = auth;
         this.apiHandler = apiHandler;
     }
 
-    public static RunReportProcedure getInstance(AuthService auth, RunReportApiHandler apiHandler){
+    public static RunReportProcedure getInstance(AuthService auth, RunReportApi apiHandler){
         if (INSTANCE == null){
             synchronized (RunReportProcedure.class){
                 if (INSTANCE == null){
@@ -55,6 +55,6 @@ public class RunReportProcedure implements CyodaProcedure{
 
     public static void runReport(ConnectorSession session, String CONFIG_ID){
         AuthContext authContext = INSTANCE.auth.fromSession(session);
-        INSTANCE.apiHandler.runReport(authContext, new ReportConfigKey(CONFIG_ID, session.getQueryId()));
+        INSTANCE.apiHandler.runReport(session.getQueryId(), authContext, new ReportConfigKey(CONFIG_ID, session.getQueryId()));
     }
 }

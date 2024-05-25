@@ -17,32 +17,14 @@
 
 package com.cyoda.presto.client.types;
 
-import com.cyoda.presto.client.logic.Any;
 import com.cyoda.presto.client.logic.PredicatePushdownController;
 import com.cyoda.presto.client.logic.converters.impl.BigDecimalPrestoValueConverter;
-import com.cyoda.presto.client.logic.converters.impl.UUIDPrestoValueConverter;
-import com.cyoda.presto.client.reporting.meta.ReportStatisticsApiHandler;
 import com.cyoda.presto.logging.SupplierLogger;
-import io.trino.spi.type.BigintType;
-import io.trino.spi.type.BooleanType;
-import io.trino.spi.type.DateType;
-import io.trino.spi.type.DoubleType;
-import io.trino.spi.type.IntegerType;
-import io.trino.type.JsonType;
-import io.trino.spi.type.RealType;
-import io.trino.spi.type.SmallintType;
 import io.trino.spi.type.StandardTypes;
-import io.trino.spi.type.TimestampType;
-import io.trino.spi.type.TinyintType;
-import io.trino.spi.type.Type;
-import io.trino.spi.type.TypeSignature;
 import io.trino.spi.type.TypeSignatureParameter;
-import io.trino.spi.type.VarcharType;
 import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.ParameterizedType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.ByteBuffer;
@@ -52,14 +34,11 @@ import java.time.LocalTime;
 import java.time.Year;
 import java.time.YearMonth;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;

@@ -5,7 +5,6 @@ import com.cyoda.presto.auth.AuthContext;
 import com.cyoda.presto.auth.AuthService;
 import com.cyoda.presto.client.RestTemplateCustomizer;
 import com.cyoda.presto.client.reporting.BaseReportsApiHandler;
-import com.cyoda.presto.client.reporting.meta.ReportConfigKey;
 import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.presto.logging.SupplierLogger;
 import com.google.common.collect.ImmutableList;
@@ -21,29 +20,30 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-public class DeleteReportsApiHandler extends BaseReportsApiHandler {
+public class DeleteReportsApiHttp extends BaseReportsApiHandler implements DeleteReportsApi {
 
     public static final String RUN_REPORT_ENDPOINT = "/api/platform-api/reporting/definitions/";
 
-    protected static final SupplierLogger LOG = SupplierLogger.get(DeleteReportsApiHandler.class);
+    protected static final SupplierLogger LOG = SupplierLogger.get(DeleteReportsApiHttp.class);
 
     private final UriTemplate uriTemplate;
     private final AuthService auth;
     @Inject
-    protected DeleteReportsApiHandler(CyodaConfig config, RestTemplateCustomizer restTemplateCustomizer, AuthService authService, CyodaApiRequestStatsMonitor requestStatsMonitor, AuthService auth) {
+    protected DeleteReportsApiHttp(CyodaConfig config, RestTemplateCustomizer restTemplateCustomizer, AuthService authService, CyodaApiRequestStatsMonitor requestStatsMonitor, AuthService auth) {
         super(config, restTemplateCustomizer, LOG, authService, requestStatsMonitor);
         this.auth = auth;
         uriTemplate = setupUriTemplate();
     }
 
 
+    @Override
     public String deleteReports(ConnectorSession session, String configId) {
         AuthContext authContext = auth.fromSession(session);
         Map<String, Object> expansion = new HashMap<>();

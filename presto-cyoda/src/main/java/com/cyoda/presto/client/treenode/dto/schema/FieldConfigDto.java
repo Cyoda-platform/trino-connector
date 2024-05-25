@@ -20,18 +20,19 @@ public class FieldConfigDto {
         this.dataType = dataType;
     }
 
+    @JsonProperty
     public String getFieldName() {
         return fieldName;
     }
-
+    @JsonProperty
     public String getFieldKey() {
         return fieldKey;
     }
-
+    @JsonProperty
     public String getDataType() {
         return dataType;
     }
-
+    @JsonProperty
     public String getValuePath() {
         return valuePath;
     }

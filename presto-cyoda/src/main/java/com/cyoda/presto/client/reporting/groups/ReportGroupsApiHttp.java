@@ -46,7 +46,7 @@ import org.springframework.hateoas.client.Traverson;
 import org.springframework.hateoas.server.core.TypeReferences;
 import org.springframework.web.client.HttpClientErrorException;
 
-import javax.inject.Inject;
+import jakarta.inject.Inject;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.Duration;
@@ -61,9 +61,9 @@ import static com.cyoda.presto.client.reporting.metaproviders.StaticReportFields
 /**
  * This is not intended to be exposed as a table, but used internally to fill the real table.
  */
-public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<GroupsRequestKey, GroupingHandle> {
+public class ReportGroupsApiHttp extends CachedPagingReportsApiHandler<GroupsRequestKey, GroupingHandle> implements ReportGroupsApi {
 
-    protected static final SupplierLogger LOG = SupplierLogger.get(ReportGroupsApiHandler.class);
+    protected static final SupplierLogger LOG = SupplierLogger.get(ReportGroupsApiHttp.class);
 
     public static final String REPORT_GROUPS_TEMPLATE = "/{" + HISTORY_REPORT_ID_COLUMN + "" +
             "}/{" +
@@ -76,11 +76,11 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
 //    private final CyodaColumnHandle reportIdColumn;
 
     @Inject
-    public ReportGroupsApiHandler(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
-                                  RestTemplateCustomizer restTemplateCustomizer,
-                                  AuthService authService,
-                                  CyodaApiRequestStatsMonitor requestStatsMonitor,
-                                  CyodaCacheMonitor cacheMonitor) {
+    public ReportGroupsApiHttp(CyodaConnectorId connectorId, CyodaConfig config, TypeManager typeManager,
+                               RestTemplateCustomizer restTemplateCustomizer,
+                               AuthService authService,
+                               CyodaApiRequestStatsMonitor requestStatsMonitor,
+                               CyodaCacheMonitor cacheMonitor) {
         super(connectorId, config, typeManager, restTemplateCustomizer, LOG, authService, requestStatsMonitor, cacheMonitor);
 //        this.groupingVersionColumn = staticMetaProvider.getReportGroups().getGroupingVersionColumn();
 //        this.reportIdColumn = staticMetaProvider.getReportGroups().getReportIdColumn();
@@ -119,7 +119,7 @@ public class ReportGroupsApiHandler extends CachedPagingReportsApiHandler<Groups
 
         Date apiCallTime = new Date();
         Traverson traverson = new Traverson(templatedUri, MediaTypes.HAL_JSON);
-        traverson.setRestOperations(restTemplateCustomizer.getRestTemplateWithTechAuth());
+        traverson.setRestOperations(getTechRestTemplate());
 
         TypeReferences.PagedModelType<WrappedEntityModel<GroupHeader>> typeReference =
                 new TypeReferences.PagedModelType<WrappedEntityModel<GroupHeader>>() {

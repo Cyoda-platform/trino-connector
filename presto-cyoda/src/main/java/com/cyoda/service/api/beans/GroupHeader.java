@@ -165,6 +165,7 @@ public class GroupHeader implements ImmutableBean {
      * Gets the groupValuesJson.
      * @return the value of the property
      */
+    @JsonProperty
     public String getGroupValuesJson() {
         return groupValuesJson;
     }
@@ -174,6 +175,7 @@ public class GroupHeader implements ImmutableBean {
      * Gets the groupValuesJsonBase64.
      * @return the value of the property
      */
+    @JsonProperty
     public String getGroupValuesJsonBase64() {
         return groupValuesJsonBase64;
     }
@@ -183,6 +185,7 @@ public class GroupHeader implements ImmutableBean {
      * Gets the groupValues.
      * @return the value of the property
      */
+    @JsonProperty
     public List<String> getGroupValues() {
         return groupValues;
     }
@@ -192,6 +195,7 @@ public class GroupHeader implements ImmutableBean {
      * Gets the parentGroupValuesJson.
      * @return the value of the property
      */
+    @JsonProperty
     public String getParentGroupValuesJson() {
         return parentGroupValuesJson;
     }
@@ -201,6 +205,7 @@ public class GroupHeader implements ImmutableBean {
      * Gets the groupLevel.
      * @return the value of the property
      */
+    @JsonProperty
     public int getGroupLevel() {
         return groupLevel;
     }
@@ -210,6 +215,7 @@ public class GroupHeader implements ImmutableBean {
      * Gets the isNext.
      * @return the value of the property
      */
+    @JsonProperty
     public boolean isIsNext() {
         return isNext;
     }
@@ -219,6 +225,7 @@ public class GroupHeader implements ImmutableBean {
      * Gets the leaf.
      * @return the value of the property
      */
+    @JsonProperty
     public boolean isLeaf() {
         return leaf;
     }
@@ -228,6 +235,7 @@ public class GroupHeader implements ImmutableBean {
      * Gets the summary.
      * @return the value of the property
      */
+    @JsonProperty
     public Map<String, Summary> getSummary() {
         return summary;
     }
@@ -237,6 +245,7 @@ public class GroupHeader implements ImmutableBean {
      * Gets the commonGroupValues.
      * @return the value of the property
      */
+    @JsonProperty
     public Map<String, Optional> getCommonGroupValues() {
         return commonGroupValues;
     }
@@ -246,6 +255,7 @@ public class GroupHeader implements ImmutableBean {
      * Gets the rowCount.
      * @return the value of the property
      */
+    @JsonProperty
     public Long getRowCount() {
         return rowCount;
     }
