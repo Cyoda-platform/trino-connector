@@ -311,7 +311,7 @@ public class CyodaMetadata implements ConnectorMetadata {
             throw new TrinoException(MISSING_SCHEMA_NAME,"view is missing schema name: " + viewName.getTableName());
         }
         String queryId = session.getQueryId();
-        String userId = session.getUser();
+        String userId = auth.fromSession(session).getUserId();
         TrinoViewDto data = new TrinoViewDto(userId, viewName, TrinoViewDefinitionDto.fromModel(definition, viewName), null, replace);
         String response = rSocketClient.viewClient.addRequester.retrieveData(queryId, data).block();
         if (response != null)
@@ -321,7 +321,7 @@ public class CyodaMetadata implements ConnectorMetadata {
     @Override
     public synchronized void renameView(ConnectorSession session, SchemaTableName viewName, SchemaTableName newViewName)
     {
-        String userId = session.getUser();
+        String userId = auth.fromSession(session).getUserId();
         TrinoViewDto data = new TrinoViewDto(userId, viewName, null, newViewName, false);
         String response = rSocketClient.viewClient.renameRequester.retrieveData(session.getQueryId(), data).block();
         if (response != null) throw new TrinoException(StandardErrorCode.REMOTE_TASK_FAILED, response);
@@ -330,7 +330,7 @@ public class CyodaMetadata implements ConnectorMetadata {
     @Override
     public synchronized void dropView(ConnectorSession session, SchemaTableName viewName)
     {
-        String userId = session.getUser();
+        String userId = auth.fromSession(session).getUserId();
         TrinoViewDto data = new TrinoViewDto(userId, viewName, null, null, true);
         String response = rSocketClient.viewClient.deleteRequester.retrieveData(session.getQueryId(), data).block();
         if (response != null) throw new TrinoException(StandardErrorCode.REMOTE_TASK_FAILED, response);
