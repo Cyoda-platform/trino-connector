@@ -300,7 +300,7 @@
                 <version>${easy-random.version}</version>
                 <scope>test</scope>
             </dependency>
-            <!--        Strange demands of 445:-->
+<!--        Strange demands of 445:-->
             <dependency>
                 <groupId>io.opentelemetry</groupId>
                 <artifactId>opentelemetry-api</artifactId>
@@ -322,11 +322,11 @@
                     <artifactId>joda-beans-maven-plugin</artifactId>
                     <version>${joda-beans-maven-plugin.version}</version>
                 </plugin>
-                <!--                <plugin>-->
-                <!--                    <groupId>org.apache.maven.plugins</groupId>-->
-                <!--                    <artifactId>maven-compiler-plugin</artifactId>-->
-                <!--                    <version>${maven-compiler-plugin.version}</version>-->
-                <!--                </plugin>-->
+<!--                <plugin>-->
+<!--                    <groupId>org.apache.maven.plugins</groupId>-->
+<!--                    <artifactId>maven-compiler-plugin</artifactId>-->
+<!--                    <version>${maven-compiler-plugin.version}</version>-->
+<!--                </plugin>-->
                 <plugin>
                     <groupId>org.sonarsource.scanner.maven</groupId>
                     <artifactId>sonar-maven-plugin</artifactId>
@@ -381,34 +381,34 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
                 <configuration>
-                    <!--                    <rules>-->
-                    <!--                        <compound implementation="com.github.ferstl.maven.pomenforcers.CompoundPedanticEnforcer">-->
-                    <!--&lt;!&ndash;                            <enforcers>POM_SECTION_ORDER,MODULE_ORDER,DEPENDENCY_MANAGEMENT_ORDER,DEPENDENCY_ORDER,DEPENDENCY_ELEMENT</enforcers>&ndash;&gt;-->
-                    <!--                            <enforcers>POM_SECTION_ORDER</enforcers>-->
-                    <!--                            <pomSectionPriorities>modelVersion,parent,groupId,artifactId,version,name,description,packaging,url,inceptionYear,licenses,scm,properties,modules</pomSectionPriorities>-->
-                    <!--                            <dependenciesGroupIdPriorities>io.trino,io.airlift</dependenciesGroupIdPriorities>-->
-                    <!--                            <dependenciesOrderBy>scope,groupId,artifactId</dependenciesOrderBy>-->
-                    <!--                            <dependenciesScopePriorities>compile,runtime,provided,test</dependenciesScopePriorities>-->
-                    <!--                            <dependencyManagementOrderBy>groupId,artifactId</dependencyManagementOrderBy>-->
-                    <!--                            <dependencyManagementGroupIdPriorities>io.trino,io.airlift</dependencyManagementGroupIdPriorities>-->
-                    <!--                            <dependencyElementOrdering>groupId,artifactId,type,version</dependencyElementOrdering>-->
-                    <!--                        </compound>-->
-                    <!--                        <requireUpperBoundDeps>-->
-                    <!--                            <excludes combine.children="append">-->
-                    <!--                                &lt;!&ndash; TODO: fix this in Airlift resolver &ndash;&gt;-->
-                    <!--                                <exclude>org.codehaus.plexus:plexus-utils</exclude>-->
-                    <!--                                <exclude>com.google.guava:guava</exclude>-->
-                    <!--                                <exclude>com.fasterxml.jackson.core:jackson-core</exclude>-->
-                    <!--                                <exclude>com.google.j2objc:j2objc-annotations</exclude>-->
-                    <!--                            </excludes>-->
-                    <!--                        </requireUpperBoundDeps>-->
-                    <!--                        <bannedDependencies>-->
-                    <!--                            <excludes combine.children="append">-->
-                    <!--                                &lt;!&ndash; We don't use log4j2, additionally versions < 2.15.0 are vulnerable to the RCE Log4Shell (CVE-2021-44228) &ndash;&gt;-->
-                    <!--                                <exclude>org.apache.logging.log4j:log4j-core</exclude>-->
-                    <!--                            </excludes>-->
-                    <!--                        </bannedDependencies>-->
-                    <!--                    </rules>-->
+<!--                    <rules>-->
+<!--                        <compound implementation="com.github.ferstl.maven.pomenforcers.CompoundPedanticEnforcer">-->
+<!--&lt;!&ndash;                            <enforcers>POM_SECTION_ORDER,MODULE_ORDER,DEPENDENCY_MANAGEMENT_ORDER,DEPENDENCY_ORDER,DEPENDENCY_ELEMENT</enforcers>&ndash;&gt;-->
+<!--                            <enforcers>POM_SECTION_ORDER</enforcers>-->
+<!--                            <pomSectionPriorities>modelVersion,parent,groupId,artifactId,version,name,description,packaging,url,inceptionYear,licenses,scm,properties,modules</pomSectionPriorities>-->
+<!--                            <dependenciesGroupIdPriorities>io.trino,io.airlift</dependenciesGroupIdPriorities>-->
+<!--                            <dependenciesOrderBy>scope,groupId,artifactId</dependenciesOrderBy>-->
+<!--                            <dependenciesScopePriorities>compile,runtime,provided,test</dependenciesScopePriorities>-->
+<!--                            <dependencyManagementOrderBy>groupId,artifactId</dependencyManagementOrderBy>-->
+<!--                            <dependencyManagementGroupIdPriorities>io.trino,io.airlift</dependencyManagementGroupIdPriorities>-->
+<!--                            <dependencyElementOrdering>groupId,artifactId,type,version</dependencyElementOrdering>-->
+<!--                        </compound>-->
+<!--                        <requireUpperBoundDeps>-->
+<!--                            <excludes combine.children="append">-->
+<!--                                &lt;!&ndash; TODO: fix this in Airlift resolver &ndash;&gt;-->
+<!--                                <exclude>org.codehaus.plexus:plexus-utils</exclude>-->
+<!--                                <exclude>com.google.guava:guava</exclude>-->
+<!--                                <exclude>com.fasterxml.jackson.core:jackson-core</exclude>-->
+<!--                                <exclude>com.google.j2objc:j2objc-annotations</exclude>-->
+<!--                            </excludes>-->
+<!--                        </requireUpperBoundDeps>-->
+<!--                        <bannedDependencies>-->
+<!--                            <excludes combine.children="append">-->
+<!--                                &lt;!&ndash; We don't use log4j2, additionally versions < 2.15.0 are vulnerable to the RCE Log4Shell (CVE-2021-44228) &ndash;&gt;-->
+<!--                                <exclude>org.apache.logging.log4j:log4j-core</exclude>-->
+<!--                            </excludes>-->
+<!--                        </bannedDependencies>-->
+<!--                    </rules>-->
                     <skip>true</skip>
                 </configuration>
                 <dependencies>
@@ -426,21 +426,21 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
-            <!--            <plugin>-->
-            <!--                <artifactId>maven-compiler-plugin</artifactId>-->
-            <!--                <version>3.8.1</version>-->
-            <!--                <configuration>-->
-            <!--                    <source>19</source>-->
-            <!--                    <release>19</release>-->
-            <!--                    <encoding>UTF-8</encoding>-->
-            <!--                    <fork>false</fork>-->
-            <!--                    <maxmem>1024m</maxmem>-->
-            <!--                    <failOnWarning>false</failOnWarning>-->
-            <!--                    <showDeprecation>true</showDeprecation>-->
-            <!--                    <showWarnings>true</showWarnings>-->
-            <!--                    <parameters>true</parameters>-->
-            <!--                </configuration>-->
-            <!--            </plugin>-->
+<!--            <plugin>-->
+<!--                <artifactId>maven-compiler-plugin</artifactId>-->
+<!--                <version>3.8.1</version>-->
+<!--                <configuration>-->
+<!--                    <source>19</source>-->
+<!--                    <release>19</release>-->
+<!--                    <encoding>UTF-8</encoding>-->
+<!--                    <fork>false</fork>-->
+<!--                    <maxmem>1024m</maxmem>-->
+<!--                    <failOnWarning>false</failOnWarning>-->
+<!--                    <showDeprecation>true</showDeprecation>-->
+<!--                    <showWarnings>true</showWarnings>-->
+<!--                    <parameters>true</parameters>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
         </plugins>
     </build>
 
