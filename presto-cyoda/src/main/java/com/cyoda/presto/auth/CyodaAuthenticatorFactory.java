@@ -17,19 +17,10 @@
 
 package com.cyoda.presto.auth;
 
-import com.cyoda.presto.CyodaConfig;
-import com.cyoda.presto.client.RestTemplateCustomizer;
-import com.cyoda.presto.client.reporting.stats.CyodaApiRequestStatsMonitor;
-import io.airlift.bootstrap.Bootstrap;
 import io.trino.spi.security.PasswordAuthenticator;
 import io.trino.spi.security.PasswordAuthenticatorFactory;
-import com.google.inject.Injector;
-import com.google.inject.Scopes;
 
 import java.util.Map;
-
-import static io.airlift.configuration.ConfigBinder.configBinder;
-import static com.google.common.base.Throwables.throwIfUnchecked;
 
 public class CyodaAuthenticatorFactory implements PasswordAuthenticatorFactory {
     @Override
@@ -39,27 +30,6 @@ public class CyodaAuthenticatorFactory implements PasswordAuthenticatorFactory {
 
     @Override
     public PasswordAuthenticator create(Map<String, String> config) {
-        try {
-            Bootstrap app = new Bootstrap(
-                    binder -> {
-                        configBinder(binder).bindConfig(CyodaConfig.class);
-//                        configBinder(binder).bindConfig(CyodaApiRequestStatsMonitor.class);
-//                        configBinder(binder).bindConfig(RestTemplateCustomizer.class);
-                        binder.bind(CyodaApiRequestStatsMonitor.class).in(Scopes.SINGLETON);
-                        binder.bind(RestTemplateCustomizer.class).in(Scopes.SINGLETON);
-                        binder.bind(CyodaAuthenticator.class).in(Scopes.SINGLETON);
-                    });
-
-            Injector injector = app
-                    .doNotInitializeLogging()
-                    .setRequiredConfigurationProperties(config)
-                    .initialize();
-
-            return injector.getInstance(CyodaAuthenticator.class);
-        }
-        catch (Exception e) {
-            throwIfUnchecked(e);
-            throw new RuntimeException(e);
-        }
+        return new CyodaAuthenticator(config);
     }
 }
