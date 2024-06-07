@@ -540,4 +540,16 @@
             </build>
         </profile>
     </profiles>
+    <distributionManagement>
+        <repository>
+            <id>releases</id>
+            <name>Cyoda Releases</name>
+            <url>https://nexus.cyoda.com/repository/releases/</url>
+        </repository>
+        <snapshotRepository>
+            <id>snapshots</id>
+            <name>Cyoda Snapshots</name>
+            <url>https://nexus.cyoda.com/repository/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
 </project>
