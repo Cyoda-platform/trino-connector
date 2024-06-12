@@ -32,30 +32,23 @@ public class CyodaConfig {
     private static final int DEFAULT_HTTP_KEEP_ALIVE = 20;
     private static final int DEFAULT_HTTP_CONNECTION_TIMEOUT = 30;
     private static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.SECONDS;
-    private static final boolean DEFAULT_HTTPS_OVERRIDE = false;
     private static final String DEFAULT_SCHEMA_NAME = "reporting";
     private static final int DEFAULT_REQUEST_PAGE_SIZE = 10;
-    private static final String DEFAULT_LOGIN_ENDPOINT = "/api/auth/login";
     private static final String DEFAULT_REFERSH_ENDPOINT = "/api/auth/token";
 
     private URL serverUrl;
-    private CyodaAuthenticationType cyodaAuthenticationType = CyodaAuthenticationType.NONE;
-    private String basicAuthenticationUsername;
-    private String basicAuthenticationPassword;
     private HostAndPort socksHostAndPort;
     private HostAndPort httpHostAndPort;
     private long httpConnectionTimeout;
     private TimeUnit timeUnit;
     private int maxHttpIdle;
     private long maxHttpKeepalive;
-    private boolean httpsOverride;
     private boolean logApiCallStats;
     private boolean logApiCallResponse;
     private long apiCallStatsMaxRecords;
     private String schemaName;
     private int requestPageSize;
     private int rowRequestPageSize;
-    private String userLoginEndpoint;
     private String refreshTokenEndpoint;
     private long cacheUserAuthSecAfterWrite;
     private long cacheReportHistorySecAfterWrite;
@@ -84,11 +77,9 @@ public class CyodaConfig {
         httpConnectionTimeout = DEFAULT_HTTP_CONNECTION_TIMEOUT;
         maxHttpIdle = DEFAULT_HTTP_MAX_IDLE;
         maxHttpKeepalive = DEFAULT_HTTP_KEEP_ALIVE;
-        httpsOverride = DEFAULT_HTTPS_OVERRIDE;
         schemaName = DEFAULT_SCHEMA_NAME;
         requestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
         rowRequestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
-        userLoginEndpoint = DEFAULT_LOGIN_ENDPOINT;
         refreshTokenEndpoint = DEFAULT_REFERSH_ENDPOINT;
         logApiCallStats = false;
         logApiCallResponse = true; //does not matter if logApiCallStats = false
@@ -134,39 +125,6 @@ public class CyodaConfig {
     @Config("cyoda.presto.server.url")
     public CyodaConfig setServerUrl(URL serverUrl) {
         this.serverUrl = serverUrl;
-        return this;
-    }
-
-    @NotNull
-    public CyodaAuthenticationType getCyodaAuthenticationType() {
-        return cyodaAuthenticationType;
-    }
-
-    @Config("cyoda.presto.authentication.type")
-    public CyodaConfig setCyodaAuthenticationType(CyodaAuthenticationType cyodaAuthenticationType) {
-        if (cyodaAuthenticationType != null) {
-            this.cyodaAuthenticationType = cyodaAuthenticationType;
-        }
-        return this;
-    }
-
-    public String getBasicAuthenticationUsername() {
-        return basicAuthenticationUsername;
-    }
-
-    @Config("cyoda.presto.basic-authentication.username")
-    public CyodaConfig setBasicAuthenticationUsername(String basicAuthenticationUsername) {
-        this.basicAuthenticationUsername = basicAuthenticationUsername;
-        return this;
-    }
-
-    public String getBasicAuthenticationPassword() {
-        return basicAuthenticationPassword;
-    }
-
-    @Config("cyoda.presto.basic-authentication.password")
-    public CyodaConfig setBasicAuthenticationPassword(String basicAuthenticationPassword) {
-        this.basicAuthenticationPassword = basicAuthenticationPassword;
         return this;
     }
 
@@ -230,22 +188,6 @@ public class CyodaConfig {
         return this;
     }
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    public boolean getHttpsOverride() {
-        return httpsOverride;
-    }
-
-    /**
-     * For testing without https
-     *
-     * @return if you want the RestTemplate to allow authentication over http
-     */
-    @Config("cyoda.presto.https-override")
-    public CyodaConfig setHttpsOverride(boolean httpsOverride) {
-        this.httpsOverride = httpsOverride;
-        return this;
-    }
-
     public boolean getLogApiCallStats() {
         return logApiCallStats;
     }
@@ -302,16 +244,6 @@ public class CyodaConfig {
         this.rowRequestPageSize = rowRequestPageSize;
     }
 
-    @Config("cyoda.presto.user-login-endpoint")
-    public CyodaConfig setUserLoginEndpoint(String userLoginEndpoint) {
-        this.userLoginEndpoint = userLoginEndpoint;
-        return this;
-    }
-
-    public String getUserLoginEndpoint() {
-        return userLoginEndpoint;
-    }
-
     @Config("cyoda.presto.refresh-token-endpoint")
     public CyodaConfig setRefreshTokenEndpoint(String refreshTokenEndpoint) {
         this.refreshTokenEndpoint = refreshTokenEndpoint;
@@ -366,12 +298,6 @@ public class CyodaConfig {
 
     public String getAnonymousUserName() {
         return anonymousUserName;
-    }
-
-    public enum CyodaAuthenticationType {
-        NONE,
-        BASIC,
-        JWT
     }
 
     public long getCacheUserAuthSecAfterWrite() {

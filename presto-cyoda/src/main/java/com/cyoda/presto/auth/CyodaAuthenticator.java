@@ -17,10 +17,8 @@
 
 package com.cyoda.presto.auth;
 
-import com.cyoda.presto.CyodaConfig;
-import com.cyoda.presto.client.RestTemplateCustomizer;
+import com.cyoda.presto.client.AuthRestTemplate;
 import com.cyoda.presto.logging.SupplierLogger;
-import io.trino.spi.TrinoException;
 import io.trino.spi.security.AccessDeniedException;
 import io.trino.spi.security.BasicPrincipal;
 import io.trino.spi.security.PasswordAuthenticator;
@@ -32,13 +30,12 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
-import jakarta.inject.Inject;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.security.Principal;
 import java.util.Collections;
+import java.util.Map;
 
-import static com.cyoda.presto.CyodaErrorCode.CYODA_BOOTSTRAPPING_FAILURE;
+import static java.util.Objects.requireNonNull;
 
 public class CyodaAuthenticator implements PasswordAuthenticator {
 
@@ -48,20 +45,13 @@ public class CyodaAuthenticator implements PasswordAuthenticator {
         HEADERS.add("X-Requested-With", "XMLHttpRequest");
     }
 
-    private final RestTemplateCustomizer restTemplateCustomizer;
+    private final AuthRestTemplate authRestTemplate;
     private final URI loginUri;
 
-    @Inject
-    public CyodaAuthenticator(CyodaConfig config, RestTemplateCustomizer restTemplateCustomizer) {
-        this.restTemplateCustomizer = restTemplateCustomizer;
-        try {
-            URI serverUri = config.getServerUrl().toURI();
-            this.loginUri = serverUri.resolve(config.getUserLoginEndpoint());
-
-        } catch (URISyntaxException e) {
-            throw new TrinoException(CYODA_BOOTSTRAPPING_FAILURE,"Cannot resolve URI",e);
-        }
-
+    public CyodaAuthenticator(Map<String, String> config) {
+        this.authRestTemplate = new AuthRestTemplate(config);
+            this.loginUri = URI.create(
+                    requireNonNull(config.get("cyoda.login.uri"), "Property cyoda.login.uri is required in password-authenticator.properties"));
     }
 
     @Override
@@ -70,7 +60,7 @@ public class CyodaAuthenticator implements PasswordAuthenticator {
         Login payload = new Login(user,password);
         HttpEntity<Login> requestEntity = new HttpEntity<>(payload, HEADERS);
         ResponseEntity<AuthContextWithToken> response =
-                restTemplateCustomizer.getUnauthorizedRestTemplate()
+                authRestTemplate.getRestTemplate()
                         .exchange(loginUri, HttpMethod.POST, requestEntity, AuthContextWithToken.class);
         if ( response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
             return new BasicPrincipal(response.getBody().getUserId());

@@ -31,7 +31,6 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.net.HostAndPort;
 import okhttp3.ConnectionPool;
-import okhttp3.Credentials;
 import okhttp3.Interceptor;
 import okhttp3.OkHttpClient;
 import org.springframework.hateoas.MediaTypes;
@@ -57,7 +56,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
-import static com.cyoda.presto.CyodaErrorCode.CYODA_AUTHENTICATION_ERROR;
 import static com.cyoda.presto.CyodaErrorCode.CYODA_BOOTSTRAPPING_FAILURE;
 import static com.cyoda.presto.client.RestTemplateCustomizer.TemplateType.ACCESS;
 import static com.cyoda.presto.client.RestTemplateCustomizer.TemplateType.REFRESH;
@@ -77,7 +75,6 @@ public class RestTemplateCustomizer {
     private final CyodaApiRequestStatsMonitor apiRequestStatsMonitor;
     private final LoadingCache<AuthContextWithToken,RestTemplate> restTemplateCache;
     private final LoadingCache<AuthContextWithToken,RestTemplate> refreshRestTemplateCache;
-    private final RestTemplate unauthorizedRestTemplate;
     private final URI refreshUri;
     private final boolean logResponce;
 
@@ -104,7 +101,6 @@ public class RestTemplateCustomizer {
                     LOG.debug(()->"creating refresh RestTemplate for "+key.getPayload().getUsername());
                     return newRestTemplate(REFRESH,key,null);
                 });
-        this.unauthorizedRestTemplate = newRestTemplate(ACCESS,null,null);
 
         try {
             this.refreshUri = config.getServerUrl().toURI().resolve(config.getRefreshTokenEndpoint());
@@ -126,10 +122,6 @@ public class RestTemplateCustomizer {
             return getRestTemplate((AuthContextWithToken) authContext);
     }
 
-    public RestTemplate getUnauthorizedRestTemplate() {
-        return unauthorizedRestTemplate;
-    }
-
     private RestTemplate newRestTemplate(TemplateType templateType, AuthContextWithToken authContext,
                                          List<HttpMessageConverter<?>> messageConverters) {
 
@@ -147,8 +139,8 @@ public class RestTemplateCustomizer {
 
         setupSocksProxy(builder, config);
         setupHttpProxy(builder, config);
-        if ( authContext != null ) {
-            setupAuthentication(templateType, authContext, builder, config);
+        if ( authContext != null && authContext.getPayload().getRefreshToken() != null) {
+            builder.addInterceptor(tokenAuth(templateType, authContext));
         }
 
         template.setRequestFactory(new OkHttp3ClientHttpRequestFactory(builder.build()));
@@ -164,67 +156,6 @@ public class RestTemplateCustomizer {
         converter.getObjectMapper().enable(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT);
 
         return template;
-    }
-
-    private void setupAuthentication(
-            TemplateType templateType,
-            AuthContextWithToken authContext,
-            OkHttpClient.Builder clientBuilder,
-            CyodaConfig config) {
-        switch (config.getCyodaAuthenticationType()) {
-            case BASIC: {
-                setupBasicAuth(clientBuilder, config);
-                break;
-            }
-            case JWT: {
-                setupTokenAuth(templateType, authContext,clientBuilder, config);
-                break;
-            }
-            default:
-                break;
-        }
-
-    }
-
-    // We don't actually support basic auth or plan to support basic auth
-    private static void setupBasicAuth(OkHttpClient.Builder clientBuilder, CyodaConfig config) {
-        final String username = config.getBasicAuthenticationUsername();
-        final String password = config.getBasicAuthenticationPassword();
-        if (username != null && password != null) {
-            if (!config.getHttpsOverride()) {
-                checkArgument(config.getServerUrl().getProtocol().equalsIgnoreCase("https"),
-                        "Authentication using username/password requires HTTPS to be enabled");
-            }
-            clientBuilder.addInterceptor(basicAuth(username, password));
-        }
-    }
-
-    private void setupTokenAuth(
-            TemplateType templateType,
-            AuthContextWithToken authContext,
-            OkHttpClient.Builder clientBuilder,
-            CyodaConfig config) {
-
-        if (authContext.getPayload().getRefreshToken() != null) {
-            if (!config.getHttpsOverride()) {
-                checkArgument(config.getServerUrl().getProtocol().equalsIgnoreCase("https"),
-                        "Authentication using an access token requires HTTPS to be enabled");
-            }
-            clientBuilder.addInterceptor(tokenAuth(templateType,authContext));
-        }
-    }
-
-    private static Interceptor basicAuth(String user, String password) {
-        requireNonNull(user, "user is null");
-        requireNonNull(password, "password is null");
-        if (user.contains(":")) {
-            throw new TrinoException(CYODA_AUTHENTICATION_ERROR,"[Cyoda] Illegal character ':' found in username");
-        }
-
-        String credential = Credentials.basic(user, password);
-        return chain -> chain.proceed(chain.request().newBuilder()
-                .header(AUTHORIZATION, credential)
-                .build());
     }
 
     private Interceptor tokenAuth(TemplateType templateType, AuthContextWithToken authContext) {
