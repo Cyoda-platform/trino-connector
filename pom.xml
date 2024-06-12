@@ -21,16 +21,18 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>io.trino</groupId>
-        <artifactId>trino-root</artifactId>
+        <artifactId>trino-plugin-parent</artifactId>
         <version>445</version>
     </parent>
 
     <groupId>com.cyoda.trino</groupId>
     <artifactId>presto-cyoda-root</artifactId>
+    <version>1.0-SNAPSHOT</version>
     <description>Trino - Cyoda HTTP Connector</description>
     <packaging>pom</packaging>
 
     <properties>
+        <trino.version>445</trino.version>
         <!--suppress UnresolvedMavenProperty -->
         <air.main.basedir>${project.parent.basedir}</air.main.basedir>
 
@@ -78,6 +80,7 @@
         <module>presto-cyoda</module>
         <module>presto-server-runtime</module>
         <module>presto-cli-runtime</module>
+        <module>trino-plugin-parent</module>
     </modules>
 
     <dependencyManagement>
