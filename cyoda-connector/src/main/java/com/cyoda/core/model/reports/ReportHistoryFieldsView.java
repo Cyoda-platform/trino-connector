@@ -17,9 +17,8 @@
 
 package com.cyoda.core.model.reports;
 
-import com.cyoda.presto.client.reporting.metaproviders.StaticReportFields;
+import com.cyoda.connector.client.reporting.metaproviders.StaticReportFields;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 

@@ -21,9 +21,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-// TODO: We need to bundle all the non-presto com.cyoda classes that were copied from the platform
-// into a dependency that we can use in presto-cyoda connector.
-// These need to introduce an absolute minimum of transitive dependencies to presto.
+// TODO: We need to bundle all the non-connector com.cyoda classes that were copied from the platform
+// into a dependency that we can use in connector-cyoda connector.
+// These need to introduce an absolute minimum of transitive dependencies to connector.
 @BeanDefinition(constructorScope = "public@ConstructorProperties")
 public final class DistributedReportInfoDto implements ImmutableBean {
     

@@ -1,5 +1,5 @@
 package com.cyoda.plugins;
-import com.cyoda.presto.client.types.DataType;
+import com.cyoda.connector.client.types.DataType;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;

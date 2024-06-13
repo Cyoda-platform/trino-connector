@@ -17,10 +17,10 @@
 
 package com.cyoda.core.model.reports;
 
-import com.cyoda.presto.CyodaConfig;
-import com.cyoda.presto.auth.AuthContext;
-import com.cyoda.presto.auth.AuthContextWithToken;
-import com.cyoda.presto.client.RestTemplateCustomizer;
+import com.cyoda.connector.CyodaConfig;
+import com.cyoda.connector.auth.AuthContext;
+import com.cyoda.connector.auth.AuthContextWithToken;
+import com.cyoda.connector.client.RestTemplateCustomizer;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
