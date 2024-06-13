@@ -28,28 +28,14 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("UnstableApiUsage")
 public class CyodaConfig {
 
-    private static final int DEFAULT_HTTP_MAX_IDLE = 20;
-    private static final int DEFAULT_HTTP_KEEP_ALIVE = 20;
-    private static final int DEFAULT_HTTP_CONNECTION_TIMEOUT = 30;
-    private static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.SECONDS;
     private static final String DEFAULT_SCHEMA_NAME = "reporting";
     private static final int DEFAULT_REQUEST_PAGE_SIZE = 10;
-    private static final String DEFAULT_REFERSH_ENDPOINT = "/api/auth/token";
 
-    private URL serverUrl;
-    private HostAndPort socksHostAndPort;
-    private HostAndPort httpHostAndPort;
-    private long httpConnectionTimeout;
-    private TimeUnit timeUnit;
-    private int maxHttpIdle;
-    private long maxHttpKeepalive;
     private boolean logApiCallStats;
     private boolean logApiCallResponse;
     private long apiCallStatsMaxRecords;
     private String schemaName;
-    private int requestPageSize;
     private int rowRequestPageSize;
-    private String refreshTokenEndpoint;
     private long cacheUserAuthSecAfterWrite;
     private long cacheReportHistorySecAfterWrite;
     private long cacheReportMetaHoursAfterAccess;
@@ -58,10 +44,6 @@ public class CyodaConfig {
 
     private boolean anonymousLogin;
     private String anonymousUserId;
-    private String anonymousToken;
-    private String anonymousRefreshToken;
-    private String anonymousUserName;
-
     private int predicatePushdownThreshold;
 
     private String rSocketBindAddress;
@@ -73,22 +55,13 @@ public class CyodaConfig {
 
 
     private void setDefaults() {
-        timeUnit = DEFAULT_TIME_UNIT;
-        httpConnectionTimeout = DEFAULT_HTTP_CONNECTION_TIMEOUT;
-        maxHttpIdle = DEFAULT_HTTP_MAX_IDLE;
-        maxHttpKeepalive = DEFAULT_HTTP_KEEP_ALIVE;
         schemaName = DEFAULT_SCHEMA_NAME;
-        requestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
         rowRequestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
-        refreshTokenEndpoint = DEFAULT_REFERSH_ENDPOINT;
         logApiCallStats = false;
         logApiCallResponse = true; //does not matter if logApiCallStats = false
         apiCallStatsMaxRecords = 10000;
         anonymousLogin = false;
         anonymousUserId = null;
-        anonymousToken = null;
-        anonymousRefreshToken = null;
-        anonymousUserName = null;
         cacheUserAuthSecAfterWrite = 5;
         cacheReportHistorySecAfterWrite = 30;
         cacheReportMetaHoursAfterAccess = 24;
@@ -98,95 +71,6 @@ public class CyodaConfig {
         rSocketPort=7000;
     }
 
-    @NotNull
-    public URL getServerUrl() {
-        return serverUrl;
-    }
-
-    /**
-     * The URL of the Cyoda API to be connected to.
-     * <p>
-     * About the {@link Config} annotation:
-     * A {@link ConfigurationFactory} instantiated with the Map of properties
-     * <pre>
-     *      Map<String, String> properties = new ImmutableMap.Builder<String, String>()
-     *                 .put("baseUrl", "https://demo.cyoda.com")
-     *                 .put("accessToken", "bla-bla-bla")
-     *                 .build();
-     * </pre>
-     * will build an Example config with these properties injected.
-     * <pre>
-     *         ConfigurationFactory configurationFactory = new ConfigurationFactory(properties);
-     *         return configurationFactory.build(configClass);
-     *
-     * @param serverUrl the server url
-     * @return the CyodaConfig
-     */
-    @Config("cyoda.connector.server.url")
-    public CyodaConfig setServerUrl(URL serverUrl) {
-        this.serverUrl = serverUrl;
-        return this;
-    }
-
-    public HostAndPort getSocksProxy() {
-        return socksHostAndPort;
-    }
-
-    @Config("cyoda.connector.socks-proxy")
-    public CyodaConfig setSocksProxy(HostAndPort socksHostAndPort) {
-        this.socksHostAndPort = socksHostAndPort;
-        return this;
-    }
-
-    public HostAndPort getHttpProxy() {
-        return httpHostAndPort;
-    }
-
-    @Config("cyoda.connector.http-proxy")
-    public CyodaConfig setHttpProxy(HostAndPort httpHostAndPort) {
-        this.httpHostAndPort = httpHostAndPort;
-        return this;
-    }
-
-    public int getMaxHttpIdle() {
-        return maxHttpIdle;
-    }
-
-    @Config("cyoda.connector.max-idle")
-    public CyodaConfig setMaxHttpIdle(int maxHttpIdle) {
-        this.maxHttpIdle = maxHttpIdle;
-        return this;
-    }
-
-    public long getMaxHttpKeepalive() {
-        return maxHttpKeepalive;
-    }
-
-    @Config("cyoda.connector.keep-alive")
-    public CyodaConfig setMaxHttpKeepalive(long maxHttpKeepalive) {
-        this.maxHttpKeepalive = maxHttpKeepalive;
-        return this;
-    }
-
-    public TimeUnit getHttpTimeUnit() {
-        return timeUnit;
-    }
-
-    @Config("cyoda.connector.time-unit")
-    public CyodaConfig setHttpTimeUnit(TimeUnit timeUnit) {
-        this.timeUnit = timeUnit;
-        return this;
-    }
-
-    public long getHttpConnectionTimeout() {
-        return httpConnectionTimeout;
-    }
-
-    @Config("cyoda.connector.connection-timeout")
-    public CyodaConfig setHttpConnectionTimeout(long connectionTimeout) {
-        this.httpConnectionTimeout = connectionTimeout;
-        return this;
-    }
 
     public boolean getLogApiCallStats() {
         return logApiCallStats;
@@ -225,15 +109,6 @@ public class CyodaConfig {
         return this;
     }
 
-    @Config("cyoda.connector.request-page-size")
-    public CyodaConfig setRequestPageSize(int requestPageSize) {
-        this.requestPageSize = requestPageSize;
-        return this;
-    }
-
-    public int getRequestPageSize() {
-        return requestPageSize;
-    }
 
     public int getRowRequestPageSize() {
         return rowRequestPageSize;
@@ -242,16 +117,6 @@ public class CyodaConfig {
     @Config("cyoda.connector.row-request-page-size")
     public void setRowRequestPageSize(int rowRequestPageSize) {
         this.rowRequestPageSize = rowRequestPageSize;
-    }
-
-    @Config("cyoda.connector.refresh-token-endpoint")
-    public CyodaConfig setRefreshTokenEndpoint(String refreshTokenEndpoint) {
-        this.refreshTokenEndpoint = refreshTokenEndpoint;
-        return this;
-    }
-
-    public String getRefreshTokenEndpoint() {
-        return refreshTokenEndpoint;
     }
 
 
@@ -271,33 +136,6 @@ public class CyodaConfig {
 
     public String getAnonymousUserId() {
         return anonymousUserId;
-    }
-
-    @Config("cyoda.connector.anonymous-token")
-    public void setAnonymousToken(String anonymousToken) {
-        this.anonymousToken = anonymousToken;
-    }
-
-    public String getAnonymousToken() {
-        return anonymousToken;
-    }
-
-    @Config("cyoda.connector.anonymous-refresh-token")
-    public void setAnonymousRefreshToken(String anonymousRefreshToken) {
-        this.anonymousRefreshToken = anonymousRefreshToken;
-    }
-
-    public String getAnonymousRefreshToken() {
-        return anonymousRefreshToken;
-    }
-
-    @Config("cyoda.connector.anonymous-username")
-    public void setAnonymousUserName(String anonymousUserName) {
-        this.anonymousUserName = anonymousUserName;
-    }
-
-    public String getAnonymousUserName() {
-        return anonymousUserName;
     }
 
     public long getCacheUserAuthSecAfterWrite() {

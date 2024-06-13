@@ -5,7 +5,6 @@ import com.cyoda.connector.CyodaConfig;
 import com.cyoda.connector.CyodaConnectorId;
 import com.cyoda.connector.auth.AuthContext;
 import com.cyoda.connector.auth.AuthService;
-import com.cyoda.connector.client.reporting.BaseReportsApiHandler;
 import com.cyoda.connector.client.reporting.meta.ConfiguredReportsApi;
 import com.cyoda.connector.client.reporting.meta.ReportConfigDetailsApi;
 import com.cyoda.connector.client.reporting.meta.ReportConfigKey;
@@ -104,7 +103,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     }
 
     private CyodaTableMeta getTableHandleFromCyoda(String configId) {
-        SchemaTableName tableName = BaseReportsApiHandler.configIdToSchemaTableName(configId);
+        SchemaTableName tableName = ConfiguredReportsApi.configIdToSchemaTableName(configId);
         ReportDefinitionHandle definitionHandle;
         try {
             definitionHandle = reportConfigDetailsApiHandler.getReportDefSingleHandle(new ReportConfigKey(configId, "META"));
