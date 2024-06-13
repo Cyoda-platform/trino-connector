@@ -26,7 +26,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>presto-cyoda</artifactId>
+    <artifactId>cyoda-connector</artifactId>
     <packaging>trino-plugin</packaging>
 
     <properties>

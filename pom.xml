@@ -14,9 +14,9 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>presto-cli-runtime</module>
-        <module>presto-cyoda</module>
-        <module>presto-server-runtime</module>
+        <module>cli-runtime</module>
+        <module>cyoda-connector</module>
+        <module>server-runtime</module>
     </modules>
 
     <!--Below is a copy of trino-root pom, that was forked to allow having own version of plugin-->
