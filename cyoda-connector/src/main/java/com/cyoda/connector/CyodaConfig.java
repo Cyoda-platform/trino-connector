@@ -122,7 +122,7 @@ public class CyodaConfig {
      * @param serverUrl the server url
      * @return the CyodaConfig
      */
-    @Config("cyoda.presto.server.url")
+    @Config("cyoda.connector.server.url")
     public CyodaConfig setServerUrl(URL serverUrl) {
         this.serverUrl = serverUrl;
         return this;
@@ -192,7 +192,7 @@ public class CyodaConfig {
         return logApiCallStats;
     }
 
-    @Config("cyoda.presto.log-api-call-stats")
+    @Config("cyoda.connector.log-api-call-stats")
     public void setLogApiCallStats(boolean logApiCallStats) {
         this.logApiCallStats = logApiCallStats;
     }
@@ -219,13 +219,13 @@ public class CyodaConfig {
         return schemaName;
     }
 
-    @Config("cyoda.presto.schema-name")
+    @Config("cyoda.connector.schema-name")
     public CyodaConfig setSchemaName(String schemaName) {
         this.schemaName = schemaName;
         return this;
     }
 
-    @Config("cyoda.presto.request-page-size")
+    @Config("cyoda.connector.request-page-size")
     public CyodaConfig setRequestPageSize(int requestPageSize) {
         this.requestPageSize = requestPageSize;
         return this;
@@ -244,7 +244,7 @@ public class CyodaConfig {
         this.rowRequestPageSize = rowRequestPageSize;
     }
 
-    @Config("cyoda.presto.refresh-token-endpoint")
+    @Config("cyoda.connector.refresh-token-endpoint")
     public CyodaConfig setRefreshTokenEndpoint(String refreshTokenEndpoint) {
         this.refreshTokenEndpoint = refreshTokenEndpoint;
         return this;
@@ -255,7 +255,7 @@ public class CyodaConfig {
     }
 
 
-    @Config("cyoda.presto.allow-anonymous-login")
+    @Config("cyoda.connector.allow-anonymous-login")
     public void setAnonymousLogin(boolean anonymousLogin) {
         this.anonymousLogin = anonymousLogin;
     }
@@ -264,7 +264,7 @@ public class CyodaConfig {
         return anonymousLogin;
     }
 
-    @Config("cyoda.presto.anonymous-user-id")
+    @Config("cyoda.connector.anonymous-user-id")
     public void setAnonymousUserId(String anonymousUserId) {
         this.anonymousUserId = anonymousUserId;
     }
@@ -282,7 +282,7 @@ public class CyodaConfig {
         return anonymousToken;
     }
 
-    @Config("cyoda.presto.anonymous-refresh-token")
+    @Config("cyoda.connector.anonymous-refresh-token")
     public void setAnonymousRefreshToken(String anonymousRefreshToken) {
         this.anonymousRefreshToken = anonymousRefreshToken;
     }
@@ -291,7 +291,7 @@ public class CyodaConfig {
         return anonymousRefreshToken;
     }
 
-    @Config("cyoda.presto.anonymous-username")
+    @Config("cyoda.connector.anonymous-username")
     public void setAnonymousUserName(String anonymousUserName) {
         this.anonymousUserName = anonymousUserName;
     }
@@ -357,7 +357,7 @@ public class CyodaConfig {
     public String getRSocketBindAddress() {
         return this.rSocketBindAddress;
     }
-    @Config("cyoda.presto.rsocket.bind-address")
+    @Config("cyoda.connector.rsocket.bind-address")
     public void setRSocketBindAddress(String bindAddress) {
         this.rSocketBindAddress = bindAddress;
     }
@@ -365,7 +365,7 @@ public class CyodaConfig {
     public int getRSocketPort() {
         return this.rSocketPort;
     }
-    @Config("cyoda.presto.rsocket.port")
+    @Config("cyoda.connector.rsocket.port")
     public void setRSocketPort(int port) {
         this.rSocketPort = port;
     }

@@ -19,7 +19,6 @@ image::doc/Screenshot 2022-11-15 at 6.26.31 PM.png[]
 -Dlog.levels-file=etc/log.properties
 -Djdk.attach.allowAttachSelf=true
 -Dconfig=etc/config.properties
--Dcyoda.presto.server.url=http://localhost:8082
 ----
 
 This has been tested to also work on Apple M1 with an ARM-based CPU.
@@ -39,4 +38,4 @@ This should allow you to run Trino locally on a Windows PC for local dev/testing
 .Important things that were adjusted to get this working
 . remove all other trino plugins by exclusions in the `trino-server` dependency
 . add an antrun task to the trino-cyoda module in the packaging phase to unpack the zip file into `target/plugin`
-. adjust `etc/config.properties` to set `plugin.dir=../presto-cyoda/target/plugin`
+. adjust `etc/config.properties` to set `plugin.dir=../cyoda-connector/target/plugin`
