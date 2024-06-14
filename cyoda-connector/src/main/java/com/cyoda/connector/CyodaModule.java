@@ -17,7 +17,6 @@
 package com.cyoda.connector;
 
 import com.cyoda.connector.auth.AuthService;
-import com.cyoda.connector.client.RestTemplateCustomizer;
 import com.cyoda.connector.client.data.TableDataProviderProvider;
 import com.cyoda.connector.client.reporting.calls.DeleteReportsApi;
 import com.cyoda.connector.client.reporting.calls.DeleteReportsApiRSocket;
@@ -113,15 +112,6 @@ public class CyodaModule implements Module {
         binder.bind(RunReportApi.class).to(RunReportApiRSocket.class).in(Scopes.SINGLETON);
         binder.bind(DeleteReportsApi.class).to(DeleteReportsApiRSocket.class).in(Scopes.SINGLETON);
 
-//        binder.bind(ConfiguredReportsApi.class).to(ConfiguredReportsApiHttp.class).in(Scopes.SINGLETON);
-//        binder.bind(ReportConfigDetailsApi.class).to(ReportConfigDetailsApiHttp.class).in(Scopes.SINGLETON);
-//        binder.bind(ReportStatisticsApi.class).to(ReportStatisticsApiHttp.class).in(Scopes.SINGLETON);
-//        binder.bind(ReportHistoryApi.class).to(ReportHistoryApiHttp.class).in(Scopes.SINGLETON);
-//        binder.bind(ReportGroupsApi.class).to(ReportGroupsApiHttp.class).in(Scopes.SINGLETON);
-//        binder.bind(ReportRowsApi.class).to(ReportRowsApiHttp.class).in(Scopes.SINGLETON);
-//        binder.bind(RunReportApi.class).to(RunReportApiHttp.class).in(Scopes.SINGLETON);
-//        binder.bind(DeleteReportsApi.class).to(DeleteReportsApiHttp.class).in(Scopes.SINGLETON);
-
         binder.bind(CyodaRSocketClient.class).in(Scopes.SINGLETON);
 
 
@@ -135,8 +125,6 @@ public class CyodaModule implements Module {
         configBinder(binder).bindConfig(CyodaConfig.class);
 
         jsonBinder(binder).addDeserializerBinding(Type.class).to(TypeDeserializer.class);
-
-        binder.bind(RestTemplateCustomizer.class).in(Scopes.SINGLETON);
 
     }
 

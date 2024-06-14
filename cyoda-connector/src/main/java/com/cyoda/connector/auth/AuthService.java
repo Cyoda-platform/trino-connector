@@ -10,31 +10,13 @@ import java.security.Principal;
 public class AuthService {
     private final CyodaConfig config;
     private final AuthContext anonymousAuth;
-    private final AuthContext technicalAuth;
 
     @Inject
     public AuthService(CyodaConfig config) {
         this.config = config;
-        anonymousAuth = new AuthContextWithToken(
-                config.getAnonymousUserId(),
-                new AuthPayload(
-                        null,
-                        null,
-                        null,
-                        null,
-                        config.getAnonymousToken(),
-                        config.getAnonymousRefreshToken(),
-                        config.getAnonymousUserName()
-                )
-        );
-        //TODO for now it is just same anonymous auth
-        technicalAuth = anonymousAuth;
+        anonymousAuth = new AuthContext(config.getAnonymousUserId());
     }
 
-
-    public AuthContext getTechnicalAuth() {
-        return technicalAuth;
-    }
 
     public @Nonnull AuthContext fromSession(@Nonnull ConnectorSession session) {
         if ( config.isAnonymousLogin() ) return anonymousAuth;
