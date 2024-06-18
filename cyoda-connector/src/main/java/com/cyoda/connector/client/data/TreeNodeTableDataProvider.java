@@ -52,11 +52,11 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         if (columnHandle.getDataType().getMainType() == DataType.LIST){
             int count = 0;
             List<Object> result = new ArrayList<>();
-            Object currentElement = entity.getContents().get(columnHandle.getColumnKey().replace("*", count++ + ""));
-            while (currentElement != null) {
+            do {
+                Object currentElement = entity.getContents().get(columnHandle.getColumnKey() + "[" + count++ + "]");
+                if (currentElement == null) break;
                 result.add(currentElement);
-                currentElement = entity.getContents().get(columnHandle.getColumnKey().replace("*", count++ + ""));
-            }
+            } while (true);
             return result;
         } else
             return entity.getContents().get(columnHandle.getColumnKey());

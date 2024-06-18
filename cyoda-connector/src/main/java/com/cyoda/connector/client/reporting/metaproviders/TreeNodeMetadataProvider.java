@@ -6,6 +6,7 @@ import com.cyoda.connector.auth.AuthContext;
 import com.cyoda.connector.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.connector.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.connector.client.treenode.CyodaRSocketClient;
+import com.cyoda.connector.client.treenode.dto.schema.FieldConfigDto;
 import com.cyoda.connector.client.treenode.dto.schema.SchemaConfigDto;
 import com.cyoda.connector.client.treenode.dto.schema.TableConfigDto;
 import com.cyoda.connector.client.types.CompoundDataType;
@@ -21,6 +22,8 @@ import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.type.TypeManager;
 
 import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
+
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
@@ -28,6 +31,7 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TreeNodeMetadataProvider extends TableMetadataProvider {
 
@@ -95,27 +99,35 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
     }
 
     protected CyodaTableMeta createTableMeta(String schemaName, TableConfigDto tableConfigDto) {
-        AtomicInteger counter = new AtomicInteger(3);
+        AtomicInteger counter = new AtomicInteger(4);
         List<CyodaColumnHandle> columns = new ArrayList<>();
         CompoundDataType uuidType = new CompoundDataType("id", DataType.UUID_TYPE);
         CompoundDataType indexType = new CompoundDataType("index", DataType.INTEGER);
         columns.add(new CyodaColumnHandle("id", uuidType.toPrestoType(typeManager), uuidType, 1, false));
         columns.add(new CyodaColumnHandle("root", uuidType.toPrestoType(typeManager), uuidType, 2, true));
-        columns.add(new CyodaColumnHandle("parent", uuidType.toPrestoType(typeManager), uuidType, 2, true));
-        columns.add(new CyodaColumnHandle("index", indexType.toPrestoType(typeManager), indexType, 3, true));
-        columns.addAll(tableConfigDto.getFields().stream().map(dto -> {
-            String dtoDataType = dto.getDataType();
-            CompoundDataType dataType;
-            if (dtoDataType.startsWith("*")) {
-                dataType = new CompoundDataType(dto.getFieldName(), DataType.LIST, DataType.valueOf(dtoDataType.substring(1)));
-            } else {
-                dataType = new CompoundDataType(dto.getFieldName(), DataType.valueOf(dtoDataType));
+        columns.add(new CyodaColumnHandle("parent", uuidType.toPrestoType(typeManager), uuidType, 3, true));
+        columns.add(new CyodaColumnHandle("index", indexType.toPrestoType(typeManager), indexType, 4, true));
+        columns.addAll(tableConfigDto.getFields().stream().flatMap(dto -> {
+            if (dto.getArray() && dto.getFlatten()){
+                return dto.getArrayFields().stream().map( fieldConfigDto -> createColumnHandle(fieldConfigDto, counter));
             }
-            return new CyodaColumnHandle(dto.getFieldName(), dto.getFieldKey(), dto.getValuePath(), dataType.toPrestoType(typeManager), dataType, counter.incrementAndGet(), true);
+            return Stream.of(createColumnHandle(dto, counter));
         }).toList());
         String tableId = tableConfigDto.getMetadataClassId().toString() + "|" + tableConfigDto.getUniformedPath();
         return new CyodaTableMeta(schemaName, tableConfigDto.getTableName(),
                 columns, CyodaTableType.TREE_NODE_TABLE, tableId, "Tree node table description", false, false);
+    }
+
+    @NotNull
+    private CyodaColumnHandle createColumnHandle(FieldConfigDto dto, AtomicInteger counter) {
+        String dtoDataType = dto.getDataType();
+        CompoundDataType dataType;
+        if (dto.getArray()) {
+            dataType = new CompoundDataType(dto.getFieldName(), DataType.LIST, DataType.valueOf(dtoDataType));
+        } else {
+            dataType = new CompoundDataType(dto.getFieldName(), DataType.valueOf(dtoDataType));
+        }
+        return new CyodaColumnHandle(dto.getFieldName(), dto.getFieldKey(), dto.getValuePath(), dataType.toPrestoType(typeManager), dataType, counter.incrementAndGet(), true);
     }
 
     @Override
