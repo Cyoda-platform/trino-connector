@@ -1,5 +1,6 @@
 package com.cyoda.connector.client.treenode;
 
+import com.cyoda.connector.client.treenode.dto.RawEntityContentDto;
 import com.cyoda.core.reports.DistributedReportInfoDto;
 import com.cyoda.connector.CyodaConfig;
 import com.cyoda.connector.client.reporting.stats.ContentIdLoadingCache;
@@ -243,6 +244,11 @@ public class CyodaRSocketClient {
                 new FluxRequester<>("treeNode.getData", "RS-TDB",
                         spec -> spec.retrieveFlux(EntityContentDto.class),
                         DataRequestDto::toMap);
+
+        public final FluxRequester<String, RawEntityContentDto> rawDataRequester =
+                new FluxRequester<>("treeNode.getRawData", "RS-TDB-RAW",
+                        spec -> spec.retrieveFlux(RawEntityContentDto.class),
+                        request -> Map.of("userId", request));
 
     }
 }

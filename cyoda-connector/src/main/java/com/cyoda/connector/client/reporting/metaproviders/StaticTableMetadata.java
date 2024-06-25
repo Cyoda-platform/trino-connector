@@ -30,6 +30,7 @@ import com.google.common.collect.ImmutableList;
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -37,6 +38,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.cyoda.connector.client.types.DataType.INTEGER;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_CREATE_TIME_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_GROUPING_COLUMNS_COLUMN;
 import static com.cyoda.core.model.reports.ReportHistoryFieldsView.HISTORY_GROUPING_VERSION_COLUMN;
@@ -90,7 +92,8 @@ public enum StaticTableMetadata {
             .build(), CyodaTableType.DATA),
     REPORT_STATS("List of all reports in system. Using in queries is NOT recommended", StandardColumnDefinition.builder()
             .add(DistributedReportInfoDto.meta())
-            .build(), CyodaTableType.STATS, "report_stats");
+            .build(), CyodaTableType.STATS, "report_stats"),
+    TDB_RAW_DATA("Raw access to TDB, for development and testing", Arrays.asList(RawEntityContentColumnDef.values()), CyodaTableType.TDB_RAW_DATA, "tree_node_data");
 
     public static final String LOG_TABLE_NAME = LOG_TABLE.staticTableName;
     private final Map<String, ColumnDefinition> columns;
@@ -180,6 +183,64 @@ public enum StaticTableMetadata {
                     .add("fieldName", fieldName)
                     .add("dataType", dataType)
                     .toString();
+        }
+    }
+    public enum RawEntityContentColumnDef implements ColumnDefinition {
+        ID(0, UUID_TYPE),
+        ENTITY_MODEL_CLASS_ID(1, UUID_TYPE),
+        ENTITY_MODEL_NAME(2, STRING),
+        ENTITY_MODEL_VERSION(3, INTEGER),
+        ROOT_ID(4, UUID_TYPE),
+        PARENT_ID(5, UUID_TYPE),
+        SIBLING_INDEX(6, INTEGER),
+        PARENT_PATH(7, STRING),
+        PATH(8, STRING),
+        DEPTH(9, INTEGER),
+        INDEX(10, INTEGER),
+        UNIFORMED_PATH(11, STRING),
+        SIBLINGS(12, MAP, STRING, UUID_TYPE),
+        LAST_UPDATE_DATE(13, DATE),
+        CONTENTS(14, MAP, STRING, STRING),
+        TYPE_REFERENCE(15, MAP, STRING, STRING);
+
+        private final int pos;
+        private final String fieldName;
+        private final CompoundDataType dataType;
+
+        private static final Map<String, RawEntityContentColumnDef> byFieldName = new HashMap<>();
+
+        RawEntityContentColumnDef(int pos, DataType mainType, DataType... typeParams) {
+            this.pos = pos;
+            this.fieldName = name().toLowerCase();
+            this.dataType = new CompoundDataType(fieldName, mainType, typeParams);
+        }
+
+        public static RawEntityContentColumnDef getByFieldName(String fieldName){
+            if (byFieldName.isEmpty()){
+                synchronized (RawEntityContentColumnDef.class) {
+                    if (byFieldName.isEmpty()){
+                        for (RawEntityContentColumnDef value : RawEntityContentColumnDef.values()) {
+                            byFieldName.put(value.fieldName, value);
+                        }
+                    }
+                }
+            }
+            return byFieldName.get(fieldName);
+        }
+
+        @Override
+        public int getPos() {
+            return pos;
+        }
+
+        @Override
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        @Override
+        public CompoundDataType getDataType() {
+            return dataType;
         }
     }
 
