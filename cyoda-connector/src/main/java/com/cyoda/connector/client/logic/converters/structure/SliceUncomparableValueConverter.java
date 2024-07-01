@@ -1,0 +1,23 @@
+package com.cyoda.connector.client.logic.converters.structure;
+
+import com.cyoda.connector.client.types.IDataType;
+import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.type.Type;
+import io.airlift.slice.Slice;
+
+import javax.annotation.Nonnull;
+
+public abstract class SliceUncomparableValueConverter<T> extends SingleValueConverter<T> {
+
+    public abstract Slice toSlice(@Nonnull T value);
+    public abstract @Nonnull T fromSlice(Slice value);
+
+    public SliceUncomparableValueConverter(IDataType<T> dataType) {
+        super(dataType);
+    }
+
+    @Override
+    public void writeValue(Type type, BlockBuilder builder, @Nonnull T value) {
+        type.writeSlice(builder, toSlice(value));
+    }
+}
