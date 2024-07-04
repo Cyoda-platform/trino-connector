@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 @SuppressWarnings("UnstableApiUsage")
 public class CyodaConfig {
 
-    private static final String DEFAULT_SCHEMA_NAME = "reporting";
+    private static final String DEFAULT_SCHEMA_NAME = "static_tables";
     private static final int DEFAULT_REQUEST_PAGE_SIZE = 10;
 
     private boolean logApiCallStats;

@@ -32,11 +32,34 @@ public class DomainToCondition {
         // Utility class
     }
 
-    public static GroupCondition convert(TupleDomain<ColumnHandle> tupleDomain){
+    public static Object extractSingleEquals(TupleDomain<ColumnHandle> tupleDomain, CyodaColumnHandle columnName){
+        if (tupleDomain.getDomains().isEmpty()) return null;
+        Domain domain = tupleDomain.getDomains().get().get(columnName);
+        if (domain == null || domain.getValues() == null) return null;
+        ComparableValueConverter converter = (ComparableValueConverter) columnName.getConverter();
+        Object conditionValue = domain.getValues().getValuesProcessor().transform(ranges -> {
+            if (ranges.getRangeCount() > 1) throw new RuntimeException("Only single value conditions are allowed for field " + columnName.getColumnName());
+            Range range = ranges.getOrderedRanges().getFirst();
+                if (range.isSingleValue()) {
+                     return range.getHighValue().map(it -> converter.fromPrestoNative(it)).orElse(null);
+                } else {
+                    throw new RuntimeException("Only single value conditions are allowed for field " + columnName.getColumnName());
+                }
+        }, discreteValues -> {
+            Collection<Object> values = discreteValues.getValues();
+            if (values.size() > 1) throw new RuntimeException("Only single value conditions are allowed for field " + columnName.getColumnName());
+            return values.stream().findFirst().map(it -> converter.fromPrestoNative(it)).orElse(null);
+        }, ignored -> null);
+        return conditionValue;
+    }
+
+    public static GroupCondition convert(TupleDomain<ColumnHandle> tupleDomain, String...excludeColumns){
         GroupCondition result = new GroupCondition(GroupCondition.Operator.AND);
+        Set<String> exclusion = new HashSet<>(List.of(excludeColumns));
         for (Map.Entry<ColumnHandle, Domain> byColumn : tupleDomain.getDomains().get().entrySet()){
             Domain domain = byColumn.getValue();
             CyodaColumnHandle column = (CyodaColumnHandle) byColumn.getKey();
+            if (exclusion.contains(column.getColumnName())) continue;
             ComparableValueConverter converter = (ComparableValueConverter) column.getConverter();
             ValueSet valueSet = domain.getValues();
             List<AbstractCondition> conditions = new ArrayList<>();

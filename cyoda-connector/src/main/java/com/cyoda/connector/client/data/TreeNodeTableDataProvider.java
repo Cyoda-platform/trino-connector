@@ -25,6 +25,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +49,7 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         if ("root".equals(columnHandle.getColumnName())) return entity.getRootId();
         if ("parent".equals(columnHandle.getColumnName())) return entity.getParentId();
         if ("index".equals(columnHandle.getColumnName())) return entity.getIndex();
+        if ("point_time".equals(columnHandle.getColumnName())) return entity.getPointTime();
 
         if (columnHandle.getDataType().getMainType() == DataType.LIST){
             int count = 0;
@@ -109,16 +111,20 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         UUID metaClassId = UUID.fromString(s[0]);
         GroupCondition condition;
         String uniformedPath = s[1];
+        Date pointTime = null;
         if (constraint.isAll()) {
             condition = new GroupCondition(GroupCondition.Operator.AND);
         } else {
-            condition = DomainToCondition.convert(constraint);
+            CyodaColumnHandle pointTimeColumn = tableHandle.getColumn("point_time");
+            if (pointTimeColumn != null)
+                pointTime = (Date)DomainToCondition.extractSingleEquals(constraint, pointTimeColumn);
+            condition = DomainToCondition.convert(constraint, "point_time");
         }
         condition.addCondition(new Equals("entityModelClassId", metaClassId,true));
         condition.addCondition(new Equals("uniformedPath", uniformedPath,true));
         String strCondition = JodaBeanSerUtil.compact().jsonWriter().write(condition);
         String queryId = split.getQueryId();
-        DataRequestDto dataRequest = new DataRequestDto(metaClassId, split.getUserId(), uniformedPath, strCondition);
+        DataRequestDto dataRequest = new DataRequestDto(metaClassId, split.getUserId(), uniformedPath, strCondition, pointTime);
         Iterable<EntityContentDto> result = client.treeNodeClient.dataRequester.retrieveData(queryId, dataRequest).toIterable();
         return result;
     }
