@@ -19,6 +19,7 @@ import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static com.cyoda.connector.client.reporting.meta.ReportDefinitionHandle.REPORT_COLUMNS_COLUMN;
 import static com.cyoda.connector.client.reporting.meta.ReportDefinitionHandle.REPORT_ERROR_COLUMN;
@@ -36,7 +37,9 @@ public class ReportsTableDataProvider extends TableDataProvider<ReportsTableData
 
     @Override
     public Iterable<ReportsTableData> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
-        return split.getCustomData().entrySet().stream()
+        return Objects.requireNonNull(reportsApiHandler.asFlux(new ReportListKey(split.getUserId(), split.getQueryId()), SizeListener.NOT_LISTENING)
+                        .collectMap(GridConfigFieldsView::getId, GridConfigFieldsView::getGridConfigFields)
+                        .block(),"Failed to load report configurations").entrySet().stream()
                 .map(entry -> {
                     try {
                         ReportDefinitionHandle repDef = configDetailsApiHandler.getReportDefSingleHandle(
@@ -69,8 +72,6 @@ public class ReportsTableDataProvider extends TableDataProvider<ReportsTableData
 
     @Override
     public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
-        Map<String, Map<String, String>> configFields = reportsApiHandler.asFlux(new ReportListKey(authContext, queryId), SizeListener.NOT_LISTENING)
-                .collectMap(GridConfigFieldsView::getId, GridConfigFieldsView::getGridConfigFields).block();
-        return Collections.singletonList(CyodaSplit.emptyCoordinatorSplit(queryId, authContext.getUserId(), configFields));
+        return Collections.singletonList(new CyodaSplit(queryId, authContext.getUserId(), tableHandle));
     }
 }

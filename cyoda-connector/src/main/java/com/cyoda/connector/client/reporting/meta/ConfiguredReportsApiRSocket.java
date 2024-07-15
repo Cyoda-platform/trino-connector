@@ -17,7 +17,7 @@ public class ConfiguredReportsApiRSocket extends BaseRSocketReportsApiHandler im
 
     @Override
     public Flux<GridConfigFieldsView> asFlux(ReportListKey requestKey, SizeListener listener) {
-        String userId = requestKey.authContext().getUserId();
+        String userId = requestKey.getUserId();
         return rSocketClient.reportsClient.configsRequester.retrieveData(requestKey.queryId(), userId)
                 .map(GridConfigFieldsView::new)
                 .doOnNext(ConfiguredReportsApi::addSchemaTableName);

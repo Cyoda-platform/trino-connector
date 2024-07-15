@@ -2,7 +2,6 @@ package com.cyoda.connector.client.reporting.metaproviders;
 
 import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.connector.CyodaConfig;
-import com.cyoda.connector.CyodaConnectorId;
 import com.cyoda.connector.auth.AuthContext;
 import com.cyoda.connector.auth.AuthService;
 import com.cyoda.connector.client.reporting.meta.ConfiguredReportsApi;
@@ -45,13 +44,13 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
     private final ContentIdLoadingCache<TableMetaCacheKey, CyodaTableMeta> tableMetaCache;
 
     @Inject
-    public DynamicReportMetadataProvider(CyodaConnectorId connectorId, CyodaConfig config,
+    public DynamicReportMetadataProvider(CyodaConfig config,
                                          TypeManager typeManager, AuthService auth,
                                          StaticTableMetadataProvider staticTableMetadataProvider,
                                          ConfiguredReportsApi configuredReportsApiHandler,
                                          ReportConfigDetailsApi reportConfigDetailsApiHandler,
                                          CyodaCacheMonitor cacheMonitor) {
-        super(typeManager, config, connectorId);
+        super(typeManager, config);
         this.staticTableMetadataProvider = staticTableMetadataProvider;
         this.configuredReportsApiHandler = configuredReportsApiHandler;
         this.reportConfigDetailsApiHandler = reportConfigDetailsApiHandler;
@@ -71,7 +70,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
         try {
             List<CyodaTableHandle> result = new ArrayList<>();
             Flux<GridConfigFieldsView> flux = configuredReportsApiHandler.asFlux(
-                    new ReportListKey(authContext, "META"),
+                    new ReportListKey(authContext.getUserId(), "META"),
                     NOT_LISTENING
             );
             flux.toIterable().forEach(item -> {

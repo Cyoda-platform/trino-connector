@@ -32,11 +32,12 @@ public class CyodaSplitDispatcher {
     }
 
     private void dispatchToWorkers(CyodaSplit split) {
-        if (!split.getAddresses().isEmpty() || split.getCyodaTableMetaId() == null) return;
-        if (split.getReportId() == null) return;
+        if (!split.getAddresses().isEmpty() ||
+            split.getTableHandle().getTableMetaId() == null ||
+            split.getReportHandle() == null) return;
         refreshBuckets();
         Node dispatched;
-        int hash = Math.abs(Objects.hash(split.getCyodaTableMetaId(), split.getReportId(), split.getGroupJsonBase64(), split.getPage()));
+        int hash = Math.abs(Objects.hash(split.getTableHandle().getTableMetaId(), split.getReportHandle()));
         dispatched = nodeBuckets.get(hash % nodeBuckets.size());
         split.getAddresses().add(dispatched.getHostAndPort());
     }

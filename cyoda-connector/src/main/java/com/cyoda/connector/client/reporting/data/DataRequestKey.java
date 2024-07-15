@@ -11,7 +11,7 @@ public final class DataRequestKey {
     private transient final String queryId;
 
     // actual payload
-    private transient final CyodaTableMeta tableHandle;
+    private transient final CyodaTableMeta tableMeta;
     private transient final CyodaSplit split;
 
     // extracted key fields of split to use in equals & hashCode
@@ -20,38 +20,34 @@ public final class DataRequestKey {
     private final UUID groupingVersion;
     private final String groupJsonBase64;
     private final int page;
-    private final int pageSize;
 
     private DataRequestKey(
             String queryId,
-            CyodaTableMeta tableHandle, CyodaSplit split, String reportConfigId,
+            CyodaTableMeta tableMeta, CyodaSplit split, String reportConfigId,
             String reportId,
             UUID groupingVersion,
             String groupJsonBase64,
-            int page,
-            int pageSize) {
+            int page) {
         this.queryId = queryId;
-        this.tableHandle = tableHandle;
+        this.tableMeta = tableMeta;
         this.split = split;
         this.reportConfigId = reportConfigId;
         this.reportId = reportId;
         this.groupingVersion = groupingVersion;
         this.groupJsonBase64 = groupJsonBase64;
         this.page = page;
-        this.pageSize = pageSize;
     }
 
-    public DataRequestKey(CyodaSplit split, CyodaTableMeta tableHandle) {
+    public DataRequestKey(CyodaSplit split, CyodaTableMeta tableMeta) {
         this(
                 split.getQueryId(),
-                tableHandle,
+                tableMeta,
                 split,
-                split.getCyodaTableMetaId(),
-                split.getReportId(),
-                split.getGroupingVersion(),
-                split.getGroupJsonBase64(),
-                split.getPage(),
-                split.getPageSize());
+                split.getTableHandle().getTableMetaId(),
+                split.getReportHandle().getReportId(),
+                split.getReportHandle().getGroupingVersion(),
+                split.getReportHandle().getGroupJsonBase64(),
+                split.getReportHandle().getPage());
     }
 
     @Override
@@ -61,8 +57,7 @@ public final class DataRequestKey {
         return Objects.equals(reportConfigId, other.reportConfigId) &&
                 Objects.equals(reportId, other.reportId) &&
                 Objects.equals(groupJsonBase64, other.groupJsonBase64) &&
-                page == other.page &&
-                pageSize == other.pageSize;
+                page == other.page;
     }
 
     @Override
@@ -74,8 +69,8 @@ public final class DataRequestKey {
         return queryId;
     }
 
-    public CyodaTableMeta getTableHandle() {
-        return tableHandle;
+    public CyodaTableMeta getTableMeta() {
+        return tableMeta;
     }
 
     public CyodaSplit getSplit() {

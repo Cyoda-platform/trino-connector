@@ -1,5 +1,6 @@
 package com.cyoda.connector.client.treenode.dto;
 
+import com.cyoda.connector.handles.ReportSplitHandle;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -25,6 +26,9 @@ public class ReportRequestDto {
         this.groupJsonBase64 = groupJsonBase64;
         this.startRow = startRow;
         this.endRow = endRow;
+    }
+    public ReportRequestDto(ReportSplitHandle reportSplitHandle, int startRow, int endRow){
+        this(reportSplitHandle.getReportId(), reportSplitHandle.getGroupingVersion(), reportSplitHandle.getGroupJsonBase64(), (long) startRow, (long) endRow);
     }
 
     @JsonProperty

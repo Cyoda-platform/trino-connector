@@ -69,7 +69,7 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         TupleDomain<ColumnHandle> tupleDomain = tableHandle.getConstraint();
         if (tupleDomain == null || tupleDomain.isAll() || tupleDomain.getDomains().isEmpty())
             return Collections.singletonList(
-                    new CyodaSplit(queryId, authContext.getUserId(), tableHandle.getTableMetaId(), null, null, null, tupleDomain));
+                    new CyodaSplit(queryId, authContext.getUserId(), tableHandle));
 
         Map<ColumnHandle, Domain> columnDomains;
         columnDomains = tupleDomain.getDomains().get();
@@ -84,7 +84,7 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         }
         if (constraintSize.isEmpty())
             return Collections.singletonList(
-                    new CyodaSplit(queryId, authContext.getUserId(), tableHandle.getTableMetaId(), null, null, null, tupleDomain));
+                    new CyodaSplit(queryId, authContext.getUserId(), tableHandle));
 
         ColumnHandle splitColumn = Collections.max(constraintSize.entrySet(), Map.Entry.comparingByValue()).getKey();
         Domain domain = columnDomains.get(splitColumn);
@@ -97,16 +97,16 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
             replacerDomains.add(tupleDomain.intersect(TupleDomain.withColumnDomains(Map.of(splitColumn, partDomain))));
         }
         return replacerDomains.stream()
-                .map(td -> new CyodaSplit(queryId, authContext.getUserId(), tableHandle.getTableMetaId(), null, null, null, td))
+                .map(td -> new CyodaSplit(queryId, authContext.getUserId(), tableHandle.withConstraint(td)))
                 .toList();
     }
 
 
     @Override
     public Iterable<EntityContentDto> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
-        TupleDomain<ColumnHandle> constraint = split.getConstraint();
+        TupleDomain<ColumnHandle> constraint = split.getTableHandle().getConstraint();
         if (constraint.isNone()) return Collections.emptyList();
-        String strTableId = split.getCyodaTableMetaId();
+        String strTableId = split.getTableHandle().getTableMetaId();
         String[] s = strTableId.split("\\|");
         UUID metaClassId = UUID.fromString(s[0]);
         GroupCondition condition;
@@ -124,8 +124,15 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         condition.addCondition(new Equals("uniformedPath", uniformedPath,true));
         String strCondition = JodaBeanSerUtil.compact().jsonWriter().write(condition);
         String queryId = split.getQueryId();
-        DataRequestDto dataRequest = new DataRequestDto(metaClassId, split.getUserId(), uniformedPath, strCondition, pointTime);
-        Iterable<EntityContentDto> result = client.treeNodeClient.dataRequester.retrieveData(queryId, dataRequest).toIterable();
-        return result;
+        DataRequestDto dataRequest = new DataRequestDto(
+                metaClassId,
+                split.getUserId(),
+                uniformedPath,
+                strCondition,
+                pointTime,
+                split.getTableHandle().getSelectedFields(),
+                split.getTableHandle().getSortingFields(),
+                split.getTableHandle().getLimit());
+        return client.treeNodeClient.dataRequester.retrieveData(queryId, dataRequest).toIterable();
     }
 }

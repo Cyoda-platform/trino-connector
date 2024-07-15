@@ -41,6 +41,7 @@ import com.google.common.collect.Maps;
 import io.trino.spi.StandardErrorCode;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.*;
+import io.trino.spi.expression.ConnectorExpression;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
 
@@ -61,7 +62,6 @@ public class CyodaMetadata implements ConnectorMetadata {
 
     private static final SupplierLogger LOG = SupplierLogger.get(CyodaMetadata.class);
 
-    private final String connectorId;
     private final CyodaConfig config;
     private final AuthService auth;
     private final StaticTableMetadataProvider staticMetadataProvider;
@@ -74,7 +74,6 @@ public class CyodaMetadata implements ConnectorMetadata {
 
     @Inject
     public CyodaMetadata(
-            CyodaConnectorId connectorId,
             CyodaConfig config,
             AuthService auth,
             StaticTableMetadataProvider staticMetadataProvider,
@@ -83,7 +82,6 @@ public class CyodaMetadata implements ConnectorMetadata {
             DeleteReportsApi deleteReportsApiHandler,
             CyodaCacheMonitor cacheMonitor,
             CyodaRSocketClient rSocketClient) {
-        this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
         this.config = requireNonNull(config,"confif is null");
         this.auth = auth;
         this.staticMetadataProvider = staticMetadataProvider;
@@ -272,16 +270,46 @@ public class CyodaMetadata implements ConnectorMetadata {
             return Optional.empty();
         }
 
-        tableHandle = new CyodaTableHandle(
-                tableHandle.getSchemaName(),
-                tableHandle.getTableName(),
-                tableHandle.getTableType(),
-                tableHandle.getTableMetaId(),
-                tableHandle.getCreateDate(),
-                tableHandle.getLastUpdateDate(),
-                newDomain);
+        tableHandle.setConstraint(newDomain);
 
-        return Optional.of(new ConstraintApplicationResult<>(tableHandle, remainingFilter, true));
+        return Optional.of(new ConstraintApplicationResult<>(tableHandle, remainingFilter, constraint.getExpression(), true));
+    }
+
+    @Override
+    public Optional<ProjectionApplicationResult<ConnectorTableHandle>> applyProjection(ConnectorSession session, ConnectorTableHandle handle, List<ConnectorExpression> projections, Map<String, ColumnHandle> assignments) {
+        CyodaTableHandle cyodaTableHandle = (CyodaTableHandle) handle;
+        if (cyodaTableHandle.getSelectedFields() == null){
+            cyodaTableHandle.setSelectedFields(assignments.values().stream().map(col -> ((CyodaColumnHandle) col).getColumnKey()).toList());
+        }
+        return ConnectorMetadata.super.applyProjection(session, handle, projections, assignments);
+    }
+
+    @Override
+    public Optional<TopNApplicationResult<ConnectorTableHandle>> applyTopN(ConnectorSession session, ConnectorTableHandle handle, long topNCount, List<SortItem> sortItems, Map<String, ColumnHandle> assignments) {
+        CyodaTableHandle cyodaTableHandle = (CyodaTableHandle) handle;
+        if (cyodaTableHandle.getSortingFields() == null && cyodaTableHandle.getLimit() == null){
+            cyodaTableHandle.setLimit(topNCount);
+            List<String> sortingFields = new ArrayList<>();
+            for (SortItem item : sortItems){
+                switch (item.getSortOrder()) {
+                    case ASC_NULLS_FIRST -> {
+                        CyodaColumnHandle columnHandle = (CyodaColumnHandle) assignments.get(item.getName());
+                        requireNonNull(columnHandle);
+                        sortingFields.add(columnHandle.getExternalName());
+                    }
+                    case DESC_NULLS_FIRST -> {
+                        CyodaColumnHandle columnHandle = (CyodaColumnHandle) assignments.get(item.getName());
+                        requireNonNull(columnHandle);
+                        sortingFields.add("-"+columnHandle.getExternalName());
+                    }
+                    case ASC_NULLS_LAST, DESC_NULLS_LAST -> {
+                        //nulls last are not supported
+                    }
+                }
+            }
+            cyodaTableHandle.setSortingFields(sortingFields);
+        }
+        return ConnectorMetadata.super.applyTopN(session, handle, topNCount, sortItems, assignments);
     }
 
     @Override

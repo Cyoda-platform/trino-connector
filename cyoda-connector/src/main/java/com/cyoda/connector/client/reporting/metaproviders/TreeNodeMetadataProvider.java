@@ -1,7 +1,6 @@
 package com.cyoda.connector.client.reporting.metaproviders;
 
 import com.cyoda.connector.CyodaConfig;
-import com.cyoda.connector.CyodaConnectorId;
 import com.cyoda.connector.auth.AuthContext;
 import com.cyoda.connector.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.connector.client.reporting.stats.CyodaCacheMonitor;
@@ -41,8 +40,8 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
 
     private final CyodaRSocketClient rSocketClient;
     @Inject
-    public TreeNodeMetadataProvider(TypeManager typeManager, CyodaConfig config, CyodaConnectorId connectorId, CyodaCacheMonitor cacheMonitor, CyodaRSocketClient rSocketClient) {
-        super(typeManager, config, connectorId);
+    public TreeNodeMetadataProvider(TypeManager typeManager, CyodaConfig config, CyodaCacheMonitor cacheMonitor, CyodaRSocketClient rSocketClient) {
+        super(typeManager, config);
         schemaCache = new ContentIdLoadingCache<>(Caffeine.newBuilder()
                 .expireAfterWrite(Duration.ofSeconds(10))
                 .recordStats()
@@ -93,7 +92,7 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
                 .map(entry -> {
                     CyodaTableMeta tableMeta = entry.getValue();
                     return new CyodaTableHandle(entry.getKey().getSchemaName(), tableMeta.getTableName(), CyodaTableType.TREE_NODE_TABLE,
-                            tableMeta.getReportConfigId(), 0,0, TupleDomain.all());
+                            tableMeta.getReportConfigId(), 0,0, TupleDomain.all(), null, null, null);
                 }).toList();
 
     }

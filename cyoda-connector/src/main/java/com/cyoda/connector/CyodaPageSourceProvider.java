@@ -44,8 +44,7 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
     private final CyodaMetadata cyodaMetadata;
 
     @Inject
-    public CyodaPageSourceProvider(CyodaConnectorId connectorId,
-                                   TableDataProviderProvider dataProviderProvider,
+    public CyodaPageSourceProvider(TableDataProviderProvider dataProviderProvider,
                                    CyodaMetadata cyodaMetadata) {
         this.dataProviderProvider = requireNonNull(dataProviderProvider, "dataProviderProvider is null");
         this.cyodaMetadata = cyodaMetadata;
@@ -61,9 +60,9 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
             DynamicFilter dynamicFilter
     ) {
         requireNonNull(split, "split is null");
-        CyodaTableHandle handle = (CyodaTableHandle) tableHandle;
-        CyodaTableMeta cyodaTableMeta = cyodaMetadata.getTableMeta(handle);
         CyodaSplit cyodaSplit = (CyodaSplit) split;
+        CyodaTableHandle handle = cyodaSplit.getTableHandle();
+        CyodaTableMeta cyodaTableMeta = cyodaMetadata.getTableMeta(handle);
         if (handle.getTableType().isPushdownSupported()){
             if (dynamicFilter.isAwaitable()) {
                 int cnt = 0;
@@ -73,10 +72,10 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
                     throw new RuntimeException(e);
                 }
                 if (dynamicFilter.isComplete()){
-                    cyodaSplit.setConstraint(cyodaSplit.getConstraint().intersect(dynamicFilter.getCurrentPredicate()));
+                    handle.setConstraint(handle.getConstraint().intersect(dynamicFilter.getCurrentPredicate()));
                 } else LOG.error("Exceeded 10s timeout for dynamic filter await");
             } else {
-                cyodaSplit.setConstraint(cyodaSplit.getConstraint().intersect(dynamicFilter.getCurrentPredicate()));
+                handle.setConstraint(handle.getConstraint().intersect(dynamicFilter.getCurrentPredicate()));
             }
         }
         List<CyodaColumnHandle> cyodaColumns = columns.stream().map(CyodaColumnHandle.class::cast).collect(Collectors.toList());

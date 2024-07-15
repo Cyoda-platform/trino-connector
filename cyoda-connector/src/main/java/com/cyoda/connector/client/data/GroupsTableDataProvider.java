@@ -11,6 +11,7 @@ import com.cyoda.connector.client.reporting.metaproviders.StaticTableMetadataPro
 import com.cyoda.connector.handles.CyodaColumnHandle;
 import com.cyoda.connector.handles.CyodaTableHandle;
 import com.cyoda.connector.handles.CyodaTableMeta;
+import com.cyoda.connector.handles.ReportSplitHandle;
 import io.trino.spi.connector.Constraint;
 import org.joda.beans.MetaProperty;
 
@@ -61,13 +62,14 @@ public class GroupsTableDataProvider extends TableDataProvider<GroupingHandle> {
         return reportHistoryApiHandler.getByKey(new ReportConfigKey(tableHandle.getTableMetaId(), queryId))
                 .stream()
                 .filter(fieldsView -> !hasReportIdConstraint || acceptVal(reportIdColumn, fieldsView.getReportId(), constraint))
-                .map(fieldsView -> new CyodaSplit(queryId, authContext.getUserId(), tableHandle.getTableMetaId(), fieldsView.getReportId(), fieldsView.getGroupingVersion(), null))
+                .map(fieldsView -> new CyodaSplit(queryId, authContext.getUserId(), tableHandle,
+                        new ReportSplitHandle(fieldsView.getReportId(), fieldsView.getGroupingVersion(), null, 0)))
                 .toList();
     }
 
     @Override
     public Iterable<GroupingHandle> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
-        return reportGroupsApiHandler.getByKey(new GroupsRequestKey(split.getReportId(), split.getGroupingVersion(), split.getQueryId()));
+        return reportGroupsApiHandler.getByKey(new GroupsRequestKey(split.getReportHandle().getReportId(), split.getReportHandle().getGroupingVersion(), split.getQueryId()));
     }
 
 }
