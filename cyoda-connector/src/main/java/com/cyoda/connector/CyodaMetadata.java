@@ -297,17 +297,18 @@ public class CyodaMetadata implements ConnectorMetadata {
                         requireNonNull(columnHandle);
                         sortingFields.add(columnHandle.getExternalName());
                     }
-                    case DESC_NULLS_FIRST -> {
+                    case DESC_NULLS_LAST -> {
                         CyodaColumnHandle columnHandle = (CyodaColumnHandle) assignments.get(item.getName());
                         requireNonNull(columnHandle);
                         sortingFields.add("-"+columnHandle.getExternalName());
                     }
-                    case ASC_NULLS_LAST, DESC_NULLS_LAST -> {
-                        //nulls last are not supported
+                    case ASC_NULLS_LAST, DESC_NULLS_FIRST -> {
+                        //nulls-are-larger paradigm is not supported
                     }
                 }
             }
-            cyodaTableHandle.setSortingFields(sortingFields);
+            if (!sortingFields.isEmpty())
+                cyodaTableHandle.setSortingFields(sortingFields);
         }
         return ConnectorMetadata.super.applyTopN(session, handle, topNCount, sortItems, assignments);
     }
