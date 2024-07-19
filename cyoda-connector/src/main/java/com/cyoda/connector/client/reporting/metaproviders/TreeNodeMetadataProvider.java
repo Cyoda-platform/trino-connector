@@ -103,10 +103,12 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
         List<CyodaColumnHandle> columns = new ArrayList<>();
         CompoundDataType uuidType = new CompoundDataType("id", DataType.UUID_TYPE);
         CompoundDataType indexType = new CompoundDataType("index", DataType.INTEGER);
+        CompoundDataType dateType = new CompoundDataType("point_time", DataType.DATE);
         columns.add(new CyodaColumnHandle("id", uuidType.toPrestoType(typeManager), uuidType, 1, false));
         columns.add(new CyodaColumnHandle("root", uuidType.toPrestoType(typeManager), uuidType, 2, true));
         columns.add(new CyodaColumnHandle("parent", uuidType.toPrestoType(typeManager), uuidType, 3, true));
         columns.add(new CyodaColumnHandle("index", indexType.toPrestoType(typeManager), indexType, 4, true));
+        columns.add(new CyodaColumnHandle("point_time", dateType.toPrestoType(typeManager), dateType, 999, true));
         columns.addAll(tableConfigDto.getFields().stream().flatMap(dto -> {
             if (dto.getArray() && dto.getFlatten()){
                 return dto.getArrayFields().stream().map( fieldConfigDto -> createColumnHandle(fieldConfigDto, counter));
