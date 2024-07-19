@@ -120,8 +120,7 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
                 pointTime = (Date)DomainToCondition.extractSingleEquals(constraint, pointTimeColumn);
             condition = DomainToCondition.convert(constraint, "point_time");
         }
-        condition.addCondition(new Equals("entityModelClassId", metaClassId,true));
-        condition.addCondition(new Equals("uniformedPath", uniformedPath,true));
+
         String strCondition = JodaBeanSerUtil.compact().jsonWriter().write(condition);
         String queryId = split.getQueryId();
         DataRequestDto dataRequest = new DataRequestDto(

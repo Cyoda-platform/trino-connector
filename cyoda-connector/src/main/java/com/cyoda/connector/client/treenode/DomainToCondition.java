@@ -1,5 +1,6 @@
 package com.cyoda.connector.client.treenode;
 
+import com.cyoda.connector.CyodaErrorCode;
 import com.cyoda.core.conditions.AbstractCondition;
 import com.cyoda.core.conditions.GroupCondition;
 import com.cyoda.core.conditions.RangeCondition;
@@ -12,11 +13,13 @@ import com.cyoda.connector.client.logic.converters.structure.ComparableValueConv
 import com.cyoda.connector.handles.CyodaColumnHandle;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.Range;
 import io.trino.spi.predicate.TupleDomain;
 import io.trino.spi.predicate.ValueSet;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -32,25 +35,30 @@ public class DomainToCondition {
         // Utility class
     }
 
-    public static Object extractSingleEquals(TupleDomain<ColumnHandle> tupleDomain, CyodaColumnHandle columnName){
+    public static Object extractSingleEquals(TupleDomain<ColumnHandle> tupleDomain, CyodaColumnHandle columnHandle){
         if (tupleDomain.getDomains().isEmpty()) return null;
-        Domain domain = tupleDomain.getDomains().get().get(columnName);
+        Domain domain = tupleDomain.getDomains().get().get(columnHandle);
         if (domain == null || domain.getValues() == null) return null;
-        ComparableValueConverter converter = (ComparableValueConverter) columnName.getConverter();
+        ComparableValueConverter converter = (ComparableValueConverter) columnHandle.getConverter();
         Object conditionValue = domain.getValues().getValuesProcessor().transform(ranges -> {
-            if (ranges.getRangeCount() > 1) throw new RuntimeException("Only single value conditions are allowed for field " + columnName.getColumnName());
+            if (ranges.getRangeCount() > 1) throw getUnsupportedConditionException(columnHandle.getColumnName());
             Range range = ranges.getOrderedRanges().getFirst();
                 if (range.isSingleValue()) {
                      return range.getHighValue().map(it -> converter.fromPrestoNative(it)).orElse(null);
                 } else {
-                    throw new RuntimeException("Only single value conditions are allowed for field " + columnName.getColumnName());
+                    throw getUnsupportedConditionException(columnHandle.getColumnName());
                 }
         }, discreteValues -> {
             Collection<Object> values = discreteValues.getValues();
-            if (values.size() > 1) throw new RuntimeException("Only single value conditions are allowed for field " + columnName.getColumnName());
+            if (values.size() > 1) throw getUnsupportedConditionException(columnHandle.getColumnName());
             return values.stream().findFirst().map(it -> converter.fromPrestoNative(it)).orElse(null);
         }, ignored -> null);
         return conditionValue;
+    }
+
+    @NotNull
+    private static RuntimeException getUnsupportedConditionException(String columnName) {
+        return new TrinoException(CyodaErrorCode.CYODA_UNSUPPORTED_CONDITION, "Only single value conditions are allowed for field " + columnName);
     }
 
     public static GroupCondition convert(TupleDomain<ColumnHandle> tupleDomain, String...excludeColumns){

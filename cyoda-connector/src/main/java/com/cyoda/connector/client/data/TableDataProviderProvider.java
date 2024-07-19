@@ -83,6 +83,10 @@ public class TableDataProviderProvider {
                 TREE_NODE_TABLE,
                 new TreeNodeTableDataProvider(treeNodeAPIClient)
         );
+        providerMap.put(
+                TDB_RAW_DATA,
+                new RawTreeNodeDataProvider(treeNodeAPIClient)
+        );
     }
 
     public TableDataProvider<?> getDataProvider(CyodaTableType tableType){
