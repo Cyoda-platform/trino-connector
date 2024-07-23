@@ -25,6 +25,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -98,22 +99,18 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
     }
 
     protected CyodaTableMeta createTableMeta(String schemaName, TableConfigDto tableConfigDto) {
-        AtomicInteger counter = new AtomicInteger(4);
+        AtomicInteger counter = new AtomicInteger(1);
         List<CyodaColumnHandle> columns = new ArrayList<>();
         CompoundDataType uuidType = new CompoundDataType("id", DataType.UUID_TYPE);
-        CompoundDataType indexType = new CompoundDataType("index", DataType.INTEGER);
         CompoundDataType dateType = new CompoundDataType("point_time", DataType.DATE);
         columns.add(new CyodaColumnHandle("id", uuidType.toPrestoType(typeManager), uuidType, 1, false));
-        columns.add(new CyodaColumnHandle("root", uuidType.toPrestoType(typeManager), uuidType, 2, true));
-        columns.add(new CyodaColumnHandle("parent", uuidType.toPrestoType(typeManager), uuidType, 3, true));
-        columns.add(new CyodaColumnHandle("index", indexType.toPrestoType(typeManager), indexType, 4, true));
-        columns.add(new CyodaColumnHandle("point_time", dateType.toPrestoType(typeManager), dateType, 999, true));
         columns.addAll(tableConfigDto.getFields().stream().flatMap(dto -> {
             if (dto.getArray() && dto.getFlatten()){
                 return dto.getArrayFields().stream().map( fieldConfigDto -> createColumnHandle(fieldConfigDto, counter));
             }
             return Stream.of(createColumnHandle(dto, counter));
-        }).toList());
+        }).sorted(Comparator.comparingInt(CyodaColumnHandle::getOrdinalPosition)).toList());
+        columns.add(new CyodaColumnHandle("point_time", dateType.toPrestoType(typeManager), dateType, 999, true));
         String tableId = tableConfigDto.getMetadataClassId().toString() + "|" + tableConfigDto.getUniformedPath();
         return new CyodaTableMeta(schemaName, tableConfigDto.getTableName(),
                 columns, CyodaTableType.TREE_NODE_TABLE, tableId, "Tree node table description", false, false);
