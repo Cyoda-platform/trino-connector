@@ -17,10 +17,10 @@ import com.cyoda.connector.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.connector.handles.CyodaColumnHandle;
 import com.cyoda.connector.handles.CyodaTableHandle;
 import com.cyoda.connector.handles.CyodaTableMeta;
+import com.cyoda.connector.handles.ReportSplitHandle;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import io.trino.spi.connector.ConnectorPageSource;
 import io.trino.spi.connector.Constraint;
-import io.trino.spi.predicate.TupleDomain;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -98,11 +98,12 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
                                     authContext.getUserId(),
                                     new ArrayList<>(),
                                     false,
-                                    tableHandle.getTableMetaId(),
-                                    groupingHandle.reportId,
-                                    groupingHandle.groupingVersion,
-                                    groupingHandle.groupHeader.getGroupValuesJsonBase64(),
-                                    page, pageSize, null, TupleDomain.all()));
+                                    tableHandle,
+                                    new ReportSplitHandle(
+                                      groupingHandle.reportId,
+                                      groupingHandle.groupingVersion,
+                                      groupingHandle.groupHeader.getGroupValuesJsonBase64(),
+                                      page)));
                 })
                 .toList();
     }
@@ -119,7 +120,7 @@ public class DynamicTableDataProvider extends TableDataProvider<RowHandle> {
 
     @Nonnull
     public CyodaCachedPageSource<RowHandle> getCachedPageSource(DataRequestKey requestKey) {
-        return new CyodaCachedPageSource<>(this, requestKey.getTableHandle(), requestKey.getSplit());
+        return new CyodaCachedPageSource<>(this, requestKey.getTableMeta(), requestKey.getSplit());
     }
 
     @Nullable

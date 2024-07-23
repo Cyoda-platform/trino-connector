@@ -17,19 +17,18 @@
 
 package com.cyoda.connector;
 
-import io.trino.spi.connector.ColumnHandle;
+import com.cyoda.connector.handles.CyodaTableHandle;
+import com.cyoda.connector.handles.ReportSplitHandle;
 import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.HostAddress;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.MoreObjects;
-import io.trino.spi.predicate.TupleDomain;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.Objects;
 
 import static java.util.Objects.requireNonNull;
 
@@ -37,91 +36,48 @@ public class CyodaSplit implements ConnectorSplit {
     private final String queryId;
     private final String userId;
     private final List<HostAddress> addresses;
-
     private final boolean assignToCoordinator;
-
-    private final String cyodaTableMetaId;
-
-    private final String reportId;
-
-    private final UUID groupingVersion;
-
-    private final String groupJsonBase64;
-
-
-    private final int page;
-
-    private final int pageSize;
-
-    private final Map<String, ?> customData;
-    private TupleDomain<ColumnHandle> constraint;
+    private final CyodaTableHandle tableHandle;
+    private final ReportSplitHandle reportHandle;
 
     @JsonCreator
-    public CyodaSplit(String queryId, String userId, List<HostAddress> addresses, boolean assignToCoordinator, String cyodaTableMetaId, String reportId, UUID groupingVersion, String groupJsonBase64, int page, int pageSize, Map<String, ?> customData, TupleDomain<ColumnHandle> constraint) {
+    public CyodaSplit(String queryId,
+                      String userId,
+                      List<HostAddress> addresses,
+                      boolean assignToCoordinator,
+                      CyodaTableHandle tableHandle,
+                      ReportSplitHandle reportHandle) {
         this.queryId = queryId;
         this.userId = userId;
         this.addresses = addresses;
         this.assignToCoordinator = assignToCoordinator;
-        this.cyodaTableMetaId = cyodaTableMetaId;
-        this.reportId = reportId;
-        this.groupingVersion = groupingVersion;
-        this.groupJsonBase64 = groupJsonBase64;
-        this.page = page;
-        this.pageSize = pageSize;
-        this.customData = customData;
-        this.constraint = constraint;
+        this.tableHandle = Objects.requireNonNull(tableHandle);
+        this.reportHandle = reportHandle;
     }
 
-    public CyodaSplit(String queryId, String userId, String cyodaTableMetaId, String reportId, UUID groupingVersion, String groupJsonBase64){
+    //groups and histories
+    public CyodaSplit(String queryId,
+                      String userId,
+                      CyodaTableHandle tableHandle,
+                      ReportSplitHandle reportHandle){
         this(queryId,
-                userId, cyodaTableMetaId,
-                reportId,
-                groupingVersion,
-                groupJsonBase64, null);
+                userId, new ArrayList<>(), false, tableHandle, reportHandle);
     }
-    public CyodaSplit(String queryId, String userId, String cyodaTableMetaId, String reportId, UUID groupingVersion, String groupJsonBase64, TupleDomain<ColumnHandle> constraint){
+    //TREE NODE SPLITS
+    public CyodaSplit(String queryId, String userId, CyodaTableHandle tableHandle){
         this(queryId, userId,
                 new ArrayList<>(),
-                true,
-                cyodaTableMetaId,
-                reportId,
-                groupingVersion,
-                groupJsonBase64,
-                0,
-                Integer.MAX_VALUE, null, constraint);
-    }
-
-    public static CyodaSplit emptyCoordinatorSplit(String queryId, String userId, Map<String, ?> customData){
-        return new CyodaSplit(queryId,
-                userId, new ArrayList<>(),
-                true,
-                null,
-                null,
-                null,
-                null,
-                0,
-                Integer.MAX_VALUE, customData, null);
-    }
-    public static CyodaSplit configSplit(String reportConfigId, String userId, String queryId){
-        return new CyodaSplit(queryId,
-                userId, new ArrayList<>(),
                 false,
-                reportConfigId,
-                null,
-                null,
-                null,
-                0, Integer.MAX_VALUE, null, null);
+                tableHandle, null);
     }
 
-    public static CyodaSplit addressedEmptySplit(String queryId, String userId, HostAddress nodeAddress){
+
+    public static CyodaSplit addressedEmptySplit(String queryId, String userId, HostAddress nodeAddress, CyodaTableHandle tableHandle){
         return new CyodaSplit(queryId,
                 userId, Collections.singletonList(nodeAddress),
                 false,
-                null,
-                null,
-                null,
-                null,
-                0, Integer.MAX_VALUE, null, null);
+                tableHandle,
+                null);
     }
 
     @JsonProperty
@@ -139,56 +95,20 @@ public class CyodaSplit implements ConnectorSplit {
         return assignToCoordinator;
     }
 
-    @JsonProperty
-    public String getCyodaTableMetaId() {
-        return cyodaTableMetaId;
-    }
-
-    @JsonProperty
-    public String getReportId() {
-        return reportId;
-    }
-
-    @JsonProperty
-    public UUID getGroupingVersion() {
-        return groupingVersion;
-    }
-
-    @JsonProperty
-    public String getGroupJsonBase64() {
-        return groupJsonBase64;
-    }
-
-    @JsonProperty
-    public int getPage() {
-        return page;
-    }
-
-    @JsonProperty
-    public int getPageSize() {
-        return pageSize;
-    }
-
-    @JsonProperty
-    public Map<String, ?> getCustomData() {
-        return customData;
-    }
-
-    @JsonProperty
-    public TupleDomain<ColumnHandle> getConstraint() {
-        return constraint;
-    }
-
-    public void setConstraint(TupleDomain<ColumnHandle> constraint) {
-        this.constraint = constraint;
-    }
-
     @Override
     public boolean isRemotelyAccessible() {
         return addresses.isEmpty();
     }
     public List<HostAddress> getAddresses() {
         return addresses;
+    }
+    @JsonProperty
+    public CyodaTableHandle getTableHandle() {
+        return tableHandle;
+    }
+    @JsonProperty
+    public ReportSplitHandle getReportHandle() {
+        return reportHandle;
     }
 
     @Override
@@ -198,12 +118,8 @@ public class CyodaSplit implements ConnectorSplit {
                 .add("queryId", queryId)
                 .add("addresses", addresses)
                 .add("assignToCoordinator", assignToCoordinator)
-                .add("reportConfigId", cyodaTableMetaId)
-                .add("reportId", reportId)
-                .add("groupingVersion", groupingVersion)
-                .add("groupJsonBase64", groupJsonBase64)
-                .add("page", page)
-                .add("pageSize", pageSize)
+                .add("tableHandle", tableHandle)
+                .add("reportHandle", reportHandle)
                 .toString();
     }
 }

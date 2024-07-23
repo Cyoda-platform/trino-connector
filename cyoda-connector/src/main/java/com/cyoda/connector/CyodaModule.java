@@ -69,7 +69,6 @@ import static io.trino.sql.analyzer.TypeSignatureTranslator.parseTypeSignature;
 import static java.util.Objects.requireNonNull;
 
 public class CyodaModule implements Module {
-    private final String connectorId;
     private final TypeManager typeManager;
     private final NodeManager nodeManager;
     private final OpenTelemetry telemetry;
@@ -77,7 +76,6 @@ public class CyodaModule implements Module {
 
 
     public CyodaModule(String connectorId, ConnectorContext context) {
-        this.connectorId = requireNonNull(connectorId, "connector id is null");
         typeManager = requireNonNull(context.getTypeManager(), "typeManager is null");
         nodeManager = requireNonNull(context.getNodeManager(), "nodeManager is null");
         telemetry = requireNonNull(context.getOpenTelemetry(), "openTelemetry is null");
@@ -91,7 +89,6 @@ public class CyodaModule implements Module {
         binder.bind(OpenTelemetry.class).toInstance(telemetry);
         binder.bind(Tracer.class).toInstance(tracer);
 
-        binder.bind(CyodaConnectorId.class).toInstance(new CyodaConnectorId(connectorId));
         binder.bind(CyodaMetadata.class).in(Scopes.SINGLETON);
         binder.bind(CyodaSplitManager.class).in(Scopes.SINGLETON);
         binder.bind(CyodaPageSourceProvider.class).in(Scopes.SINGLETON);

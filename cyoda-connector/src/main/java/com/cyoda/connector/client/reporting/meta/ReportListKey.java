@@ -5,16 +5,16 @@ import com.cyoda.connector.auth.AuthContext;
 import java.util.Objects;
 
 public final class ReportListKey {
-    private final AuthContext authContext;
     private final String queryId;
+    private final String userId;
 
-    public ReportListKey(AuthContext authContext, String queryId) {
-        this.authContext = authContext;
+    public ReportListKey(String userId, String queryId) {
+        this.userId = userId;
         this.queryId = queryId;
     }
 
-    public AuthContext authContext() {
-        return authContext;
+    public String getUserId() {
+        return userId;
     }
 
     public String queryId() {
@@ -26,18 +26,18 @@ public final class ReportListKey {
         if (obj == this) return true;
         if (obj == null || obj.getClass() != this.getClass()) return false;
         var that = (ReportListKey) obj;
-        return Objects.equals(this.authContext, that.authContext);
+        return Objects.equals(this.userId, that.userId);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(authContext);
+        return Objects.hash(userId);
     }
 
     @Override
     public String toString() {
         return "ReportListKey[" +
-                "authContext=" + authContext + ", " +
+                "userId=" + userId + ", " +
                 "queryId=" + queryId + ']';
     }
 

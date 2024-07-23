@@ -41,11 +41,11 @@ public class HistoryTableDataProvider extends TableDataProvider<ReportHistoryFie
     @Override
     public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
         return Collections.singletonList(
-                new CyodaSplit(queryId, authContext.getUserId(), tableHandle.getTableMetaId(), null, null, null));
+                new CyodaSplit(queryId, authContext.getUserId(), tableHandle, null));
     }
 
     @Override
     public Iterable<ReportHistoryFieldsView> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
-        return reportHistoryApiHandler.getByKey(new ReportConfigKey(split.getCyodaTableMetaId(), split.getQueryId()));
+        return reportHistoryApiHandler.getByKey(new ReportConfigKey(split.getTableHandle().getTableMetaId(), split.getQueryId()));
     }
 }

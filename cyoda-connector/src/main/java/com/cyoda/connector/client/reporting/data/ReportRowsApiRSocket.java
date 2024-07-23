@@ -1,5 +1,6 @@
 package com.cyoda.connector.client.reporting.data;
 
+import com.cyoda.connector.CyodaConfig;
 import com.cyoda.connector.CyodaSplit;
 import com.cyoda.connector.client.reporting.BaseRSocketReportsApiHandler;
 import com.cyoda.connector.client.treenode.CyodaRSocketClient;
@@ -9,22 +10,23 @@ import com.google.inject.Inject;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReportRowsApiRSocket extends BaseRSocketReportsApiHandler implements ReportRowsApi {
+    private CyodaConfig config;
     @Inject
-    public ReportRowsApiRSocket(CyodaRSocketClient rSocketClient) {
+    public ReportRowsApiRSocket(CyodaRSocketClient rSocketClient, CyodaConfig config) {
         super(rSocketClient);
+        this.config = config;
     }
 
     @Override
     public Iterable<RowHandle> getIterable(CyodaSplit split) {
-        int startRow = split.getPageSize() * split.getPage();
-        int endRow = startRow + split.getPageSize() - 1;
+        int pageSize = config.getRowRequestPageSize();
+        int startRow = pageSize * split.getReportHandle().getPage();
+        int endRow = startRow + pageSize - 1;
         AtomicInteger pageCounter = new AtomicInteger(startRow -1);
         String queryId = split.getQueryId();
-        String reportId = split.getReportId();
-        String groupJsonBase64 = split.getGroupJsonBase64();
-        ReportRequestDto requestDto = new ReportRequestDto(reportId, null, groupJsonBase64, (long) startRow, (long) endRow);
+        ReportRequestDto requestDto = new ReportRequestDto(split.getReportHandle(), startRow, endRow);
         return rSocketClient.reportsClient.rowsRequester.retrieveData(queryId, requestDto)
-                .map(row -> new RowHandle(split.getReportId(), split.getGroupingVersion(), split.getGroupJsonBase64(), row, pageCounter.incrementAndGet()))
+                .map(row -> new RowHandle(split.getReportHandle(), row, pageCounter.incrementAndGet()))
                 .toIterable();
     }
 }

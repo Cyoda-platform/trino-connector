@@ -1,7 +1,6 @@
 package com.cyoda.connector.client.reporting.metaproviders;
 
 import com.cyoda.connector.CyodaConfig;
-import com.cyoda.connector.CyodaConnectorId;
 import com.cyoda.connector.auth.AuthContext;
 import com.cyoda.connector.client.reporting.ColumnDefinition;
 import com.cyoda.connector.handles.CyodaColumnHandle;
@@ -68,8 +67,8 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
 
 
     @Inject
-    public StaticTableMetadataProvider(TypeManager typeManager, CyodaConfig config, CyodaConnectorId connectorId) {
-        super(typeManager, config, connectorId);
+    public StaticTableMetadataProvider(TypeManager typeManager, CyodaConfig config) {
+        super(typeManager, config);
         standaloneTablesMap = Arrays.stream(StaticTableMetadata.values())
                 .filter(t -> t.getStaticTableName() != null)
                 .map(StaticTable::new)

@@ -60,6 +60,7 @@ public class CyodaConfig {
         logApiCallStats = false;
         logApiCallResponse = true; //does not matter if logApiCallStats = false
         apiCallStatsMaxRecords = 10000;
+        predicatePushdownThreshold = 10000;
         anonymousLogin = false;
         anonymousUserId = null;
         cacheUserAuthSecAfterWrite = 5;
