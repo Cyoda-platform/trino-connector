@@ -32,6 +32,8 @@ import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 
 import jakarta.inject.Inject;
+
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -79,7 +81,10 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
                 cyodaSplit.setConstraint(cyodaSplit.getConstraint().intersect(dynamicFilter.getCurrentPredicate()));
             }
         }
-        List<CyodaColumnHandle> cyodaColumns = columns.stream().map(CyodaColumnHandle.class::cast).collect(Collectors.toList());
+        List<CyodaColumnHandle> cyodaColumns = columns.stream()
+                .map(CyodaColumnHandle.class::cast)
+                .sorted(Comparator.comparingInt(CyodaColumnHandle::getOrdinalPosition))
+                .collect(Collectors.toList());
 
         return dataProviderProvider
                 .getDataProvider(cyodaTableMeta.getTableType())

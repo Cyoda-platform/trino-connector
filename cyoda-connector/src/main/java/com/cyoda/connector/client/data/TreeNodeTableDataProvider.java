@@ -46,10 +46,16 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
     @Override
     protected Object getFieldValueFromEntity(@Nonnull EntityContentDto entity, CyodaColumnHandle columnHandle) {
         if ("id".equals(columnHandle.getColumnName())) return entity.getId();
-        if ("root".equals(columnHandle.getColumnName())) return entity.getRootId();
-        if ("parent".equals(columnHandle.getColumnName())) return entity.getParentId();
-        if ("index".equals(columnHandle.getColumnName())) return entity.getIndex();
         if ("point_time".equals(columnHandle.getColumnName())) return entity.getPointTime();
+
+        if (columnHandle.getColumnKey() == null) return switch (columnHandle.getExternalName()) {
+            case "root" -> entity.getRootId();
+            case "parent" -> entity.getParentId();
+            case "index" -> entity.getIndex();
+            case "creationDate" -> entity.getCreateDate();
+            case "lastUpdateTime" -> entity.getLastUpdateDate();
+            default -> throw new RuntimeException("Unrecognized static field " + columnHandle.getExternalName());
+        };
 
         if (columnHandle.getDataType().getMainType() == DataType.LIST){
             int count = 0;
