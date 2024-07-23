@@ -11,6 +11,7 @@ public class EntityContentDto {
     private final UUID rootId;
     private final UUID parentId;
     private final Integer index;
+    private final Date createDate;
     private final Date lastUpdateDate;
     private final Date pointTime;
     private final Map<String, Object> contents;
@@ -20,6 +21,7 @@ public class EntityContentDto {
                             @JsonProperty("rootId") UUID rootId,
                             @JsonProperty("parentId") UUID parentId,
                             @JsonProperty("index") Integer index,
+                            @JsonProperty("createDate") Date createDate,
                             @JsonProperty("lastUpdateDate") Date lastUpdateDate,
                             @JsonProperty("pointTime") Date pointTime,
                             @JsonProperty("contents") Map<String, Object> contents) {
@@ -27,6 +29,7 @@ public class EntityContentDto {
         this.rootId = rootId;
         this.parentId = parentId;
         this.index = index;
+        this.createDate = createDate;
         this.lastUpdateDate = lastUpdateDate;
         this.pointTime = pointTime;
         this.contents = contents;
@@ -48,9 +51,14 @@ public class EntityContentDto {
         return index;
     }
 
+    public Date getCreateDate() {
+        return createDate;
+    }
+
     public Date getLastUpdateDate() {
         return lastUpdateDate;
     }
+
     public Date getPointTime() {
         return pointTime;
     }
