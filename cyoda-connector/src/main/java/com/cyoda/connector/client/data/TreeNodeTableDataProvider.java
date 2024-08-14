@@ -49,7 +49,7 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         if ("point_time".equals(columnHandle.getColumnName())) return entity.getPointTime();
 
         if (columnHandle.getColumnKey() == null) return switch (columnHandle.getExternalName()) {
-            case "root" -> entity.getRootId();
+            case "id" -> entity.getRootId();
             case "parent" -> entity.getParentId();
             case "index" -> entity.getIndex();
             case "creationDate" -> entity.getCreateDate();

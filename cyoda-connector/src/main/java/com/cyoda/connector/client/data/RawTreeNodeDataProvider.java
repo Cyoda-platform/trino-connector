@@ -67,12 +67,6 @@ public class RawTreeNodeDataProvider extends TableDataProvider<RawEntityContentD
             case PARENT_ID -> {
                 return entity.getParentId();
             }
-            case SIBLING_INDEX -> {
-                return entity.getSiblingIndex();
-            }
-            case PARENT_PATH -> {
-                return entity.getParentPath();
-            }
             case PATH -> {
                 return entity.getPath();
             }
@@ -84,9 +78,6 @@ public class RawTreeNodeDataProvider extends TableDataProvider<RawEntityContentD
             }
             case UNIFORMED_PATH -> {
                 return entity.getUniformedPath();
-            }
-            case SIBLINGS -> {
-                return entity.getSiblings();
             }
             case LAST_UPDATE_DATE -> {
                 return entity.getLastUpdateDate();
@@ -103,7 +94,7 @@ public class RawTreeNodeDataProvider extends TableDataProvider<RawEntityContentD
 
     @Override
     public List<CyodaSplit> getSplits(AuthContext authContext, String queryId, CyodaTableHandle tableHandle, Constraint constraint) {
-        return List.of(CyodaSplit.emptyCoordinatorSplit(queryId, authContext.getUserId(), null));
+        return List.of(new CyodaSplit(queryId, authContext.getUserId(), tableHandle));
     }
 
 

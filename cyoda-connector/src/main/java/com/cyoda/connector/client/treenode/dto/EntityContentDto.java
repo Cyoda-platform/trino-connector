@@ -4,13 +4,14 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 public class EntityContentDto {
     private final UUID id;
     private final UUID rootId;
     private final UUID parentId;
-    private final Integer index;
+    private final List<Integer> index;
     private final Date createDate;
     private final Date lastUpdateDate;
     private final Date pointTime;
@@ -20,7 +21,7 @@ public class EntityContentDto {
     public EntityContentDto(@JsonProperty("id") UUID id,
                             @JsonProperty("rootId") UUID rootId,
                             @JsonProperty("parentId") UUID parentId,
-                            @JsonProperty("index") Integer index,
+                            @JsonProperty("index") List<Integer> index,
                             @JsonProperty("createDate") Date createDate,
                             @JsonProperty("lastUpdateDate") Date lastUpdateDate,
                             @JsonProperty("pointTime") Date pointTime,
@@ -47,7 +48,7 @@ public class EntityContentDto {
         return parentId;
     }
 
-    public Integer getIndex() {
+    public List<Integer> getIndex() {
         return index;
     }
 

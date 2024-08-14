@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -15,13 +16,10 @@ public class RawEntityContentDto {
     private final int entityModelVersion;
     private final UUID rootId;
     private final UUID parentId;
-    private final int siblingIndex;
-    private final String parentPath;
     private final String path;
     private final Integer depth;
-    private final Integer index;
+    private final List<Integer> index;
     private final String uniformedPath;
-    private final Map<String, UUID> siblings;
     private final Date lastUpdateDate;
     private final Map<String, String> contents;
     private final Map<String, String> typeReference;
@@ -34,13 +32,10 @@ public class RawEntityContentDto {
             @JsonProperty("entityModelVersion") int entityModelVersion,
             @JsonProperty("rootId") UUID rootId,
             @JsonProperty("parentId") UUID parentId,
-            @JsonProperty("siblingIndex") int siblingIndex,
-            @JsonProperty("parentPath") String parentPath,
             @JsonProperty("path") String path,
             @JsonProperty("depth") Integer depth,
-            @JsonProperty("index") Integer index,
+            @JsonProperty("index") List<Integer> index,
             @JsonProperty("uniformedPath") String uniformedPath,
-            @JsonProperty("siblings") Map<String, UUID> siblings,
             @JsonProperty("lastUpdateDate") Date lastUpdateDate,
             @JsonProperty("contents") Map<String, String> contents,
             @JsonProperty("typeReference") Map<String, String> typeReference
@@ -51,13 +46,10 @@ public class RawEntityContentDto {
         this.entityModelVersion = entityModelVersion;
         this.rootId = rootId;
         this.parentId = parentId;
-        this.siblingIndex = siblingIndex;
-        this.parentPath = parentPath;
         this.path = path;
         this.depth = depth;
         this.index = index;
         this.uniformedPath = uniformedPath;
-        this.siblings = siblings;
         this.lastUpdateDate = lastUpdateDate;
         this.contents = contents;
         this.typeReference = typeReference;
@@ -87,14 +79,6 @@ public class RawEntityContentDto {
         return parentId;
     }
 
-    public int getSiblingIndex() {
-        return siblingIndex;
-    }
-
-    public String getParentPath() {
-        return parentPath;
-    }
-
     public String getPath() {
         return path;
     }
@@ -103,16 +87,12 @@ public class RawEntityContentDto {
         return depth;
     }
 
-    public Integer getIndex() {
+    public List<Integer> getIndex() {
         return index;
     }
 
     public String getUniformedPath() {
         return uniformedPath;
-    }
-
-    public Map<String, UUID> getSiblings() {
-        return siblings;
     }
 
     public Date getLastUpdateDate() {

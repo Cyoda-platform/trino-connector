@@ -29,7 +29,9 @@ public interface PredicatePushdownController
             // pushdown simplified domain
             return new DomainPushdownResult(domain.simplify(threshold), domain);
         }
-        return new DomainPushdownResult(domain, Domain.all(domain.getType()));
+        //returning same domain as remaining filter because currently push-downs are dirty
+        //return new DomainPushdownResult(domain, Domain.all(domain.getType()));
+        return new DomainPushdownResult(domain, domain);
     };
 
     PredicatePushdownController DISABLE_PUSHDOWN = (threshold, domain) -> new DomainPushdownResult(
