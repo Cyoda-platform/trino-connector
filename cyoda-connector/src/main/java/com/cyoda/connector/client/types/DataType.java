@@ -67,6 +67,7 @@ public enum DataType implements IDataType {
     YEAR_MONTH      (YearMonth.class,       StandardTypes.DATE,         true, 0),
     LOCAL_TIME      (LocalTime.class,       StandardTypes.TIME,         true, 0, 9),
     UUID_TYPE       (UUID.class,            StandardTypes.UUID,         true, 0),
+    TIME_UUID_TYPE  (UUID.class,            StandardTypes.UUID,         true, 0),
     BYTE_ARRAY      (byte[].class,          StandardTypes.VARBINARY,    false, 0),
     BYTE_BUFFER     (ByteBuffer.class,      StandardTypes.VARBINARY,    false, 0),
     LOCALE          (Locale.class,          StandardTypes.VARCHAR,      false, 0),
