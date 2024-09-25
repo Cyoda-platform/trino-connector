@@ -119,7 +119,10 @@ public enum DataType implements IDataType {
     }
 
     public static final Map<Class<?>, DataType> objectClassToDataType = ImmutableMap.copyOf(
-            Arrays.stream(DataType.values()).filter(it -> it.javaType != null).collect(Collectors.toMap(it -> it.javaType, it -> it))
+            Arrays.stream(DataType.values())
+                    .filter(it -> it.javaType != null)
+                    .filter(it -> it != TIME_UUID_TYPE)
+                    .collect(Collectors.toMap(it -> it.javaType, it -> it))
     );
 
     public static final Map<Class<?>, DataType> primitiveClassToDataType = ImmutableMap.<Class<?>, DataType>builder()
