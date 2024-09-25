@@ -255,11 +255,12 @@ public class CyodaMetadata implements ConnectorMetadata {
             Map<ColumnHandle, Domain> unsupported = new HashMap<>();
             for (CyodaColumnHandle column : columnHandles) {
                 PredicatePushdownController pushDownController;
-                if (column.getColumnName().equals("id") || column.getExternalName().equals("parent") || column.getExternalName().equals("index")){
-                    pushDownController = PredicatePushdownController.DISABLE_PUSHDOWN;
-                } else {
-                    pushDownController = column.getDataType().getMainType().getPushDownController();
-                }
+//                if (column.getColumnName().equals("id") || column.getExternalName().equals("parent") || column.getExternalName().equals("index")){
+//                    pushDownController = PredicatePushdownController.DISABLE_PUSHDOWN;
+//                } else {
+//                    pushDownController = column.getDataType().getMainType().getPushDownController();
+//                }
+                pushDownController = column.getDataType().getMainType().getPushDownController();
                 PredicatePushdownController.DomainPushdownResult pushdownResult =
                         pushDownController.apply(config.getPredicatePushdownThreshold(), domains.get(column));
                 supported.put(column, pushdownResult.getPushedDown());
@@ -284,39 +285,39 @@ public class CyodaMetadata implements ConnectorMetadata {
     public Optional<ProjectionApplicationResult<ConnectorTableHandle>> applyProjection(ConnectorSession session, ConnectorTableHandle handle, List<ConnectorExpression> projections, Map<String, ColumnHandle> assignments) {
         CyodaTableHandle cyodaTableHandle = (CyodaTableHandle) handle;
         if (cyodaTableHandle.getSelectedFields() == null){
-            cyodaTableHandle.setSelectedFields(assignments.values().stream().map(col -> ((CyodaColumnHandle) col).getColumnKey()).toList());
+            cyodaTableHandle.setSelectedFields(assignments.values().stream().map(col -> ((CyodaColumnHandle) col)).toList());
         }
         return ConnectorMetadata.super.applyProjection(session, handle, projections, assignments);
     }
 
-    @Override
-    public Optional<TopNApplicationResult<ConnectorTableHandle>> applyTopN(ConnectorSession session, ConnectorTableHandle handle, long topNCount, List<SortItem> sortItems, Map<String, ColumnHandle> assignments) {
-        CyodaTableHandle cyodaTableHandle = (CyodaTableHandle) handle;
-        if (cyodaTableHandle.getSortingFields() == null && cyodaTableHandle.getLimit() == null){
-            cyodaTableHandle.setLimit(topNCount);
-            List<String> sortingFields = new ArrayList<>();
-            for (SortItem item : sortItems){
-                switch (item.getSortOrder()) {
-                    case ASC_NULLS_FIRST -> {
-                        CyodaColumnHandle columnHandle = (CyodaColumnHandle) assignments.get(item.getName());
-                        requireNonNull(columnHandle);
-                        sortingFields.add(columnHandle.getExternalName());
-                    }
-                    case DESC_NULLS_LAST -> {
-                        CyodaColumnHandle columnHandle = (CyodaColumnHandle) assignments.get(item.getName());
-                        requireNonNull(columnHandle);
-                        sortingFields.add("-"+columnHandle.getExternalName());
-                    }
-                    case ASC_NULLS_LAST, DESC_NULLS_FIRST -> {
-                        //nulls-are-larger paradigm is not supported
-                    }
-                }
-            }
-            if (!sortingFields.isEmpty())
-                cyodaTableHandle.setSortingFields(sortingFields);
-        }
-        return ConnectorMetadata.super.applyTopN(session, handle, topNCount, sortItems, assignments);
-    }
+//    @Override
+//    public Optional<TopNApplicationResult<ConnectorTableHandle>> applyTopN(ConnectorSession session, ConnectorTableHandle handle, long topNCount, List<SortItem> sortItems, Map<String, ColumnHandle> assignments) {
+//        CyodaTableHandle cyodaTableHandle = (CyodaTableHandle) handle;
+//        if (cyodaTableHandle.getSortingFields() == null && cyodaTableHandle.getLimit() == null){
+//            cyodaTableHandle.setLimit(topNCount);
+//            List<CyodaColumnHandle> sortingFields = new ArrayList<>();
+//            for (SortItem item : sortItems){
+//                switch (item.getSortOrder()) {
+//                    case ASC_NULLS_FIRST -> {
+//                        CyodaColumnHandle columnHandle = (CyodaColumnHandle) assignments.get(item.getName());
+//                        requireNonNull(columnHandle);
+//                        sortingFields.add(columnHandle);
+//                    }
+//                    case DESC_NULLS_LAST -> {
+//                        CyodaColumnHandle columnHandle = (CyodaColumnHandle) assignments.get(item.getName());
+//                        requireNonNull(columnHandle);
+//                        sortingFields.add("-"+columnHandle.getExternalName());
+//                    }
+//                    case ASC_NULLS_LAST, DESC_NULLS_FIRST -> {
+//                        //nulls-are-larger paradigm is not supported
+//                    }
+//                }
+//            }
+//            if (!sortingFields.isEmpty())
+//                cyodaTableHandle.setSortingFields(sortingFields);
+//        }
+//        return ConnectorMetadata.super.applyTopN(session, handle, topNCount, sortItems, assignments);
+//    }
 
     @Override
     public List<SchemaTableName> listTables(ConnectorSession session, Optional<String> filterSchema) {

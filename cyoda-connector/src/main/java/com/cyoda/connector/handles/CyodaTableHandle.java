@@ -21,8 +21,8 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     private final long createDate;
     private final long lastUpdateDate;
     private TupleDomain<ColumnHandle> constraint;
-    private List<String> selectedFields;
-    private List<String> sortingFields;
+    private List<CyodaColumnHandle> selectedFields;
+    private List<CyodaColumnHandle> sortingFields;
     private Long limit;
 
     @JsonCreator
@@ -34,8 +34,8 @@ public class CyodaTableHandle implements ConnectorTableHandle {
             @JsonProperty("createDate") long createDate,
             @JsonProperty("lastUpdateDate") long lastUpdateDate,
             @JsonProperty("constraint")TupleDomain<ColumnHandle> constraint,
-            @JsonProperty("selectedFields") List<String> selectedFields,
-            @JsonProperty("sortingFields") List<String> sortingFields,
+            @JsonProperty("selectedFields") List<CyodaColumnHandle> selectedFields,
+            @JsonProperty("sortingFields") List<CyodaColumnHandle> sortingFields,
             @JsonProperty("limit") Long limit) {
         this.schemaName = requireNonNull(schemaName, "schemaName is null");
         this.tableName = requireNonNull(tableName, "tableName is null");
@@ -113,20 +113,20 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     }
 
     @JsonProperty
-    public List<String> getSelectedFields() {
+    public List<CyodaColumnHandle> getSelectedFields() {
         return selectedFields;
     }
 
-    public void setSelectedFields(List<String> selectedFields) {
+    public void setSelectedFields(List<CyodaColumnHandle> selectedFields) {
         this.selectedFields = selectedFields;
     }
 
     @JsonProperty
-    public List<String> getSortingFields() {
+    public List<CyodaColumnHandle> getSortingFields() {
         return sortingFields;
     }
 
-    public void setSortingFields(List<String> sortingFields) {
+    public void setSortingFields(List<CyodaColumnHandle> sortingFields) {
         this.sortingFields = sortingFields;
     }
 

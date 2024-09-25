@@ -8,7 +8,7 @@ import java.util.List;
 public class FieldConfigDto {
     private final String fieldName; // display; default = fieldKey;
     private final String fieldKey; // key form <String, String> map
-    private final String valuePath; // "fieldName" to use in conditions
+    private final String fieldCategory;
     private final String dataType;
     private final Boolean isArray;
     private final Boolean flatten;
@@ -17,14 +17,14 @@ public class FieldConfigDto {
     @JsonCreator
     public FieldConfigDto(@JsonProperty("fieldName") String fieldName,
                           @JsonProperty("fieldKey") String fieldKey,
-                          @JsonProperty("valuePath") String valuePath,
+                          @JsonProperty("fieldCategory") String fieldCategory,
                           @JsonProperty("dataType") String dataType,
                           @JsonProperty("isArray") Boolean isArray,
                           @JsonProperty("flatten") Boolean flatten,
                           @JsonProperty("arrayFields") List<FieldConfigDto> arrayFields) {
         this.fieldName = fieldName;
         this.fieldKey = fieldKey;
-        this.valuePath = valuePath;
+        this.fieldCategory = fieldCategory;
         this.dataType = dataType;
         this.isArray = isArray;
         this.flatten = flatten;
@@ -44,8 +44,8 @@ public class FieldConfigDto {
         return dataType;
     }
     @JsonProperty
-    public String getValuePath() {
-        return valuePath;
+    public String getFieldCategory() {
+        return fieldCategory;
     }
     @JsonProperty
     public Boolean getArray() {
@@ -59,4 +59,5 @@ public class FieldConfigDto {
     public List<FieldConfigDto> getArrayFields() {
         return arrayFields;
     }
+
 }
