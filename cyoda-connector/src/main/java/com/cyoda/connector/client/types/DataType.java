@@ -67,6 +67,7 @@ public enum DataType implements IDataType {
     YEAR_MONTH      (YearMonth.class,       StandardTypes.DATE,         true, 0),
     LOCAL_TIME      (LocalTime.class,       StandardTypes.TIME,         true, 0, 9),
     UUID_TYPE       (UUID.class,            StandardTypes.UUID,         true, 0),
+    TIME_UUID_TYPE  (UUID.class,            StandardTypes.UUID,         true, 0),
     BYTE_ARRAY      (byte[].class,          StandardTypes.VARBINARY,    false, 0),
     BYTE_BUFFER     (ByteBuffer.class,      StandardTypes.VARBINARY,    false, 0),
     LOCALE          (Locale.class,          StandardTypes.VARCHAR,      false, 0),
@@ -118,7 +119,10 @@ public enum DataType implements IDataType {
     }
 
     public static final Map<Class<?>, DataType> objectClassToDataType = ImmutableMap.copyOf(
-            Arrays.stream(DataType.values()).filter(it -> it.javaType != null).collect(Collectors.toMap(it -> it.javaType, it -> it))
+            Arrays.stream(DataType.values())
+                    .filter(it -> it.javaType != null)
+                    .filter(it -> it != TIME_UUID_TYPE)
+                    .collect(Collectors.toMap(it -> it.javaType, it -> it))
     );
 
     public static final Map<Class<?>, DataType> primitiveClassToDataType = ImmutableMap.<Class<?>, DataType>builder()

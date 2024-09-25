@@ -56,7 +56,9 @@ public class PrestoConverterFactory {
         comparableBuilder.put(DataType.LONG,new LongPrestoValueConverter());
         comparableBuilder.put(DataType.SHORT,new ShortPrestoValueConverter());
         comparableBuilder.put(DataType.STRING,new StringPrestoValueConverter());
-        comparableBuilder.put(DataType.UUID_TYPE,new UUIDPrestoValueConverter());
+        UUIDPrestoValueConverter uuidConverter = new UUIDPrestoValueConverter();
+        comparableBuilder.put(DataType.UUID_TYPE, uuidConverter);
+        comparableBuilder.put(DataType.TIME_UUID_TYPE, uuidConverter);
         comparableBuilder.put(DataType.YEAR_MONTH,new YearMonthPrestoValueConverter());
         comparableBuilder.put(DataType.YEAR,new YearPrestoValueConverter());
         comparableBuilder.put(DataType.ZONED_DATE_TIME,new ZonedDateTimePrestoValueConverter());
