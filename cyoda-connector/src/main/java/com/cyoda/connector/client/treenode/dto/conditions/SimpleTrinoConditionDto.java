@@ -1,6 +1,5 @@
 package com.cyoda.connector.client.treenode.dto.conditions;
 
-import com.cyoda.core.conditions.Operation;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 

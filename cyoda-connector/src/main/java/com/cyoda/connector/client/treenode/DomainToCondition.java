@@ -4,7 +4,7 @@ import com.cyoda.connector.client.logic.converters.PrestoValueConverter;
 import com.cyoda.connector.client.treenode.dto.conditions.AbstractTrinoConditionDto;
 import com.cyoda.connector.client.treenode.dto.conditions.GroupTrinoConditionDto;
 import com.cyoda.connector.client.treenode.dto.conditions.SimpleTrinoConditionDto;
-import com.cyoda.core.conditions.Operation;
+import com.cyoda.connector.client.treenode.dto.conditions.Operation;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.Range;
 import io.trino.spi.predicate.ValueSet;

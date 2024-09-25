@@ -4,7 +4,7 @@ import com.cyoda.connector.CyodaErrorCode;
 import com.cyoda.connector.client.treenode.dto.conditions.AbstractTrinoConditionDto;
 import com.cyoda.connector.client.treenode.dto.conditions.GroupTrinoConditionDto;
 import com.cyoda.connector.client.treenode.dto.conditions.SimpleTrinoConditionDto;
-import com.cyoda.core.conditions.Operation;
+import com.cyoda.connector.client.treenode.dto.conditions.Operation;
 import com.cyoda.connector.CyodaSplit;
 import com.cyoda.connector.auth.AuthContext;
 import com.cyoda.connector.client.treenode.DomainToCondition;
