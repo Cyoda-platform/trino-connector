@@ -100,17 +100,12 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
 
     protected CyodaTableMeta createTableMeta(String schemaName, TableConfigDto tableConfigDto) {
         AtomicInteger counter = new AtomicInteger(1);
-        List<CyodaColumnHandle> columns = new ArrayList<>();
-        CompoundDataType uuidType = new CompoundDataType("id", DataType.UUID_TYPE);
-        CompoundDataType dateType = new CompoundDataType("point_time", DataType.DATE);
-        columns.add(new CyodaColumnHandle("id", uuidType.toPrestoType(typeManager), uuidType, 1, false));
-        columns.addAll(tableConfigDto.getFields().stream().flatMap(dto -> {
-            if (dto.getArray() && dto.getFlatten()){
-                return dto.getArrayFields().stream().map( fieldConfigDto -> createColumnHandle(fieldConfigDto, counter));
+        List<CyodaColumnHandle> columns = tableConfigDto.getFields().stream().flatMap(dto -> {
+            if (dto.getArray() && dto.getFlatten()) {
+                return dto.getArrayFields().stream().map(fieldConfigDto -> createColumnHandle(fieldConfigDto, counter));
             }
             return Stream.of(createColumnHandle(dto, counter));
-        }).sorted(Comparator.comparingInt(CyodaColumnHandle::getOrdinalPosition)).toList());
-        columns.add(new CyodaColumnHandle("point_time", dateType.toPrestoType(typeManager), dateType, 999, true));
+        }).sorted(Comparator.comparingInt(CyodaColumnHandle::getOrdinalPosition)).toList();
         String tableId = tableConfigDto.getMetadataClassId().toString() + "|" + tableConfigDto.getUniformedPath();
         return new CyodaTableMeta(schemaName, tableConfigDto.getTableName(),
                 columns, CyodaTableType.TREE_NODE_TABLE, tableId, "Tree node table description", false, false);
@@ -125,7 +120,8 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
         } else {
             dataType = new CompoundDataType(dto.getFieldName(), DataType.valueOf(dtoDataType));
         }
-        return new CyodaColumnHandle(dto.getFieldName(), dto.getFieldKey(), dto.getValuePath(), dataType.toPrestoType(typeManager), dataType, counter.incrementAndGet(), true);
+        return new CyodaColumnHandle(dto.getFieldName(), dto.getFieldKey(), CyodaColumnHandle.ColumnCategory.valueOf(dto.getFieldCategory()),
+                null, dataType.toPrestoType(typeManager), dataType, counter.incrementAndGet(), true);
     }
 
     @Override

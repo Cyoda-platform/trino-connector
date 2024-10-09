@@ -41,6 +41,7 @@ import static java.util.Objects.requireNonNull;
 public class CyodaColumnHandle implements ColumnHandle {
     private final String columnName;
     private final String columnKey;
+    private final ColumnCategory columnCategory;
     private final String externalName;
     private final Type columnType;
     private final int ordinalPosition;
@@ -55,6 +56,7 @@ public class CyodaColumnHandle implements ColumnHandle {
     public CyodaColumnHandle(
             @JsonProperty("columnName") String columnName,
             @JsonProperty("columnKey") String columnKey,
+            @JsonProperty("columnCategory") ColumnCategory columnCategory,
             @JsonProperty("externalName") String externalName,
             @JsonProperty("columnType") Type columnType,
             @JsonProperty("dataType") CompoundDataType dataType,
@@ -63,6 +65,7 @@ public class CyodaColumnHandle implements ColumnHandle {
     ) {
         this.columnName = requireNonNull(columnName, "columnName is null");
         this.columnKey = columnKey;
+        this.columnCategory = columnCategory;
         this.externalName = externalName;
         this.columnType = requireNonNull(columnType, "columnType is null");
         this.dataType = dataType;
@@ -76,7 +79,7 @@ public class CyodaColumnHandle implements ColumnHandle {
             CompoundDataType dataType,
             int ordinalPosition,
             boolean isNullable){
-        this(columnName, columnName, columnName, columnType, dataType, ordinalPosition, isNullable);
+        this(columnName, columnName, null, columnName, columnType, dataType, ordinalPosition, isNullable);
     }
 
     @Deprecated
@@ -86,7 +89,7 @@ public class CyodaColumnHandle implements ColumnHandle {
             DataType dataType,
             int ordinalPosition
     ) {
-        this(columnName, null, null, columnType, new CompoundDataType(columnName,dataType), ordinalPosition, true);
+        this(columnName, null, null, null, columnType, new CompoundDataType(columnName,dataType), ordinalPosition, true);
     }
 
     public PrestoValueConverter<?> getConverter(){
@@ -147,6 +150,11 @@ public class CyodaColumnHandle implements ColumnHandle {
     }
 
     @JsonProperty
+    public ColumnCategory getColumnCategory() {
+        return columnCategory;
+    }
+
+    @JsonProperty
     public Type getColumnType() {
         return columnType;
     }
@@ -191,6 +199,13 @@ public class CyodaColumnHandle implements ColumnHandle {
                 .add("columnType", columnType)
                 .add("ordinalPosition", ordinalPosition)
                 .toString();
+    }
+
+    public enum ColumnCategory {
+        DATA, ROOT, SPECIAL, REPORT, INDEX
+    }
+    public enum SpecialColumn {
+        ENTITY_ID, POINT_TIME
     }
 
 }

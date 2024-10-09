@@ -1,8 +1,10 @@
 package com.cyoda.connector.client.data;
 
-import com.cyoda.core.conditions.GroupCondition;
-import com.cyoda.core.conditions.queryable.Equals;
-import com.cyoda.core.util.JodaBeanSerUtil;
+import com.cyoda.connector.CyodaErrorCode;
+import com.cyoda.connector.client.treenode.dto.conditions.AbstractTrinoConditionDto;
+import com.cyoda.connector.client.treenode.dto.conditions.GroupTrinoConditionDto;
+import com.cyoda.connector.client.treenode.dto.conditions.SimpleTrinoConditionDto;
+import com.cyoda.connector.client.treenode.dto.conditions.Operation;
 import com.cyoda.connector.CyodaSplit;
 import com.cyoda.connector.auth.AuthContext;
 import com.cyoda.connector.client.treenode.DomainToCondition;
@@ -14,6 +16,7 @@ import com.cyoda.connector.handles.CyodaColumnHandle;
 import com.cyoda.connector.handles.CyodaTableHandle;
 import com.cyoda.connector.handles.CyodaTableMeta;
 import com.google.common.collect.Lists;
+import io.trino.spi.TrinoException;
 import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.Constraint;
 import io.trino.spi.predicate.Domain;
@@ -25,7 +28,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,29 +47,42 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
     @Nullable
     @Override
     protected Object getFieldValueFromEntity(@Nonnull EntityContentDto entity, CyodaColumnHandle columnHandle) {
-        if ("id".equals(columnHandle.getColumnName())) return entity.getId();
-        if ("point_time".equals(columnHandle.getColumnName())) return entity.getPointTime();
+        switch (columnHandle.getColumnCategory()) {
+            case REPORT -> throw new RuntimeException("Report field in TDB");
+            case DATA -> {
+                if (columnHandle.getDataType().getMainType() == DataType.LIST){
+                    int count = 0;
+                    List<Object> result = new ArrayList<>();
+                    do {
+                        Object currentElement = entity.getContents().get(columnHandle.getColumnKey() + "[" + count++ + "]");
+                        if (currentElement == null) break;
+                        result.add(currentElement);
+                    } while (true);
+                    return result;
+                } else
+                    return entity.getContents().get(columnHandle.getColumnKey());
+            }
+            case ROOT -> {
+                return switch (columnHandle.getColumnKey()) {
+                    case "creationDate" -> entity.getCreateDate();
+                    case "lastUpdateTime" -> entity.getLastUpdateDate();
+                    default -> throw new RuntimeException("Unrecognized root field " + columnHandle.getColumnKey());
+                };
+            }
+            case SPECIAL -> {
+                return switch (CyodaColumnHandle.SpecialColumn.valueOf(columnHandle.getColumnKey())){
+                    case ENTITY_ID -> entity.getRootId();
+                    case POINT_TIME -> entity.getPointTime();
+                };
+            }
+            case INDEX -> {
+                if (columnHandle.getColumnKey().isEmpty())
+                    return entity.getIndex();
+                else return entity.getIndex().get(Integer.parseInt(columnHandle.getColumnKey()));
+            }
 
-        if (columnHandle.getColumnKey() == null) return switch (columnHandle.getExternalName()) {
-            case "id" -> entity.getRootId();
-            case "parent" -> entity.getParentId();
-            case "index" -> entity.getIndex();
-            case "creationDate" -> entity.getCreateDate();
-            case "lastUpdateTime" -> entity.getLastUpdateDate();
-            default -> throw new RuntimeException("Unrecognized static field " + columnHandle.getExternalName());
-        };
-
-        if (columnHandle.getDataType().getMainType() == DataType.LIST){
-            int count = 0;
-            List<Object> result = new ArrayList<>();
-            do {
-                Object currentElement = entity.getContents().get(columnHandle.getColumnKey() + "[" + count++ + "]");
-                if (currentElement == null) break;
-                result.add(currentElement);
-            } while (true);
-            return result;
-        } else
-            return entity.getContents().get(columnHandle.getColumnKey());
+            default -> throw new IllegalStateException("Unexpected value: " + columnHandle.getColumnCategory());
+        }
     }
 
     @Override
@@ -115,29 +130,44 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         String strTableId = split.getTableHandle().getTableMetaId();
         String[] s = strTableId.split("\\|");
         UUID metaClassId = UUID.fromString(s[0]);
-        GroupCondition condition;
+        Map<String,Map<String, AbstractTrinoConditionDto>> condition;
         String uniformedPath = s[1];
-        Date pointTime = null;
         if (constraint.isAll()) {
-            condition = new GroupCondition(GroupCondition.Operator.AND);
+            condition = null;
         } else {
-            CyodaColumnHandle pointTimeColumn = tableHandle.getColumn("point_time");
-            if (pointTimeColumn != null)
-                pointTime = (Date)DomainToCondition.extractSingleEquals(constraint, pointTimeColumn);
-            condition = DomainToCondition.convert(constraint, "point_time");
+            condition = new HashMap<>();
+            Map<ColumnHandle, Domain> domainMap = constraint.getDomains().get();
+            for (Map.Entry<ColumnHandle, Domain> entry : domainMap.entrySet()) {
+                Domain domain = entry.getValue();
+                CyodaColumnHandle columnHandle = (CyodaColumnHandle) entry.getKey();
+                CyodaColumnHandle.ColumnCategory columnCategory = columnHandle.getColumnCategory();
+                Map<String, AbstractTrinoConditionDto> categoryMap = condition.computeIfAbsent(columnCategory.toString(), x -> new HashMap<>());
+                AbstractTrinoConditionDto trinoCondition = DomainToCondition.createTrinoCondition(columnHandle.getConverter(), domain);
+                validatePointTimeCondition(columnCategory, columnHandle, trinoCondition);
+                categoryMap.put(columnHandle.getColumnKey(), trinoCondition);
+            }
         }
 
-        String strCondition = JodaBeanSerUtil.compact().jsonWriter().write(condition);
         String queryId = split.getQueryId();
+        List<CyodaColumnHandle> selectedFields = split.getTableHandle().getSelectedFields();
         DataRequestDto dataRequest = new DataRequestDto(
                 metaClassId,
                 split.getUserId(),
                 uniformedPath,
-                strCondition,
-                pointTime,
-                split.getTableHandle().getSelectedFields(),
-                split.getTableHandle().getSortingFields(),
-                split.getTableHandle().getLimit());
+                condition,
+                selectedFields == null ? null : selectedFields.stream()
+                        .filter(f -> f.getColumnCategory() == CyodaColumnHandle.ColumnCategory.DATA)
+                        .map(CyodaColumnHandle::getColumnKey).toList());
         return client.treeNodeClient.dataRequester.retrieveData(queryId, dataRequest).toIterable();
+    }
+
+    private static void validatePointTimeCondition(CyodaColumnHandle.ColumnCategory columnCategory, CyodaColumnHandle columnHandle, AbstractTrinoConditionDto trinoCondition) {
+        if (columnCategory == CyodaColumnHandle.ColumnCategory.SPECIAL &&
+                CyodaColumnHandle.SpecialColumn.POINT_TIME.toString().equals(columnHandle.getColumnKey()) &&
+        ((trinoCondition instanceof GroupTrinoConditionDto) || ((SimpleTrinoConditionDto) trinoCondition).getOperation() != Operation.EQUALS)
+            ){
+            String columnName = columnHandle.getColumnName();
+            throw new TrinoException(CyodaErrorCode.CYODA_UNSUPPORTED_CONDITION, "Only single value conditions are allowed for field " + columnName);
+        }
     }
 }

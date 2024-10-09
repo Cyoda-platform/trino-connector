@@ -1,0 +1,49 @@
+package com.cyoda.connector.client.treenode.dto.conditions;
+
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.List;
+
+// GroupTrinoConditionDto
+public class GroupTrinoConditionDto extends AbstractTrinoConditionDto {
+    private final Operator operator;
+    private final List<AbstractTrinoConditionDto> conditions;
+
+    @JsonCreator
+    public GroupTrinoConditionDto(
+            @JsonProperty("operator") Operator operator,
+            @JsonProperty("conditions") List<AbstractTrinoConditionDto> conditions
+    ) {
+        this.operator = operator;
+        this.conditions = conditions;
+    }
+
+    @JsonProperty
+    public Operator getOperator() {
+        return operator;
+    }
+
+    @JsonProperty
+    public List<AbstractTrinoConditionDto> getConditions() {
+        return conditions;
+    }
+
+    @Override
+    public String getType() {
+        return "group";
+    }
+
+    @Override
+    @JsonIgnore
+    public AbstractTrinoConditionDto simplify() {
+        if (conditions.size() == 1) {
+            return conditions.get(0);
+        } else return this;
+    }
+
+    public enum Operator {
+        AND, OR, NOT
+    }
+}

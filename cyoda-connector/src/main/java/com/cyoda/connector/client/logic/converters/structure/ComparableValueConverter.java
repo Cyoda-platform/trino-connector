@@ -16,6 +16,8 @@ public abstract class ComparableValueConverter<T extends Comparable<? super T>> 
     }
 
     protected abstract ColumnPredicate<T> newComparisonPredicate(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, T value);
+
+    @Override
     public abstract T fromPrestoNative(Object nativeValue);
 
     public final ColumnPredicate<T> newComparisonPredicateFromNative(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, Object nativeValue){

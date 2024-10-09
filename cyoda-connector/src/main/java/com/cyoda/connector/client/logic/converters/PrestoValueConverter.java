@@ -43,6 +43,9 @@ public interface PrestoValueConverter<T> {
     default NullableValue toNullableValue(Type type, Object value){
         return new NullableValue(type, value);
     }
+    default T fromPrestoNative(Object nativeValue){
+        throw new UnsupportedOperationException("Condition pushdown is not supported for " + getDataType());
+    }
 
     default boolean areConsecutive(T a, T b){
         return false;

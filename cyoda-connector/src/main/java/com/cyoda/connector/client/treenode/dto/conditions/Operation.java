@@ -8,13 +8,7 @@
  *   this information.
  */
 
-package com.cyoda.core.conditions;
-
-import com.google.common.collect.ImmutableMap;
-
-import java.util.Arrays;
-import java.util.Map;
-import java.util.stream.Collectors;
+package com.cyoda.connector.client.treenode.dto.conditions;
 
 public enum Operation {
     EQUALS("equals"),
@@ -94,9 +88,6 @@ public enum Operation {
         return this.value;
     }
 
-    public static final Map<String, Operation> operations = ImmutableMap.copyOf(
-            Arrays.stream(Operation.values()).collect(Collectors.toMap(Operation::getValue, e->e))
-    );
 }
 
 

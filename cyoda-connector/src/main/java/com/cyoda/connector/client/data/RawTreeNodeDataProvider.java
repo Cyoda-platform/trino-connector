@@ -2,36 +2,17 @@ package com.cyoda.connector.client.data;
 
 import com.cyoda.connector.CyodaSplit;
 import com.cyoda.connector.auth.AuthContext;
-import com.cyoda.connector.client.reporting.metaproviders.StaticTableMetadata;
 import com.cyoda.connector.client.reporting.metaproviders.StaticTableMetadata.RawEntityContentColumnDef;
 import com.cyoda.connector.client.treenode.CyodaRSocketClient;
-import com.cyoda.connector.client.treenode.DomainToCondition;
-import com.cyoda.connector.client.treenode.dto.DataRequestDto;
-import com.cyoda.connector.client.treenode.dto.EntityContentDto;
 import com.cyoda.connector.client.treenode.dto.RawEntityContentDto;
-import com.cyoda.connector.client.types.DataType;
 import com.cyoda.connector.handles.CyodaColumnHandle;
 import com.cyoda.connector.handles.CyodaTableHandle;
 import com.cyoda.connector.handles.CyodaTableMeta;
-import com.cyoda.core.conditions.GroupCondition;
-import com.cyoda.core.conditions.queryable.Equals;
-import com.cyoda.core.util.JodaBeanSerUtil;
-import com.google.common.collect.Lists;
-import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.Constraint;
-import io.trino.spi.predicate.Domain;
-import io.trino.spi.predicate.EquatableValueSet;
-import io.trino.spi.predicate.TupleDomain;
-import io.trino.spi.predicate.ValueSet;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 
 public class RawTreeNodeDataProvider extends TableDataProvider<RawEntityContentDto> {
