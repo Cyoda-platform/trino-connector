@@ -92,6 +92,6 @@ public class DoublePrestoValueConverter extends LongWrittenTypeValueConverter<Do
 
     @Override
     public Double fromOtherCyodaType(Object value, String columnName) {
-        return ((BigDecimal)value).doubleValue();
+        return ((Number) value).doubleValue();
     }
 }

@@ -92,6 +92,6 @@ public class FloatPrestoValueConverter extends LongWrittenTypeValueConverter<Flo
 
     @Override
     public Float fromOtherCyodaType(Object value, String columnName) {
-        return ((BigDecimal) value).floatValue();
+        return ((Number) value).floatValue();
     }
 }
