@@ -11,16 +11,19 @@ public class TableConfigDto {
     private final UUID metadataClassId; // link to entityName.partName on cyoda side
     private final String uniformedPath;
     private final List<FieldConfigDto> fields;
+    private final Boolean hidden;
 
     @JsonCreator
     public TableConfigDto(@JsonProperty("tableName") String tableName,
                           @JsonProperty("metadataClassId") UUID metadataClassId,
                           @JsonProperty("uniformedPath") String uniformedPath,
-                          @JsonProperty("fields") List<FieldConfigDto> fields) {
+                          @JsonProperty("fields") List<FieldConfigDto> fields,
+                          @JsonProperty("hidden") Boolean hidden) {
         this.tableName = tableName;
         this.metadataClassId = metadataClassId;
         this.uniformedPath = uniformedPath;
         this.fields = fields;
+        this.hidden = hidden;
     }
 
     @JsonProperty
@@ -41,5 +44,10 @@ public class TableConfigDto {
     @JsonProperty
     public List<FieldConfigDto> getFields() {
         return fields;
+    }
+
+    @JsonProperty
+    public Boolean getHidden() {
+        return hidden;
     }
 }
