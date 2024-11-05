@@ -11,6 +11,7 @@ public class FieldConfigDto {
     private final String fieldCategory;
     private final String dataType;
     private final Boolean isArray;
+    private final Boolean hidden;
     private final Boolean flatten;
     private final List<FieldConfigDto> arrayFields;
 
@@ -20,6 +21,7 @@ public class FieldConfigDto {
                           @JsonProperty("fieldCategory") String fieldCategory,
                           @JsonProperty("dataType") String dataType,
                           @JsonProperty("isArray") Boolean isArray,
+                          @JsonProperty("hidden") Boolean hidden,
                           @JsonProperty("flatten") Boolean flatten,
                           @JsonProperty("arrayFields") List<FieldConfigDto> arrayFields) {
         this.fieldName = fieldName;
@@ -27,6 +29,7 @@ public class FieldConfigDto {
         this.fieldCategory = fieldCategory;
         this.dataType = dataType;
         this.isArray = isArray;
+        this.hidden = hidden;
         this.flatten = flatten;
         this.arrayFields = arrayFields;
     }
@@ -50,6 +53,10 @@ public class FieldConfigDto {
     @JsonProperty
     public Boolean getArray() {
         return isArray;
+    }
+    @JsonProperty
+    public Boolean getHidden() {
+        return hidden;
     }
     @JsonProperty
     public Boolean getFlatten() {

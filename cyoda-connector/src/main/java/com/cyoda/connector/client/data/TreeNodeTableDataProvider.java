@@ -51,13 +51,19 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
             case REPORT -> throw new RuntimeException("Report field in TDB");
             case DATA -> {
                 if (columnHandle.getDataType().getMainType() == DataType.LIST){
-                    int count = 0;
-                    List<Object> result = new ArrayList<>();
-                    do {
-                        Object currentElement = entity.getContents().get(columnHandle.getColumnKey() + "[" + count++ + "]");
-                        if (currentElement == null) break;
-                        result.add(currentElement);
-                    } while (true);
+                    String keyPrefix = columnHandle.getColumnKey() + "[";
+                    Map<Integer, Object> arrayMap = new HashMap<>();
+                    entity.getContents().forEach((key, value) -> {
+                        if (key.startsWith(keyPrefix)) {
+                            arrayMap.put(Integer.parseInt(key.substring(keyPrefix.length(), key.length()-1)), value);
+                        }
+                    });
+                    if (arrayMap.isEmpty()) return new ArrayList<>();
+                    int size = arrayMap.keySet().stream().max(Integer::compareTo).get() + 1;
+                    List<Object> result = new ArrayList<>(size);
+                    for (int i = 0; i < size; i++) {
+                        result.add(arrayMap.get(i));
+                    }
                     return result;
                 } else
                     return entity.getContents().get(columnHandle.getColumnKey());
