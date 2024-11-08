@@ -6,12 +6,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 // SimpleTrinoConditionDto
 public class SimpleTrinoConditionDto extends AbstractTrinoConditionDto {
     private final Operation operation;
-    private final Object value;
+    private final String value;
 
     @JsonCreator
     public SimpleTrinoConditionDto(
             @JsonProperty("operation") Operation operation,
-            @JsonProperty("value") Object value
+            @JsonProperty("value") String value
     ) {
         this.operation = operation;
         this.value = value;
@@ -23,7 +23,7 @@ public class SimpleTrinoConditionDto extends AbstractTrinoConditionDto {
     }
 
     @JsonProperty
-    public Object getValue() {
+    public String getValue() {
         return value;
     }
 

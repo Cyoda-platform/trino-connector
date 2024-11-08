@@ -46,6 +46,9 @@ public interface PrestoValueConverter<T> {
     default T fromPrestoNative(Object nativeValue){
         throw new UnsupportedOperationException("Condition pushdown is not supported for " + getDataType());
     }
+    default String toStringFromNative(Object nativeValue){
+        return fromPrestoNative(nativeValue).toString();
+    }
 
     default boolean areConsecutive(T a, T b){
         return false;
