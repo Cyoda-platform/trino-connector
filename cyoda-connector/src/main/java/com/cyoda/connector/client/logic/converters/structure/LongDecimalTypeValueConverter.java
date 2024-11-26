@@ -32,6 +32,11 @@ public abstract class LongDecimalTypeValueConverter<T extends Comparable<? super
     }
 
     @Override
+    public String toStringFromNative(Object nativeValue) {
+        return fromPrestoNative(nativeValue).toString();
+    }
+
+    @Override
     protected ColumnPredicate<T> newComparisonPredicate(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, T value) {
         BigInteger bdValue = toInt128(value).toBigInteger();
         BigInteger minValue = Decimals.MIN_UNSCALED_DECIMAL.toBigInteger();
