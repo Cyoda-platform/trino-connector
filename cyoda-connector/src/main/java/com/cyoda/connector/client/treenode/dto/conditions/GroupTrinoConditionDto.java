@@ -3,8 +3,10 @@ package com.cyoda.connector.client.treenode.dto.conditions;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.common.base.Joiner;
 
 import java.util.List;
+import java.util.StringJoiner;
 
 // GroupTrinoConditionDto
 public class GroupTrinoConditionDto extends AbstractTrinoConditionDto {
@@ -45,5 +47,10 @@ public class GroupTrinoConditionDto extends AbstractTrinoConditionDto {
 
     public enum Operator {
         AND, OR, NOT
+    }
+
+    @Override
+    public String toString() {
+        return "(" + Joiner.on(operator.toString()).join(conditions) + ")";
     }
 }

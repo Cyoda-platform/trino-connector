@@ -61,6 +61,11 @@ public class DataRequestDto {
         map.put("metaClassId", metaClassId.toString());
         map.put("userId", userId);
         map.put("path", path);
+        for (Map.Entry<String,Map<String,AbstractTrinoConditionDto>> entry1 : condition.entrySet()) {
+            for (Map.Entry<String,AbstractTrinoConditionDto> entry2 : entry1.getValue().entrySet()) {
+                map.put(entry1.getKey() + "." + entry2.getKey(), entry2.getValue().toString());
+            }
+        }
         return map;
     }
 }

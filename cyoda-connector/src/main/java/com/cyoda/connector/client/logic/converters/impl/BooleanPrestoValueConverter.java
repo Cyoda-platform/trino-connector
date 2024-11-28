@@ -41,6 +41,11 @@ public class BooleanPrestoValueConverter extends ComparableValueConverter<Boolea
     }
 
     @Override
+    public String toStringFromNative(Object nativeValue) {
+        return nativeValue.toString();
+    }
+
+    @Override
     protected ColumnPredicate<Boolean> buildInListPredicate(CyodaColumnHandle column, SortedSet<Boolean> values) {
         // IN (true, false) predicates can be simplified to IS NOT NULL.
         if (values.size() > 1) {

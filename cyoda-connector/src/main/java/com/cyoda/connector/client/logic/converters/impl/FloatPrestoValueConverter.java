@@ -41,6 +41,10 @@ public class FloatPrestoValueConverter extends LongWrittenTypeValueConverter<Flo
     public long toLong(@Nonnull Float value) {
         return floatToRawIntBits(value);
     }
+    @Override
+    public String toStringFromNative(Object nativeValue) {
+        return nativeValue.toString();
+    }
 
     @Nonnull
     @Override
