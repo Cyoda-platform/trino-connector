@@ -35,6 +35,11 @@ public class BytePrestoValueConverter extends LongComparedTypeValueConverter<Byt
         return value.longValue();
     }
 
+    @Override
+    public String toStringFromNative(Object nativeValue) {
+        return nativeValue.toString();
+    }
+
     @Nonnull
     @Override
     public Byte fromLong(long value) {

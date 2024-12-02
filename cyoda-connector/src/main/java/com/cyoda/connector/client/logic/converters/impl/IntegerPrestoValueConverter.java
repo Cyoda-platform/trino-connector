@@ -35,6 +35,10 @@ public class IntegerPrestoValueConverter extends LongComparedTypeValueConverter<
         return value.longValue();
     }
 
+    @Override
+    public String toStringFromNative(Object nativeValue) {
+        return nativeValue.toString();
+    }
     @Nonnull
     @Override
     public Integer fromLong(long value) {
