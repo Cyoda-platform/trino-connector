@@ -51,7 +51,8 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
             case REPORT -> throw new RuntimeException("Report field in TDB");
             case DATA -> {
                 if (columnHandle.getDataType().getMainType() == DataType.LIST){
-                    String keyPrefix = columnHandle.getColumnKey() + "[";
+                    String columnKey = columnHandle.getColumnKey();
+                    String keyPrefix = columnKey.substring(0, columnKey.length()-2);
                     Map<Integer, Object> arrayMap = new HashMap<>();
                     entity.getContents().forEach((key, value) -> {
                         if (key.startsWith(keyPrefix)) {

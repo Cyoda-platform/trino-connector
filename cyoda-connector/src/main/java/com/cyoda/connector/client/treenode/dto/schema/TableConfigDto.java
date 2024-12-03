@@ -12,18 +12,21 @@ public class TableConfigDto {
     private final String uniformedPath;
     private final List<FieldConfigDto> fields;
     private final Boolean hidden;
+    private final Long modelUpdateDate;
 
     @JsonCreator
     public TableConfigDto(@JsonProperty("tableName") String tableName,
                           @JsonProperty("metadataClassId") UUID metadataClassId,
                           @JsonProperty("uniformedPath") String uniformedPath,
                           @JsonProperty("fields") List<FieldConfigDto> fields,
-                          @JsonProperty("hidden") Boolean hidden) {
+                          @JsonProperty("hidden") Boolean hidden,
+                          @JsonProperty("modelUpdateDate") Long modelUpdateDate) {
         this.tableName = tableName;
         this.metadataClassId = metadataClassId;
         this.uniformedPath = uniformedPath;
         this.fields = fields;
         this.hidden = hidden;
+        this.modelUpdateDate = modelUpdateDate;
     }
 
     @JsonProperty
@@ -49,5 +52,10 @@ public class TableConfigDto {
     @JsonProperty
     public Boolean getHidden() {
         return hidden;
+    }
+
+    @JsonProperty
+    public Long getModelUpdateDate() {
+        return modelUpdateDate;
     }
 }
