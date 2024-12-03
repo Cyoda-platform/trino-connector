@@ -31,4 +31,9 @@ public class SimpleTrinoConditionDto extends AbstractTrinoConditionDto {
     public String getType() {
         return "simple";
     }
+
+    @Override
+    public String toString() {
+        return "["+ operation.getValue() +" "+ value +"]";
+    }
 }

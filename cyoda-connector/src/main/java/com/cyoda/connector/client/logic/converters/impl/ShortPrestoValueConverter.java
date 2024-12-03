@@ -35,6 +35,10 @@ public class ShortPrestoValueConverter extends LongComparedTypeValueConverter<Sh
         return value.longValue();
     }
 
+    @Override
+    public String toStringFromNative(Object nativeValue) {
+        return nativeValue.toString();
+    }
     @Nonnull
     @Override
     public Short fromLong(long value) {

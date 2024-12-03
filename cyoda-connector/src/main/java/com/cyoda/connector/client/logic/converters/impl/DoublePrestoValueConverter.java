@@ -39,6 +39,11 @@ public class DoublePrestoValueConverter extends LongWrittenTypeValueConverter<Do
         return Double.doubleToLongBits(value);
     }
 
+    @Override
+    public String toStringFromNative(Object nativeValue) {
+        return nativeValue.toString();
+    }
+
     @Nonnull
     public Double fromLong(long value) {
         return Double.longBitsToDouble(value);

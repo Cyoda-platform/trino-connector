@@ -47,6 +47,10 @@ public class LongPrestoValueConverter extends LongComparedTypeValueConverter<Lon
         return value;
     }
 
+    @Override
+    public String toStringFromNative(Object nativeValue) {
+        return nativeValue.toString();
+    }
     @Nonnull
     @Override
     public Long fromLong(long value) {
