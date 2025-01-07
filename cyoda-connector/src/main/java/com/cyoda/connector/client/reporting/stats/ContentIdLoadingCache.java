@@ -11,6 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -70,19 +71,31 @@ public class ContentIdLoadingCache<K, V> implements LoadingCache<K, V> {
     }
 
     @Override
+    public Map<K, V> getAll(Iterable<? extends K> keys, Function<? super Set<? extends K>, ? extends Map<? extends K, ? extends V>> mappingFunction) {
+        ensureKeysMapped(keys);
+        return nested.getAll(keys, mappingFunction);
+    }
+
+    @Override
     public @NonNull Map<@NonNull K, @NonNull V> getAll(@NonNull Iterable<? extends @NonNull K> keys) {
         ensureKeysMapped(keys);
         return nested.getAll(keys);
     }
 
     @Override
-    public void refresh(@NonNull K key) {
-        ensureKeyMapped(key);
-        nested.refresh(key);
+    public CompletableFuture<V> refresh(K k) {
+        ensureKeyMapped(k);
+        return nested.refresh(k);
     }
 
     @Override
-    public @Nullable V getIfPresent(@NonNull Object key) {
+    public CompletableFuture<Map<K, V>> refreshAll(Iterable<? extends K> keys) {
+        ensureKeysMapped(keys);
+        return nested.refreshAll(keys);
+    }
+
+    @Override
+    public @Nullable V getIfPresent(@NonNull K key) {
         return nested.getIfPresent(key);
     }
 
@@ -93,7 +106,7 @@ public class ContentIdLoadingCache<K, V> implements LoadingCache<K, V> {
     }
 
     @Override
-    public @NonNull Map<@NonNull K, @NonNull V> getAllPresent(@NonNull Iterable<@NonNull ?> keys) {
+    public Map<K, V> getAllPresent(Iterable<? extends K> keys) {
         return nested.getAllPresent(keys);
     }
 
@@ -110,13 +123,13 @@ public class ContentIdLoadingCache<K, V> implements LoadingCache<K, V> {
     }
 
     @Override
-    public void invalidate(@NonNull Object key) {
+    public void invalidate(@NonNull K key) {
         nested.invalidate(key);
         removeCacheKey(key);
     }
 
     @Override
-    public void invalidateAll(@NonNull Iterable<@NonNull ?> keys) {
+    public void invalidateAll(Iterable<? extends K> keys) {
         nested.invalidateAll(keys);
         for (Object key : keys){
             removeCacheKey(key);
