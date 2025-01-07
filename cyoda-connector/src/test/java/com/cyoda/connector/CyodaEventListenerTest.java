@@ -26,38 +26,31 @@ import io.trino.spi.eventlistener.QueryStatistics;
 import io.trino.spi.eventlistener.SplitCompletedEvent;
 import io.trino.spi.eventlistener.SplitStatistics;
 import com.google.common.collect.ImmutableMap;
-import org.jeasy.random.EasyRandom;
-import org.jeasy.random.EasyRandomParameters;
+import org.instancio.Instancio;
+import org.instancio.Model;
+import org.instancio.Select;
+import org.instancio.generator.Generator;
 import org.testng.annotations.Test;
 
-import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import static com.cyoda.connector.CyodaEventListener.*;
-import static org.jeasy.random.FieldPredicates.*;
 import static org.mockito.Mockito.*;
 
 public class CyodaEventListenerTest {
 
-    EasyRandom baseRandom = new EasyRandom();
-    EasyRandom easyRandom = new EasyRandom(
-            new EasyRandomParameters()
-                    .randomize(Optional.class,() -> Optional.of(baseRandom.nextObject(String.class)))
-                    .randomize(ofType(Optional.class).and(inClass(QueryStatistics.class)),
-                            ()->Optional.of(baseRandom.nextObject(Duration.class)))
-                    .randomize(named("planNodeStatsAndCosts").and(ofType(Optional.class)).and(inClass(QueryStatistics.class)),
-                            ()->Optional.of(baseRandom.nextObject(String.class)))
-                    .randomize(ofType(Optional.class).and(inClass(SplitStatistics.class)),
-                            ()->Optional.of(baseRandom.nextObject(Duration.class)))
-    );
+
+    private final Model<QueryMetadata> queryMetadataModel = Instancio.of(QueryMetadata.class)
+            .supply(Select.all(Supplier.class), (Generator<Supplier<Optional<String>>>) random -> () -> Optional.of("GeneratedValue"+random.digits(2)))
+            .toModel();
 
     @Test
     public void testQueryCreated_DebugDisabled() {
         Map<String,String> config = setupConfig(false,false,false,false);
 
         QueryCreatedEvent mockQueryCreatedEvent = mock(QueryCreatedEvent.class);
-        QueryMetadata randomMetaData = easyRandom.nextObject(QueryMetadata.class);
 
         SupplierLogger mockLogger = mock(SupplierLogger.class);
         when(mockLogger.isDebugEnabled()).thenReturn(true);
@@ -94,8 +87,9 @@ public class CyodaEventListenerTest {
     }
 
     private void doQueryCreated(Map<String, String> config, int debugCalled) {
+
         QueryCreatedEvent mockQueryCreatedEvent = mock(QueryCreatedEvent.class);
-        QueryMetadata randomMetaData = easyRandom.nextObject(QueryMetadata.class);
+        QueryMetadata randomMetaData = Instancio.create(queryMetadataModel);
         when(mockQueryCreatedEvent.getMetadata()).thenReturn(randomMetaData);
 
         SupplierLogger mockLogger = mock(SupplierLogger.class);
@@ -139,7 +133,7 @@ public class CyodaEventListenerTest {
     private void doSplitCompleted(Map<String, String> config, boolean debugEnabled, int debugCalled) {
         SplitCompletedEvent mockSplitCompletedEvent = mock(SplitCompletedEvent.class);
         when(mockSplitCompletedEvent.getQueryId()).thenReturn("query-id");
-        SplitStatistics randomSplitStatistics = easyRandom.nextObject(SplitStatistics.class);
+        SplitStatistics randomSplitStatistics = Instancio.create(SplitStatistics.class);
         when(mockSplitCompletedEvent.getStatistics()).thenReturn(randomSplitStatistics);
 
         SupplierLogger mockLogger = mock(SupplierLogger.class);
@@ -165,7 +159,7 @@ public class CyodaEventListenerTest {
         when(mockMetaData.getQueryId()).thenReturn("my-query-id");
         when(mockQueryCompletedEvent.getMetadata()).thenReturn(mockMetaData);
 
-        QueryFailureInfo randomeQueryFailureInfo = easyRandom.nextObject(QueryFailureInfo.class);
+        QueryFailureInfo randomeQueryFailureInfo = Instancio.create(QueryFailureInfo.class);
         when(mockQueryCompletedEvent.getFailureInfo()).thenReturn(Optional.of(randomeQueryFailureInfo));
 
         SupplierLogger mockLogger = mock(SupplierLogger.class);
@@ -213,7 +207,7 @@ public class CyodaEventListenerTest {
         when(mockQueryCompletedEvent.getMetadata()).thenReturn(mockMetaData);
 
         when(mockQueryCompletedEvent.getFailureInfo()).thenReturn(Optional.empty());
-        when(mockQueryCompletedEvent.getStatistics()).thenReturn(easyRandom.nextObject(QueryStatistics.class));
+        when(mockQueryCompletedEvent.getStatistics()).thenReturn(Instancio.create(QueryStatistics.class));
 
         SupplierLogger mockLogger = mock(SupplierLogger.class);
         when(mockLogger.isDebugEnabled()).thenReturn(true);
@@ -236,9 +230,9 @@ public class CyodaEventListenerTest {
         when(mockMetaData.getQueryId()).thenReturn("my-query-id");
         when(mockQueryCompletedEvent.getMetadata()).thenReturn(mockMetaData);
 
-        QueryFailureInfo randomeQueryFailureInfo = easyRandom.nextObject(QueryFailureInfo.class);
+        QueryFailureInfo randomeQueryFailureInfo = Instancio.create(QueryFailureInfo.class);
         when(mockQueryCompletedEvent.getFailureInfo()).thenReturn(Optional.of(randomeQueryFailureInfo));
-        when(mockQueryCompletedEvent.getStatistics()).thenReturn(easyRandom.nextObject(QueryStatistics.class));
+        when(mockQueryCompletedEvent.getStatistics()).thenReturn(Instancio.create(QueryStatistics.class));
 
         SupplierLogger mockLogger = mock(SupplierLogger.class);
         when(mockLogger.isDebugEnabled()).thenReturn(true);
