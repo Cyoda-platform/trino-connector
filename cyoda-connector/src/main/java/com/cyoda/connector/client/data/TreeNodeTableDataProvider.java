@@ -70,11 +70,7 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
                     return entity.getContents().get(columnHandle.getColumnKey());
             }
             case ROOT -> {
-                return switch (columnHandle.getColumnKey()) {
-                    case "creationDate" -> entity.getCreateDate();
-                    case "lastUpdateTime" -> entity.getLastUpdateDate();
-                    default -> throw new RuntimeException("Unrecognized root field " + columnHandle.getColumnKey());
-                };
+                return entity.getRootFields().get(columnHandle.getColumnKey());
             }
             case SPECIAL -> {
                 return switch (CyodaColumnHandle.SpecialColumn.valueOf(columnHandle.getColumnKey())){
