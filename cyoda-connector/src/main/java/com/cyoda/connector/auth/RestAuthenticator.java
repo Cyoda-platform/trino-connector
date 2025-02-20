@@ -45,7 +45,7 @@ public class RestAuthenticator {
         HttpHeaders sendHeader = RestAuthenticator.standardHeader();
         sendHeader.add("X-Requested-With", "XMLHttpRequest");
         sendHeader.add("Authorization", "Bearer " + userToken);
-        HttpEntity<?> requestEntity = new HttpEntity<>(HEADERS);
+        HttpEntity<?> requestEntity = new HttpEntity<>(sendHeader);
         ResponseEntity<String> response =
                 authRestTemplate.getRestTemplate()
                         .exchange(testTokenUri, HttpMethod.GET, requestEntity, String.class, uriParams);
