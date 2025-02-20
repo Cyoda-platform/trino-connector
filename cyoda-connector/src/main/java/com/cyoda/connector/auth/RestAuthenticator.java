@@ -10,7 +10,9 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -40,15 +42,15 @@ public class RestAuthenticator {
         return headers;
     }
     static @NotNull BasicPrincipal parseProvidedToken(AuthRestTemplate authRestTemplate, String testTokenUri, String userToken) {
-        Map<String, String> uriParams = new HashMap<>();
-        uriParams.put(JWT_PARAM, userToken);
+        URI tokenUriWithParam = UriComponentsBuilder.fromUriString(testTokenUri)
+                .queryParam(JWT_PARAM, userToken).build().toUri();
         HttpHeaders sendHeader = RestAuthenticator.standardHeader();
         sendHeader.add("X-Requested-With", "XMLHttpRequest");
         sendHeader.add("Authorization", "Bearer " + userToken);
         HttpEntity<?> requestEntity = new HttpEntity<>(sendHeader);
         ResponseEntity<String> response =
                 authRestTemplate.getRestTemplate()
-                        .exchange(testTokenUri, HttpMethod.GET, requestEntity, String.class, uriParams);
+                        .exchange(tokenUriWithParam, HttpMethod.GET, requestEntity, String.class);
         if ( response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
             Matcher matcher = USER_ID_PATTERN.matcher(response.getBody());
             if (matcher.find()) {
