@@ -17,7 +17,6 @@
 
 package com.cyoda.connector.auth;
 
-import com.cyoda.connector.client.AuthRestTemplate;
 import com.cyoda.connector.logging.SupplierLogger;
 import io.trino.spi.security.AccessDeniedException;
 import io.trino.spi.security.BasicPrincipal;
@@ -25,56 +24,53 @@ import io.trino.spi.security.PasswordAuthenticator;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
 import java.security.Principal;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import static java.util.Objects.requireNonNull;
 
-public class CyodaAuthenticator implements PasswordAuthenticator {
+public class CyodaAuthenticator extends RestAuthenticator implements PasswordAuthenticator {
 
     private static final SupplierLogger LOG = SupplierLogger.get(CyodaAuthenticator.class);
-    private static final HttpHeaders HEADERS = standardHeader();
-    static {
-        HEADERS.add("X-Requested-With", "XMLHttpRequest");
-    }
 
-    private final AuthRestTemplate authRestTemplate;
+    private static final Pattern UUID_PATTERN = Pattern.compile(
+            UUID_PATTERN_STRING
+    );
+
     private final URI loginUri;
+    private final String testTokenUrl;
 
     public CyodaAuthenticator(Map<String, String> config) {
-        this.authRestTemplate = new AuthRestTemplate(config);
-            this.loginUri = URI.create(
+        super(config);
+        this.loginUri = URI.create(
                     requireNonNull(config.get("cyoda.login.uri"), "Property cyoda.login.uri is required in password-authenticator.properties"));
+        this.testTokenUrl = config.get("cyoda.test-token.uri");
     }
 
     @Override
     public Principal createAuthenticatedPrincipal(String user, String password) {
-
-        Login payload = new Login(user,password);
-        HttpEntity<Login> requestEntity = new HttpEntity<>(payload, HEADERS);
-        ResponseEntity<AuthContextWithToken> response =
-                authRestTemplate.getRestTemplate()
-                        .exchange(loginUri, HttpMethod.POST, requestEntity, AuthContextWithToken.class);
-        if ( response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-            return new BasicPrincipal(response.getBody().getUserId());
+        if (testTokenUrl!= null && (user == null || user.isEmpty() || UUID_PATTERN.matcher(user).matches())) { // hijack user/password to deliver token
+            return parseProvidedToken(authRestTemplate, testTokenUrl, password);
         } else {
-            LOG.warn("access denied to "+user+" with reason: "+response.toString());
-            throw new AccessDeniedException("Unauthorized");
+            Login payload = new Login(user, password);
+            HttpEntity<Login> requestEntity = new HttpEntity<>(payload, HEADERS);
+            ResponseEntity<AuthContextWithToken> response =
+                    authRestTemplate.getRestTemplate()
+                            .exchange(loginUri, HttpMethod.POST, requestEntity, AuthContextWithToken.class);
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                return new BasicPrincipal(response.getBody().getUserId());
+            } else {
+                LOG.warn("access denied to " + user + " with reason: " + response.toString());
+                throw new AccessDeniedException("Unauthorized");
+            }
         }
-    }
-
-    private static HttpHeaders standardHeader() {
-        HttpHeaders headers = new HttpHeaders();
-        headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        return headers;
     }
 
     static class Login {
