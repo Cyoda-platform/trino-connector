@@ -24,8 +24,10 @@ import com.cyoda.connector.auth.CyodaAuthenticatorFactory;
 //import com.cyoda.connector.client.types.BigIntegerDistinctFromOperator;
 //import com.cyoda.connector.client.types.BigIntegerOperators;
 //import com.cyoda.connector.client.types.BigIntegerType;
+import com.cyoda.connector.auth.CyodaTokenAuthFactory;
 import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
+import io.trino.spi.security.HeaderAuthenticatorFactory;
 import io.trino.spi.security.PasswordAuthenticatorFactory;
 import io.trino.spi.eventlistener.EventListenerFactory;
 import com.google.common.collect.ImmutableList;
@@ -70,5 +72,10 @@ public class CyodaPlugin implements Plugin {
                 .build();
     }
 
-
+    @Override
+    public Iterable<HeaderAuthenticatorFactory> getHeaderAuthenticatorFactories() {
+        return ImmutableList.<HeaderAuthenticatorFactory>builder()
+                .add(new CyodaTokenAuthFactory())
+                .build();
+    }
 }
