@@ -53,7 +53,9 @@ public enum DataType implements IDataType {
     INTEGER         (Integer.class,         StandardTypes.INTEGER,      true, 0),
     BIG_DECIMAL     (BigDecimal.class,      StandardTypes.DECIMAL,      true, 0,
             BigDecimalPrestoValueConverter.PRECISION, BigDecimalPrestoValueConverter.SCALE),
+    UNBOUND_DECIMAL (BigDecimal.class,      StandardTypes.VARCHAR,      true, 0),
     BIG_INTEGER     (BigInteger.class,      StandardTypes.DECIMAL,      true, 0),
+    UNBOUND_INTEGER (BigInteger.class,      StandardTypes.VARCHAR,      true, 0),
     BOOLEAN         (Boolean.class,         StandardTypes.BOOLEAN,      true, 0),
     LOCAL_DATE      (LocalDate.class,       StandardTypes.DATE,         true, 0),
     LOCAL_DATE_TIME (LocalDateTime.class,   StandardTypes.TIMESTAMP,    true, 0),
@@ -120,7 +122,8 @@ public enum DataType implements IDataType {
 
     public static final Map<Class<?>, DataType> objectClassToDataType = ImmutableMap.copyOf(
             Arrays.stream(DataType.values())
-                    .filter(it -> it.javaType != null)
+                    // for report BigDecimal and BigInteger should prioritize unbound types, because there is no way to ensure right capacity for that application
+                    .filter(it -> it.javaType != null && it != BIG_DECIMAL && it != BIG_INTEGER)
                     .filter(it -> it != TIME_UUID_TYPE)
                     .collect(Collectors.toMap(it -> it.javaType, it -> it))
     );

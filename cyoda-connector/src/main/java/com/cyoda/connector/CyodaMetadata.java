@@ -48,6 +48,8 @@ import io.trino.spi.predicate.TupleDomain;
 import javax.annotation.Nonnull;
 
 import jakarta.inject.Inject;
+import org.jetbrains.annotations.Nullable;
+
 import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -159,11 +161,10 @@ public class CyodaMetadata implements ConnectorMetadata {
     }
 
     @Override
-    public ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName) {
+    public @Nullable ConnectorTableHandle getTableHandle(ConnectorSession session, SchemaTableName tableName, Optional<ConnectorTableVersion> startVersion, Optional<ConnectorTableVersion> endVersion) {
         Map<SchemaTableName, CyodaTableHandle> schemaMap = getTableHandleMap(session);
-        return schemaMap.get(tableName);
+        return schemaMap.get(tableName).withoutConstraint();
     }
-
 
     @Override
     public void truncateTable(ConnectorSession session, ConnectorTableHandle tableHandle) {

@@ -67,6 +67,20 @@ public class CyodaTableHandle implements ConnectorTableHandle {
                 this.limit
         );
     }
+    public CyodaTableHandle withoutConstraint() {
+        return new CyodaTableHandle(
+                this.schemaName,
+                this.tableName,
+                this.tableType,
+                this.tableMetaId,
+                this.createDate,
+                this.lastUpdateDate,
+                TupleDomain.all(),
+                this.selectedFields,
+                this.sortingFields,
+                this.limit
+        );
+    }
 
 
     @JsonProperty

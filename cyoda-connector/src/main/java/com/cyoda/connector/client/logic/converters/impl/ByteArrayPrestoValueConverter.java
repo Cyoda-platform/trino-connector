@@ -24,6 +24,7 @@ import io.airlift.slice.Slices;
 
 import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
+import java.util.Base64;
 
 public class ByteArrayPrestoValueConverter extends SliceUncomparableValueConverter<byte[]> {
     public ByteArrayPrestoValueConverter() {
@@ -59,5 +60,15 @@ public class ByteArrayPrestoValueConverter extends SliceUncomparableValueConvert
             }
         }
         return true;
+    }
+
+    @Override
+    public byte[] fromOtherCyodaType(Object value, String columnName) {
+        return Base64.getDecoder().decode((String) value);
+    }
+
+    @Override
+    public String toStringFromNative(Object nativeValue) {
+        return Base64.getEncoder().encodeToString(fromSlice((Slice)nativeValue));
     }
 }
