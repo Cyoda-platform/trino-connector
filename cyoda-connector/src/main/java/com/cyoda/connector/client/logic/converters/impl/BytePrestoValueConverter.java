@@ -61,5 +61,8 @@ public class BytePrestoValueConverter extends LongComparedTypeValueConverter<Byt
         return value.toString();
     }
 
-
+    @Override
+    public Byte fromOtherCyodaType(Object value, String columnName) {
+        return ((Integer) value).byteValue();
+    }
 }

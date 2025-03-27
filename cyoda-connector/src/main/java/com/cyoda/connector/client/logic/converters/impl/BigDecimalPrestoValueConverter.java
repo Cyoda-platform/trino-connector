@@ -32,6 +32,7 @@ import static java.math.RoundingMode.UNNECESSARY;
 
 public class BigDecimalPrestoValueConverter extends LongDecimalTypeValueConverter<BigDecimal> {
 
+    //TODO this datatype can be improved whenever following ticked would be resolved: https://github.com/trinodb/trino/issues/2274
     public static final int SCALE = 18;
     public static final int PRECISION = Decimals.MAX_PRECISION;
     private static final DecimalType DECIMAL_TYPE = DecimalType.createDecimalType(PRECISION, SCALE);
@@ -45,11 +46,12 @@ public class BigDecimalPrestoValueConverter extends LongDecimalTypeValueConverte
 
     @Override
     protected Int128 toInt128(BigDecimal value) {
-        if (value.scale() > SCALE){
+        BigDecimal trimmedValue = value.stripTrailingZeros();
+        if (trimmedValue.scale() > SCALE){
             throw new IllegalArgumentException(String.format("Value %s of a BigDecimal field has higher scale (%s) than maximum of %s",
-                    value, value.scale(), SCALE));
+                    trimmedValue, trimmedValue.scale(), SCALE));
         }
-        BigDecimal rescaled = value.setScale(SCALE, UNNECESSARY);
+        BigDecimal rescaled = trimmedValue.setScale(SCALE, UNNECESSARY);
         return Int128.valueOf(rescaled.unscaledValue());
     }
 

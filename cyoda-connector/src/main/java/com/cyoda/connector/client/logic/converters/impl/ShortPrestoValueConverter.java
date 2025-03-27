@@ -60,4 +60,8 @@ public class ShortPrestoValueConverter extends LongComparedTypeValueConverter<Sh
         return value.toString();
     }
 
+    @Override
+    public Short fromOtherCyodaType(Object value, String columnName) {
+        return ((Integer)value).shortValue();
+    }
 }

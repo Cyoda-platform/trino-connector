@@ -3,7 +3,10 @@ package com.cyoda.connector.client.logic.converters.structure;
 import com.cyoda.connector.client.logic.ColumnPredicate;
 import com.cyoda.connector.client.types.IDataType;
 import com.cyoda.connector.handles.CyodaColumnHandle;
+import io.airlift.slice.Slice;
+import io.airlift.slice.Slices;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -20,6 +23,17 @@ public abstract class StringTypeValueConverter<T extends Comparable<? super T>> 
     @Override
     public String stringify(T value) {
         return "\"" + toStr(value) + "\"";
+    }
+
+    @Override
+    public Slice toSlice(@Nonnull T value) {
+        return Slices.utf8Slice(toStr(value));
+    }
+
+    @Nonnull
+    @Override
+    public T fromSlice(Slice value) {
+        return fromStr(value.toStringUtf8());
     }
 
     @Override

@@ -59,6 +59,7 @@ public class YearMonthPrestoValueConverter extends LongComparedTypeValueConverte
 
     @Override
     public YearMonth fromOtherCyodaType(Object value, String columnName) {
-        return YearMonth.parse((String)value, DateTimeFormatter.ISO_DATE);
+        String[] split = ((String)value).split("-");
+        return YearMonth.of(Integer.parseInt(split[0]), Integer.parseInt(split[1]));
     }
 }
