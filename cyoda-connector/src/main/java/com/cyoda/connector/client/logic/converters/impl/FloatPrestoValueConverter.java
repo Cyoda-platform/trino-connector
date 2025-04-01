@@ -25,8 +25,6 @@ import com.cyoda.connector.handles.CyodaColumnHandle;
 import javax.annotation.Nonnull;
 import jakarta.inject.Inject;
 
-import java.math.BigDecimal;
-
 import static java.lang.Float.floatToRawIntBits;
 import static java.lang.Float.intBitsToFloat;
 
@@ -38,18 +36,19 @@ public class FloatPrestoValueConverter extends LongWrittenTypeValueConverter<Flo
     }
 
     @Override
-    public long toLong(@Nonnull Float value) {
-        return floatToRawIntBits(value);
+    public Long toLong(@Nonnull Float value) {
+        return (long) floatToRawIntBits(value);
     }
+
     @Override
-    public String toStringFromNative(Object nativeValue) {
-        return nativeValue.toString();
+    public Float fromPrestoNative(Object nativeValue) {
+        return (Float) nativeValue;
     }
 
     @Nonnull
     @Override
-    public Float fromLong(long value) {
-        return intBitsToFloat((int)value);
+    public Float fromLong(Long value) {
+        return intBitsToFloat(value.intValue());
     }
 
     @Override

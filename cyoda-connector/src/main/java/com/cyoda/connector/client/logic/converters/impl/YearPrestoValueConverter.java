@@ -31,14 +31,14 @@ public class YearPrestoValueConverter extends LongComparedTypeValueConverter<Yea
     }
 
     @Override
-    public long toLong(@Nonnull Year value) {
-        return value.getValue();
+    public Long toLong(@Nonnull Year value) {
+        return (long) value.getValue();
     }
 
     @Nonnull
     @Override
-    public Year fromLong(long value) {
-        return Year.of((int)value);
+    public Year fromLong(Long value) {
+        return Year.of(value.intValue());
     }
 
     @Override

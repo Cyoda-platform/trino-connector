@@ -24,7 +24,6 @@ import javax.annotation.Nonnull;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
 
 public class YearMonthPrestoValueConverter extends LongComparedTypeValueConverter<YearMonth> {
 
@@ -37,13 +36,13 @@ public class YearMonthPrestoValueConverter extends LongComparedTypeValueConverte
     }
 
     @Override
-    public long toLong(@Nonnull YearMonth value) {
+    public Long toLong(@Nonnull YearMonth value) {
         return value.atEndOfMonth().toEpochDay();
     }
 
     @Nonnull
     @Override
-    public YearMonth fromLong(long value) {
+    public YearMonth fromLong(Long value) {
         return YearMonth.from(LocalDate.ofEpochDay(value));
     }
 

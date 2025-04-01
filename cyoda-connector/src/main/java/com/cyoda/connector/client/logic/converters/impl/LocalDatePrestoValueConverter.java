@@ -33,13 +33,13 @@ public class LocalDatePrestoValueConverter extends LongComparedTypeValueConverte
     }
 
     @Override
-    public long toLong(@Nonnull LocalDate value) {
+    public Long toLong(@Nonnull LocalDate value) {
         return value.toEpochDay();
     }
 
     @Nonnull
     @Override
-    public LocalDate fromLong(long value) {
+    public LocalDate fromLong(Long value) {
         return LocalDate.ofEpochDay(value);
     }
 

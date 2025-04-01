@@ -41,8 +41,8 @@ public class DatePrestoValueConverter extends TimestampTypeValueConverter<Date> 
     }
 
     @Override
-    public String toStringFromNative(Object nativeValue) {
-        return fromPrestoNative(nativeValue).toInstant().toString();
+    public String stringify(Date value) {
+        return value.toInstant().toString();
     }
 
     @Override

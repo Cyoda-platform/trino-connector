@@ -22,7 +22,7 @@ public abstract class StringTypeValueConverter<T extends Comparable<? super T>> 
 
     @Override
     public String stringify(T value) {
-        return "\"" + toStr(value) + "\"";
+        return toStr(value);
     }
 
     @Override

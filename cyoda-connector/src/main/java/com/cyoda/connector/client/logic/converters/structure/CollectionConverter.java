@@ -1,6 +1,9 @@
 package com.cyoda.connector.client.logic.converters.structure;
 
+import com.cyoda.connector.client.treenode.dto.conditions.AbstractTrinoConditionDto;
+import com.cyoda.connector.client.treenode.dto.conditions.Operation;
 import com.cyoda.connector.client.types.DataType;
+import io.trino.spi.block.ArrayBlock;
 import io.trino.spi.block.ArrayBlockBuilder;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.type.ArrayType;
@@ -35,5 +38,12 @@ public abstract class CollectionConverter<T extends Collection<E>, E> extends Mu
         ((ArrayBlockBuilder) builder).buildEntry(elementBuilder -> value.forEach(element -> {
             elementConverter.writeCyodaNativeFromCollection(elType, elementBuilder, element, getColumnName());
     }));
+    }
+
+    @Override
+    public AbstractTrinoConditionDto toCondition(Operation operation, Object nativeValue) {
+        ArrayBlock block = (ArrayBlock) nativeValue;
+        System.out.println(block.toString());
+        return null;
     }
 }

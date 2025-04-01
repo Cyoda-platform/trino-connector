@@ -17,11 +17,9 @@ public class DomainToCondition {
         // Utility class
     }
 
-    private static String convert(PrestoValueConverter<?> converter, Optional<Object> value){
-        return converter.toStringFromNative(value.get());
-    }
-    private static String convert(PrestoValueConverter<?> converter, Object value){
-        return converter.toStringFromNative(value);
+
+    private static AbstractTrinoConditionDto convert(PrestoValueConverter<?> converter, Operation operation, Object value){
+        return converter.toCondition(operation, value);
     }
 
     public static AbstractTrinoConditionDto createTrinoCondition(PrestoValueConverter<?> converter, Domain domain) {
@@ -30,21 +28,21 @@ public class DomainToCondition {
             List<AbstractTrinoConditionDto> rangeConditions = new ArrayList<>();
             for (Range range : ranges.getOrderedRanges()) {
                 if (range.isSingleValue()) {
-                    rangeConditions.add(new SimpleTrinoConditionDto(Operation.EQUALS, convert(converter, range.getHighValue())));
+                    rangeConditions.add(convert(converter, Operation.EQUALS, range.getHighValue().get()));
                 } else {
                     List<AbstractTrinoConditionDto> singleRangeCondition = new ArrayList<>();
                     if (!range.isHighUnbounded()) {
                         if (range.isHighInclusive()) {
-                            singleRangeCondition.add(new SimpleTrinoConditionDto(Operation.LESS_OR_EQUAL, convert(converter, range.getHighValue())));
+                            singleRangeCondition.add(convert(converter, Operation.LESS_OR_EQUAL, range.getHighValue().get()));
                         } else {
-                            singleRangeCondition.add(new SimpleTrinoConditionDto(Operation.LESS_THAN, convert(converter, range.getHighValue())));
+                            singleRangeCondition.add(convert(converter, Operation.LESS_THAN, range.getHighValue().get()));
                         }
                     }
                     if (!range.isLowUnbounded()) {
                         if (range.isLowInclusive()) {
-                            singleRangeCondition.add(new SimpleTrinoConditionDto(Operation.GREATER_OR_EQUAL, convert(converter, range.getLowValue())));
+                            singleRangeCondition.add(convert(converter, Operation.GREATER_OR_EQUAL, range.getLowValue().get()));
                         } else {
-                            singleRangeCondition.add(new SimpleTrinoConditionDto(Operation.GREATER_THAN, convert(converter, range.getLowValue())));
+                            singleRangeCondition.add(convert(converter, Operation.GREATER_THAN, range.getLowValue().get()));
                         }
                     }
                     rangeConditions.add(new GroupTrinoConditionDto(GroupTrinoConditionDto.Operator.AND, singleRangeCondition).simplify());
@@ -55,7 +53,7 @@ public class DomainToCondition {
         }, discreteValues -> {
             List<AbstractTrinoConditionDto> equalsConditions = new ArrayList<>();
             for (Object value : discreteValues.getValues()){
-                equalsConditions.add(new SimpleTrinoConditionDto(Operation.EQUALS, convert(converter, value)));
+                equalsConditions.add(convert(converter, Operation.EQUALS, value));
             }
             return new GroupTrinoConditionDto(GroupTrinoConditionDto.Operator.OR, equalsConditions).simplify();
         }, ignored -> null);

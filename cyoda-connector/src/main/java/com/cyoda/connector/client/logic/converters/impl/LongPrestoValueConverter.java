@@ -43,18 +43,19 @@ public class LongPrestoValueConverter extends LongComparedTypeValueConverter<Lon
     }
 
     @Override
-    public long toLong(@Nonnull Long value) {
+    public Long toLong(@Nonnull Long value) {
         return value;
     }
 
     @Override
-    public String toStringFromNative(Object nativeValue) {
-        return nativeValue.toString();
+    public Long fromPrestoNative(Object nativeValue) {
+        return (long) nativeValue;
     }
+
     @Nonnull
     @Override
-    public Long fromLong(long value) {
-        return (long)value;
+    public Long fromLong(Long value) {
+        return value;
     }
 
     @Override
@@ -67,10 +68,6 @@ public class LongPrestoValueConverter extends LongComparedTypeValueConverter<Lon
         return Long.MAX_VALUE;
     }
 
-    @Override
-    public String stringify(Long value) {
-        return value.toString();
-    }
 
 
     /**

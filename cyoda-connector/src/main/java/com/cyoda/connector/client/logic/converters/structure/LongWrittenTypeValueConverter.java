@@ -9,9 +9,9 @@ import javax.annotation.Nonnull;
 public abstract class LongWrittenTypeValueConverter<T extends Comparable<? super T>> extends ComparableValueConverter<T>{
 
 
-    public abstract long toLong(@Nonnull T value);
+    public abstract Long toLong(@Nonnull T value);
     @Nonnull
-    public abstract T fromLong(long value);
+    public abstract T fromLong(Long value);
 
     public LongWrittenTypeValueConverter(IDataType<T> dataType) {
         super(dataType);

@@ -68,7 +68,7 @@ public class ByteArrayPrestoValueConverter extends SliceUncomparableValueConvert
     }
 
     @Override
-    public String toStringFromNative(Object nativeValue) {
-        return Base64.getEncoder().encodeToString(fromSlice((Slice)nativeValue));
+    public String stringify(byte[] value) {
+        return Base64.getEncoder().encodeToString(value);
     }
 }

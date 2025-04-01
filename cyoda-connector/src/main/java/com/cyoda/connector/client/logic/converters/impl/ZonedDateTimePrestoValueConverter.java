@@ -37,7 +37,7 @@ public class ZonedDateTimePrestoValueConverter extends LongComparedTypeValueConv
     }
 
     @Override
-    public long toLong(@Nonnull ZonedDateTime value) {
+    public Long toLong(@Nonnull ZonedDateTime value) {
         return DateTimeEncoding.packDateTimeWithZone(
                 value.toInstant().toEpochMilli(),
                 value.getZone().getId()
@@ -46,7 +46,7 @@ public class ZonedDateTimePrestoValueConverter extends LongComparedTypeValueConv
 
     @Nonnull
     @Override
-    public ZonedDateTime fromLong(long value) {
+    public ZonedDateTime fromLong(Long value) {
         TimeZoneKey timeZoneKey = DateTimeEncoding.unpackZoneKey(value);
         long millisUtc = DateTimeEncoding.unpackMillisUtc(value);
         return ZonedDateTime.ofInstant(Instant.ofEpochMilli(millisUtc), ZoneId.of(timeZoneKey.getId()));

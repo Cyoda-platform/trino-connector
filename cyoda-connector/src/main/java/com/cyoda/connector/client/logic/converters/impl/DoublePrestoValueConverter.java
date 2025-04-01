@@ -26,7 +26,6 @@ import io.trino.spi.type.Type;
 
 import javax.annotation.Nonnull;
 import jakarta.inject.Inject;
-import java.math.BigDecimal;
 
 public class DoublePrestoValueConverter extends LongWrittenTypeValueConverter<Double> {
 
@@ -35,17 +34,17 @@ public class DoublePrestoValueConverter extends LongWrittenTypeValueConverter<Do
         super(DataType.DOUBLE);
     }
 
-    public long toLong(@Nonnull Double value) {
+    public Long toLong(@Nonnull Double value) {
         return Double.doubleToLongBits(value);
     }
 
     @Override
-    public String toStringFromNative(Object nativeValue) {
-        return nativeValue.toString();
+    public Double fromPrestoNative(Object nativeValue) {
+        return (Double) nativeValue;
     }
 
     @Nonnull
-    public Double fromLong(long value) {
+    public Double fromLong(Long value) {
         return Double.longBitsToDouble(value);
     }
 

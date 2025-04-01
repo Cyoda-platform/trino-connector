@@ -31,20 +31,16 @@ public class BytePrestoValueConverter extends LongComparedTypeValueConverter<Byt
     }
 
     @Override
-    public long toLong(@Nonnull Byte value) {
+    public Long toLong(@Nonnull Byte value) {
         return value.longValue();
-    }
-
-    @Override
-    public String toStringFromNative(Object nativeValue) {
-        return nativeValue.toString();
     }
 
     @Nonnull
     @Override
-    public Byte fromLong(long value) {
-        return (byte)value;
+    public Byte fromLong(Long value) {
+        return value.byteValue();
     }
+
 
     @Override
     public long minValueOfIntType() {
@@ -56,10 +52,6 @@ public class BytePrestoValueConverter extends LongComparedTypeValueConverter<Byt
         return Byte.MAX_VALUE;
     }
 
-    @Override
-    public String stringify(Byte value) {
-        return value.toString();
-    }
 
     @Override
     public Byte fromOtherCyodaType(Object value, String columnName) {

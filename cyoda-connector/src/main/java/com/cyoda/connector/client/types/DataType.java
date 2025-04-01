@@ -74,7 +74,7 @@ public enum DataType implements IDataType {
     BYTE_BUFFER     (ByteBuffer.class,      StandardTypes.VARBINARY,    false, 0),
     LOCALE          (Locale.class,          StandardTypes.VARCHAR,      false, 0),
     OBJECT          (Object.class,          StandardTypes.JSON,         false, 0), //Unsure. We will transform these to Json strings.
-    LIST            (List.class,            StandardTypes.ARRAY,        false, 1),
+    LIST            (List.class,            StandardTypes.ARRAY,        true, 1),
     MAP             (Map.class,             StandardTypes.MAP,          false, 2),
     SET             (Set.class,             StandardTypes.ARRAY,        false, 1);
 

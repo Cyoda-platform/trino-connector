@@ -31,18 +31,14 @@ public class IntegerPrestoValueConverter extends LongComparedTypeValueConverter<
     }
 
     @Override
-    public long toLong(@Nonnull Integer value) {
+    public Long toLong(@Nonnull Integer value) {
         return value.longValue();
     }
 
-    @Override
-    public String toStringFromNative(Object nativeValue) {
-        return nativeValue.toString();
-    }
     @Nonnull
     @Override
-    public Integer fromLong(long value) {
-        return (int)value;
+    public Integer fromLong(Long value) {
+        return value.intValue();
     }
 
     @Override
@@ -55,10 +51,7 @@ public class IntegerPrestoValueConverter extends LongComparedTypeValueConverter<
         return Integer.MAX_VALUE;
     }
 
-    @Override
-    public String stringify(Integer value) {
-        return value.toString();
-    }
+
 
 
 }

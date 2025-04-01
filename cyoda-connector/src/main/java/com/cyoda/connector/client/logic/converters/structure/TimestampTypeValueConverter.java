@@ -25,19 +25,15 @@ public abstract class TimestampTypeValueConverter<T extends Comparable<? super T
         return Long.MAX_VALUE;
     }
 
-    @Override
-    public String toStringFromNative(Object nativeValue) {
-        return fromPrestoNative(nativeValue).toString();
-    }
 
     @Override
-    public long toLong(@Nonnull T value) {
+    public Long toLong(@Nonnull T value) {
         return toInstant(value).toEpochMilli()*TIMESTAMP_LONG_MULTIPLIER;
     }
 
     @Nonnull
     @Override
-    public T fromLong(long value) {
+    public T fromLong(Long value) {
         return fromInstant(Instant.ofEpochMilli(value/TIMESTAMP_LONG_MULTIPLIER));
     }
 

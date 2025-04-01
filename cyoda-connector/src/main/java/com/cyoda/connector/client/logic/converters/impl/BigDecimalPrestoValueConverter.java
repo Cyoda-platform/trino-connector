@@ -60,8 +60,4 @@ public class BigDecimalPrestoValueConverter extends LongDecimalTypeValueConverte
         return new BigDecimal(value.toBigInteger(), DECIMAL_TYPE.getScale(), new MathContext(DECIMAL_TYPE.getPrecision()));
     }
 
-    @Override
-    public String stringify(BigDecimal value) {
-        return value.toString();
-    }
 }

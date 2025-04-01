@@ -32,13 +32,13 @@ public class LocalTimePrestoValueConverter extends LongComparedTypeValueConverte
     }
 
     @Override
-    public long toLong(@Nonnull LocalTime value) {
+    public Long toLong(@Nonnull LocalTime value) {
         return value.toNanoOfDay()*1000;
     }
 
     @Nonnull
     @Override
-    public LocalTime fromLong(long value) {
+    public LocalTime fromLong(Long value) {
         return LocalTime.ofNanoOfDay(value/1000);
     }
 

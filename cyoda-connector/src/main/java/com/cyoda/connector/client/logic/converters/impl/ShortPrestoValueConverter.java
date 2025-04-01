@@ -31,18 +31,14 @@ public class ShortPrestoValueConverter extends LongComparedTypeValueConverter<Sh
     }
 
     @Override
-    public long toLong(@Nonnull Short value) {
+    public Long toLong(@Nonnull Short value) {
         return value.longValue();
     }
 
-    @Override
-    public String toStringFromNative(Object nativeValue) {
-        return nativeValue.toString();
-    }
     @Nonnull
     @Override
-    public Short fromLong(long value) {
-        return (short)value;
+    public Short fromLong(Long value) {
+        return value.shortValue();
     }
 
     @Override
@@ -55,10 +51,6 @@ public class ShortPrestoValueConverter extends LongComparedTypeValueConverter<Sh
         return Short.MAX_VALUE;
     }
 
-    @Override
-    public String stringify(Short value) {
-        return value.toString();
-    }
 
     @Override
     public Short fromOtherCyodaType(Object value, String columnName) {

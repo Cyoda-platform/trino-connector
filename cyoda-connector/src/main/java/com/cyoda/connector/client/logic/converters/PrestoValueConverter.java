@@ -18,6 +18,9 @@
 package com.cyoda.connector.client.logic.converters;
 
 import com.cyoda.connector.client.logic.ColumnPredicate;
+import com.cyoda.connector.client.treenode.dto.conditions.AbstractTrinoConditionDto;
+import com.cyoda.connector.client.treenode.dto.conditions.Operation;
+import com.cyoda.connector.client.treenode.dto.conditions.SimpleTrinoConditionDto;
 import com.cyoda.connector.client.types.IDataType;
 import com.cyoda.connector.handles.CyodaColumnHandle;
 import com.cyoda.connector.logging.SupplierLogger;
@@ -29,7 +32,9 @@ import io.trino.spi.type.Type;
 public interface PrestoValueConverter<T> {
 
     SupplierLogger LOG = SupplierLogger.get(PrestoValueConverter.class);
-    String stringify(T value);
+    default String stringify(T value) {
+        return value.toString();
+    }
 
     default ColumnPredicate<?> newComparisonPredicateFromNative(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, Object nativeValue){
         throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
@@ -46,8 +51,9 @@ public interface PrestoValueConverter<T> {
     default T fromPrestoNative(Object nativeValue){
         throw new UnsupportedOperationException("Condition pushdown is not supported for " + getDataType());
     }
-    default String toStringFromNative(Object nativeValue){
-        return fromPrestoNative(nativeValue).toString();
+
+    default AbstractTrinoConditionDto toCondition(Operation operation,Object nativeValue) {
+        return new SimpleTrinoConditionDto(operation, stringify(fromPrestoNative(nativeValue)));
     }
 
     default boolean areConsecutive(T a, T b){

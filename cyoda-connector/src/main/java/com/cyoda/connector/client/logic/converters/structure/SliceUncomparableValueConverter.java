@@ -20,4 +20,9 @@ public abstract class SliceUncomparableValueConverter<T> extends SingleValueConv
     public void writeValue(Type type, BlockBuilder builder, @Nonnull T value) {
         type.writeSlice(builder, toSlice(value));
     }
+
+    @Override
+    public T fromPrestoNative(Object nativeValue) {
+        return fromSlice((Slice) nativeValue);
+    }
 }

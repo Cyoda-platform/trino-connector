@@ -31,10 +31,6 @@ public abstract class LongDecimalTypeValueConverter<T extends Comparable<? super
         return fromInt128((Int128) nativeValue);
     }
 
-    @Override
-    public String toStringFromNative(Object nativeValue) {
-        return fromPrestoNative(nativeValue).toString();
-    }
 
     @Override
     protected ColumnPredicate<T> newComparisonPredicate(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, T value) {
