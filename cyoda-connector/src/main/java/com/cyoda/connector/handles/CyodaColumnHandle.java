@@ -17,7 +17,6 @@
 
 package com.cyoda.connector.handles;
 
-import com.cyoda.connector.client.logic.ColumnPredicate;
 import com.cyoda.connector.client.logic.converters.PrestoValueConverter;
 import com.cyoda.connector.client.reporting.data.RowValueGrabber;
 import com.cyoda.connector.client.types.CompoundDataType;
@@ -120,18 +119,6 @@ public class CyodaColumnHandle implements ColumnHandle {
             }
         }
         return grabber.grab(source);
-    }
-
-    public ColumnPredicate<?> newComparisonPredicateFromNative(ColumnPredicate.ComparisonOp op, Object nativeValue){
-        return getConverter().newComparisonPredicateFromNative(this, op, nativeValue);
-    }
-
-    public <T extends Comparable<T>> ColumnPredicate<T> newEqualsPredicateFromJava(T javaValue){
-        return getConverter().newComparisonPredicateFromJava(this, ColumnPredicate.ComparisonOp.EQUAL, javaValue);
-    }
-
-    public ColumnPredicate<?> newInListPredicateFromDiscrete(DiscreteValues discreteValues){
-        return getConverter().newInListPredicate(this, discreteValues);
     }
 
     @JsonProperty

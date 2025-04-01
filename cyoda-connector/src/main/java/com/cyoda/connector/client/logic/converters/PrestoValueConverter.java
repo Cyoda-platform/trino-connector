@@ -17,15 +17,12 @@
 
 package com.cyoda.connector.client.logic.converters;
 
-import com.cyoda.connector.client.logic.ColumnPredicate;
 import com.cyoda.connector.client.treenode.dto.conditions.AbstractTrinoConditionDto;
 import com.cyoda.connector.client.treenode.dto.conditions.Operation;
 import com.cyoda.connector.client.treenode.dto.conditions.SimpleTrinoConditionDto;
 import com.cyoda.connector.client.types.IDataType;
-import com.cyoda.connector.handles.CyodaColumnHandle;
 import com.cyoda.connector.logging.SupplierLogger;
 import io.trino.spi.block.BlockBuilder;
-import io.trino.spi.predicate.DiscreteValues;
 import io.trino.spi.predicate.NullableValue;
 import io.trino.spi.type.Type;
 
@@ -36,15 +33,6 @@ public interface PrestoValueConverter<T> {
         return value.toString();
     }
 
-    default ColumnPredicate<?> newComparisonPredicateFromNative(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, Object nativeValue){
-        throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
-    }
-    default <C extends Comparable<C>> ColumnPredicate<C> newComparisonPredicateFromJava(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, C value){
-        throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
-    }
-    default ColumnPredicate<?> newInListPredicate(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
-        throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
-    }
     default NullableValue toNullableValue(Type type, Object value){
         return new NullableValue(type, value);
     }

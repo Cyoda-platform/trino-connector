@@ -17,10 +17,8 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
-import com.cyoda.connector.client.logic.ColumnPredicate;
 import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
 import com.cyoda.connector.client.types.DataType;
-import com.cyoda.connector.handles.CyodaColumnHandle;
 import io.trino.spi.block.BlockBuilder;
 import io.trino.spi.type.Type;
 
@@ -51,42 +49,6 @@ public class DoublePrestoValueConverter extends LongWrittenTypeValueConverter<Do
     @Override
     public boolean areConsecutive(Double a, Double b) {
         return Math.nextAfter(a, Double.POSITIVE_INFINITY) == b;
-    }
-
-    @Override
-    protected ColumnPredicate<Double> newComparisonPredicate(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, Double value) {
-        if (op == ColumnPredicate.ComparisonOp.LESS_EQUAL) {
-            if (value == Double.POSITIVE_INFINITY) {
-                return ColumnPredicate.isNotNull(column);
-            }
-            value = Math.nextAfter(value, Double.POSITIVE_INFINITY);
-            op = ColumnPredicate.ComparisonOp.LESS;
-        } else if (op == ColumnPredicate.ComparisonOp.GREATER) {
-            if (value == Double.POSITIVE_INFINITY) {
-                return ColumnPredicate.none(column);
-            }
-            value = Math.nextAfter(value, Double.POSITIVE_INFINITY);
-            op = ColumnPredicate.ComparisonOp.GREATER_EQUAL;
-        }
-
-        switch (op) {
-            case GREATER_EQUAL:
-                if (value == Double.NEGATIVE_INFINITY) {
-                    return ColumnPredicate.isNotNull(column);
-                } else if (value == Double.POSITIVE_INFINITY) {
-                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, value, null);
-                }
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, value, null);
-            case EQUAL:
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, value, null);
-            case LESS:
-                if (value == Double.NEGATIVE_INFINITY) {
-                    return ColumnPredicate.none(column);
-                }
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, null, value);
-            default:
-                throw unsupportedComparison(column, op);
-        }
     }
 
     @Override

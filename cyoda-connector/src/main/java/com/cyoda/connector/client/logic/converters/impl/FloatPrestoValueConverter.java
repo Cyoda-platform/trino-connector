@@ -17,10 +17,8 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
-import com.cyoda.connector.client.logic.ColumnPredicate;
 import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
 import com.cyoda.connector.client.types.DataType;
-import com.cyoda.connector.handles.CyodaColumnHandle;
 
 import javax.annotation.Nonnull;
 import jakarta.inject.Inject;
@@ -54,43 +52,6 @@ public class FloatPrestoValueConverter extends LongWrittenTypeValueConverter<Flo
     @Override
     public boolean areConsecutive(Float a, Float b) {
         return Math.nextAfter(a, Float.POSITIVE_INFINITY) == b;
-    }
-
-    @Override
-    protected ColumnPredicate<Float> newComparisonPredicate(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, Float value) {
-        if (op == ColumnPredicate.ComparisonOp.LESS_EQUAL) {
-            if (value == Float.POSITIVE_INFINITY) {
-                return ColumnPredicate.isNotNull(column);
-            }
-            value = Math.nextAfter(value, Float.POSITIVE_INFINITY);
-            op = ColumnPredicate.ComparisonOp.LESS;
-        } else if (op == ColumnPredicate.ComparisonOp.GREATER) {
-            if (value == Float.POSITIVE_INFINITY) {
-                return ColumnPredicate.none(column);
-            }
-            value = Math.nextAfter(value, Float.POSITIVE_INFINITY);
-            op = ColumnPredicate.ComparisonOp.GREATER_EQUAL;
-        }
-
-
-        switch (op) {
-            case GREATER_EQUAL:
-                if (value == Float.NEGATIVE_INFINITY) {
-                    return ColumnPredicate.isNotNull(column);
-                } else if (value == Float.POSITIVE_INFINITY) {
-                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, value, null);
-                }
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, value, null);
-            case EQUAL:
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, value, null);
-            case LESS:
-                if (value == Float.NEGATIVE_INFINITY) {
-                    return ColumnPredicate.none(column);
-                }
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.RANGE, column, null, value);
-            default:
-                throw unsupportedComparison(column, op);
-        }
     }
 
     @Override
