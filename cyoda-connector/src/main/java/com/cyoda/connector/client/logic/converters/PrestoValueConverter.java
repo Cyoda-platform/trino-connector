@@ -23,8 +23,12 @@ import com.cyoda.connector.client.treenode.dto.conditions.SimpleTrinoConditionDt
 import com.cyoda.connector.client.types.IDataType;
 import com.cyoda.connector.logging.SupplierLogger;
 import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.block.ValueBlock;
 import io.trino.spi.predicate.NullableValue;
 import io.trino.spi.type.Type;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public interface PrestoValueConverter<T> {
 
@@ -40,8 +44,25 @@ public interface PrestoValueConverter<T> {
         throw new UnsupportedOperationException("Condition pushdown is not supported for " + getDataType());
     }
 
-    default AbstractTrinoConditionDto toCondition(Operation operation,Object nativeValue) {
-        return new SimpleTrinoConditionDto(operation, stringify(fromPrestoNative(nativeValue)));
+    default String toStringFromNative(Object nativeValue){
+        return fromPrestoNative(nativeValue).toString();
+    }
+    /**
+     * This function is called from *element converter* to convert array block, because types of array blocks are different,
+     * depending on type of element
+     **/
+    default List<T> blockToNativeList(Object nativeBlock, Type trinoType) {
+        ValueBlock block = (ValueBlock) nativeBlock;
+        List<T> values = new ArrayList<>();
+        for (int i = 0; i < block.getPositionCount(); i++) {
+            Object element = trinoType.getObject(block, i);
+            values.add(fromPrestoNative(element));
+        }
+        return values;
+    }
+
+    default AbstractTrinoConditionDto toCondition(Operation operation, Type trinoType, Object nativeValue) {
+        return new SimpleTrinoConditionDto(operation, toStringFromNative(nativeValue));
     }
 
     default boolean areConsecutive(T a, T b){

@@ -145,7 +145,7 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
                 CyodaColumnHandle columnHandle = (CyodaColumnHandle) entry.getKey();
                 CyodaColumnHandle.ColumnCategory columnCategory = columnHandle.getColumnCategory();
                 Map<String, AbstractTrinoConditionDto> categoryMap = condition.computeIfAbsent(columnCategory.toString(), x -> new HashMap<>());
-                AbstractTrinoConditionDto trinoCondition = DomainToCondition.createTrinoCondition(columnHandle.getConverter(), domain);
+                AbstractTrinoConditionDto trinoCondition = DomainToCondition.createTrinoCondition(columnHandle, domain);
                 validatePointTimeCondition(columnCategory, columnHandle, trinoCondition);
                 categoryMap.put(columnHandle.getColumnKey(), trinoCondition);
             }

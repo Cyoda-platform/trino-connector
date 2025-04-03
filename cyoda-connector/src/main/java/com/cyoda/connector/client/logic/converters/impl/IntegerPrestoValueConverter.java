@@ -21,7 +21,13 @@ import com.cyoda.connector.client.logic.converters.structure.LongComparedTypeVal
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
+
+import io.trino.spi.block.IntArrayBlock;
+import io.trino.spi.type.Type;
 import jakarta.inject.Inject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class IntegerPrestoValueConverter extends LongComparedTypeValueConverter<Integer> {
 
@@ -52,6 +58,13 @@ public class IntegerPrestoValueConverter extends LongComparedTypeValueConverter<
     }
 
 
-
-
+    @Override
+    public List<Integer> blockToNativeList(Object nativeBlock, Type trinoType) {
+        IntArrayBlock intArrayBlock = (IntArrayBlock) nativeBlock;
+        List<Integer> list = new ArrayList<>();
+        for (int i = 0; i < intArrayBlock.getPositionCount(); i++) {
+            list.add(intArrayBlock.getInt(i));
+        }
+        return list;
+    }
 }
