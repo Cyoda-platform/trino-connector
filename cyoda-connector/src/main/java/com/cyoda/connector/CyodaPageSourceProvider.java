@@ -18,6 +18,7 @@
 package com.cyoda.connector;
 
 import com.cyoda.connector.client.data.TableDataProviderProvider;
+import com.cyoda.connector.client.reporting.stats.ConditionPushdownLogMonitor;
 import com.cyoda.connector.handles.CyodaColumnHandle;
 import com.cyoda.connector.handles.CyodaTableHandle;
 import com.cyoda.connector.handles.CyodaTableMeta;
@@ -31,6 +32,7 @@ import io.trino.spi.connector.ConnectorSplit;
 import io.trino.spi.connector.ConnectorPageSourceProvider;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 
+import io.trino.spi.predicate.TupleDomain;
 import jakarta.inject.Inject;
 
 import java.util.Comparator;
@@ -44,12 +46,14 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
     private static final SupplierLogger LOG = SupplierLogger.get(CyodaPageSourceProvider.class);
     private final TableDataProviderProvider dataProviderProvider;
     private final CyodaMetadata cyodaMetadata;
+    private final ConditionPushdownLogMonitor pushdownLogMonitor;
 
     @Inject
     public CyodaPageSourceProvider(TableDataProviderProvider dataProviderProvider,
-                                   CyodaMetadata cyodaMetadata) {
+                                   CyodaMetadata cyodaMetadata, ConditionPushdownLogMonitor pushdownLogMonitor) {
         this.dataProviderProvider = requireNonNull(dataProviderProvider, "dataProviderProvider is null");
         this.cyodaMetadata = cyodaMetadata;
+        this.pushdownLogMonitor = pushdownLogMonitor;
     }
 
     @Override
@@ -74,10 +78,10 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
                     throw new RuntimeException(e);
                 }
                 if (dynamicFilter.isComplete()){
-                    handle.setConstraint(handle.getConstraint().intersect(dynamicFilter.getCurrentPredicate()));
+                    setConstraintToHandle(session, dynamicFilter, handle);
                 } else LOG.error("Exceeded 10s timeout for dynamic filter await");
             } else {
-                handle.setConstraint(handle.getConstraint().intersect(dynamicFilter.getCurrentPredicate()));
+                setConstraintToHandle(session, dynamicFilter, handle);
             }
         }
         List<CyodaColumnHandle> cyodaColumns = columns.stream()
@@ -89,5 +93,11 @@ public class CyodaPageSourceProvider implements ConnectorPageSourceProvider {
                 .getDataProvider(cyodaTableMeta.getTableType())
                 .getPageSource(cyodaTableMeta, cyodaColumns, cyodaSplit);
 
+    }
+
+    private void setConstraintToHandle(ConnectorSession session, DynamicFilter dynamicFilter, CyodaTableHandle handle) {
+        TupleDomain<ColumnHandle> currentPredicate = dynamicFilter.getCurrentPredicate();
+
+        handle.setConstraint(handle.getConstraint().intersect(currentPredicate));
     }
 }

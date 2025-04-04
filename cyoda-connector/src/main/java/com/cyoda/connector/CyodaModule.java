@@ -37,6 +37,7 @@ import com.cyoda.connector.client.reporting.meta.ReportStatisticsApiRSocket;
 import com.cyoda.connector.client.reporting.metaproviders.DynamicReportMetadataProvider;
 import com.cyoda.connector.client.reporting.metaproviders.StaticTableMetadataProvider;
 import com.cyoda.connector.client.reporting.metaproviders.TreeNodeMetadataProvider;
+import com.cyoda.connector.client.reporting.stats.ConditionPushdownLogMonitor;
 import com.cyoda.connector.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.connector.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.connector.client.treenode.CyodaRSocketClient;
@@ -113,6 +114,7 @@ public class CyodaModule implements Module {
 
 
         binder.bind(CyodaApiRequestStatsMonitor.class).in(Scopes.SINGLETON);
+        binder.bind(ConditionPushdownLogMonitor.class).in(Scopes.SINGLETON);
         binder.bind(CyodaCacheMonitor.class).in(Scopes.SINGLETON);
 
         binder.bind(TableDataProviderProvider.class).in(Scopes.SINGLETON);

@@ -22,6 +22,7 @@ import com.cyoda.connector.auth.AuthService;
 import com.cyoda.connector.client.logic.PredicatePushdownController;
 import com.cyoda.connector.client.reporting.calls.DeleteReportsApi;
 import com.cyoda.connector.client.reporting.metaproviders.*;
+import com.cyoda.connector.client.reporting.stats.ConditionPushdownLogMonitor;
 import com.cyoda.connector.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.connector.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.connector.client.treenode.CyodaRSocketClient;
@@ -42,6 +43,7 @@ import io.trino.spi.StandardErrorCode;
 import io.trino.spi.TrinoException;
 import io.trino.spi.connector.*;
 import io.trino.spi.expression.ConnectorExpression;
+import io.trino.spi.expression.Constant;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
 
@@ -73,6 +75,7 @@ public class CyodaMetadata implements ConnectorMetadata {
     private final ContentIdLoadingCache<AuthContext, Map<SchemaTableName, CyodaTableHandle>> tableByUserCache;
     private final Map<SchemaTableName, CyodaTableHandle> defaultTableList;
     private final CyodaRSocketClient rSocketClient;
+    private final ConditionPushdownLogMonitor pushdownLogMonitor;
 
     @Inject
     public CyodaMetadata(
@@ -83,7 +86,8 @@ public class CyodaMetadata implements ConnectorMetadata {
             TreeNodeMetadataProvider treeNodeMetadataProvider,
             DeleteReportsApi deleteReportsApiHandler,
             CyodaCacheMonitor cacheMonitor,
-            CyodaRSocketClient rSocketClient) {
+            CyodaRSocketClient rSocketClient,
+            ConditionPushdownLogMonitor pushdownLogMonitor) {
         this.config = requireNonNull(config,"confif is null");
         this.auth = auth;
         this.staticMetadataProvider = staticMetadataProvider;
@@ -102,6 +106,7 @@ public class CyodaMetadata implements ConnectorMetadata {
         defaultTableList.put(new SchemaTableName(config.getSchemaName(), StaticTableMetadata.LOG_TABLE_NAME),
                 new CyodaTableHandle(config.getSchemaName(), StaticTableMetadata.LOG_TABLE_NAME, CyodaTableType.LOG_TABLE));
         this.rSocketClient = rSocketClient;
+        this.pushdownLogMonitor = pushdownLogMonitor;
     }
 
     @Nonnull
@@ -242,6 +247,9 @@ public class CyodaMetadata implements ConnectorMetadata {
         if(!tableHandle.getTableType().isPushdownSupported()) return Optional.empty();
         TupleDomain<ColumnHandle> oldDomain = tableHandle.getConstraint();
         TupleDomain<ColumnHandle> newDomain = oldDomain.intersect(constraint.getSummary());
+        if (oldDomain.equals(newDomain) && Constant.TRUE.equals(constraint.getExpression())) { // Pushdown has no effect
+            return Optional.empty();
+        }
         TupleDomain<ColumnHandle> remainingFilter;
         if (newDomain.isNone()) {
             remainingFilter = TupleDomain.all();
@@ -272,6 +280,14 @@ public class CyodaMetadata implements ConnectorMetadata {
             remainingFilter = TupleDomain.withColumnDomains(unsupported);
 
         }
+
+        pushdownLogMonitor.registerPushdown(
+                session.getQueryId(),
+                "APPLY_FILTER",
+                constraint.getSummary().toString(),
+                constraint.getExpression().toString(),
+                newDomain.toString(),
+                remainingFilter.toString());
 
         if (oldDomain.equals(newDomain)) {
             return Optional.empty();

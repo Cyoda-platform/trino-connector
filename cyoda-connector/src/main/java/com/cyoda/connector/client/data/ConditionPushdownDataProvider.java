@@ -1,28 +1,26 @@
 package com.cyoda.connector.client.data;
 
-import com.cyoda.connector.CyodaSplit;
 import com.cyoda.connector.client.reporting.metaproviders.StaticTableMetadata;
 import com.cyoda.connector.client.reporting.stats.ApiRequestStats;
+import com.cyoda.connector.client.reporting.stats.ConditionPushdownLog;
+import com.cyoda.connector.client.reporting.stats.ConditionPushdownLogMonitor;
 import com.cyoda.connector.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.connector.handles.CyodaColumnHandle;
-import com.cyoda.connector.handles.CyodaTableMeta;
 import io.trino.spi.NodeManager;
-import io.trino.spi.block.Block;
-import io.trino.spi.type.VarcharType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class ApiCallStatsDataProvider extends VirtualLogDataProvider<ApiRequestStats> {
+public class ConditionPushdownDataProvider extends VirtualLogDataProvider<ConditionPushdownLog> {
 
-    public ApiCallStatsDataProvider(CyodaApiRequestStatsMonitor statsMonitor, NodeManager nodeManager) {
+    public ConditionPushdownDataProvider(ConditionPushdownLogMonitor statsMonitor, NodeManager nodeManager) {
         super(statsMonitor, nodeManager);
     }
 
     @Nullable
     @Override
-    protected Object getFieldValueFromEntity(@Nonnull ApiRequestStats entity, CyodaColumnHandle columnHandle) {
-        StaticTableMetadata.ApiCallStatsColumnDef columnDef = StaticTableMetadata.ApiCallStatsColumnDef.valueOf(
+    protected Object getFieldValueFromEntity(@Nonnull ConditionPushdownLog entity, CyodaColumnHandle columnHandle) {
+        StaticTableMetadata.ConditionPushdownLogColumnDef columnDef = StaticTableMetadata.ConditionPushdownLogColumnDef.valueOf(
                 columnHandle.getColumnName().toUpperCase());
         switch (columnDef) {
             case QUERY_ID -> {
@@ -37,20 +35,20 @@ public class ApiCallStatsDataProvider extends VirtualLogDataProvider<ApiRequestS
             case CALL_TIME -> {
                 return entity.callTime();
             }
-            case DURATION_MILLIS -> {
-                return entity.duration();
+            case CODE_POINT -> {
+                return entity.codePoint();
             }
-            case API_HANDLER -> {
-                return entity.handlerName();
+            case DOMAIN -> {
+                return entity.domainCondition();
             }
-            case REQUEST -> {
-                return entity.request();
+            case EXPRESSION -> {
+                return entity.expression();
             }
-            case REQUEST_ROUTE -> {
-                return entity.requestUrl();
+            case ACCEPTED -> {
+                return entity.acceptedCondition();
             }
-            case RESPONSE -> {
-                return entity.response();
+            case REMAINING -> {
+                return entity.remainingCondition();
             }
         }
         throw new IllegalArgumentException("Unknown column " + columnHandle.getColumnName());

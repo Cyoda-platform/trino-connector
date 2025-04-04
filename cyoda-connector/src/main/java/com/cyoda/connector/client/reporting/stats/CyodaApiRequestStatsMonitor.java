@@ -11,17 +11,16 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
-public class CyodaApiRequestStatsMonitor {
+public class CyodaApiRequestStatsMonitor extends BaseVirtualLogMonitor<ApiRequestStats> {
 
     private static final SupplierLogger LOG = SupplierLogger.get(CyodaApiRequestStatsMonitor.class);
     private static final int MAX_RESPONSE_HOLDER_SIZE = 10;
-    private final ConcurrentLinkedDeque<ApiRequestStats> requestStatsDeque = new ConcurrentLinkedDeque<>();
     private final ConcurrentHashMap<String, String> tempResponseHolder = new ConcurrentHashMap<>();
-    private final AtomicLong currentQueueSize = new AtomicLong();
     private final CyodaConfig config;
 
     @Inject
     public CyodaApiRequestStatsMonitor(CyodaConfig config){
+        super(config);
         this.config = config;
     };
 
@@ -33,7 +32,6 @@ public class CyodaApiRequestStatsMonitor {
         registerApiCall(queryId,callTime,requestUrl, apiHandlerName, strParams, response);
     }
     public void registerApiCall(String queryId, Date callTime, String requestUrl, String apiHandlerName, Map<String, String> request, Object response){
-
         add(
                 new ApiRequestStats(
                         queryId,
@@ -44,13 +42,16 @@ public class CyodaApiRequestStatsMonitor {
                         request,
                         response));
     }
+
+    @Override
+    protected long getMaxRecords(CyodaConfig config) {
+        return config.getApiCallStatsMaxRecords();
+    }
+
+
+    @Override
     public void add(ApiRequestStats requestStat){
-        requestStatsDeque.addFirst(requestStat);
-        long newSize = currentQueueSize.incrementAndGet();
-        while (newSize > config.getApiCallStatsMaxRecords()){
-            requestStatsDeque.removeLast();
-            newSize = currentQueueSize.decrementAndGet();
-        }
+        super.add(requestStat);
         if (config.getLogApiCallResponse() && tempResponseHolder.size() > MAX_RESPONSE_HOLDER_SIZE) {
             LOG.error("Response holder overflow - flushing data:\n" + tempResponseHolder.entrySet()
                     .stream()
@@ -61,13 +62,5 @@ public class CyodaApiRequestStatsMonitor {
 
     public void addResponse(String uri, String response){
         tempResponseHolder.put(uri, response);
-    }
-
-    public void truncate(){
-        requestStatsDeque.clear();
-    }
-
-    public Iterable<ApiRequestStats> getIterable(){
-        return requestStatsDeque;
     }
 }
