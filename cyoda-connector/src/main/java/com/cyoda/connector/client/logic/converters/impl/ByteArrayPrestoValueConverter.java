@@ -50,19 +50,6 @@ public class ByteArrayPrestoValueConverter extends SliceUncomparableValueConvert
     }
 
     @Override
-    public boolean areConsecutive(byte[] a, byte[] b) {
-        if (a.length + 1 != b.length || b[a.length] != 0) {
-            return false;
-        }
-        for (int i = 0; i < a.length; i++) {
-            if (a[i] != b[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @Override
     public byte[] fromOtherCyodaType(Object value, String columnName) {
         return Base64.getDecoder().decode((String) value);
     }

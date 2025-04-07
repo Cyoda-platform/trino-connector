@@ -55,28 +55,4 @@ public class ByteBufferPrestoValueConverter extends SliceComparableValueConverte
         return value.toByteBuffer();
     }
 
-    @Override
-    public boolean areConsecutive(ByteBuffer a, ByteBuffer b) {
-        byte[] m = new byte[a.remaining()];
-        try {
-            a.get(m);
-        } finally {
-            a.rewind();
-        }
-        byte[] n = new byte[b.remaining()];
-        try {
-            b.get(n);
-        } finally {
-            b.rewind();
-        }
-        if (m.length + 1 != n.length || n[m.length] != 0) {
-            return false;
-        }
-        for (int i = 0; i < m.length; i++) {
-            if (m[i] != n[i]) {
-                return false;
-            }
-        }
-        return true;
-    }
 }

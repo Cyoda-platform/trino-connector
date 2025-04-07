@@ -17,7 +17,8 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
-import com.cyoda.connector.client.logic.converters.structure.LongComparedTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.IntWrittenTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
@@ -25,46 +26,26 @@ import javax.annotation.Nonnull;
 import io.trino.spi.block.IntArrayBlock;
 import io.trino.spi.type.Type;
 import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class IntegerPrestoValueConverter extends LongComparedTypeValueConverter<Integer> {
+public class IntegerPrestoValueConverter extends IntWrittenTypeValueConverter<Integer> {
 
     @Inject
     public IntegerPrestoValueConverter() {
         super(DataType.INTEGER);
     }
 
-    @Override
-    public Long toLong(@Nonnull Integer value) {
-        return value.longValue();
-    }
 
-    @Nonnull
     @Override
-    public Integer fromLong(Long value) {
-        return value.intValue();
+    public Integer toInt(@NotNull Integer value) {
+        return value;
     }
 
     @Override
-    public long minValueOfIntType() {
-        return Integer.MIN_VALUE;
-    }
-
-    @Override
-    public long maxValueOfIntType() {
-        return Integer.MAX_VALUE;
-    }
-
-
-    @Override
-    public List<Integer> blockToNativeList(Object nativeBlock, Type trinoType) {
-        IntArrayBlock intArrayBlock = (IntArrayBlock) nativeBlock;
-        List<Integer> list = new ArrayList<>();
-        for (int i = 0; i < intArrayBlock.getPositionCount(); i++) {
-            list.add(intArrayBlock.getInt(i));
-        }
-        return list;
+    public @NotNull Integer fromInt(Integer value) {
+        return value;
     }
 }

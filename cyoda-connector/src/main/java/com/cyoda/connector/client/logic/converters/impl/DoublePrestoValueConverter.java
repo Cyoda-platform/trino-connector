@@ -47,11 +47,6 @@ public class DoublePrestoValueConverter extends LongWrittenTypeValueConverter<Do
     }
 
     @Override
-    public boolean areConsecutive(Double a, Double b) {
-        return Math.nextAfter(a, Double.POSITIVE_INFINITY) == b;
-    }
-
-    @Override
     public void writeValue(Type type, BlockBuilder builder, @Nonnull Double value) {
         type.writeDouble(builder, value);
     }

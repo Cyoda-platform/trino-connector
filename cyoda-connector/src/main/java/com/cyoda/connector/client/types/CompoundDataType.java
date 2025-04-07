@@ -99,18 +99,21 @@ public class CompoundDataType {
 
     public Type toPrestoType(TypeManager typeManager){
         if (mainType.getTypeParametersCount() == 0) {
-            if (mainType.getStaticParams().isEmpty())
-                return typeManager.getType(new TypeSignature(mainType.getTypeString()));
-            else
-                return typeManager.getParameterizedType(mainType.getTypeString(), mainType.getStaticParams());
+            return typeManager.getType(toTypeSignature(mainType));
         } else {
             List<TypeSignatureParameter> attrs = Arrays.stream(typeParams)
-                    .map(DataType::getTypeString)
-                    .map(TypeSignature::new)
+                    .map(CompoundDataType::toTypeSignature)
                     .map(TypeSignatureParameter::typeParameter)
                     .collect(Collectors.toList());
             return typeManager.getParameterizedType(mainType.getTypeString(), attrs);
         }
+    }
+
+    private static TypeSignature toTypeSignature(DataType dataType) {
+        if (dataType.getStaticParams().isEmpty())
+            return new TypeSignature(dataType.getTypeString());
+        else
+            return new TypeSignature(dataType.getTypeString(), dataType.getStaticParams());
     }
 
     @Override

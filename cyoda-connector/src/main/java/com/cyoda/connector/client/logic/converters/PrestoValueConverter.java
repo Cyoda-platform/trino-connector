@@ -65,10 +65,6 @@ public interface PrestoValueConverter<T> {
         return new SimpleTrinoConditionDto(operation, toStringFromNative(nativeValue));
     }
 
-    default boolean areConsecutive(T a, T b){
-        return false;
-    }
-
     IDataType<T> getDataType();
 
     Class<T> getClazz();

@@ -20,10 +20,14 @@ package com.cyoda.connector.client.logic.converters.impl;
 import com.cyoda.connector.client.logic.converters.structure.ComparableValueConverter;
 import com.cyoda.connector.client.types.DataType;
 import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.block.ByteArrayBlock;
 import io.trino.spi.type.Type;
 
 import javax.annotation.Nonnull;
 import jakarta.inject.Inject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BooleanPrestoValueConverter extends ComparableValueConverter<Boolean> {
 
@@ -40,5 +44,15 @@ public class BooleanPrestoValueConverter extends ComparableValueConverter<Boolea
     @Override
     public Boolean fromPrestoNative(Object nativeValue) {
         return (Boolean) nativeValue;
+    }
+
+    @Override
+    public List<Boolean> blockToNativeList(Object nativeBlock, Type trinoType) {
+        ByteArrayBlock block = (ByteArrayBlock) nativeBlock;
+        ArrayList<Boolean> result = new ArrayList<>();
+        for (int i = 0; i < block.getPositionCount(); i++) {
+            result.add(block.getByte(i) == 1);
+        }
+        return result;
     }
 }

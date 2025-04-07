@@ -54,14 +54,6 @@ public class StringPrestoValueConverter extends StringTypeValueConverter<String>
     }
 
     @Override
-    public boolean areConsecutive(String a, String b) {
-        if (a.length() + 1 != b.length() || b.charAt(b.length() - 1) != 0) {
-            return false;
-        }
-        return a.equals(b.substring(0, b.length() - 1));
-    }
-
-    @Override
     public String fromOtherCyodaType(Object value, String columnName) {
     //a reasonable shortcut to make this type a failsafe for objects
         return value.toString();

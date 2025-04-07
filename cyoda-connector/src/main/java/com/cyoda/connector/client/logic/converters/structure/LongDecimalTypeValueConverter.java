@@ -2,10 +2,13 @@ package com.cyoda.connector.client.logic.converters.structure;
 
 import com.cyoda.connector.client.types.IDataType;
 import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.block.Int128ArrayBlock;
 import io.trino.spi.type.Int128;
 import io.trino.spi.type.Type;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class LongDecimalTypeValueConverter<T extends Comparable<? super T>> extends ComparableValueConverter<T>{
 
@@ -26,5 +29,13 @@ public abstract class LongDecimalTypeValueConverter<T extends Comparable<? super
         return fromInt128((Int128) nativeValue);
     }
 
-
+    @Override
+    public List<T> blockToNativeList(Object nativeBlock, Type trinoType) {
+        Int128ArrayBlock block = (Int128ArrayBlock) nativeBlock;
+        ArrayList<T> res = new ArrayList<T>();
+        for (int i = 0; i < block.getPositionCount(); i++) {
+            res.add(fromInt128(block.getInt128(i)));
+        }
+        return res;
+    }
 }

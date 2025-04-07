@@ -5,7 +5,7 @@ import com.cyoda.connector.client.types.IDataType;
 import javax.annotation.Nonnull;
 import java.time.Instant;
 
-public abstract class TimestampTypeValueConverter<T extends Comparable<? super T>> extends LongComparedTypeValueConverter<T>{
+public abstract class TimestampTypeValueConverter<T extends Comparable<? super T>> extends LongWrittenTypeValueConverter<T> {
     private static final long TIMESTAMP_LONG_MULTIPLIER = 1000L;
 
     protected abstract Instant toInstant(T value);
@@ -13,16 +13,6 @@ public abstract class TimestampTypeValueConverter<T extends Comparable<? super T
 
     public TimestampTypeValueConverter(IDataType<T> dataType) {
         super(dataType);
-    }
-
-    @Override
-    public long minValueOfIntType() {
-        return Long.MIN_VALUE;
-    }
-
-    @Override
-    public long maxValueOfIntType() {
-        return Long.MAX_VALUE;
     }
 
 

@@ -17,15 +17,19 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
-import com.cyoda.connector.client.logic.converters.structure.LongComparedTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.IntWrittenTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
+
 import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
+
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
-public class LocalDatePrestoValueConverter extends LongComparedTypeValueConverter<LocalDate> {
+public class LocalDatePrestoValueConverter extends IntWrittenTypeValueConverter<LocalDate> {
 
     @Inject
     public LocalDatePrestoValueConverter() {
@@ -33,28 +37,17 @@ public class LocalDatePrestoValueConverter extends LongComparedTypeValueConverte
     }
 
     @Override
-    public Long toLong(@Nonnull LocalDate value) {
-        return value.toEpochDay();
-    }
-
-    @Nonnull
-    @Override
-    public LocalDate fromLong(Long value) {
-        return LocalDate.ofEpochDay(value);
-    }
-
-    @Override
-    public long minValueOfIntType() {
-        return LocalDate.MIN.toEpochDay();
-    }
-
-    @Override
-    public long maxValueOfIntType() {
-        return LocalDate.MAX.toEpochDay();
-    }
-
-    @Override
     public LocalDate fromOtherCyodaType(Object value, String columnName) {
         return LocalDate.parse((String) value, DateTimeFormatter.ISO_DATE);
+    }
+
+    @Override
+    public Integer toInt(@NotNull LocalDate value) {
+        return (int) value.toEpochDay();
+    }
+
+    @Override
+    public @NotNull LocalDate fromInt(Integer value) {
+        return LocalDate.ofEpochDay(value);
     }
 }

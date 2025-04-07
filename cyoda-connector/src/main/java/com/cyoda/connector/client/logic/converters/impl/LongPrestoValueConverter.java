@@ -17,10 +17,11 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
-import com.cyoda.connector.client.logic.converters.structure.LongComparedTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
+
 import jakarta.inject.Inject;
 import java.math.BigInteger;
 import java.util.Arrays;
@@ -28,7 +29,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class LongPrestoValueConverter extends LongComparedTypeValueConverter<Long> {
+public class LongPrestoValueConverter extends LongWrittenTypeValueConverter<Long> {
 
     protected static final BigInteger BIG_INTEGER_MAX_LONG = BigInteger.valueOf(Long.MAX_VALUE);
     protected static final BigInteger BIG_INTEGER_MIN_LONG = BigInteger.valueOf(Long.MIN_VALUE);
@@ -57,17 +58,6 @@ public class LongPrestoValueConverter extends LongComparedTypeValueConverter<Lon
     public Long fromLong(Long value) {
         return value;
     }
-
-    @Override
-    public long minValueOfIntType() {
-        return Long.MIN_VALUE;
-    }
-
-    @Override
-    public long maxValueOfIntType() {
-        return Long.MAX_VALUE;
-    }
-
 
 
     /**

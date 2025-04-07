@@ -17,13 +17,14 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
-import com.cyoda.connector.client.logic.converters.structure.LongComparedTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
+
 import jakarta.inject.Inject;
 
-public class BytePrestoValueConverter extends LongComparedTypeValueConverter<Byte> {
+public class BytePrestoValueConverter extends LongWrittenTypeValueConverter<Byte> {
 
     @Inject
     public BytePrestoValueConverter() {
@@ -39,17 +40,6 @@ public class BytePrestoValueConverter extends LongComparedTypeValueConverter<Byt
     @Override
     public Byte fromLong(Long value) {
         return value.byteValue();
-    }
-
-
-    @Override
-    public long minValueOfIntType() {
-        return Byte.MIN_VALUE;
-    }
-
-    @Override
-    public long maxValueOfIntType() {
-        return Byte.MAX_VALUE;
     }
 
 

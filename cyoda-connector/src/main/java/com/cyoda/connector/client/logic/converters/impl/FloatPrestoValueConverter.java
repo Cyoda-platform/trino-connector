@@ -17,16 +17,18 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
+import com.cyoda.connector.client.logic.converters.structure.IntWrittenTypeValueConverter;
 import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
 import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
 
 import static java.lang.Float.floatToRawIntBits;
 import static java.lang.Float.intBitsToFloat;
 
-public class FloatPrestoValueConverter extends LongWrittenTypeValueConverter<Float> {
+public class FloatPrestoValueConverter extends IntWrittenTypeValueConverter<Float> {
 
     @Inject
     public FloatPrestoValueConverter() {
@@ -34,8 +36,13 @@ public class FloatPrestoValueConverter extends LongWrittenTypeValueConverter<Flo
     }
 
     @Override
-    public Long toLong(@Nonnull Float value) {
-        return (long) floatToRawIntBits(value);
+    public Integer toInt(@NotNull Float value) {
+        return floatToRawIntBits(value);
+    }
+
+    @Override
+    public @NotNull Float fromInt(Integer value) {
+        return intBitsToFloat(value);
     }
 
     @Override
@@ -43,18 +50,7 @@ public class FloatPrestoValueConverter extends LongWrittenTypeValueConverter<Flo
         return (Float) nativeValue;
     }
 
-    @Nonnull
-    @Override
-    public Float fromLong(Long value) {
-        return intBitsToFloat(value.intValue());
-    }
-
-    @Override
-    public boolean areConsecutive(Float a, Float b) {
-        return Math.nextAfter(a, Float.POSITIVE_INFINITY) == b;
-    }
-
-    @Override
+        @Override
     public Float fromOtherCyodaType(Object value, String columnName) {
         return ((Number) value).floatValue();
     }

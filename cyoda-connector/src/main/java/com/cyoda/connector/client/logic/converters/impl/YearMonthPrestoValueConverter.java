@@ -17,18 +17,18 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
-import com.cyoda.connector.client.logic.converters.structure.LongComparedTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.IntWrittenTypeValueConverter;
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
+
 import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
+
 import java.time.LocalDate;
 import java.time.YearMonth;
 
-public class YearMonthPrestoValueConverter extends LongComparedTypeValueConverter<YearMonth> {
-
-    public static final long MAX_YEAR_MONTH = YearMonth.from(LocalDate.MAX.atStartOfDay()).atEndOfMonth().toEpochDay();
-    public static final long MIN_YEAR_MONTH = YearMonth.from(LocalDate.MIN.atStartOfDay()).atEndOfMonth().toEpochDay();
+public class YearMonthPrestoValueConverter extends IntWrittenTypeValueConverter<YearMonth> {
 
     @Inject
     public YearMonthPrestoValueConverter() {
@@ -36,29 +36,18 @@ public class YearMonthPrestoValueConverter extends LongComparedTypeValueConverte
     }
 
     @Override
-    public Long toLong(@Nonnull YearMonth value) {
-        return value.atEndOfMonth().toEpochDay();
-    }
-
-    @Nonnull
-    @Override
-    public YearMonth fromLong(Long value) {
-        return YearMonth.from(LocalDate.ofEpochDay(value));
-    }
-
-    @Override
-    public long minValueOfIntType() {
-        return MIN_YEAR_MONTH;
-    }
-
-    @Override
-    public long maxValueOfIntType() {
-        return MAX_YEAR_MONTH;
-    }
-
-    @Override
     public YearMonth fromOtherCyodaType(Object value, String columnName) {
         String[] split = ((String)value).split("-");
         return YearMonth.of(Integer.parseInt(split[0]), Integer.parseInt(split[1]));
+    }
+
+    @Override
+    public Integer toInt(@NotNull YearMonth value) {
+        return (int) value.atEndOfMonth().toEpochDay();
+    }
+
+    @Override
+    public @NotNull YearMonth fromInt(Integer value) {
+        return YearMonth.from(LocalDate.ofEpochDay(value));
     }
 }
