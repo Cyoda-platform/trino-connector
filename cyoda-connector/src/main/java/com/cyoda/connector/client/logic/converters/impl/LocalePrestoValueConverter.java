@@ -31,11 +31,18 @@ public class LocalePrestoValueConverter extends SliceJsonValueConverter<Locale> 
 
     @Override
     public Locale fromOtherCyodaType(Object value, String columnName) {
-        String[] spl = ((String)value).split(",");
-        switch (spl.length){
-            case 1: return new Locale((String)value);
-            case 2: return new Locale(spl[0].trim(), spl[1].trim());
-            default:return new Locale(spl[0].trim(), spl[1].trim(), spl[2].trim());
+        String strValue = (String)value;
+        String[] spl = strValue.contains(",") ? strValue.split(",") : strValue.split("_");
+        
+        Locale.Builder builder = new Locale.Builder();
+        switch (spl.length) {
+            case 1 -> builder.setLanguage(spl[0].trim());
+            case 2 -> builder.setLanguage(spl[0].trim())
+                           .setRegion(spl[1].trim());
+            default -> builder.setLanguage(spl[0].trim())
+                            .setRegion(spl[1].trim())
+                            .setVariant(spl[2].trim());
         }
+        return builder.build();
     }
 }
