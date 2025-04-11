@@ -17,17 +17,24 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
+import com.cyoda.connector.client.logic.converters.structure.TemporalTransformer;
 import com.cyoda.connector.client.logic.converters.structure.TimestampTypeValueConverter;
 import com.cyoda.connector.client.types.DataType;
 
 import jakarta.inject.Inject;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 public class LocalDateTimePrestoValueConverter extends TimestampTypeValueConverter<LocalDateTime> {
+    private final TemporalTransformer<LocalDateTime> temporalTransformer = new TemporalTransformer<LocalDateTime>(
+            year -> year.atMonth(12).atEndOfMonth().atStartOfDay(), yearMonth -> yearMonth.atEndOfMonth().atStartOfDay(), localTime -> localTime.atDate(LocalDate.EPOCH), LocalDate::atStartOfDay, localDateTime -> localDateTime, null
+    );
 
     public static final ZoneId UTC = ZoneId.of("UTC");
 
@@ -49,6 +56,6 @@ public class LocalDateTimePrestoValueConverter extends TimestampTypeValueConvert
 
     @Override
     public LocalDateTime fromOtherCyodaType(Object value, String columnName) {
-        return LocalDateTime.parse((String) value, DateTimeFormatter.ISO_DATE_TIME);
+        return temporalTransformer.parse(value, columnName, getClazz());
     }
 }

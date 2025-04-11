@@ -43,9 +43,9 @@ public class PrestoConverterFactory {
     static {
         ImmutableMap.Builder<DataType, ComparableValueConverter<?>> comparableBuilder = ImmutableMap.builder();
         comparableBuilder.put(DataType.BIG_DECIMAL,new BigDecimalPrestoValueConverter());
-        comparableBuilder.put(DataType.UNBOUND_DECIMAL, new UnboundDecimalValueConverter());
+        comparableBuilder.put(DataType.UNBOUND_DECIMAL, new StringPrestoValueConverter());
         comparableBuilder.put(DataType.BIG_INTEGER,new BigIntegerPrestoValueConverter());
-        comparableBuilder.put(DataType.UNBOUND_INTEGER, new UnboundIntegerValueConverter());
+        comparableBuilder.put(DataType.UNBOUND_INTEGER, new StringPrestoValueConverter());
         comparableBuilder.put(DataType.BOOLEAN,new BooleanPrestoValueConverter());
         comparableBuilder.put(DataType.BYTE_BUFFER,new ByteBufferPrestoValueConverter());
         comparableBuilder.put(DataType.BYTE,new BytePrestoValueConverter());

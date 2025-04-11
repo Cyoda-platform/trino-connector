@@ -18,6 +18,7 @@
 package com.cyoda.connector.client.logic.converters.impl;
 
 import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.TemporalTransformer;
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
@@ -27,6 +28,9 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 public class LocalTimePrestoValueConverter extends LongWrittenTypeValueConverter<LocalTime> {
+    private final TemporalTransformer<LocalTime> temporalTransformer = new TemporalTransformer<LocalTime>(
+            null, null, localTime -> localTime, null, null, null
+    );
     @Inject
     public LocalTimePrestoValueConverter() {
         super(DataType.LOCAL_TIME);
@@ -45,6 +49,6 @@ public class LocalTimePrestoValueConverter extends LongWrittenTypeValueConverter
 
     @Override
     public LocalTime fromOtherCyodaType(Object value, String columnName) {
-        return LocalTime.parse((String)value, DateTimeFormatter.ISO_LOCAL_TIME);
+        return temporalTransformer.parse(value, columnName, getClazz());
     }
 }

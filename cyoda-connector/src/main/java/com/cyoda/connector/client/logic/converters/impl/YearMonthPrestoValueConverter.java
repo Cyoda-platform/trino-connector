@@ -18,6 +18,7 @@
 package com.cyoda.connector.client.logic.converters.impl;
 
 import com.cyoda.connector.client.logic.converters.structure.IntWrittenTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.TemporalTransformer;
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
@@ -29,6 +30,9 @@ import java.time.LocalDate;
 import java.time.YearMonth;
 
 public class YearMonthPrestoValueConverter extends IntWrittenTypeValueConverter<YearMonth> {
+    private final TemporalTransformer<YearMonth> temporalTransformer = new TemporalTransformer<YearMonth>(
+            year -> year.atMonth(12), yearMonth -> yearMonth, null, null, null, null
+    );
 
     @Inject
     public YearMonthPrestoValueConverter() {
@@ -37,8 +41,7 @@ public class YearMonthPrestoValueConverter extends IntWrittenTypeValueConverter<
 
     @Override
     public YearMonth fromOtherCyodaType(Object value, String columnName) {
-        String[] split = ((String)value).split("-");
-        return YearMonth.of(Integer.parseInt(split[0]), Integer.parseInt(split[1]));
+        return temporalTransformer.parse(value, columnName, getClazz());
     }
 
     @Override

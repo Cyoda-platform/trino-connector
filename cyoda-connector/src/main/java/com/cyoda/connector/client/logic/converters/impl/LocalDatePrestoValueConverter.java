@@ -19,6 +19,7 @@ package com.cyoda.connector.client.logic.converters.impl;
 
 import com.cyoda.connector.client.logic.converters.structure.IntWrittenTypeValueConverter;
 import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.TemporalTransformer;
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
@@ -27,9 +28,13 @@ import jakarta.inject.Inject;
 import org.jetbrains.annotations.NotNull;
 
 import java.time.LocalDate;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 
 public class LocalDatePrestoValueConverter extends IntWrittenTypeValueConverter<LocalDate> {
+    private final TemporalTransformer<LocalDate> temporalTransformer = new TemporalTransformer<>(
+            year -> year.atMonth(12).atEndOfMonth(), YearMonth::atEndOfMonth, null, localDate -> localDate, null, null
+    );
 
     @Inject
     public LocalDatePrestoValueConverter() {
@@ -38,7 +43,7 @@ public class LocalDatePrestoValueConverter extends IntWrittenTypeValueConverter<
 
     @Override
     public LocalDate fromOtherCyodaType(Object value, String columnName) {
-        return LocalDate.parse((String) value, DateTimeFormatter.ISO_DATE);
+        return temporalTransformer.parse(value, columnName, getClazz());
     }
 
     @Override

@@ -41,4 +41,9 @@ public class BigIntegerPrestoValueConverter extends LongDecimalTypeValueConverte
         return value.toBigInteger();
     }
 
+    @Override
+    public BigInteger fromOtherCyodaType(Object value, String columnName) {
+        Number number = (Number) value;
+        return BigInteger.valueOf(number.longValue());
+    }
 }
