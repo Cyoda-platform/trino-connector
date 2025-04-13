@@ -1,13 +1,10 @@
 package com.cyoda.connector.client.data;
 
-import com.cyoda.connector.CyodaSplit;
 import com.cyoda.connector.client.reporting.metaproviders.StaticTableMetadata.CacheStatsColumnDef;
 import com.cyoda.connector.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.connector.handles.CyodaColumnHandle;
-import com.cyoda.connector.handles.CyodaTableMeta;
 import com.github.benmanes.caffeine.cache.stats.CacheStats;
 import io.trino.spi.NodeManager;
-import io.trino.spi.block.Block;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -15,16 +12,9 @@ import java.util.Map;
 
 public class CacheStatsDataProvider extends VirtualTableDataProvider<Map.Entry<String, CacheStats>>{
 
-    private final CyodaCacheMonitor cacheMonitor;
 
     public CacheStatsDataProvider(NodeManager nodeManager, CyodaCacheMonitor cacheMonitor) {
-        super(nodeManager);
-        this.cacheMonitor = cacheMonitor;
-    }
-
-    @Override
-    public Iterable<Map.Entry<String, CacheStats>> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
-        return cacheMonitor.getStats().entrySet();
+        super(nodeManager, () -> cacheMonitor.getStats().entrySet());
     }
 
     @Nullable
@@ -66,8 +56,4 @@ public class CacheStatsDataProvider extends VirtualTableDataProvider<Map.Entry<S
         }
     }
 
-    @Override
-    protected void deleteByIds(Block rowIds) {
-        throw new UnsupportedOperationException("Cache statistics table does not support delete operation");
-    }
 }

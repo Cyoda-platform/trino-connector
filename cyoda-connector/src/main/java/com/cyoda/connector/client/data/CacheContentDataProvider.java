@@ -1,31 +1,18 @@
 package com.cyoda.connector.client.data;
 
-import com.cyoda.connector.CyodaSplit;
 import com.cyoda.connector.client.reporting.metaproviders.StaticTableMetadata.CacheContentColumnDef;
 import com.cyoda.connector.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.connector.client.reporting.stats.CyodaCacheMonitor.CacheContent;
 import com.cyoda.connector.handles.CyodaColumnHandle;
-import com.cyoda.connector.handles.CyodaTableMeta;
 import io.trino.spi.NodeManager;
-import io.trino.spi.block.Block;
-import io.trino.spi.type.UuidType;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.UUID;
 
 public class CacheContentDataProvider extends VirtualTableDataProvider<CacheContent>{
 
-    private final CyodaCacheMonitor cacheMonitor;
-
     public CacheContentDataProvider(NodeManager nodeManager, CyodaCacheMonitor cacheMonitor) {
-        super(nodeManager);
-        this.cacheMonitor = cacheMonitor;
-    }
-
-    @Override
-    public Iterable<CacheContent> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
-        return cacheMonitor.getContent();
+        super(nodeManager, cacheMonitor::getContent);
     }
 
     @Nullable
@@ -55,11 +42,4 @@ public class CacheContentDataProvider extends VirtualTableDataProvider<CacheCont
         }
     }
 
-    @Override
-    protected void deleteByIds(Block rowIds) {
-        for (int position = 0; position < rowIds.getPositionCount(); position++) {
-            UUID contentId = UuidType.trinoUuidToJavaUuid(UuidType.UUID.getSlice(rowIds, position));
-            cacheMonitor.removeContent(contentId);
-        }
-    }
 }

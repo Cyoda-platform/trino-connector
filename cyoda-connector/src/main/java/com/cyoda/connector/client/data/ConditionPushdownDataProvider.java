@@ -1,20 +1,18 @@
 package com.cyoda.connector.client.data;
 
 import com.cyoda.connector.client.reporting.metaproviders.StaticTableMetadata;
-import com.cyoda.connector.client.reporting.stats.ApiRequestStats;
 import com.cyoda.connector.client.reporting.stats.ConditionPushdownLog;
 import com.cyoda.connector.client.reporting.stats.ConditionPushdownLogMonitor;
-import com.cyoda.connector.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.connector.handles.CyodaColumnHandle;
 import io.trino.spi.NodeManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class ConditionPushdownDataProvider extends VirtualLogDataProvider<ConditionPushdownLog> {
+public class ConditionPushdownDataProvider extends VirtualTableDataProvider<ConditionPushdownLog> {
 
     public ConditionPushdownDataProvider(ConditionPushdownLogMonitor statsMonitor, NodeManager nodeManager) {
-        super(statsMonitor, nodeManager);
+        super(nodeManager, statsMonitor);
     }
 
     @Nullable

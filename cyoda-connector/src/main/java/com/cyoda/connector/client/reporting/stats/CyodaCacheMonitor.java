@@ -36,12 +36,6 @@ public class CyodaCacheMonitor {
         return cacheMap.values().stream().flatMap(CacheHandle::getContent).toList();
     }
 
-    public void removeContent(UUID contentId){
-        String cacheName = knownContentIds.get(contentId);
-        if (cacheName == null) return;
-        cacheMap.get(cacheName).removeByContentId(contentId);
-    }
-
     private record CacheHandle<K, T>(String cacheName,
                                      ContentIdLoadingCache<K, T> cache,
                                      Function<K, String> keySerializer,
@@ -55,14 +49,9 @@ public class CyodaCacheMonitor {
                     valueSizeExtractor().apply(entry.getValue())
             ));
         }
-        public void removeByContentId(UUID contentId){
-            K removeKey = cache.getCacheKeyByContentId(contentId);
-            cache.invalidate(removeKey);
-        }
     }
 
     public record CacheContent(UUID contentId, String cacheName, String key, long size){};
-
 
     private <K, T1, T2> Map<K, T2> remap(Map<K, T1> source, Function<T1, T2> mapper){
         Map<K, T2> res = new HashMap<>();

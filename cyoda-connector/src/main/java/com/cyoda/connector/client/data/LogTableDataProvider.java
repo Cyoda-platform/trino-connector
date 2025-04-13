@@ -1,12 +1,9 @@
 package com.cyoda.connector.client.data;
 
-import com.cyoda.connector.CyodaSplit;
 import com.cyoda.connector.client.reporting.metaproviders.StaticTableMetadata;
 import com.cyoda.connector.handles.CyodaColumnHandle;
-import com.cyoda.connector.handles.CyodaTableMeta;
 import com.cyoda.connector.logging.LogRecordHandler;
 import io.trino.spi.NodeManager;
-import io.trino.spi.block.Block;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -18,15 +15,8 @@ import java.util.logging.LogRecord;
 
 public class LogTableDataProvider extends VirtualTableDataProvider<LogRecord> {
 
-    private LogRecordHandler logRecordHandler = LogRecordHandler.getInstance();
-
     public LogTableDataProvider(NodeManager nodeManager) {
-        super(nodeManager);
-    }
-
-    @Override
-    public Iterable<LogRecord> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
-        return logRecordHandler.getLogRecords();
+        super(nodeManager, () -> LogRecordHandler.getInstance().getLogRecords());
     }
 
     @Nullable
@@ -74,8 +64,4 @@ public class LogTableDataProvider extends VirtualTableDataProvider<LogRecord> {
         return sb.toString();
     }
 
-    @Override
-    protected void deleteByIds(Block rowIds) {
-        throw new UnsupportedOperationException("DELETE for log table is not supported");
-    }
 }

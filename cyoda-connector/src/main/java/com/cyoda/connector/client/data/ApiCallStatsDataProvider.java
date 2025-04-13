@@ -13,10 +13,10 @@ import io.trino.spi.type.VarcharType;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class ApiCallStatsDataProvider extends VirtualLogDataProvider<ApiRequestStats> {
+public class ApiCallStatsDataProvider extends VirtualTableDataProvider<ApiRequestStats> {
 
     public ApiCallStatsDataProvider(CyodaApiRequestStatsMonitor statsMonitor, NodeManager nodeManager) {
-        super(statsMonitor, nodeManager);
+        super(nodeManager, statsMonitor);
     }
 
     @Nullable
