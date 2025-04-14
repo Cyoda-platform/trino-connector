@@ -15,7 +15,6 @@ import com.cyoda.connector.client.logic.converters.impl.ListPrestoValueConverter
 import com.cyoda.connector.client.logic.converters.impl.LocalDatePrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.LocalDateTimePrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.LocalTimePrestoValueConverter;
-import com.cyoda.connector.client.logic.converters.impl.LocalePrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.LongPrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.MapPrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.ObjectPrestoValueConverter;
@@ -72,7 +71,6 @@ public class PrestoConverterFactory {
         singleBuilder.putAll(comparableValueConverters);
         singleBuilder.put(DataType.BYTE_ARRAY,new ByteArrayPrestoValueConverter());
         singleBuilder.put(DataType.OBJECT,new ObjectPrestoValueConverter());
-        singleBuilder.put(DataType.LOCALE,new LocalePrestoValueConverter());
         singleValueConverters = singleBuilder.build();
 
     }
