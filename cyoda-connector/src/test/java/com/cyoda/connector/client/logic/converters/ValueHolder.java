@@ -15,7 +15,6 @@ import com.cyoda.connector.client.logic.converters.impl.ListPrestoValueConverter
 import com.cyoda.connector.client.logic.converters.impl.LocalDatePrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.LocalDateTimePrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.LocalTimePrestoValueConverter;
-import com.cyoda.connector.client.logic.converters.impl.LocalePrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.LongPrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.MapPrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.SetPrestoValueConverter;
@@ -45,7 +44,6 @@ import java.time.ZonedDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -77,7 +75,6 @@ public class ValueHolder<T> {
                 ImmutableList.of("hello","goodbye"));
         new ValueHolder<>(new LocalDatePrestoValueConverter(), LocalDate.now());
         new ValueHolder<>(new LocalDateTimePrestoValueConverter(), LocalDateTime.now().truncatedTo(ChronoUnit.MILLIS));
-        new ValueHolder<>(new LocalePrestoValueConverter(), Locale.CANADA);
         new ValueHolder<>(new LocalTimePrestoValueConverter(), LocalTime.now());
         new ValueHolder<>(new LongPrestoValueConverter(), random.longValue());
         new ValueHolder<>(new MapPrestoValueConverter<>("map",
