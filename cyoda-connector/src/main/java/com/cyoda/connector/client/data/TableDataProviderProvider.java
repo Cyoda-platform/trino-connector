@@ -8,6 +8,7 @@ import com.cyoda.connector.client.reporting.meta.ReportConfigDetailsApi;
 import com.cyoda.connector.client.reporting.meta.ReportHistoryApi;
 import com.cyoda.connector.client.reporting.meta.ReportStatisticsApi;
 import com.cyoda.connector.client.reporting.metaproviders.StaticTableMetadataProvider;
+import com.cyoda.connector.client.reporting.stats.ConditionPushdownLogMonitor;
 import com.cyoda.connector.client.reporting.stats.CyodaApiRequestStatsMonitor;
 import com.cyoda.connector.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.connector.client.treenode.CyodaRSocketClient;
@@ -33,6 +34,7 @@ public class TableDataProviderProvider {
                                      ReportRowsApi rowsApiHandler,
                                      StaticTableMetadataProvider reportMetadataProvider,
                                      CyodaApiRequestStatsMonitor statsMonitor,
+                                     ConditionPushdownLogMonitor pushdownLogMonitor,
                                      CyodaConfig config,
                                      NodeManager nodeManager,
                                      CyodaCacheMonitor cyodaCacheMonitor,
@@ -66,6 +68,10 @@ public class TableDataProviderProvider {
         providerMap.put(
                 CALL_STATS,
                 new ApiCallStatsDataProvider(statsMonitor, nodeManager)
+        );
+        providerMap.put(
+                PUSHDOWN_LOG,
+                new ConditionPushdownDataProvider(pushdownLogMonitor, nodeManager)
         );
         providerMap.put(
                 CACHE_STATS,

@@ -17,41 +17,52 @@
 
 package com.cyoda.connector.client.logic.converters;
 
-import com.cyoda.connector.client.logic.ColumnPredicate;
+import com.cyoda.connector.client.treenode.dto.conditions.AbstractTrinoConditionDto;
+import com.cyoda.connector.client.treenode.dto.conditions.Operation;
+import com.cyoda.connector.client.treenode.dto.conditions.SimpleTrinoConditionDto;
 import com.cyoda.connector.client.types.IDataType;
-import com.cyoda.connector.handles.CyodaColumnHandle;
 import com.cyoda.connector.logging.SupplierLogger;
 import io.trino.spi.block.BlockBuilder;
-import io.trino.spi.predicate.DiscreteValues;
+import io.trino.spi.block.ValueBlock;
 import io.trino.spi.predicate.NullableValue;
 import io.trino.spi.type.Type;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public interface PrestoValueConverter<T> {
 
     SupplierLogger LOG = SupplierLogger.get(PrestoValueConverter.class);
-    String stringify(T value);
+    default String stringify(T value) {
+        return value.toString();
+    }
 
-    default ColumnPredicate<?> newComparisonPredicateFromNative(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, Object nativeValue){
-        throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
-    }
-    default <C extends Comparable<C>> ColumnPredicate<C> newComparisonPredicateFromJava(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, C value){
-        throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
-    }
-    default ColumnPredicate<?> newInListPredicate(CyodaColumnHandle columnHandle, DiscreteValues discreteValues) {
-        throw new UnsupportedOperationException("Current method is not supported for " + getDataType());
-    }
     default NullableValue toNullableValue(Type type, Object value){
         return new NullableValue(type, value);
     }
     default T fromPrestoNative(Object nativeValue){
         throw new UnsupportedOperationException("Condition pushdown is not supported for " + getDataType());
     }
+
     default String toStringFromNative(Object nativeValue){
         return fromPrestoNative(nativeValue).toString();
     }
+    /**
+     * This function is called from *element converter* to convert array block, because types of array blocks are different,
+     * depending on type of element
+     **/
+    default List<T> blockToNativeList(Object nativeBlock, Type trinoType) {
+        ValueBlock block = (ValueBlock) nativeBlock;
+        List<T> values = new ArrayList<>();
+        for (int i = 0; i < block.getPositionCount(); i++) {
+            Object element = trinoType.getObject(block, i);
+            values.add(fromPrestoNative(element));
+        }
+        return values;
+    }
 
-    default boolean areConsecutive(T a, T b){
-        return false;
+    default AbstractTrinoConditionDto toCondition(Operation operation, Type trinoType, Object nativeValue) {
+        return new SimpleTrinoConditionDto(operation, toStringFromNative(nativeValue));
     }
 
     IDataType<T> getDataType();

@@ -56,7 +56,7 @@ public class DataRequestDto {
     }
 
 
-    public Map<String, String> toMap() {
+    public Map<String, String>  toMap() {
         Map<String, String> map = new HashMap<>();
         map.put("metaClassId", metaClassId.toString());
         map.put("userId", userId);

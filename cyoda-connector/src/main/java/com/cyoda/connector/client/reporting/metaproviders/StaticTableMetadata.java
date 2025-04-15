@@ -69,6 +69,8 @@ import static com.cyoda.connector.client.types.DataType.UUID_TYPE;
 public enum StaticTableMetadata {
     API_CALL_STATS("Contains records on every API call to cyoda, made by connector. You can use SQL DELETE to clear it.",
             Arrays.asList(ApiCallStatsColumnDef.values()), CyodaTableType.CALL_STATS, "api_call_stats"),
+    CONDITION_PUSHDOWN_LOG("Contains records on pushing down conditions from SQL query to API call. You can use SQL DELETE to clear it.",
+            Arrays.asList(ConditionPushdownLogColumnDef.values()), CyodaTableType.PUSHDOWN_LOG, "condition_pushdown_log"),
     CACHE_CONTENT("Displays existing cache contents, one record - one cache key. You can use SQL DELETE to clear it or remove unwanted items",
             Arrays.asList(CacheContentColumnDef.values()), CyodaTableType.CACHE_CONTENT, "cache_content"),
     CACHE_STATS("Cache statistics, provided by Caffeine cache engine",
@@ -266,6 +268,52 @@ public enum StaticTableMetadata {
         private final CompoundDataType dataType;
 
         ApiCallStatsColumnDef(int pos, DataType mainType, DataType... typeParams) {
+            this.pos = pos;
+            this.fieldName = name().toLowerCase();
+            this.dataType = new CompoundDataType(fieldName, mainType, typeParams);
+        }
+
+        @Override
+        public int getPos() {
+            return pos;
+        }
+
+        @Override
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        @Override
+        public CompoundDataType getDataType() {
+            return dataType;
+        }
+    }
+
+    public enum ConditionPushdownLogColumnDef implements ColumnDefinition {
+        QUERY_ID(0, STRING),
+        NODE_ID(1, STRING),
+        NODE_ADDRESS(2, STRING),
+        CALL_TIME(3, DATE),
+        CODE_POINT(4, STRING),
+        DOMAIN(5, STRING),
+        EXPRESSION(6, STRING),
+        ACCEPTED(7, STRING),
+        REMAINING(8, STRING);
+
+        @Override
+        public String toString() {
+            return MoreObjects.toStringHelper(this)
+                    .add("pos", pos)
+                    .add("fieldName", fieldName)
+                    .add("dataType", dataType)
+                    .toString();
+        }
+
+        private final int pos;
+        private final String fieldName;
+        private final CompoundDataType dataType;
+
+        ConditionPushdownLogColumnDef(int pos, DataType mainType, DataType... typeParams) {
             this.pos = pos;
             this.fieldName = name().toLowerCase();
             this.dataType = new CompoundDataType(fieldName, mainType, typeParams);

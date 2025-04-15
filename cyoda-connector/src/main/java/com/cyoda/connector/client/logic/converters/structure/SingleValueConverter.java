@@ -74,10 +74,10 @@ public abstract class SingleValueConverter<T> extends AbstractValueConverter<T> 
         }
     }
 
-    @Override
-    public String stringify(T value){
-        // Let Jackson do the work, so that we have consistent formatting
-        final String json = JsonCodec.jsonCodec(getClazz()).toJson(value);
-        return cleanUpJson(json);
-    }
+//    @Override
+//    public String stringify(T value){
+//        // Let Jackson do the work, so that we have consistent formatting
+//        final String json = JsonCodec.jsonCodec(getClazz()).toJson(value);
+//        return cleanUpJson(json);
+//    }
 }

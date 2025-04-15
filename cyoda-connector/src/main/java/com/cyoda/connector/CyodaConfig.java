@@ -34,6 +34,7 @@ public class CyodaConfig {
     private boolean logApiCallStats;
     private boolean logApiCallResponse;
     private long apiCallStatsMaxRecords;
+    private long pushdownLogMaxRecords;
     private String schemaName;
     private int rowRequestPageSize;
     private long cacheUserAuthSecAfterWrite;
@@ -60,6 +61,7 @@ public class CyodaConfig {
         logApiCallStats = false;
         logApiCallResponse = true; //does not matter if logApiCallStats = false
         apiCallStatsMaxRecords = 10000;
+        pushdownLogMaxRecords = 10000;
         predicatePushdownThreshold = 10000;
         anonymousLogin = false;
         anonymousUserId = null;
@@ -98,6 +100,15 @@ public class CyodaConfig {
     @Config("cyoda.connector.api-call-stats-max-records")
     public void setApiCallStatsMaxRecords(long apiCallStatsMaxRecords) {
         this.apiCallStatsMaxRecords = apiCallStatsMaxRecords;
+    }
+
+    public long getPushdownLogMaxRecords() {
+        return pushdownLogMaxRecords;
+    }
+
+    @Config("cyoda.connector.condition-pushdown-log-max-records")
+    public void setPushdownLogMaxRecords(long pushdownLogMaxRecords) {
+        this.pushdownLogMaxRecords = pushdownLogMaxRecords;
     }
 
     public String getSchemaName() {

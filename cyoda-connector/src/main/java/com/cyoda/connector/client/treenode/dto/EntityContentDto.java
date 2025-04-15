@@ -27,23 +27,33 @@ public class EntityContentDto {
         this.contents = contents;
     }
 
+    @JsonProperty("rootId")
     public UUID getRootId() {
         return rootId;
     }
 
+    @JsonProperty("index")
     public List<Integer> getIndex() {
         return index;
     }
 
+    @JsonProperty("pointTime")
     public Date getPointTime() {
         return pointTime;
     }
 
+    @JsonProperty("rootFields")
     public Map<String, Object> getRootFields() {
         return rootFields;
     }
 
+    @JsonProperty("contents")
     public Map<String, Object> getContents() {
         return contents;
+    }
+
+    @Override
+    public String toString() {
+        return "Entity(ID=" + rootId + ")";
     }
 }

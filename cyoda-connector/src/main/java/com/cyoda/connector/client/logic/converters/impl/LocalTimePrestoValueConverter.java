@@ -17,39 +17,30 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
-import com.cyoda.connector.client.logic.converters.structure.LongComparedTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
+
 import jakarta.inject.Inject;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
-public class LocalTimePrestoValueConverter extends LongComparedTypeValueConverter<LocalTime> {
+public class LocalTimePrestoValueConverter extends LongWrittenTypeValueConverter<LocalTime> {
     @Inject
     public LocalTimePrestoValueConverter() {
         super(DataType.LOCAL_TIME);
     }
 
     @Override
-    public long toLong(@Nonnull LocalTime value) {
+    public Long toLong(@Nonnull LocalTime value) {
         return value.toNanoOfDay()*1000;
     }
 
     @Nonnull
     @Override
-    public LocalTime fromLong(long value) {
+    public LocalTime fromLong(Long value) {
         return LocalTime.ofNanoOfDay(value/1000);
-    }
-
-    @Override
-    public long minValueOfIntType() {
-        return LocalTime.MIN.toNanoOfDay();
-    }
-
-    @Override
-    public long maxValueOfIntType() {
-        return LocalTime.MAX.toNanoOfDay();
     }
 
     @Override

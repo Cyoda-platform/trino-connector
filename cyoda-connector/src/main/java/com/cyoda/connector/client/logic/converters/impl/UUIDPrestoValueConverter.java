@@ -17,9 +17,13 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
+import com.cyoda.connector.CyodaCachedPageSource;
 import com.cyoda.connector.client.logic.converters.structure.LongDecimalTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.SliceComparableValueConverter;
 import com.cyoda.connector.client.types.DataType;
+import com.cyoda.connector.logging.SupplierLogger;
 import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.block.Int128ArrayBlock;
 import io.trino.spi.type.Int128;
 import io.trino.spi.type.Type;
 import io.airlift.slice.Slice;
@@ -27,19 +31,21 @@ import io.trino.spi.type.UuidType;
 
 import javax.annotation.Nonnull;
 import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
+
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
-public class UUIDPrestoValueConverter extends LongDecimalTypeValueConverter<UUID> {
+import static java.lang.Long.reverseBytes;
 
-//    public static final String TYPE_STRING = StandardTypes.VARCHAR; // For Presto
-    //public static final String TYPE_STRING = StandardTypes.UUID; // For Trino
+public class UUIDPrestoValueConverter extends SliceComparableValueConverter<UUID> {
 
-//    public static final Type TYPE = VarcharType.VARCHAR; // For Presto
-    //public static final Type TYPE = UuidType.UUID; // For Trino
+    private static final SupplierLogger LOG = SupplierLogger.get(UUIDPrestoValueConverter.class);
 
     private static final BigInteger B = BigInteger.ONE.shiftLeft(64); // 2^64
-    private static final BigInteger L = BigInteger.valueOf(Long.MAX_VALUE);
+    private static final BigInteger HALF_B = BigInteger.ONE.shiftLeft(63); // 2^63
 
     @Inject
     public UUIDPrestoValueConverter() {
@@ -47,17 +53,24 @@ public class UUIDPrestoValueConverter extends LongDecimalTypeValueConverter<UUID
     }
 
     @Override
-    protected Int128 toInt128(UUID value) {
-        return Int128.valueOf(convertToBigInteger(value));
-    }
-    @Override
-    protected UUID fromInt128(Int128 value) {
-        return convertFromBigInteger(value.toBigInteger());
+    public Slice toSlice(@NotNull UUID value) {
+        return UuidType.javaUuidToTrinoUuid(value);
     }
 
     @Override
-    public void writeValue(Type type, BlockBuilder builder, @Nonnull UUID value) {
-        type.writeSlice(builder, UuidType.javaUuidToTrinoUuid(value));
+    public @NotNull UUID fromSlice(Slice value) {
+        return UuidType.trinoUuidToJavaUuid(value);
+    }
+
+    @Override
+    public List<UUID> blockToNativeList(Object nativeBlock, Type trinoType) {
+        Int128ArrayBlock block = (Int128ArrayBlock) nativeBlock;
+        ArrayList<UUID> res = new ArrayList<>();
+        for (int i = 0; i < block.getPositionCount(); i++) {
+            Int128 int128 = block.getInt128(i);
+            res.add(new UUID(reverseBytes(int128.getHigh()), reverseBytes(int128.getLow())));
+        }
+        return res;
     }
 
     @Override
@@ -71,34 +84,5 @@ public class UUIDPrestoValueConverter extends LongDecimalTypeValueConverter<UUID
         return UUID.fromString((String) value);
     }
 
-    public static BigInteger convertToBigInteger(UUID id)
-    {
-        BigInteger lo = BigInteger.valueOf(id.getLeastSignificantBits());
-        BigInteger hi = BigInteger.valueOf(id.getMostSignificantBits());
 
-        // If any of lo/hi parts is negative interpret as unsigned
-
-        if (hi.signum() < 0)
-            hi = hi.add(B);
-
-        if (lo.signum() < 0)
-            lo = lo.add(B);
-
-        return lo.add(hi.multiply(B));
-    }
-
-    public static UUID convertFromBigInteger(BigInteger x)
-    {
-        BigInteger[] parts = x.divideAndRemainder(B);
-        BigInteger hi = parts[0];
-        BigInteger lo = parts[1];
-
-        if (L.compareTo(lo) < 0)
-            lo = lo.subtract(B);
-
-        if (L.compareTo(hi) < 0)
-            hi = hi.subtract(B);
-
-        return new UUID(hi.longValueExact(), lo.longValueExact());
-    }
 }

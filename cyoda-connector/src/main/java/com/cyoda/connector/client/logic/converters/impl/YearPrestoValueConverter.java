@@ -17,38 +17,29 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
-import com.cyoda.connector.client.logic.converters.structure.LongComparedTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
+
 import jakarta.inject.Inject;
 import java.time.Year;
 
-public class YearPrestoValueConverter extends LongComparedTypeValueConverter<Year> {
+public class YearPrestoValueConverter extends LongWrittenTypeValueConverter<Year> {
     @Inject
     public YearPrestoValueConverter() {
         super(DataType.YEAR);
     }
 
     @Override
-    public long toLong(@Nonnull Year value) {
-        return value.getValue();
+    public Long toLong(@Nonnull Year value) {
+        return (long) value.getValue();
     }
 
     @Nonnull
     @Override
-    public Year fromLong(long value) {
-        return Year.of((int)value);
-    }
-
-    @Override
-    public long minValueOfIntType() {
-        return Year.MIN_VALUE;
-    }
-
-    @Override
-    public long maxValueOfIntType() {
-        return Year.MAX_VALUE;
+    public Year fromLong(Long value) {
+        return Year.of(value.intValue());
     }
 
     @Override

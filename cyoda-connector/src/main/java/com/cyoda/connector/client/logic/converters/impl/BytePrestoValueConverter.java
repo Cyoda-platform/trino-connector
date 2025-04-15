@@ -17,13 +17,14 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
-import com.cyoda.connector.client.logic.converters.structure.LongComparedTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
+
 import jakarta.inject.Inject;
 
-public class BytePrestoValueConverter extends LongComparedTypeValueConverter<Byte> {
+public class BytePrestoValueConverter extends LongWrittenTypeValueConverter<Byte> {
 
     @Inject
     public BytePrestoValueConverter() {
@@ -31,35 +32,16 @@ public class BytePrestoValueConverter extends LongComparedTypeValueConverter<Byt
     }
 
     @Override
-    public long toLong(@Nonnull Byte value) {
+    public Long toLong(@Nonnull Byte value) {
         return value.longValue();
-    }
-
-    @Override
-    public String toStringFromNative(Object nativeValue) {
-        return nativeValue.toString();
     }
 
     @Nonnull
     @Override
-    public Byte fromLong(long value) {
-        return (byte)value;
+    public Byte fromLong(Long value) {
+        return value.byteValue();
     }
 
-    @Override
-    public long minValueOfIntType() {
-        return Byte.MIN_VALUE;
-    }
-
-    @Override
-    public long maxValueOfIntType() {
-        return Byte.MAX_VALUE;
-    }
-
-    @Override
-    public String stringify(Byte value) {
-        return value.toString();
-    }
 
     @Override
     public Byte fromOtherCyodaType(Object value, String columnName) {

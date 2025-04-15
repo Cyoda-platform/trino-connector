@@ -7,6 +7,7 @@ public enum CyodaTableType {
     GROUP,
     DATA,
     CALL_STATS,
+    PUSHDOWN_LOG,
     CACHE_STATS,
     CACHE_CONTENT,
     LOG_TABLE,

@@ -17,48 +17,35 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
-import com.cyoda.connector.client.logic.converters.structure.LongComparedTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.IntWrittenTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
-import jakarta.inject.Inject;
 
-public class IntegerPrestoValueConverter extends LongComparedTypeValueConverter<Integer> {
+import io.trino.spi.block.IntArrayBlock;
+import io.trino.spi.type.Type;
+import jakarta.inject.Inject;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class IntegerPrestoValueConverter extends IntWrittenTypeValueConverter<Integer> {
 
     @Inject
     public IntegerPrestoValueConverter() {
         super(DataType.INTEGER);
     }
 
+
     @Override
-    public long toLong(@Nonnull Integer value) {
-        return value.longValue();
+    public Integer toInt(@NotNull Integer value) {
+        return value;
     }
 
     @Override
-    public String toStringFromNative(Object nativeValue) {
-        return nativeValue.toString();
+    public @NotNull Integer fromInt(Integer value) {
+        return value;
     }
-    @Nonnull
-    @Override
-    public Integer fromLong(long value) {
-        return (int)value;
-    }
-
-    @Override
-    public long minValueOfIntType() {
-        return Integer.MIN_VALUE;
-    }
-
-    @Override
-    public long maxValueOfIntType() {
-        return Integer.MAX_VALUE;
-    }
-
-    @Override
-    public String stringify(Integer value) {
-        return value.toString();
-    }
-
-
 }

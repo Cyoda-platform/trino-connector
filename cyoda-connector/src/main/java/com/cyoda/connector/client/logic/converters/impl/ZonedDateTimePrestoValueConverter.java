@@ -17,7 +17,7 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
-import com.cyoda.connector.client.logic.converters.structure.LongComparedTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
 import com.cyoda.connector.client.types.DataType;
 import io.trino.spi.type.DateTimeEncoding;
 import io.trino.spi.type.TimeZoneKey;
@@ -29,7 +29,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
-public class ZonedDateTimePrestoValueConverter extends LongComparedTypeValueConverter<ZonedDateTime> {
+public class ZonedDateTimePrestoValueConverter extends LongWrittenTypeValueConverter<ZonedDateTime> {
 
     @Inject
     public ZonedDateTimePrestoValueConverter() {
@@ -37,7 +37,7 @@ public class ZonedDateTimePrestoValueConverter extends LongComparedTypeValueConv
     }
 
     @Override
-    public long toLong(@Nonnull ZonedDateTime value) {
+    public Long toLong(@Nonnull ZonedDateTime value) {
         return DateTimeEncoding.packDateTimeWithZone(
                 value.toInstant().toEpochMilli(),
                 value.getZone().getId()
@@ -46,20 +46,10 @@ public class ZonedDateTimePrestoValueConverter extends LongComparedTypeValueConv
 
     @Nonnull
     @Override
-    public ZonedDateTime fromLong(long value) {
+    public ZonedDateTime fromLong(Long value) {
         TimeZoneKey timeZoneKey = DateTimeEncoding.unpackZoneKey(value);
         long millisUtc = DateTimeEncoding.unpackMillisUtc(value);
         return ZonedDateTime.ofInstant(Instant.ofEpochMilli(millisUtc), ZoneId.of(timeZoneKey.getId()));
-    }
-
-    @Override
-    public long minValueOfIntType() {
-        return Long.MIN_VALUE;
-    }
-
-    @Override
-    public long maxValueOfIntType() {
-        return Long.MAX_VALUE;
     }
 
     @Override

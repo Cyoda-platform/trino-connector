@@ -19,8 +19,10 @@ package com.cyoda.connector;
 
 import com.cyoda.connector.auth.AuthService;
 import com.cyoda.connector.client.data.TableDataProviderProvider;
+import com.cyoda.connector.client.reporting.stats.ConditionPushdownLogMonitor;
 import com.cyoda.connector.handles.CyodaTableHandle;
 import io.trino.spi.NodeManager;
+import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.DynamicFilter;
@@ -30,6 +32,7 @@ import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.FixedSplitSource;
 
+import io.trino.spi.predicate.TupleDomain;
 import jakarta.inject.Inject;
 
 import java.util.List;
@@ -41,15 +44,17 @@ public class CyodaSplitManager implements ConnectorSplitManager {
     private final TableDataProviderProvider dataProviderProvider;
     private final AuthService auth;
     private final CyodaSplitDispatcher splitDispatcher;
+    private final ConditionPushdownLogMonitor pushdownLogMonitor;
 
 
     @Inject
     public CyodaSplitManager(TableDataProviderProvider dataProviderProvider,
                              AuthService auth,
-                             NodeManager nodeManager) {
+                             NodeManager nodeManager, ConditionPushdownLogMonitor pushdownLogMonitor) {
         this.dataProviderProvider = dataProviderProvider;
         this.auth = auth;
         splitDispatcher = new CyodaSplitDispatcher(nodeManager);
+        this.pushdownLogMonitor = pushdownLogMonitor;
     }
 
     @Override
@@ -62,7 +67,9 @@ public class CyodaSplitManager implements ConnectorSplitManager {
         CyodaTableHandle tableHandle = (CyodaTableHandle) connectorTableHandle;
 
         if (tableHandle.getTableType().isPushdownSupported()){
-            tableHandle.setConstraint(tableHandle.getConstraint().intersect(dynamicFilter.getCurrentPredicate()).simplify());
+            TupleDomain<ColumnHandle> currentPredicate = dynamicFilter.getCurrentPredicate();
+            pushdownLogMonitor.registerPushdown(session.getQueryId(), "GET_SPLITS", currentPredicate.toString(), null, tableHandle.getConstraint().toString(), null);
+            tableHandle.setConstraint(tableHandle.getConstraint().intersect(currentPredicate).simplify());
         }
 
         if (constraint.predicate().isEmpty() && !constraint.getSummary().isAll()){

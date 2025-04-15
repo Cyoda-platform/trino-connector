@@ -17,16 +17,17 @@
 
 package com.cyoda.connector.client.logic.converters.impl;
 
-import com.cyoda.connector.client.logic.ColumnPredicate;
 import com.cyoda.connector.client.logic.converters.structure.ComparableValueConverter;
 import com.cyoda.connector.client.types.DataType;
-import com.cyoda.connector.handles.CyodaColumnHandle;
 import io.trino.spi.block.BlockBuilder;
+import io.trino.spi.block.ByteArrayBlock;
 import io.trino.spi.type.Type;
 
 import javax.annotation.Nonnull;
 import jakarta.inject.Inject;
-import java.util.SortedSet;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BooleanPrestoValueConverter extends ComparableValueConverter<Boolean> {
 
@@ -41,70 +42,17 @@ public class BooleanPrestoValueConverter extends ComparableValueConverter<Boolea
     }
 
     @Override
-    public String toStringFromNative(Object nativeValue) {
-        return nativeValue.toString();
-    }
-
-    @Override
-    protected ColumnPredicate<Boolean> buildInListPredicate(CyodaColumnHandle column, SortedSet<Boolean> values) {
-        // IN (true, false) predicates can be simplified to IS NOT NULL.
-        if (values.size() > 1) {
-            return ColumnPredicate.isNotNull(column);
-        }
-        return super.buildInListPredicate(column, values);
-    }
-
-    @Override
-    protected ColumnPredicate<Boolean> newComparisonPredicate(CyodaColumnHandle column, ColumnPredicate.ComparisonOp op, Boolean value) {
-        // Create the comparison predicate. Range predicates on boolean values can
-        // always be converted to either an equality, an IS NOT NULL (filtering only
-        // null values), or NONE (filtering all values).
-        switch (op) {
-            case GREATER: {
-                // b > true  -> b NONE
-                // b > false -> b = true
-                if (value) {
-                    return ColumnPredicate.none(column);
-                } else {
-                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, true, null);
-                }
-            }
-            case GREATER_EQUAL: {
-                // b >= true  -> b = true
-                // b >= false -> b IS NOT NULL
-                if (value) {
-                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, true, null);
-                } else {
-                    return ColumnPredicate.isNotNull(column);
-                }
-            }
-            case EQUAL:
-                return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, value, null);
-            case LESS: {
-                // b < true  -> b NONE
-                // b < false -> b = true
-                if (value) {
-                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, false, null);
-                } else {
-                    return ColumnPredicate.none(column);
-                }
-            }
-            case LESS_EQUAL: {
-                // b <= true  -> b IS NOT NULL
-                // b <= false -> b = false
-                if (value) {
-                    return ColumnPredicate.isNotNull(column);
-                } else {
-                    return new ColumnPredicate<>(ColumnPredicate.PredicateType.EQUALITY, column, false, null);
-                }
-            }
-            default:
-                throw unsupportedComparison(column, op);
-        }
-    }
-
-    @Override
     public Boolean fromPrestoNative(Object nativeValue) {
         return (Boolean) nativeValue;
+    }
+
+    @Override
+    public List<Boolean> blockToNativeList(Object nativeBlock, Type trinoType) {
+        ByteArrayBlock block = (ByteArrayBlock) nativeBlock;
+        ArrayList<Boolean> result = new ArrayList<>();
+        for (int i = 0; i < block.getPositionCount(); i++) {
+            result.add(block.getByte(i) == 1);
+        }
+        return result;
     }
 }

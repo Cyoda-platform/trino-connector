@@ -15,16 +15,8 @@ import javax.annotation.Nullable;
 
 public class ApiCallStatsDataProvider extends VirtualTableDataProvider<ApiRequestStats> {
 
-    private final CyodaApiRequestStatsMonitor statsMonitor;
-
     public ApiCallStatsDataProvider(CyodaApiRequestStatsMonitor statsMonitor, NodeManager nodeManager) {
-        super(nodeManager);
-        this.statsMonitor = statsMonitor;
-    }
-
-    @Override
-    public Iterable<ApiRequestStats> getIterable(CyodaTableMeta tableHandle, CyodaSplit split) {
-        return statsMonitor.getIterable();
+        super(nodeManager, statsMonitor);
     }
 
     @Nullable
@@ -64,13 +56,4 @@ public class ApiCallStatsDataProvider extends VirtualTableDataProvider<ApiReques
         throw new IllegalArgumentException("Unknown column " + columnHandle.getColumnName());
     }
 
-    @Override
-    protected void deleteByIds(Block rowIds) {
-        for (int position = 0; position < rowIds.getPositionCount(); position++) {
-            String requestNodeId = VarcharType.VARCHAR.getSlice(rowIds, position).toStringUtf8();
-            if (thisNode.getNodeIdentifier().equals(requestNodeId)){
-                statsMonitor.truncate();
-            }
-        }
-    }
 }
