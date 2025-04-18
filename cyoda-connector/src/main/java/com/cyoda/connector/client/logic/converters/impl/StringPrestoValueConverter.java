@@ -25,6 +25,8 @@ import io.airlift.slice.Slices;
 import javax.annotation.Nonnull;
 import jakarta.inject.Inject;
 
+import java.math.BigDecimal;
+
 public class StringPrestoValueConverter extends StringTypeValueConverter<String> {
 
     @Inject
@@ -42,20 +44,15 @@ public class StringPrestoValueConverter extends StringTypeValueConverter<String>
         return value;
     }
 
-    @Override
-    public Slice toSlice(@Nonnull String value) {
-        return Slices.utf8Slice(value);
-    }
-
-    @Nonnull
-    @Override
-    public String fromSlice(Slice value) {
-        return value.toStringUtf8();
-    }
 
     @Override
     public String fromOtherCyodaType(Object value, String columnName) {
-    //a reasonable shortcut to make this type a failsafe for objects
-        return value.toString();
+        return switch (value) {
+            // getting rid of exponent to ensure consistent serialization
+            case BigDecimal bd -> bd.stripTrailingZeros().toPlainString();
+            case Double d -> BigDecimal.valueOf(d).stripTrailingZeros().toPlainString();
+            //a reasonable shortcut to make this type a failsafe for objects
+            default -> value.toString();
+        };
     }
 }

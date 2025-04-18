@@ -22,7 +22,12 @@ import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
 
+import io.trino.spi.block.ShortArrayBlock;
+import io.trino.spi.type.Type;
 import jakarta.inject.Inject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class ShortPrestoValueConverter extends LongWrittenTypeValueConverter<Short> {
 
@@ -42,9 +47,18 @@ public class ShortPrestoValueConverter extends LongWrittenTypeValueConverter<Sho
         return value.shortValue();
     }
 
-
     @Override
     public Short fromOtherCyodaType(Object value, String columnName) {
         return ((Integer)value).shortValue();
+    }
+
+    @Override
+    public List<Short> blockToNativeList(Object nativeBlock, Type trinoType) {
+        ShortArrayBlock block = (ShortArrayBlock) nativeBlock;
+        List<Short> shorts = new ArrayList<Short>();
+        for (int i = 0; i < block.getPositionCount(); i++) {
+            shorts.add(block.getShort(i));
+        }
+        return shorts;
     }
 }

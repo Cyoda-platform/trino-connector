@@ -22,8 +22,6 @@ import com.cyoda.connector.client.logic.converters.impl.SetPrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.ShortPrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.StringPrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.UUIDPrestoValueConverter;
-import com.cyoda.connector.client.logic.converters.impl.UnboundDecimalValueConverter;
-import com.cyoda.connector.client.logic.converters.impl.UnboundIntegerValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.YearMonthPrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.YearPrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.ZonedDateTimePrestoValueConverter;

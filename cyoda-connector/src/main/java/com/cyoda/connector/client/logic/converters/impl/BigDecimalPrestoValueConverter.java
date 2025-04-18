@@ -65,6 +65,7 @@ public class BigDecimalPrestoValueConverter extends LongDecimalTypeValueConverte
     public BigDecimal fromOtherCyodaType(Object value, String columnName) {
         return switch (value) {
             case BigInteger bigInteger -> new BigDecimal(bigInteger);
+            case Long longValue -> new BigDecimal(longValue);
             case Number number -> BigDecimal.valueOf(number.doubleValue());
             default -> super.fromOtherCyodaType(value, columnName);
         };
