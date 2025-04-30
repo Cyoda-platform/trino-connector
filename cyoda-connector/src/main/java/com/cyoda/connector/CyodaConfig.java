@@ -46,6 +46,7 @@ public class CyodaConfig {
     private boolean anonymousLogin;
     private String anonymousUserId;
     private int predicatePushdownThreshold;
+    private boolean isNullPushdown;
 
     private String rSocketBindAddress;
     private int rSocketPort;
@@ -63,6 +64,7 @@ public class CyodaConfig {
         apiCallStatsMaxRecords = 10000;
         pushdownLogMaxRecords = 10000;
         predicatePushdownThreshold = 10000;
+        isNullPushdown = false;
         anonymousLogin = false;
         anonymousUserId = null;
         cacheUserAuthSecAfterWrite = 5;
@@ -202,6 +204,15 @@ public class CyodaConfig {
     @Config("cyoda.connector.tree-node.pushdown-threshold")
     public void setPredicatePushdownThreshold(int predicatePushdownThreshold) {
         this.predicatePushdownThreshold = predicatePushdownThreshold;
+    }
+
+    public boolean isNullPushdown() {
+        return isNullPushdown;
+    }
+
+    @Config("cyoda.connector.tree-node.pushdown-isnull")
+    public void setNullPushdown(boolean nullPushdown) {
+        isNullPushdown = nullPushdown;
     }
 
     public String getRSocketBindAddress() {

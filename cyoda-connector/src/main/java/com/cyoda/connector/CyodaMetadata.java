@@ -264,14 +264,14 @@ public class CyodaMetadata implements ConnectorMetadata {
             Map<ColumnHandle, Domain> unsupported = new HashMap<>();
             for (CyodaColumnHandle column : columnHandles) {
                 PredicatePushdownController pushDownController;
-//                if (column.getColumnName().equals("id") || column.getExternalName().equals("parent") || column.getExternalName().equals("index")){
-//                    pushDownController = PredicatePushdownController.DISABLE_PUSHDOWN;
-//                } else {
-//                    pushDownController = column.getDataType().getMainType().getPushDownController();
-//                }
-                pushDownController = column.getDataType().getMainType().getPushDownController();
+                Domain domain = domains.get(column);
+                if (!config.isNullPushdown() && domain.isNullAllowed()){
+                    pushDownController = PredicatePushdownController.DISABLE_PUSHDOWN;
+                } else {
+                    pushDownController = column.getDataType().getMainType().getPushDownController();
+                }
                 PredicatePushdownController.DomainPushdownResult pushdownResult =
-                        pushDownController.apply(config.getPredicatePushdownThreshold(), domains.get(column));
+                        pushDownController.apply(config.getPredicatePushdownThreshold(), domain);
                 supported.put(column, pushdownResult.getPushedDown());
                 unsupported.put(column, pushdownResult.getRemainingFilter());
             }
