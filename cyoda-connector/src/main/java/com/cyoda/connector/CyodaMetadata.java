@@ -103,8 +103,8 @@ public class CyodaMetadata implements ConnectorMetadata {
                 }));
         cacheMonitor.register("AUTH", tableByUserCache, AuthContext::getUserId, Map::size);
         defaultTableList = new HashMap<>();
-        defaultTableList.put(new SchemaTableName(config.getSchemaName(), StaticTableMetadata.LOG_TABLE_NAME),
-                new CyodaTableHandle(config.getSchemaName(), StaticTableMetadata.LOG_TABLE_NAME, CyodaTableType.LOG_TABLE));
+        defaultTableList.put(new SchemaTableName(config.getMaintenanceSchemaName(), StaticTableMetadata.LOG_TABLE_NAME),
+                new CyodaTableHandle(config.getMaintenanceSchemaName(), StaticTableMetadata.LOG_TABLE_NAME, CyodaTableType.LOG_TABLE));
         this.rSocketClient = rSocketClient;
         this.pushdownLogMonitor = pushdownLogMonitor;
     }
