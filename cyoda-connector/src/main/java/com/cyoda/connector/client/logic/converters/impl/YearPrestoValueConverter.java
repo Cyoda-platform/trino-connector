@@ -18,6 +18,7 @@
 package com.cyoda.connector.client.logic.converters.impl;
 
 import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.TemporalTransformer;
 import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
@@ -26,6 +27,10 @@ import jakarta.inject.Inject;
 import java.time.Year;
 
 public class YearPrestoValueConverter extends LongWrittenTypeValueConverter<Year> {
+    private final TemporalTransformer<Year> temporalTransformer = new TemporalTransformer<>(
+            year -> year, null, null, null, null, null
+    );
+
     @Inject
     public YearPrestoValueConverter() {
         super(DataType.YEAR);
@@ -44,6 +49,6 @@ public class YearPrestoValueConverter extends LongWrittenTypeValueConverter<Year
 
     @Override
     public Year fromOtherCyodaType(Object value, String columnName) {
-        return Year.of(Integer.parseInt((String) value));
+        return temporalTransformer.parse(value, columnName, getClazz());
     }
 }

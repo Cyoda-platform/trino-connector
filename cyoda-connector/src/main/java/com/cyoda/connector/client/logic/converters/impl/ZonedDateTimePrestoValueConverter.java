@@ -18,23 +18,55 @@
 package com.cyoda.connector.client.logic.converters.impl;
 
 import com.cyoda.connector.client.logic.converters.structure.LongWrittenTypeValueConverter;
+import com.cyoda.connector.client.logic.converters.structure.TemporalTransformer;
 import com.cyoda.connector.client.types.DataType;
 import io.trino.spi.type.DateTimeEncoding;
 import io.trino.spi.type.TimeZoneKey;
 
 import javax.annotation.Nonnull;
+
+import io.trino.spi.type.TypeSignatureParameter;
 import jakarta.inject.Inject;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 
 public class ZonedDateTimePrestoValueConverter extends LongWrittenTypeValueConverter<ZonedDateTime> {
+    private static final int DEFAULT_PRECISION = 3;
+    private final DateTimeFormatter formatter;
+
+    private final TemporalTransformer<ZonedDateTime> temporalTransformer = new TemporalTransformer<ZonedDateTime>(
+            year -> year.atMonth(12).atEndOfMonth().atStartOfDay().atZone(ZoneOffset.UTC),
+            yearMonth -> yearMonth.atEndOfMonth().atStartOfDay().atZone(ZoneOffset.UTC),
+            localTime -> localTime.atDate(LocalDate.EPOCH).atZone(ZoneOffset.UTC),
+            localDate -> localDate.atStartOfDay().atZone(ZoneOffset.UTC),
+            null,
+            zonedDateTime -> zonedDateTime
+    );
 
     @Inject
     public ZonedDateTimePrestoValueConverter() {
         super(DataType.ZONED_DATE_TIME);
+        List<TypeSignatureParameter> staticParams = DataType.ZONED_DATE_TIME.getStaticParams();
+        int precision = staticParams.isEmpty() ? DEFAULT_PRECISION : staticParams.getFirst().getLongLiteral().intValue();
+        String pattern = "uuuu-MM-dd'T'HH:mm:ss";
+        if (precision > 0) {
+            pattern += "." + "S".repeat(precision);
+        }
+        pattern += "XXX";
+        formatter = DateTimeFormatter.ofPattern(pattern);
     }
+
+//    @Override
+//    public String stringify(ZonedDateTime value) {
+//        //need to remove the "[country/city]" part to have consistent formatting
+//        return value.format(formatter);
+//    }
 
     @Override
     public Long toLong(@Nonnull ZonedDateTime value) {
@@ -54,6 +86,6 @@ public class ZonedDateTimePrestoValueConverter extends LongWrittenTypeValueConve
 
     @Override
     public ZonedDateTime fromOtherCyodaType(Object value, String columnName) {
-        return ZonedDateTime.parse((String) value, DateTimeFormatter.ISO_ZONED_DATE_TIME);
+        return temporalTransformer.parse(value, columnName, getClazz());
     }
 }

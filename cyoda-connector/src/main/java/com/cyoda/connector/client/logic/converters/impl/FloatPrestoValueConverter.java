@@ -45,11 +45,6 @@ public class FloatPrestoValueConverter extends IntWrittenTypeValueConverter<Floa
         return intBitsToFloat(value);
     }
 
-    @Override
-    public Float fromPrestoNative(Object nativeValue) {
-        return (Float) nativeValue;
-    }
-
         @Override
     public Float fromOtherCyodaType(Object value, String columnName) {
         return ((Number) value).floatValue();

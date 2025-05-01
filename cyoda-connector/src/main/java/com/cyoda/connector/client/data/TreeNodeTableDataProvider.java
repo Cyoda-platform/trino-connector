@@ -11,6 +11,7 @@ import com.cyoda.connector.client.treenode.DomainToCondition;
 import com.cyoda.connector.client.treenode.CyodaRSocketClient;
 import com.cyoda.connector.client.treenode.dto.DataRequestDto;
 import com.cyoda.connector.client.treenode.dto.EntityContentDto;
+import com.cyoda.connector.client.types.CompoundDataType;
 import com.cyoda.connector.client.types.DataType;
 import com.cyoda.connector.handles.CyodaColumnHandle;
 import com.cyoda.connector.handles.CyodaTableHandle;
@@ -147,7 +148,17 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
                 Map<String, AbstractTrinoConditionDto> categoryMap = condition.computeIfAbsent(columnCategory.toString(), x -> new HashMap<>());
                 AbstractTrinoConditionDto trinoCondition = DomainToCondition.createTrinoCondition(columnHandle, domain);
                 validatePointTimeCondition(columnCategory, columnHandle, trinoCondition);
-                categoryMap.put(columnHandle.getColumnKey(), trinoCondition);
+                String conditionKey = columnHandle.getColumnKey();
+                if (columnCategory == CyodaColumnHandle.ColumnCategory.DATA){
+                    CompoundDataType dataType = columnHandle.getDataType();
+                    String elementDataType;
+                    if (dataType.getMainType() == DataType.LIST)
+                        elementDataType = dataType.getTypeParams()[0].toString();
+                    else
+                        elementDataType = dataType.getMainType().toString();
+                    conditionKey += "|" + elementDataType;
+                }
+                categoryMap.put(conditionKey, trinoCondition);
             }
         }
 

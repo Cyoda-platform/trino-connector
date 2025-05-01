@@ -22,7 +22,12 @@ import com.cyoda.connector.client.types.DataType;
 
 import javax.annotation.Nonnull;
 
+import io.trino.spi.block.ByteArrayBlock;
+import io.trino.spi.type.Type;
 import jakarta.inject.Inject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class BytePrestoValueConverter extends LongWrittenTypeValueConverter<Byte> {
 
@@ -42,9 +47,18 @@ public class BytePrestoValueConverter extends LongWrittenTypeValueConverter<Byte
         return value.byteValue();
     }
 
-
     @Override
     public Byte fromOtherCyodaType(Object value, String columnName) {
         return ((Integer) value).byteValue();
+    }
+
+    @Override
+    public List<Byte> blockToNativeList(Object nativeBlock, Type trinoType) {
+        ByteArrayBlock block = (ByteArrayBlock) nativeBlock;
+        List<Byte> bytes = new ArrayList<>();
+        for (int i = 0; i < block.getPositionCount(); i++) {
+            bytes.add(block.getByte(i));
+        }
+        return bytes;
     }
 }

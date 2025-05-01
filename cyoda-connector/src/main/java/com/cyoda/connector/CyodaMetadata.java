@@ -88,7 +88,7 @@ public class CyodaMetadata implements ConnectorMetadata {
             CyodaCacheMonitor cacheMonitor,
             CyodaRSocketClient rSocketClient,
             ConditionPushdownLogMonitor pushdownLogMonitor) {
-        this.config = requireNonNull(config,"confif is null");
+        this.config = requireNonNull(config,"config is null");
         this.auth = auth;
         this.staticMetadataProvider = staticMetadataProvider;
         this.dynamicReportMetadataProvider = dynamicReportMetadataProvider;

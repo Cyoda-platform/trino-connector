@@ -22,8 +22,6 @@ import com.cyoda.connector.client.logic.converters.impl.SetPrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.ShortPrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.StringPrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.UUIDPrestoValueConverter;
-import com.cyoda.connector.client.logic.converters.impl.UnboundDecimalValueConverter;
-import com.cyoda.connector.client.logic.converters.impl.UnboundIntegerValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.YearMonthPrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.YearPrestoValueConverter;
 import com.cyoda.connector.client.logic.converters.impl.ZonedDateTimePrestoValueConverter;
@@ -42,9 +40,9 @@ public class PrestoConverterFactory {
     static {
         ImmutableMap.Builder<DataType, ComparableValueConverter<?>> comparableBuilder = ImmutableMap.builder();
         comparableBuilder.put(DataType.BIG_DECIMAL,new BigDecimalPrestoValueConverter());
-        comparableBuilder.put(DataType.UNBOUND_DECIMAL, new UnboundDecimalValueConverter());
+        comparableBuilder.put(DataType.UNBOUND_DECIMAL, new StringPrestoValueConverter());
         comparableBuilder.put(DataType.BIG_INTEGER,new BigIntegerPrestoValueConverter());
-        comparableBuilder.put(DataType.UNBOUND_INTEGER, new UnboundIntegerValueConverter());
+        comparableBuilder.put(DataType.UNBOUND_INTEGER, new StringPrestoValueConverter());
         comparableBuilder.put(DataType.BOOLEAN,new BooleanPrestoValueConverter());
         comparableBuilder.put(DataType.BYTE_BUFFER,new ByteBufferPrestoValueConverter());
         comparableBuilder.put(DataType.BYTE,new BytePrestoValueConverter());

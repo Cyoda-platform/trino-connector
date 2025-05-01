@@ -52,15 +52,14 @@ public abstract class SingleValueConverter<T> extends AbstractValueConverter<T> 
     public T fromCyodaNative(@Nonnull Object cyodaNative, String columnName) {
         return fromCyodaNative(cyodaNative, columnName, false);
     }
-    private T fromCyodaNative(Object cyodaNative, String columnName, boolean fromCollection) {
+
+    public T fromCyodaNative(Object cyodaNative, String columnName, boolean fromCollection) {
         if (cyodaNative == null) return null;
         if (!fromCollection && cyodaNative instanceof List<?> list){
             if (list.size() == 1)
-                return super.fromCyodaNative(list.get(0), columnName);
+                return fromCyodaNative(list.getFirst(), columnName);
         }
         if (!getClazz().isAssignableFrom(cyodaNative.getClass())) {
-            LOG.debug(String.format("Column type mismatch \"%s\"\nExpected %s \nReceived: %s. \nTrying to convert...",
-                    columnName, getClazz().getName(), cyodaNative.getClass().getName()));
             return fromOtherCyodaType(cyodaNative, columnName);
         }
         return super.fromCyodaNative(cyodaNative, columnName);

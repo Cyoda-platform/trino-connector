@@ -45,7 +45,7 @@ public interface PrestoValueConverter<T> {
     }
 
     default String toStringFromNative(Object nativeValue){
-        return fromPrestoNative(nativeValue).toString();
+        return stringify(fromPrestoNative(nativeValue));
     }
     /**
      * This function is called from *element converter* to convert array block, because types of array blocks are different,

@@ -26,6 +26,7 @@ import io.trino.spi.type.TypeSignatureParameter;
 
 import jakarta.inject.Inject;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.MathContext;
 
 import static java.math.RoundingMode.UNNECESSARY;
@@ -60,4 +61,13 @@ public class BigDecimalPrestoValueConverter extends LongDecimalTypeValueConverte
         return new BigDecimal(value.toBigInteger(), DECIMAL_TYPE.getScale(), new MathContext(DECIMAL_TYPE.getPrecision()));
     }
 
+    @Override
+    public BigDecimal fromOtherCyodaType(Object value, String columnName) {
+        return switch (value) {
+            case BigInteger bigInteger -> new BigDecimal(bigInteger);
+            case Long longValue -> new BigDecimal(longValue);
+            case Number number -> BigDecimal.valueOf(number.doubleValue());
+            default -> super.fromOtherCyodaType(value, columnName);
+        };
+    }
 }
