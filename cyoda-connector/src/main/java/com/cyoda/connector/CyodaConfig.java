@@ -17,25 +17,22 @@
 
 package com.cyoda.connector;
 
-import com.google.common.net.HostAndPort;
 import io.airlift.configuration.Config;
-import io.airlift.configuration.ConfigurationFactory;
-
-import jakarta.validation.constraints.NotNull;
-import java.net.URL;
-import java.util.concurrent.TimeUnit;
 
 @SuppressWarnings("UnstableApiUsage")
 public class CyodaConfig {
 
-    private static final String DEFAULT_SCHEMA_NAME = "static_tables";
+    private static final String DEFAULT_REPORTING_SCHEMA_NAME = "reporting";
+    private static final String DEFAULT_MAINTENANCE_SCHEMA_NAME = "maintenance";
     private static final int DEFAULT_REQUEST_PAGE_SIZE = 10;
 
     private boolean logApiCallStats;
     private boolean logApiCallResponse;
     private long apiCallStatsMaxRecords;
     private long pushdownLogMaxRecords;
-    private String schemaName;
+    private String reportingSchemaName;
+    private String maintenanceSchemaName;
+    private boolean testingMode;
     private int rowRequestPageSize;
     private long cacheUserAuthSecAfterWrite;
     private long cacheReportHistorySecAfterWrite;
@@ -57,7 +54,9 @@ public class CyodaConfig {
 
 
     private void setDefaults() {
-        schemaName = DEFAULT_SCHEMA_NAME;
+        reportingSchemaName = DEFAULT_REPORTING_SCHEMA_NAME;
+        maintenanceSchemaName = DEFAULT_MAINTENANCE_SCHEMA_NAME;
+        testingMode = false;
         rowRequestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
         logApiCallStats = false;
         logApiCallResponse = true; //does not matter if logApiCallStats = false
@@ -113,16 +112,33 @@ public class CyodaConfig {
         this.pushdownLogMaxRecords = pushdownLogMaxRecords;
     }
 
-    public String getSchemaName() {
-        return schemaName;
+    public String getReportingSchemaName() {
+        return reportingSchemaName;
     }
 
-    @Config("cyoda.connector.schema-name")
-    public CyodaConfig setSchemaName(String schemaName) {
-        this.schemaName = schemaName;
+    @Config("cyoda.connector.reporting-schema-name")
+    public CyodaConfig setReportingSchemaName(String reportingSchemaName) {
+        this.reportingSchemaName = reportingSchemaName;
         return this;
     }
 
+    public String getMaintenanceSchemaName() {
+        return maintenanceSchemaName;
+    }
+
+    @Config("cyoda.connector.maintenance-schema-name")
+    public CyodaConfig setMaintenanceSchemaName(String maintenanceSchemaName) {
+        this.maintenanceSchemaName = maintenanceSchemaName;
+        return this;
+    }
+
+    public boolean isTestingMode() {
+        return testingMode;
+    }
+    @Config("cyoda.connector.testing-mode")
+    public void setTestingMode(boolean testingMode) {
+        this.testingMode = testingMode;
+    }
 
     public int getRowRequestPageSize() {
         return rowRequestPageSize;
