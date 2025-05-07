@@ -4,6 +4,7 @@ import com.cyoda.connector.client.logic.converters.PrestoValueConverter;
 import com.cyoda.connector.client.treenode.dto.conditions.AbstractTrinoConditionDto;
 import com.cyoda.connector.client.treenode.dto.conditions.GroupTrinoConditionDto;
 import com.cyoda.connector.client.treenode.dto.conditions.Operation;
+import com.cyoda.connector.client.treenode.dto.conditions.SimpleTrinoConditionDto;
 import com.cyoda.connector.handles.CyodaColumnHandle;
 import io.trino.spi.block.ValueBlock;
 import io.trino.spi.predicate.Domain;
@@ -13,6 +14,8 @@ import io.trino.spi.predicate.ValueSet;
 import java.util.*;
 
 public class DomainToCondition {
+
+    public static final SimpleTrinoConditionDto IS_NULL_CONDITION = new SimpleTrinoConditionDto(Operation.IS_NULL, null);
 
     private DomainToCondition() {
         // Utility class
@@ -25,9 +28,14 @@ public class DomainToCondition {
 
     public static AbstractTrinoConditionDto createTrinoCondition(CyodaColumnHandle columnHandle, Domain domain) {
         ValueSet valueSet = domain.getValues();
-        return valueSet.getValuesProcessor().transform(ranges -> {
+        AbstractTrinoConditionDto valueBasedCondition = valueSet.getValuesProcessor().transform(ranges -> {
             List<AbstractTrinoConditionDto> rangeConditions = new ArrayList<>();
-            for (Range range : ranges.getOrderedRanges()) {
+            List<Range> orderedRanges = ranges.getOrderedRanges();
+            if (orderedRanges.isEmpty()) return null;
+            if (orderedRanges.size() == 1 && orderedRanges.getFirst().isHighUnbounded() && orderedRanges.getFirst().isLowUnbounded()) {
+                return new SimpleTrinoConditionDto(Operation.NOT_NULL, null);
+            }
+            for (Range range : orderedRanges) {
                 if (range.isSingleValue()) {
                     rangeConditions.add(convert(columnHandle, Operation.EQUALS, range.getHighValue().get()));
                 } else {
@@ -58,6 +66,12 @@ public class DomainToCondition {
             }
             return new GroupTrinoConditionDto(GroupTrinoConditionDto.Operator.OR, equalsConditions).simplify();
         }, ignored -> null);
+        if (domain.isNullAllowed()) {
+            if (valueBasedCondition == null)
+                return IS_NULL_CONDITION;
+            else
+                return new GroupTrinoConditionDto(GroupTrinoConditionDto.Operator.OR, List.of(valueBasedCondition, IS_NULL_CONDITION));
+        } else return valueBasedCondition;
     }
 
 }
