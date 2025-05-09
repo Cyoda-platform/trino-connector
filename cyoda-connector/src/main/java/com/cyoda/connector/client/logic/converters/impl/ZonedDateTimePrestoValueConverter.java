@@ -41,8 +41,8 @@ public class ZonedDateTimePrestoValueConverter extends LongWrittenTypeValueConve
     private final DateTimeFormatter formatter;
 
     private final TemporalTransformer<ZonedDateTime> temporalTransformer = new TemporalTransformer<ZonedDateTime>(
-            year -> year.atMonth(12).atEndOfMonth().atStartOfDay().atZone(ZoneOffset.UTC),
-            yearMonth -> yearMonth.atEndOfMonth().atStartOfDay().atZone(ZoneOffset.UTC),
+            year -> year.atMonth(1).atDay(1).atStartOfDay().atZone(ZoneOffset.UTC),
+            yearMonth -> yearMonth.atDay(1).atStartOfDay().atZone(ZoneOffset.UTC),
             localTime -> localTime.atDate(LocalDate.EPOCH).atZone(ZoneOffset.UTC),
             localDate -> localDate.atStartOfDay().atZone(ZoneOffset.UTC),
             null,

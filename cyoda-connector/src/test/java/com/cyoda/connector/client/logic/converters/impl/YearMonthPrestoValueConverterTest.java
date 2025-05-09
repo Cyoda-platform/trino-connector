@@ -34,7 +34,7 @@ public class YearMonthPrestoValueConverterTest {
         Integer result = converter.toInt(testValue);
         
         // The epoch day for the end of month (2023-01-31)
-        long expectedEpochDay = testValue.atEndOfMonth().toEpochDay();
+        long expectedEpochDay = testValue.atDay(1).toEpochDay();
         assertEquals(result.intValue(), expectedEpochDay);
     }
 
@@ -43,7 +43,7 @@ public class YearMonthPrestoValueConverterTest {
         // Create a YearMonth
         YearMonth expectedYearMonth = YearMonth.of(2023, 1);
         // Get the epoch day for the end of month
-        int epochDay = (int) expectedYearMonth.atEndOfMonth().toEpochDay();
+        int epochDay = (int) expectedYearMonth.atDay(1).toEpochDay();
         
         YearMonth result = converter.fromInt(epochDay);
         
@@ -58,13 +58,13 @@ public class YearMonthPrestoValueConverterTest {
         
         converter.writeValue(type, blockBuilder, testValue);
         
-        verify(type).writeLong(blockBuilder, testValue.atEndOfMonth().toEpochDay());
+        verify(type).writeLong(blockBuilder, testValue.atDay(1).toEpochDay());
     }
 
     @Test
     public void testFromPrestoNative() {
         YearMonth expectedYearMonth = YearMonth.of(2023, 1);
-        int epochDay = (int) expectedYearMonth.atEndOfMonth().toEpochDay();
+        int epochDay = (int) expectedYearMonth.atDay(1).toEpochDay();
         
         YearMonth result = converter.fromPrestoNative((long) epochDay);
         

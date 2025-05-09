@@ -31,7 +31,7 @@ import java.time.YearMonth;
 
 public class YearMonthPrestoValueConverter extends IntWrittenTypeValueConverter<YearMonth> {
     private final TemporalTransformer<YearMonth> temporalTransformer = new TemporalTransformer<YearMonth>(
-            year -> year.atMonth(12), yearMonth -> yearMonth, null, null, null, null
+            year -> year.atMonth(1), yearMonth -> yearMonth, null, null, null, null
     );
 
     @Inject
