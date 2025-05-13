@@ -46,7 +46,7 @@ public class YearMonthPrestoValueConverter extends IntWrittenTypeValueConverter<
 
     @Override
     public Integer toInt(@NotNull YearMonth value) {
-        return (int) value.atEndOfMonth().toEpochDay();
+        return (int) value.atDay(1).toEpochDay();
     }
 
     @Override
