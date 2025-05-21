@@ -33,8 +33,8 @@ import java.time.format.DateTimeFormatter;
 
 public class LocalDateTimePrestoValueConverter extends TimestampTypeValueConverter<LocalDateTime> {
     private final TemporalTransformer<LocalDateTime> temporalTransformer = new TemporalTransformer<LocalDateTime>(
-            year -> year.atMonth(12).atEndOfMonth().atStartOfDay(),
-            yearMonth -> yearMonth.atEndOfMonth().atStartOfDay(),
+            year -> year.atMonth(1).atDay(1).atStartOfDay(),
+            yearMonth -> yearMonth.atDay(1).atStartOfDay(),
             localTime -> localTime.atDate(LocalDate.EPOCH),
             LocalDate::atStartOfDay,
             localDateTime -> localDateTime,

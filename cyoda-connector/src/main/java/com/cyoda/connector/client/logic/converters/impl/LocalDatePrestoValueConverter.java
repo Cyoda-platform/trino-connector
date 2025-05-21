@@ -33,7 +33,7 @@ import java.time.format.DateTimeFormatter;
 
 public class LocalDatePrestoValueConverter extends IntWrittenTypeValueConverter<LocalDate> {
     private final TemporalTransformer<LocalDate> temporalTransformer = new TemporalTransformer<>(
-            year -> year.atMonth(12).atEndOfMonth(), YearMonth::atEndOfMonth, null, localDate -> localDate, null, null
+            year -> year.atMonth(1).atDay(1), yearMonth -> yearMonth.atDay(1), null, localDate -> localDate, null, null
     );
 
     @Inject
