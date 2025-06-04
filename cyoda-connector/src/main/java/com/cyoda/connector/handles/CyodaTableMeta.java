@@ -139,10 +139,10 @@ public class CyodaTableMeta {
         return new SchemaTableName(schemaName, tableName);
     }
     public CyodaTableHandle toMainHandle(long createDate, long lastUpdateDate) {
-        return new CyodaTableHandle(schemaName, tableName, tableType, reportConfigId, createDate, lastUpdateDate, TupleDomain.all(), null, null, null);
+        return new CyodaTableHandle(schemaName, tableName, tableType, reportConfigId, createDate, lastUpdateDate, TupleDomain.all(), null, null, null, null);
     }
     public CyodaTableHandle toSuppHandle(String tablePostfix, CyodaTableType tableType) {
-        return new CyodaTableHandle(schemaName, tableName + tablePostfix, tableType, reportConfigId, 0, 0, TupleDomain.all(), null, null, null);
+        return new CyodaTableHandle(schemaName, tableName + tablePostfix, tableType, reportConfigId, 0, 0, TupleDomain.all(), null, null, null, null);
     }
 
     @Override

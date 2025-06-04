@@ -11,6 +11,8 @@ import com.cyoda.connector.client.treenode.DomainToCondition;
 import com.cyoda.connector.client.treenode.CyodaRSocketClient;
 import com.cyoda.connector.client.treenode.dto.DataRequestDto;
 import com.cyoda.connector.client.treenode.dto.EntityContentDto;
+import com.cyoda.connector.client.treenode.dto.conditions.complex.AbstractConditionDto;
+import com.cyoda.connector.client.treenode.dto.conditions.complex.GroupConditionDto;
 import com.cyoda.connector.client.types.CompoundDataType;
 import com.cyoda.connector.client.types.DataType;
 import com.cyoda.connector.handles.CyodaColumnHandle;
@@ -136,6 +138,7 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
         UUID metaClassId = UUID.fromString(s[0]);
         Map<String,Map<String, AbstractTrinoConditionDto>> condition;
         String uniformedPath = s[1];
+        List<AbstractConditionDto> dataConditions = new ArrayList<>();
         if (constraint.isAll()) {
             condition = null;
         } else {
@@ -145,30 +148,30 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
                 Domain domain = entry.getValue();
                 CyodaColumnHandle columnHandle = (CyodaColumnHandle) entry.getKey();
                 CyodaColumnHandle.ColumnCategory columnCategory = columnHandle.getColumnCategory();
-                Map<String, AbstractTrinoConditionDto> categoryMap = condition.computeIfAbsent(columnCategory.toString(), x -> new HashMap<>());
                 AbstractTrinoConditionDto trinoCondition = DomainToCondition.createTrinoCondition(columnHandle, domain);
-                validatePointTimeCondition(columnCategory, columnHandle, trinoCondition);
                 String conditionKey = columnHandle.getColumnKey();
-                if (columnCategory == CyodaColumnHandle.ColumnCategory.DATA){
-                    CompoundDataType dataType = columnHandle.getDataType();
-                    String elementDataType;
-                    if (dataType.getMainType() == DataType.LIST)
-                        elementDataType = dataType.getTypeParams()[0].toString();
-                    else
-                        elementDataType = dataType.getMainType().toString();
-                    conditionKey += "|" + elementDataType;
+                if (columnCategory == CyodaColumnHandle.ColumnCategory.SPECIAL || columnCategory == CyodaColumnHandle.ColumnCategory.INDEX) {
+                    Map<String, AbstractTrinoConditionDto> categoryMap = condition.computeIfAbsent(columnCategory.toString(), x -> new HashMap<>());
+                    validatePointTimeCondition(columnCategory, columnHandle, trinoCondition);
+                    categoryMap.put(conditionKey, trinoCondition);
+                } else {
+                    dataConditions.add(trinoCondition.toComplexCondition(columnCategory, conditionKey));
                 }
-                categoryMap.put(conditionKey, trinoCondition);
             }
         }
 
         String queryId = split.getQueryId();
         List<CyodaColumnHandle> selectedFields = split.getTableHandle().getSelectedFields();
+        AbstractConditionDto expressionCondition = split.getTableHandle().getCondition();
+        if (expressionCondition != null && !expressionCondition.isAll())
+            dataConditions.add(expressionCondition);
+        GroupConditionDto complexCondition = new GroupConditionDto(GroupConditionDto.Operator.AND, dataConditions);
         DataRequestDto dataRequest = new DataRequestDto(
                 metaClassId,
                 split.getUserId(),
                 uniformedPath,
                 condition,
+                complexCondition.isAll() ? null : complexCondition,
                 selectedFields == null ? null : selectedFields.stream()
                         .filter(f -> f.getColumnCategory() == CyodaColumnHandle.ColumnCategory.DATA)
                         .map(CyodaColumnHandle::getColumnKey).toList());

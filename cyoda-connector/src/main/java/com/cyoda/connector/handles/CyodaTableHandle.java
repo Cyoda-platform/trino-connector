@@ -1,5 +1,7 @@
 package com.cyoda.connector.handles;
 
+import com.cyoda.connector.client.treenode.dto.conditions.AbstractTrinoConditionDto;
+import com.cyoda.connector.client.treenode.dto.conditions.complex.AbstractConditionDto;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.spi.connector.ColumnHandle;
@@ -21,6 +23,7 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     private final long createDate;
     private final long lastUpdateDate;
     private TupleDomain<ColumnHandle> constraint;
+    private AbstractConditionDto condition;
     private List<CyodaColumnHandle> selectedFields;
     private List<CyodaColumnHandle> sortingFields;
     private Long limit;
@@ -34,6 +37,7 @@ public class CyodaTableHandle implements ConnectorTableHandle {
             @JsonProperty("createDate") long createDate,
             @JsonProperty("lastUpdateDate") long lastUpdateDate,
             @JsonProperty("constraint")TupleDomain<ColumnHandle> constraint,
+            @JsonProperty("condition") AbstractConditionDto condition,
             @JsonProperty("selectedFields") List<CyodaColumnHandle> selectedFields,
             @JsonProperty("sortingFields") List<CyodaColumnHandle> sortingFields,
             @JsonProperty("limit") Long limit) {
@@ -44,13 +48,14 @@ public class CyodaTableHandle implements ConnectorTableHandle {
         this.createDate = createDate;
         this.lastUpdateDate = lastUpdateDate;
         this.constraint = constraint;
+        this.condition = condition;
         this.selectedFields = selectedFields;
         this.sortingFields = sortingFields;
         this.limit = limit;
     }
     //for static tables
     public CyodaTableHandle(String schemaName, String tableName, CyodaTableType tableType){
-        this(schemaName, tableName, tableType, null, 0,0, null, null, null, null);
+        this(schemaName, tableName, tableType, null, 0,0, null, null, null, null, null);
     }
 
     public CyodaTableHandle withConstraint(TupleDomain<ColumnHandle> newConstraint) {
@@ -62,6 +67,7 @@ public class CyodaTableHandle implements ConnectorTableHandle {
                 this.createDate,
                 this.lastUpdateDate,
                 newConstraint,
+                this.condition,
                 this.selectedFields,
                 this.sortingFields,
                 this.limit
@@ -76,6 +82,7 @@ public class CyodaTableHandle implements ConnectorTableHandle {
                 this.createDate,
                 this.lastUpdateDate,
                 TupleDomain.all(),
+                null,
                 this.selectedFields,
                 this.sortingFields,
                 this.limit
@@ -124,6 +131,15 @@ public class CyodaTableHandle implements ConnectorTableHandle {
     }
     public void setConstraint(TupleDomain<ColumnHandle> constraint) {
         this.constraint = constraint;
+    }
+
+    @JsonProperty
+    public AbstractConditionDto getCondition() {
+        return condition;
+    }
+
+    public void setCondition(AbstractConditionDto condition) {
+        this.condition = condition;
     }
 
     @JsonProperty

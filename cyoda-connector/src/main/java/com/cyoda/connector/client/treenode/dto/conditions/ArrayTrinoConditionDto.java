@@ -1,5 +1,8 @@
 package com.cyoda.connector.client.treenode.dto.conditions;
 
+import com.cyoda.connector.client.treenode.dto.conditions.complex.AbstractConditionDto;
+import com.cyoda.connector.client.treenode.dto.conditions.complex.ArrayConditionDto;
+import com.cyoda.connector.handles.CyodaColumnHandle;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -32,6 +35,11 @@ public class ArrayTrinoConditionDto extends AbstractTrinoConditionDto {
     @Override
     public String getType() {
         return "array";
+    }
+
+    @Override
+    public AbstractConditionDto toComplexCondition(CyodaColumnHandle.ColumnCategory columnCategory, String columnKey) {
+        return new ArrayConditionDto(columnKey, operation, values);
     }
 
     @Override

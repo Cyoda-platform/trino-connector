@@ -93,7 +93,7 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
                 .map(entry -> {
                     CyodaTableMeta tableMeta = entry.getValue();
                     return new CyodaTableHandle(entry.getKey().getSchemaName(), tableMeta.getTableName(), CyodaTableType.TREE_NODE_TABLE,
-                            tableMeta.getReportConfigId(), 0,0, TupleDomain.all(), null, null, null);
+                            tableMeta.getReportConfigId(), 0,0, TupleDomain.all(), null, null, null, null);
                 }).toList();
 
     }
