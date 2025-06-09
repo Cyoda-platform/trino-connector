@@ -26,6 +26,9 @@ import com.cyoda.connector.client.reporting.stats.ConditionPushdownLogMonitor;
 import com.cyoda.connector.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.connector.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.connector.client.treenode.CyodaRSocketClient;
+import com.cyoda.connector.client.treenode.dto.conditions.complex.AbstractConditionDto;
+import com.cyoda.connector.client.treenode.dto.conditions.complex.GroupConditionDto;
+import com.cyoda.connector.client.treenode.dto.conditions.expressions.SupportedExpressionConditions;
 import com.cyoda.connector.client.treenode.dto.view.TrinoViewDefinitionDto;
 import com.cyoda.connector.client.treenode.dto.view.TrinoViewDto;
 import com.cyoda.connector.handles.CyodaColumnHandle;
@@ -44,6 +47,7 @@ import io.trino.spi.TrinoException;
 import io.trino.spi.connector.*;
 import io.trino.spi.expression.ConnectorExpression;
 import io.trino.spi.expression.Constant;
+import io.trino.spi.expression.Variable;
 import io.trino.spi.predicate.Domain;
 import io.trino.spi.predicate.TupleDomain;
 
@@ -54,6 +58,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -247,7 +252,14 @@ public class CyodaMetadata implements ConnectorMetadata {
         if(!tableHandle.getTableType().isPushdownSupported()) return Optional.empty();
         TupleDomain<ColumnHandle> oldDomain = tableHandle.getConstraint();
         TupleDomain<ColumnHandle> newDomain = oldDomain.intersect(constraint.getSummary());
-        if (oldDomain.equals(newDomain) && Constant.TRUE.equals(constraint.getExpression())) { // Pushdown has no effect
+        if (tableHandle.getCondition() == null) { //parsing expression wasn't attempted
+            if (Constant.TRUE.equals(constraint.getExpression())) {
+                tableHandle.setCondition(GroupConditionDto.ALL);
+            } else {
+                AbstractConditionDto parsed = SupportedExpressionConditions.convertFailsafe(constraint.getExpression(), constraint.getAssignments());
+                tableHandle.setCondition(Objects.requireNonNullElse(parsed, GroupConditionDto.ALL));
+            }
+        } else if (oldDomain.equals(newDomain)) { // Pushdown has no effect
             return Optional.empty();
         }
         TupleDomain<ColumnHandle> remainingFilter;
