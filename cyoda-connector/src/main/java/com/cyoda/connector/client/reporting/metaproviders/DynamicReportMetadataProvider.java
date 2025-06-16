@@ -3,7 +3,6 @@ package com.cyoda.connector.client.reporting.metaproviders;
 import com.cyoda.api.view.GridConfigFieldsView;
 import com.cyoda.connector.CyodaConfig;
 import com.cyoda.connector.auth.AuthContext;
-import com.cyoda.connector.auth.AuthService;
 import com.cyoda.connector.client.reporting.meta.ConfiguredReportsApi;
 import com.cyoda.connector.client.reporting.meta.ReportConfigDetailsApi;
 import com.cyoda.connector.client.reporting.meta.ReportConfigKey;
@@ -12,6 +11,7 @@ import com.cyoda.connector.client.reporting.meta.ReportListKey;
 import com.cyoda.connector.client.reporting.stats.ContentIdLoadingCache;
 import com.cyoda.connector.client.reporting.stats.CyodaCacheMonitor;
 import com.cyoda.connector.handles.CyodaColumnHandle;
+import com.cyoda.connector.handles.CyodaTableCategory;
 import com.cyoda.connector.handles.CyodaTableHandle;
 import com.cyoda.connector.handles.CyodaTableMeta;
 import com.cyoda.connector.handles.CyodaTableType;
@@ -45,7 +45,7 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
 
     @Inject
     public DynamicReportMetadataProvider(CyodaConfig config,
-                                         TypeManager typeManager, AuthService auth,
+                                         TypeManager typeManager,
                                          StaticTableMetadataProvider staticTableMetadataProvider,
                                          ConfiguredReportsApi configuredReportsApiHandler,
                                          ReportConfigDetailsApi reportConfigDetailsApiHandler,
@@ -62,6 +62,11 @@ public class DynamicReportMetadataProvider extends TableMetadataProvider {
                     return getTableHandleFromCyoda(key.configId);
                 }));
         cacheMonitor.register("META", tableMetaCache, key -> key.configId, x->1);
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return CyodaTableCategory.REPORT.isEnabled(config);
     }
 
     @Override

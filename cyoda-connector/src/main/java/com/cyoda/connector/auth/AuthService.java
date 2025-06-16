@@ -9,21 +9,19 @@ import java.security.Principal;
 
 public class AuthService {
     private final CyodaConfig config;
-    private final AuthContext anonymousAuth;
+    private final CyodaAuthorizationManager authorizationHandler;
 
     @Inject
-    public AuthService(CyodaConfig config) {
+    public AuthService(CyodaConfig config, CyodaAuthorizationManager authorizationHandler) {
         this.config = config;
-        anonymousAuth = new AuthContext(config.getAnonymousUserId());
+        this.authorizationHandler = authorizationHandler;
     }
 
 
     public @Nonnull AuthContext fromSession(@Nonnull ConnectorSession session) {
-        if ( config.isAnonymousLogin() ) return anonymousAuth;
-
         Principal principal = session.getIdentity().getPrincipal()
                 .orElseThrow(() -> new IllegalArgumentException("principal is missing"));
 
-        return new AuthContext(principal.getName());
+        return authorizationHandler.getAuthContext(principal.toString());
     }
 }

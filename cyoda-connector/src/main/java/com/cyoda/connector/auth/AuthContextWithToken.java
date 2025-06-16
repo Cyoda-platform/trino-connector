@@ -22,35 +22,20 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class AuthContextWithToken extends AuthContext {
-    private final AuthPayload payload;
+    private final String token;
 
     @JsonCreator
     public AuthContextWithToken(
             @JsonProperty("userId") String userId,
-            @JsonProperty("payload") AuthPayload payload
+            @JsonProperty("token") String token
     ) {
         super(userId);
-        this.payload = payload;
+        this.token = token;
     }
 
     @JsonProperty
-    public AuthPayload getPayload() {
-        return payload;
+    public String getToken() {
+        return token;
     }
 
-    @JsonIgnore
-    public AuthContextWithToken withContext(RefreshContext refreshContext) {
-        return new AuthContextWithToken(
-                this.userId,
-                new AuthPayload(
-                        this.payload.getRefreshTokenExpiry(),
-                        this.payload.getIdleTimeMs(),
-                        this.payload.getRoles(),
-                        refreshContext.getTokenExpiry(),
-                        refreshContext.getToken(),
-                        this.payload.getRefreshToken(),
-                        this.payload.getUsername()
-                )
-        );
-    }
 }

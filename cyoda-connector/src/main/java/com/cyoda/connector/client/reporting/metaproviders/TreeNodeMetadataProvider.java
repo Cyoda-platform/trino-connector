@@ -11,6 +11,7 @@ import com.cyoda.connector.client.treenode.dto.schema.TableConfigDto;
 import com.cyoda.connector.client.types.CompoundDataType;
 import com.cyoda.connector.client.types.DataType;
 import com.cyoda.connector.handles.CyodaColumnHandle;
+import com.cyoda.connector.handles.CyodaTableCategory;
 import com.cyoda.connector.handles.CyodaTableHandle;
 import com.cyoda.connector.handles.CyodaTableMeta;
 import com.cyoda.connector.handles.CyodaTableType;
@@ -83,6 +84,11 @@ public class TreeNodeMetadataProvider extends TableMetadataProvider {
             schemaCache.put(schemaName, mapSchema(schemaConfigDto));
         });
         return result;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return CyodaTableCategory.TREE_NODE.isEnabled(config);
     }
 
     @Override
