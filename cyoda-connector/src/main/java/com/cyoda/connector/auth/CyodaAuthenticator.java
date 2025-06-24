@@ -46,7 +46,7 @@ public class CyodaAuthenticator extends RestAuthenticator implements PasswordAut
 
     @Override
     public Principal createAuthenticatedPrincipal(String user, String password) {
-        if (user == null || user.isEmpty() || UUID_PATTERN.matcher(user).matches()) { // hijack user/password to deliver token
+        if (user == null || user.isEmpty()) { // hijack user/password to deliver token
             return authHandler.authToken(authRestTemplate, testTokenUrl, password);
         } else {
             return authHandler.authPassword(authRestTemplate, loginUri, testTokenUrl, user, password);

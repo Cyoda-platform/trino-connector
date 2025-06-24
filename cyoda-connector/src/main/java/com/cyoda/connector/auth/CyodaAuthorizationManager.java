@@ -63,7 +63,7 @@ public class CyodaAuthorizationManager {
         AbstractTimedAuth auth = authMap.get(principal);
         if (auth != null) {
             return new AuthContext(auth.getUserInfo().userId());
-        } else return new AuthContext(principal); // test mode access with userId as username
+        } else return null;
     }
 
     private class PasswordTimedAuth extends AbstractTimedAuth {
@@ -186,7 +186,6 @@ public class CyodaAuthorizationManager {
             URI tokenUriWithParam = UriComponentsBuilder.fromUriString(testTokenUri)
                     .queryParam(JWT_PARAM, userToken).build().toUri();
             HttpHeaders sendHeader = RestAuthenticator.standardHeader();
-            sendHeader.add("X-Requested-With", "XMLHttpRequest");
             sendHeader.add("Authorization", "Bearer " + userToken);
             HttpEntity<?> requestEntity = new HttpEntity<>(sendHeader);
             ResponseEntity<String> response =

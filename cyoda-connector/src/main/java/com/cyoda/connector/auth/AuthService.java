@@ -4,6 +4,8 @@ import com.cyoda.connector.CyodaConfig;
 import io.trino.spi.connector.ConnectorSession;
 
 import javax.annotation.Nonnull;
+
+import io.trino.spi.security.AccessDeniedException;
 import jakarta.inject.Inject;
 import java.security.Principal;
 
@@ -22,6 +24,11 @@ public class AuthService {
         Principal principal = session.getIdentity().getPrincipal()
                 .orElseThrow(() -> new IllegalArgumentException("principal is missing"));
 
-        return authorizationHandler.getAuthContext(principal.toString());
+        AuthContext authContext = authorizationHandler.getAuthContext(principal.toString());
+        if (authContext == null) {
+            if (config.isTestingMode()) {
+                return new AuthContext(principal.toString()); // test mode access with userId as username
+            } else throw new AccessDeniedException("Principal "+ principal +" never authorized");
+        } else return authContext;
     }
 }

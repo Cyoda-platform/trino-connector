@@ -29,6 +29,7 @@ public class CyodaConfig {
     private long apiCallStatsMaxRecords;
     private long pushdownLogMaxRecords;
     private String reportingSchemaName;
+    private boolean testingMode;
     private int rowRequestPageSize;
     private long cacheUserAuthSecAfterWrite;
     private long cacheReportHistorySecAfterWrite;
@@ -49,6 +50,7 @@ public class CyodaConfig {
 
     private void setDefaults() {
         reportingSchemaName = null;
+        testingMode = false;
         rowRequestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
         logApiCallStats = false;
         logApiCallResponse = true; //does not matter if logApiCallStats = false
@@ -110,6 +112,14 @@ public class CyodaConfig {
     public CyodaConfig setReportingSchemaName(String reportingSchemaName) {
         this.reportingSchemaName = reportingSchemaName;
         return this;
+    }
+
+    public boolean isTestingMode() {
+        return testingMode;
+    }
+    @Config("cyoda.connector.testing-mode")
+    public void setTestingMode(boolean testingMode) {
+        this.testingMode = testingMode;
     }
 
     public int getRowRequestPageSize() {
