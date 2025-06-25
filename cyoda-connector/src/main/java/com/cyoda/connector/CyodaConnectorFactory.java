@@ -17,6 +17,7 @@
 
 package com.cyoda.connector;
 
+import com.cyoda.connector.auth.CyodaAuthorizationManager;
 import io.airlift.bootstrap.Bootstrap;
 import io.airlift.json.JsonModule;
 import io.opentelemetry.api.OpenTelemetry;
@@ -36,6 +37,13 @@ import static java.util.Objects.requireNonNull;
 
 public class CyodaConnectorFactory implements ConnectorFactory {
     public static final String CATALOG_NAME = "cyoda";
+    public static final String MAINTENANCE_SCHEMA_NAME = "maintenance";
+
+    private final CyodaAuthorizationManager authorization;
+
+    public CyodaConnectorFactory(CyodaAuthorizationManager authorization) {
+        this.authorization = authorization;
+    }
 
     @Override
     public String getName() {
@@ -54,6 +62,7 @@ public class CyodaConnectorFactory implements ConnectorFactory {
                         binder.bind(TypeManager.class).toInstance(context.getTypeManager());
                         binder.bind(OpenTelemetry.class).toInstance(context.getOpenTelemetry());
                         binder.bind(Tracer.class).toInstance(context.getTracer());
+                        binder.bind(CyodaAuthorizationManager.class).toInstance(authorization);
                     });
 
             //noinspection UnstableApiUsage

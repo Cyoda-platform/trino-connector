@@ -22,8 +22,6 @@ import io.airlift.configuration.Config;
 @SuppressWarnings("UnstableApiUsage")
 public class CyodaConfig {
 
-    private static final String DEFAULT_REPORTING_SCHEMA_NAME = "reporting";
-    private static final String DEFAULT_MAINTENANCE_SCHEMA_NAME = "maintenance";
     private static final int DEFAULT_REQUEST_PAGE_SIZE = 10;
 
     private boolean logApiCallStats;
@@ -31,7 +29,6 @@ public class CyodaConfig {
     private long apiCallStatsMaxRecords;
     private long pushdownLogMaxRecords;
     private String reportingSchemaName;
-    private String maintenanceSchemaName;
     private boolean testingMode;
     private int rowRequestPageSize;
     private long cacheUserAuthSecAfterWrite;
@@ -40,8 +37,6 @@ public class CyodaConfig {
     private long cacheReportPagesHoursAfterAccess;
     private long cacheReportGroupsHoursAfterAccess;
 
-    private boolean anonymousLogin;
-    private String anonymousUserId;
     private int predicatePushdownThreshold;
     private boolean isNullPushdown;
 
@@ -54,8 +49,7 @@ public class CyodaConfig {
 
 
     private void setDefaults() {
-        reportingSchemaName = DEFAULT_REPORTING_SCHEMA_NAME;
-        maintenanceSchemaName = DEFAULT_MAINTENANCE_SCHEMA_NAME;
+        reportingSchemaName = null;
         testingMode = false;
         rowRequestPageSize = DEFAULT_REQUEST_PAGE_SIZE;
         logApiCallStats = false;
@@ -64,8 +58,6 @@ public class CyodaConfig {
         pushdownLogMaxRecords = 10000;
         predicatePushdownThreshold = 10000;
         isNullPushdown = false;
-        anonymousLogin = false;
-        anonymousUserId = null;
         cacheUserAuthSecAfterWrite = 5;
         cacheReportHistorySecAfterWrite = 30;
         cacheReportMetaHoursAfterAccess = 24;
@@ -122,16 +114,6 @@ public class CyodaConfig {
         return this;
     }
 
-    public String getMaintenanceSchemaName() {
-        return maintenanceSchemaName;
-    }
-
-    @Config("cyoda.connector.maintenance-schema-name")
-    public CyodaConfig setMaintenanceSchemaName(String maintenanceSchemaName) {
-        this.maintenanceSchemaName = maintenanceSchemaName;
-        return this;
-    }
-
     public boolean isTestingMode() {
         return testingMode;
     }
@@ -147,25 +129,6 @@ public class CyodaConfig {
     @Config("cyoda.connector.row-request-page-size")
     public void setRowRequestPageSize(int rowRequestPageSize) {
         this.rowRequestPageSize = rowRequestPageSize;
-    }
-
-
-    @Config("cyoda.connector.allow-anonymous-login")
-    public void setAnonymousLogin(boolean anonymousLogin) {
-        this.anonymousLogin = anonymousLogin;
-    }
-
-    public boolean isAnonymousLogin() {
-        return anonymousLogin;
-    }
-
-    @Config("cyoda.connector.anonymous-user-id")
-    public void setAnonymousUserId(String anonymousUserId) {
-        this.anonymousUserId = anonymousUserId;
-    }
-
-    public String getAnonymousUserId() {
-        return anonymousUserId;
     }
 
     public long getCacheUserAuthSecAfterWrite() {

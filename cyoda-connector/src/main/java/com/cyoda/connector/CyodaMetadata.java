@@ -108,8 +108,8 @@ public class CyodaMetadata implements ConnectorMetadata {
                 }));
         cacheMonitor.register("AUTH", tableByUserCache, AuthContext::getUserId, Map::size);
         defaultTableList = new HashMap<>();
-        defaultTableList.put(new SchemaTableName(config.getMaintenanceSchemaName(), StaticTableMetadata.LOG_TABLE_NAME),
-                new CyodaTableHandle(config.getMaintenanceSchemaName(), StaticTableMetadata.LOG_TABLE_NAME, CyodaTableType.LOG_TABLE));
+        defaultTableList.put(new SchemaTableName(CyodaConnectorFactory.MAINTENANCE_SCHEMA_NAME, StaticTableMetadata.LOG_TABLE_NAME),
+                new CyodaTableHandle(CyodaConnectorFactory.MAINTENANCE_SCHEMA_NAME, StaticTableMetadata.LOG_TABLE_NAME, CyodaTableType.LOG_TABLE));
         this.rSocketClient = rSocketClient;
         this.pushdownLogMonitor = pushdownLogMonitor;
     }
@@ -121,6 +121,7 @@ public class CyodaMetadata implements ConnectorMetadata {
                     staticMetadataProvider,
                     dynamicReportMetadataProvider,
                     treeNodeMetadataProvider)
+                    .filter(TableMetadataProvider::isEnabled)
                     .flatMap(x -> x.listTables(key).stream())
                     .collect(Collectors.groupingBy(tableHandle -> new SchemaTableName(tableHandle.getSchemaName(), tableHandle.getTableName())));
             Map<SchemaTableName, CyodaTableHandle> result = tableNameListMap.entrySet().stream()

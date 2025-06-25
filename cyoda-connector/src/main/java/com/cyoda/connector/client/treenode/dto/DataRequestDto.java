@@ -78,7 +78,9 @@ public class DataRequestDto {
                 }
             }
         }
-        map.put("expressionCondition", expressionCondition.toString());
+        if (expressionCondition != null) {
+            map.put("expressionCondition", expressionCondition.toString());
+        }
         return map;
     }
 }

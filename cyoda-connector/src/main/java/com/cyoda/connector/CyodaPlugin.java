@@ -18,12 +18,8 @@
 package com.cyoda.connector;
 
 import com.cyoda.connector.auth.CyodaAuthenticatorFactory;
-//import com.cyoda.connector.client.types.BigDecimalDistinctFromOperator;
-//import com.cyoda.connector.client.types.BigDecimalOperators;
-//import com.cyoda.connector.client.types.BigDecimalType;
-//import com.cyoda.connector.client.types.BigIntegerDistinctFromOperator;
-//import com.cyoda.connector.client.types.BigIntegerOperators;
-//import com.cyoda.connector.client.types.BigIntegerType;
+import com.cyoda.connector.auth.CyodaAuthorizationManager;
+import com.cyoda.connector.auth.CyodaSystemAccessControl;
 import com.cyoda.connector.auth.CyodaTokenAuthFactory;
 import io.trino.spi.Plugin;
 import io.trino.spi.connector.ConnectorFactory;
@@ -31,11 +27,14 @@ import io.trino.spi.security.HeaderAuthenticatorFactory;
 import io.trino.spi.security.PasswordAuthenticatorFactory;
 import io.trino.spi.eventlistener.EventListenerFactory;
 import com.google.common.collect.ImmutableList;
+import io.trino.spi.security.SystemAccessControlFactory;
 
 public class CyodaPlugin implements Plugin {
+
+    CyodaAuthorizationManager cyodaAuthorization =  new CyodaAuthorizationManager();
     @Override
     public Iterable<ConnectorFactory> getConnectorFactories() {
-        return ImmutableList.of(new CyodaConnectorFactory());
+        return ImmutableList.of(new CyodaConnectorFactory(cyodaAuthorization));
     }
 
     @Override
@@ -43,39 +42,24 @@ public class CyodaPlugin implements Plugin {
         return ImmutableList.of(new CyodaEventListenerFactory());
     }
 
-//    private static final List<Type> OUR_TYPES = ImmutableList.<Type>builder()
-//            .add(BigDecimalType.BIG_DECIMAL_TYPE)
-//            .add(BigIntegerType.BIG_INTEGER_TYPE)
-//            .build();
-//
-//    @Override
-//    public Iterable<Type> getTypes() {
-//        return OUR_TYPES;
-//    }
-//
-//    private static final Set<Class<?>> OUR_FUNCTIONS = ImmutableSet.<Class<?>>builder()
-//            .add(BigDecimalOperators.class)
-//            .add(BigDecimalDistinctFromOperator.class)
-//            .add(BigIntegerOperators.class)
-//            .add(BigIntegerDistinctFromOperator.class)
-//            .build();
-//
-//    @Override
-//    public Set<Class<?>> getFunctions() {
-//        return OUR_FUNCTIONS;
-//    }
-
     @Override
     public Iterable<PasswordAuthenticatorFactory> getPasswordAuthenticatorFactories() {
         return ImmutableList.<PasswordAuthenticatorFactory>builder()
-                .add(new CyodaAuthenticatorFactory())
+                .add(new CyodaAuthenticatorFactory(cyodaAuthorization))
                 .build();
     }
 
     @Override
     public Iterable<HeaderAuthenticatorFactory> getHeaderAuthenticatorFactories() {
         return ImmutableList.<HeaderAuthenticatorFactory>builder()
-                .add(new CyodaTokenAuthFactory())
+                .add(new CyodaTokenAuthFactory(cyodaAuthorization))
+                .build();
+    }
+
+    @Override
+    public Iterable<SystemAccessControlFactory> getSystemAccessControlFactories() {
+        return ImmutableList.<SystemAccessControlFactory>builder()
+                .add(new CyodaSystemAccessControl.Factory(cyodaAuthorization))
                 .build();
     }
 }

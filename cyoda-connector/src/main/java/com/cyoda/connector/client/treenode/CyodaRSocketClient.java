@@ -111,7 +111,7 @@ public class CyodaRSocketClient {
         @Override
         public Flux<A> retrieveData(String queryId, Q request) {
             Flux<A> flux = super.retrieveData(queryId, request);
-            if (config.getLogApiCallStats() && config.isTestingMode()) {
+            if (config.getLogApiCallStats()) {
                 Date callTime = new Date();
                 List<A> response = new ArrayList<>();
                 if (config.getLogApiCallResponse()) {
@@ -132,7 +132,7 @@ public class CyodaRSocketClient {
         @Override
         public Mono<A> retrieveData(String queryId, Q request) {
             Mono<A> mono = super.retrieveData(queryId, request);
-            if (config.getLogApiCallStats() && config.isTestingMode()) {
+            if (config.getLogApiCallStats()) {
                 Date callTime = new Date();
                 ResponseHolder holder = new ResponseHolder();
                 if (config.getLogApiCallResponse()) {

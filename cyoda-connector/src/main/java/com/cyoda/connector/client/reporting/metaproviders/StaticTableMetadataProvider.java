@@ -21,7 +21,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.cyoda.connector.client.reporting.metaproviders.StaticReportFields.GROUPING_VERSION_COLUMN;
 import static com.cyoda.connector.client.reporting.metaproviders.StaticReportFields.HISTORY_REPORT_ID_COLUMN;
 import static com.cyoda.connector.client.reporting.metaproviders.StaticReportFields.ROW_GROUP_JSON_BASE64_VARIABLE;
 import static com.cyoda.connector.client.reporting.metaproviders.StaticReportFields.ROW_REPORT_ID_COLUMN;
@@ -32,11 +31,25 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
     private static final SupplierLogger LOG = SupplierLogger.get(StaticTableMetadataProvider.class);
     private final Map<CyodaTableHandle, CyodaTableMeta> standaloneTablesMap;
 
-    private final ReportGroups reportGroups;
-    private final ReportRows reportRows;
+    private final boolean reportsEnabled;
+    private final ReportStaticMetaProvider reportMeta;
 
-    private final CyodaTableMeta.Template historyTableTemplate;
-    private final CyodaTableMeta.Template groupsTableTemplate;
+    private class ReportStaticMetaProvider {
+        private final ReportGroups reportGroups;
+        private final ReportRows reportRows;
+
+        private final CyodaTableMeta.Template historyTableTemplate;
+        private final CyodaTableMeta.Template groupsTableTemplate;
+
+        ReportStaticMetaProvider(){
+            reportGroups = new ReportGroups();
+            reportRows = new ReportRows();
+
+            historyTableTemplate = CyodaTableMeta.Template.of(new StaticTable(StaticTableMetadata.REPORT_HISTORIES).getTableMeta());
+            groupsTableTemplate = CyodaTableMeta.Template.of(reportGroups.getTableMeta());
+        }
+    }
+
 
     private final SimpleStaticCache<CyodaTableHandle, CyodaTableMeta> staticMetaCache = new SimpleStaticCache<>();
     //Since everything, that is provided by that class, are compiled from hardcoded sources
@@ -70,20 +83,23 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
         super(typeManager, config);
         standaloneTablesMap = Arrays.stream(StaticTableMetadata.values())
                 .filter(t -> (
-                        (config.isTestingMode() || t.getTableType().getTableCategory() != CyodaTableCategory.MAINTENANCE) &&
+                        t.getTableType().isEnabled(config) &&
                         t.getStaticTableName() != null
                 ))
                 .map(StaticTable::new)
                 .collect(Collectors.toMap(StaticTable::getTableHandle, StaticTable::getTableMeta));
-        ApiCallStats apiCallStats = new ApiCallStats();
-        if (!config.getLogApiCallStats()) {
-            standaloneTablesMap.remove(apiCallStats.getTableHandle());
-        }
-        reportGroups = new ReportGroups();
-        reportRows = new ReportRows();
 
-        historyTableTemplate = CyodaTableMeta.Template.of(new StaticTable(StaticTableMetadata.REPORT_HISTORIES).getTableMeta());
-        groupsTableTemplate = CyodaTableMeta.Template.of(reportGroups.getTableMeta());
+        reportsEnabled = CyodaTableCategory.REPORT.isEnabled(config);
+        if (reportsEnabled) {
+            reportMeta = new ReportStaticMetaProvider();
+        } else {
+            reportMeta = null;
+        }
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 
     @Override
@@ -110,18 +126,18 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
 
 
     public ReportGroups getReportGroups(){
-        return reportGroups;
+        return reportMeta.reportGroups;
     }
     public ReportRows getReportRows() {
-        return reportRows;
+        return reportMeta.reportRows;
     }
 
     public CyodaTableMeta.Template getHistoryTableTemplate() {
-        return historyTableTemplate;
+        return reportMeta.historyTableTemplate;
     }
 
     public CyodaTableMeta.Template getGroupsTableTemplate() {
-        return groupsTableTemplate;
+        return reportMeta.groupsTableTemplate;
     }
 
     private List<CyodaColumnHandle> getCyodaColumnHandles(StaticTableMetadata tableDefinition) {
@@ -182,35 +198,6 @@ public class StaticTableMetadataProvider extends TableMetadataProvider {
 
         public CyodaColumnHandle getTypeColumn() {
             return typeColumn;
-        }
-    }
-
-
-    public class ReportStats extends StaticTable {
-        public ReportStats() {
-            super(StaticTableMetadata.REPORT_STATS);
-        }
-    }
-
-    public class ApiCallStats extends StaticTable {
-        private final CyodaColumnHandle nodeIdColumn;
-        public ApiCallStats() {
-            super(StaticTableMetadata.API_CALL_STATS);
-            nodeIdColumn = getTableMeta().getColumn(StaticTableMetadata.ApiCallStatsColumnDef.NODE_ID.getFieldName());
-        }
-        public CyodaColumnHandle getNodeIdColumn() {
-            return nodeIdColumn;
-        }
-    }
-
-    public class CacheContent extends StaticTable {
-        private final CyodaColumnHandle cacheKeyColumn;
-        public CacheContent() {
-            super(StaticTableMetadata.CACHE_CONTENT);
-            cacheKeyColumn = getTableMeta().getColumn(StaticTableMetadata.CacheContentColumnDef.CONTENT_ID.getFieldName());
-        }
-        public CyodaColumnHandle getCacheKeyColumn() {
-            return cacheKeyColumn;
         }
     }
 

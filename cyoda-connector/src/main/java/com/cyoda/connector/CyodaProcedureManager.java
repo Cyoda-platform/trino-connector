@@ -21,7 +21,9 @@ public class CyodaProcedureManager {
         registerProcedure(RunReportProcedure.getInstance(auth, runReportApiHandler));
     }
     private void registerProcedure(CyodaProcedure procedure){
-        procedures.add(new Procedure(config.getReportingSchemaName(), procedure.getName(), procedure.getArguments(), procedure.getMethodHandle()));
+        String reportingSchemaName = config.getReportingSchemaName();
+        if(reportingSchemaName != null)
+            procedures.add(new Procedure(reportingSchemaName, procedure.getName(), procedure.getArguments(), procedure.getMethodHandle()));
     }
 
     public Set<Procedure> getProcedures() {

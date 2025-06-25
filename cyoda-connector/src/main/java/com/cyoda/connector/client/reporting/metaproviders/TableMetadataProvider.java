@@ -14,6 +14,7 @@ public abstract class TableMetadataProvider {
 
     public abstract List<CyodaTableHandle> listTables(AuthContext authContext);
     public abstract CyodaTableMeta getTableMeta(CyodaTableHandle tableHandle);
+    public abstract boolean isEnabled();
 
     public TableMetadataProvider(TypeManager typeManager, CyodaConfig config) {
         this.typeManager = typeManager;

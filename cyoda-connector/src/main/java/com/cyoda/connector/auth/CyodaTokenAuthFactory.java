@@ -6,6 +6,13 @@ import io.trino.spi.security.HeaderAuthenticatorFactory;
 import java.util.Map;
 
 public class CyodaTokenAuthFactory implements HeaderAuthenticatorFactory {
+
+    private final CyodaAuthorizationManager cyodaAuthorization;
+
+    public CyodaTokenAuthFactory(CyodaAuthorizationManager cyodaAuthorization) {
+        this.cyodaAuthorization = cyodaAuthorization;
+    }
+
     @Override
     public String getName() {
         return "token";
@@ -13,6 +20,6 @@ public class CyodaTokenAuthFactory implements HeaderAuthenticatorFactory {
 
     @Override
     public HeaderAuthenticator create(Map<String, String> config) {
-        return new CyodaTokenAuth(config);
+        return new CyodaTokenAuth(config, cyodaAuthorization);
     }
 }

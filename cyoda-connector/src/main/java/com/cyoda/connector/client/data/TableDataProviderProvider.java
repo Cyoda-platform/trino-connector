@@ -19,12 +19,24 @@ import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static com.cyoda.connector.handles.CyodaTableType.*;
 
 public class TableDataProviderProvider {
 
     private final Map<CyodaTableType, TableDataProvider<?>> providerMap;
+
+    private static <T extends TableDataProvider<?>> void putToMap(Map<CyodaTableType, TableDataProvider<?>> providerMap,
+                                                                  CyodaConfig config,
+                                                                  CyodaTableType tableType,
+                                                                  Supplier<T> supplier)
+    {
+        if (tableType.isEnabled(config)) {
+            providerMap.put(tableType, supplier.get());
+        }
+    }
     @Inject
     public TableDataProviderProvider(ConfiguredReportsApi reportsApiHandler,
                                      ReportConfigDetailsApi configDetailsApiHandler,
@@ -40,59 +52,20 @@ public class TableDataProviderProvider {
                                      CyodaCacheMonitor cyodaCacheMonitor,
                                      CyodaRSocketClient treeNodeAPIClient) {
         providerMap = new HashMap<>();
-        providerMap.put(
-                REPORTS,
-                new ReportsTableDataProvider(reportsApiHandler, configDetailsApiHandler)
-        );
-        providerMap.put(
-                STATS,
-                new StatisticsTableDataProvider(reportsApiHandler, statisticsApiHandler)
-        );
-        providerMap.put(
-                HISTORY,
-                new HistoryTableDataProvider(historyApiHandler)
-        );
-        providerMap.put(
-                GROUP,
-                new GroupsTableDataProvider(historyApiHandler, groupsApiHandler, reportMetadataProvider)
-        );
-        providerMap.put(
-                DATA,
-                new DynamicTableDataProvider(historyApiHandler,
-                        groupsApiHandler,
-                        rowsApiHandler,
-                        reportMetadataProvider,
-                        config,
-                        cyodaCacheMonitor)
-        );
-        providerMap.put(
-                CALL_STATS,
-                new ApiCallStatsDataProvider(statsMonitor, nodeManager)
-        );
-        providerMap.put(
-                PUSHDOWN_LOG,
-                new ConditionPushdownDataProvider(pushdownLogMonitor, nodeManager)
-        );
-        providerMap.put(
-                CACHE_STATS,
-                new CacheStatsDataProvider(nodeManager, cyodaCacheMonitor)
-        );
-        providerMap.put(
-                CACHE_CONTENT,
-                new CacheContentDataProvider(nodeManager, cyodaCacheMonitor)
-        );
-        providerMap.put(
-                LOG_TABLE,
-                new LogTableDataProvider(nodeManager)
-        );
-        providerMap.put(
-                TREE_NODE_TABLE,
-                new TreeNodeTableDataProvider(treeNodeAPIClient)
-        );
-        providerMap.put(
-                TDB_RAW_DATA,
-                new RawTreeNodeDataProvider(treeNodeAPIClient)
-        );
+        putToMap(providerMap, config, REPORTS,() -> new ReportsTableDataProvider(reportsApiHandler, configDetailsApiHandler));
+        putToMap(providerMap, config, REPORTS,() -> new ReportsTableDataProvider(reportsApiHandler, configDetailsApiHandler));
+        putToMap(providerMap, config, STATS,() -> new StatisticsTableDataProvider(reportsApiHandler, statisticsApiHandler));
+        putToMap(providerMap, config, HISTORY,() -> new HistoryTableDataProvider(historyApiHandler));
+        putToMap(providerMap, config, GROUP,() -> new GroupsTableDataProvider(historyApiHandler, groupsApiHandler, reportMetadataProvider));
+        putToMap(providerMap, config, DATA,() ->
+                new DynamicTableDataProvider(historyApiHandler, groupsApiHandler, rowsApiHandler, reportMetadataProvider, config, cyodaCacheMonitor));
+        putToMap(providerMap, config, CALL_STATS,() -> new ApiCallStatsDataProvider(statsMonitor, nodeManager));
+        putToMap(providerMap, config, PUSHDOWN_LOG,() -> new ConditionPushdownDataProvider(pushdownLogMonitor, nodeManager));
+        putToMap(providerMap, config, CACHE_STATS,() -> new CacheStatsDataProvider(nodeManager, cyodaCacheMonitor));
+        putToMap(providerMap, config, CACHE_CONTENT,() -> new CacheContentDataProvider(nodeManager, cyodaCacheMonitor));
+        putToMap(providerMap, config, LOG_TABLE,() -> new LogTableDataProvider(nodeManager));
+        putToMap(providerMap, config, TREE_NODE_TABLE,() -> new TreeNodeTableDataProvider(treeNodeAPIClient));
+        putToMap(providerMap, config, TDB_RAW_DATA,() -> new RawTreeNodeDataProvider(treeNodeAPIClient));
     }
 
     public TableDataProvider<?> getDataProvider(CyodaTableType tableType){

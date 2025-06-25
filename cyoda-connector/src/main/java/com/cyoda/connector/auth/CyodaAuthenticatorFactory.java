@@ -23,6 +23,13 @@ import io.trino.spi.security.PasswordAuthenticatorFactory;
 import java.util.Map;
 
 public class CyodaAuthenticatorFactory implements PasswordAuthenticatorFactory {
+
+    private final CyodaAuthorizationManager cyodaAuthorization;
+
+    public CyodaAuthenticatorFactory(CyodaAuthorizationManager cyodaAuthorization) {
+        this.cyodaAuthorization = cyodaAuthorization;
+    }
+
     @Override
     public String getName() {
         return "ajax";
@@ -30,6 +37,6 @@ public class CyodaAuthenticatorFactory implements PasswordAuthenticatorFactory {
 
     @Override
     public PasswordAuthenticator create(Map<String, String> config) {
-        return new CyodaAuthenticator(config);
+        return new CyodaAuthenticator(config, cyodaAuthorization);
     }
 }
