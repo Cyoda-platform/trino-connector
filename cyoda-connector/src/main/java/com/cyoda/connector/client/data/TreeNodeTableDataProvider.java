@@ -79,6 +79,7 @@ public class TreeNodeTableDataProvider extends TableDataProvider<EntityContentDt
                 return switch (CyodaColumnHandle.SpecialColumn.valueOf(columnHandle.getColumnKey())){
                     case ENTITY_ID -> entity.getRootId();
                     case POINT_TIME -> entity.getPointTime();
+                    case JSON -> entity.getReconstructedEntity();
                 };
             }
             case INDEX -> {

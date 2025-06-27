@@ -13,18 +13,21 @@ public class EntityContentDto {
     private final Date pointTime;
     private final Map<String, Object> rootFields;
     private final Map<String, Object> contents;
+    private final String reconstructedEntity;
 
     @JsonCreator
     public EntityContentDto(@JsonProperty("rootId") UUID rootId,
                             @JsonProperty("index") List<Integer> index,
                             @JsonProperty("pointTime") Date pointTime,
                             @JsonProperty("rootFields") Map<String, Object> rootFields,
-                            @JsonProperty("contents") Map<String, Object> contents) {
+                            @JsonProperty("contents") Map<String, Object> contents,
+                            @JsonProperty("reconstructedEntity") String reconstructedEntity) {
         this.rootId = rootId;
         this.index = index;
         this.pointTime = pointTime;
         this.rootFields = rootFields;
         this.contents = contents;
+        this.reconstructedEntity = reconstructedEntity;
     }
 
     @JsonProperty("rootId")
@@ -50,6 +53,11 @@ public class EntityContentDto {
     @JsonProperty("contents")
     public Map<String, Object> getContents() {
         return contents;
+    }
+
+    @JsonProperty("reconstructedEntity")
+    public String getReconstructedEntity() {
+        return reconstructedEntity;
     }
 
     @Override
