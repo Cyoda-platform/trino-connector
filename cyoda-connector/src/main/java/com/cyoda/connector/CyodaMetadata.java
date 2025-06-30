@@ -278,7 +278,8 @@ public class CyodaMetadata implements ConnectorMetadata {
             for (CyodaColumnHandle column : columnHandles) {
                 PredicatePushdownController pushDownController;
                 Domain domain = domains.get(column);
-                if (!config.isNullPushdown() && domain.isNullAllowed()){
+                if ((domain.isNullAllowed() && !config.isNullPushdown()) ||
+                        column.getColumnKey().equals(CyodaColumnHandle.SpecialColumn.JSON.name())){
                     pushDownController = PredicatePushdownController.DISABLE_PUSHDOWN;
                 } else {
                     pushDownController = column.getDataType().getMainType().getPushDownController();

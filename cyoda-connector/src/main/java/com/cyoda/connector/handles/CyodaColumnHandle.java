@@ -192,7 +192,7 @@ public class CyodaColumnHandle implements ColumnHandle {
         DATA, ROOT, SPECIAL, REPORT, INDEX
     }
     public enum SpecialColumn {
-        ENTITY_ID, POINT_TIME
+        ENTITY_ID, POINT_TIME, JSON
     }
 
 }
