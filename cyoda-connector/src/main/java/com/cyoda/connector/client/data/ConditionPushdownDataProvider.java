@@ -30,6 +30,9 @@ public class ConditionPushdownDataProvider extends VirtualTableDataProvider<Cond
             case NODE_ADDRESS -> {
                 return thisNode.getHostAndPort().toString();
             }
+            case TABLE_NAME -> {
+                return entity.tableName();
+            }
             case CALL_TIME -> {
                 return entity.callTime();
             }
@@ -45,8 +48,8 @@ public class ConditionPushdownDataProvider extends VirtualTableDataProvider<Cond
             case ACCEPTED -> {
                 return entity.acceptedCondition();
             }
-            case REMAINING -> {
-                return entity.remainingCondition();
+            case ADDITIONAL_INFO -> {
+                return entity.additionalInfo();
             }
         }
         throw new IllegalArgumentException("Unknown column " + columnHandle.getColumnName());

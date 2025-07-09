@@ -22,7 +22,6 @@ import com.cyoda.connector.client.data.TableDataProviderProvider;
 import com.cyoda.connector.client.reporting.stats.ConditionPushdownLogMonitor;
 import com.cyoda.connector.handles.CyodaTableHandle;
 import io.trino.spi.NodeManager;
-import io.trino.spi.connector.ColumnHandle;
 import io.trino.spi.connector.ConnectorTableHandle;
 import io.trino.spi.connector.Constraint;
 import io.trino.spi.connector.DynamicFilter;
@@ -32,29 +31,28 @@ import io.trino.spi.connector.ConnectorSplitManager;
 import io.trino.spi.connector.ConnectorTransactionHandle;
 import io.trino.spi.connector.FixedSplitSource;
 
-import io.trino.spi.predicate.TupleDomain;
 import jakarta.inject.Inject;
 
 import java.util.List;
 
-import static com.google.common.base.Preconditions.checkState;
-import static java.util.Objects.requireNonNull;
 
 public class CyodaSplitManager implements ConnectorSplitManager {
     private final TableDataProviderProvider dataProviderProvider;
     private final AuthService auth;
     private final CyodaSplitDispatcher splitDispatcher;
     private final ConditionPushdownLogMonitor pushdownLogMonitor;
+    private final CyodaConfig cyodaConfig;
 
 
     @Inject
     public CyodaSplitManager(TableDataProviderProvider dataProviderProvider,
                              AuthService auth,
-                             NodeManager nodeManager, ConditionPushdownLogMonitor pushdownLogMonitor) {
+                             NodeManager nodeManager, ConditionPushdownLogMonitor pushdownLogMonitor, CyodaConfig cyodaConfig) {
         this.dataProviderProvider = dataProviderProvider;
         this.auth = auth;
         splitDispatcher = new CyodaSplitDispatcher(nodeManager);
         this.pushdownLogMonitor = pushdownLogMonitor;
+        this.cyodaConfig = cyodaConfig;
     }
 
     @Override
@@ -66,11 +64,12 @@ public class CyodaSplitManager implements ConnectorSplitManager {
             Constraint constraint) {
         CyodaTableHandle tableHandle = (CyodaTableHandle) connectorTableHandle;
 
-        if (tableHandle.getTableType().isPushdownSupported()){
-            TupleDomain<ColumnHandle> currentPredicate = dynamicFilter.getCurrentPredicate();
-            pushdownLogMonitor.registerPushdown(session.getQueryId(), "GET_SPLITS", currentPredicate.toString(), null, tableHandle.getConstraint().toString(), null);
-            tableHandle.setConstraint(tableHandle.getConstraint().intersect(currentPredicate).simplify());
-        }
+        DynamicFilterHelper.dynamicFilterPushdown(pushdownLogMonitor,
+                session.getQueryId(),
+                dynamicFilter,
+                tableHandle,
+                cyodaConfig.getDynamicFilterWaitStage(),
+                CyodaConfig.DynamicFilterWaitStage.GET_SPLITS);
 
         if (constraint.predicate().isEmpty() && !constraint.getSummary().isAll()){
             throw new RuntimeException("Constraint summary is not blank, but predicate not present");
