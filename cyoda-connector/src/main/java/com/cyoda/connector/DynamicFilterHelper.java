@@ -25,8 +25,8 @@ public class DynamicFilterHelper {
                     dynamicFilter.isAwaitable()) {
                 int cnt = 0;
                 int maxWaitingSteps = handle.getTableMetaId().endsWith("json") ? DF_JSON_WAITING_STEPS : DF_OTHER_WAITING_STEPS;
-                if ((handle.getCondition() == null || handle.getCondition().isAll()) &&
-                        handle.getConstraint().isAll()){
+                if ((handle.getCondition() != null && !handle.getCondition().isAll()) ||
+                        !handle.getConstraint().isAll()){
                     maxWaitingSteps -= DF_ALREADY_HAS_CONDITION_STEPS_SUBTRACT;
                 }
                 while (!dynamicFilter.isComplete() && cnt++ < maxWaitingSteps) try {
