@@ -293,12 +293,13 @@ public enum StaticTableMetadata {
         QUERY_ID(0, STRING),
         NODE_ID(1, STRING),
         NODE_ADDRESS(2, STRING),
-        CALL_TIME(3, DATE),
-        CODE_POINT(4, STRING),
-        DOMAIN(5, STRING),
-        EXPRESSION(6, STRING),
-        ACCEPTED(7, STRING),
-        REMAINING(8, STRING);
+        TABLE_NAME(3, STRING),
+        CALL_TIME(4, DATE),
+        CODE_POINT(5, STRING),
+        DOMAIN(6, STRING),
+        EXPRESSION(7, STRING),
+        ACCEPTED(8, STRING),
+        ADDITIONAL_INFO(9, STRING);
 
         @Override
         public String toString() {

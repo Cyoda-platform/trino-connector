@@ -1,6 +1,7 @@
 package com.cyoda.connector.client.treenode.dto.conditions;
 
 import com.cyoda.connector.client.treenode.dto.conditions.complex.AbstractConditionDto;
+import com.cyoda.connector.client.treenode.dto.conditions.complex.GroupConditionDto;
 import com.cyoda.connector.handles.CyodaColumnHandle;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -41,7 +42,8 @@ public class GroupTrinoConditionDto extends AbstractTrinoConditionDto {
 
     @Override
     public AbstractConditionDto toComplexCondition(CyodaColumnHandle.ColumnCategory columnCategory, String columnKey) {
-        throw new UnsupportedOperationException("GroupTrinoConditionDto.toComplexCondition() is not supported.");
+        return new GroupConditionDto(GroupConditionDto.Operator.valueOf(operator.name()),
+                conditions.stream().map(condition -> condition.toComplexCondition(columnCategory, columnKey)).toList());
     }
 
     @Override
