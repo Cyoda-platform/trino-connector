@@ -297,6 +297,7 @@ public class CyodaMetadata implements ConnectorMetadata {
 
         pushdownLogMonitor.registerPushdown(
                 session.getQueryId(),
+                tableHandle.toSchemaTableName().toString(),
                 "APPLY_FILTER",
                 constraint.getSummary().toString(),
                 constraint.getExpression().toString(),

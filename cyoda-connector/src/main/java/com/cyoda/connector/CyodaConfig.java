@@ -43,6 +43,13 @@ public class CyodaConfig {
     private String rSocketBindAddress;
     private int rSocketPort;
 
+    private DynamicFilterWaitStage dynamicFilterWaitStage;
+
+
+    public enum DynamicFilterWaitStage {
+        GET_SPLITS, PAGE_SOURCE, ALL
+    }
+
     public CyodaConfig() {
         setDefaults();
     }
@@ -65,6 +72,7 @@ public class CyodaConfig {
         cacheReportGroupsHoursAfterAccess = 24;
         rSocketBindAddress="localhost";
         rSocketPort=7000;
+        dynamicFilterWaitStage = DynamicFilterWaitStage.PAGE_SOURCE;
     }
 
 
@@ -210,4 +218,12 @@ public class CyodaConfig {
         this.rSocketPort = port;
     }
 
+    public DynamicFilterWaitStage getDynamicFilterWaitStage() {
+        return dynamicFilterWaitStage;
+    }
+
+    @Config("cyoda.connector.dynamic-filter-wait-stage")
+    public void setDynamicFilterWaitStage(DynamicFilterWaitStage dynamicFilterWaitStage) {
+        this.dynamicFilterWaitStage = dynamicFilterWaitStage;
+    }
 }

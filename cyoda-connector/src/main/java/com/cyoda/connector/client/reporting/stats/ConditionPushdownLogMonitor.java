@@ -18,13 +18,14 @@ public class ConditionPushdownLogMonitor extends BaseVirtualLogMonitor<Condition
     };
 
     public void registerPushdown(String queryId,
+                                 String tableName,
                                  String codePoint,
                                  String domainCondition,
                                  String expression,
                                  String acceptedCondition,
-                                 String remainingCondition) {
+                                 String additionalInfo) {
         add(new ConditionPushdownLog(
-                queryId, new Date(), codePoint, domainCondition, expression, acceptedCondition, remainingCondition
+                queryId, tableName, new Date(), codePoint, domainCondition, expression, acceptedCondition, additionalInfo
         ));
     }
 
