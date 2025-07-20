@@ -2,24 +2,21 @@ package com.cyoda.connector.auth;
 
 import com.cyoda.connector.client.AuthRestTemplate;
 import com.cyoda.connector.logging.SupplierLogger;
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import io.trino.spi.security.AccessDeniedException;
 import io.trino.spi.security.BasicPrincipal;
 import org.jetbrains.annotations.NotNull;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
 import java.security.Principal;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -94,37 +91,26 @@ public class CyodaAuthorizationManager {
         }
 
         private static @NotNull String passwordAuth(AuthRestTemplate authRestTemplate, URI loginUri, String user, String password) {
-            Login payload = new Login(user, password);
-            HttpEntity<Login> requestEntity = new HttpEntity<>(payload, RestAuthenticator.HEADERS);
-            ResponseEntity<AuthContextWithToken> response =
+            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+            formData.add("grant_type", "client_credentials");
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+            // Add Basic Authentication header with client_id:client_secret
+            String credentials = user + ":" + password;
+            String encodedCredentials = Base64.getEncoder().encodeToString(credentials.getBytes());
+            headers.add("Authorization", "Basic " + encodedCredentials);
+
+            HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(formData, headers);
+            ResponseEntity<OAuth2TokenResponse> response =
                     authRestTemplate.getRestTemplate()
-                            .exchange(loginUri, HttpMethod.POST, requestEntity, AuthContextWithToken.class);
+                            .exchange(loginUri, HttpMethod.POST, requestEntity, OAuth2TokenResponse.class);
             if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
-                return response.getBody().getToken();
+                return response.getBody().token;
             } else {
                 LOG.warn("access denied to " + user + " with reason: " + response);
                 throw new AccessDeniedException("Unauthorized");
-            }
-        }
-
-        private static class Login {
-            private final String username;
-            private final String password;
-
-            @JsonCreator
-            Login(@JsonProperty("username") String username, @JsonProperty("password") String password) {
-                this.username = username;
-                this.password = password;
-            }
-
-            @JsonProperty
-            public String getUsername() {
-                return username;
-            }
-
-            @JsonProperty
-            public String getPassword() {
-                return password;
             }
         }
     }

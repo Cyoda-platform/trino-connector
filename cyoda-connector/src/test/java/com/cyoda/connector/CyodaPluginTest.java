@@ -32,6 +32,6 @@ public class CyodaPluginTest {
     {
         Plugin plugin = new CyodaPlugin();
         ConnectorFactory factory = getOnlyElement(plugin.getConnectorFactories());
-        factory.create("test", ImmutableMap.of("cyoda.connector.server.url", "http://localhost:8090"), new TestingConnectorContext());
+        factory.create("test", ImmutableMap.of(), new TestingConnectorContext());
     }
 }
