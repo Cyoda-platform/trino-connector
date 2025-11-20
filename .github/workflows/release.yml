@@ -5,12 +5,22 @@ on:
     tags:
       - "v*"
 
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (ignored if triggered by tag)"
+        required: false
+        default: ""
+
 jobs:
   release:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+        # This ensures tags are available when triggered manually
+        with:
+          fetch-depth: 0
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -21,11 +31,24 @@ jobs:
       - name: Build plugin
         run: mvn -B clean package
 
-      - name: Create GitHub Release
+      # If running manually, create a release with input version
+      - name: Create Release (manual)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ inputs.version }}
+          name: Release ${{ inputs.version }}
+          files: |
+            target/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # If running from a tag push, take actual tag
+      - name: Create Release (tag)
+        if: ${{ github.event_name == 'push' }}
         uses: softprops/action-gh-release@v2
         with:
           files: |
             target/*.zip
-          draft: false
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
