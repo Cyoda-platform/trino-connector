@@ -137,7 +137,7 @@ public class ZonedDateTimePrestoValueConverterTest {
         assertEquals(converter.fromLong(estLong), estTime);
     }
 
-    @Test(expectedExceptions = DateTimeParseException.class, expectedExceptionsMessageRegExp = "Text 'not-a-zoned-date-time' could not be parsed at index 0")
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Unable to parse not-a-zoned-date-time to ZonedDateTime at column testColumn")
     public void testFromOtherCyodaTypeWithInvalidFormat() {
         converter.fromOtherCyodaType("not-a-zoned-date-time", "testColumn");
     }

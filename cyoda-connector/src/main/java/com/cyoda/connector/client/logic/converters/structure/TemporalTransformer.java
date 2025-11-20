@@ -70,7 +70,12 @@ public class TemporalTransformer<T extends Temporal> {
             int tzPos = value.length() - 6;
             String local = value.substring(0, tzPos);
             String tz = value.substring(tzPos);
-            return ZonedDateTime.of(LocalDateTime.parse(local), ZoneOffset.of(tz));
+            try {
+                ZoneOffset zone = ZoneOffset.of(tz);
+                return ZonedDateTime.of(LocalDateTime.parse(local), zone);
+            }catch (Exception e) {
+                return ZonedDateTime.parse(value);
+            }
         } else {
             return ZonedDateTime.parse(value);
         }

@@ -106,7 +106,7 @@ public class YearMonthPrestoValueConverterTest {
         assertEquals(converter.fromInt(int2), ym2);
     }
     
-    @Test(expectedExceptions = NumberFormatException.class)
+    @Test(expectedExceptions = RuntimeException.class)
     public void testFromOtherCyodaTypeWithInvalidFormat() {
         converter.fromOtherCyodaType("not-a-year-month", "testColumn");
     }

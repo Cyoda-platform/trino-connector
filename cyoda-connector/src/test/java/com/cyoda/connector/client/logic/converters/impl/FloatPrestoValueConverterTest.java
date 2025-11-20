@@ -84,7 +84,7 @@ public class FloatPrestoValueConverterTest {
 
     @Test
     public void testFromPrestoNative() {
-        Float nativeValue = 123.456f;
+        long nativeValue = Float.floatToRawIntBits(123.456f);
         Float result = converter.fromPrestoNative(nativeValue);
         assertEquals(result, 123.456f);
     }

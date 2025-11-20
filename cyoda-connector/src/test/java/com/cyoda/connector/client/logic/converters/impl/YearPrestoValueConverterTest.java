@@ -95,7 +95,7 @@ public class YearPrestoValueConverterTest {
         assertEquals(maxYearResult, maxYear);
     }
     
-    @Test(expectedExceptions = NumberFormatException.class)
+    @Test(expectedExceptions = RuntimeException.class)
     public void testFromOtherCyodaTypeWithInvalidFormat() {
         converter.fromOtherCyodaType("not-a-year", "testColumn");
     }

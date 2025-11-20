@@ -121,7 +121,7 @@ public class LocalDateTimePrestoValueConverterTest {
         assertEquals(result, expectedDateTime);
     }
 
-    @Test(expectedExceptions = DateTimeParseException.class, expectedExceptionsMessageRegExp = "Text 'not-a-date-time' could not be parsed at index 0")
+    @Test(expectedExceptions = RuntimeException.class, expectedExceptionsMessageRegExp = "Unable to parse not-a-date-time to LocalDateTime at column testColumn")
     public void testFromOtherCyodaTypeWithInvalidFormat() {
         converter.fromOtherCyodaType("not-a-date-time", "testColumn");
     }
