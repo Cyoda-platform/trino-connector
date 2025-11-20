@@ -39,7 +39,7 @@ jobs:
           tag_name: ${{ inputs.version }}
           name: Release ${{ inputs.version }}
           files: |
-            target/*.zip
+            cyoda-connector/target/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -49,6 +49,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            target/*.zip
+            cyoda-connector/target/*.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
